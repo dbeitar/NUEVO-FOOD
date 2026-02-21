@@ -138,10 +138,14 @@ export default function AdminUsers() {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h3 className="text-lg font-bold text-stone-900">Gestión de Usuarios</h3>
+      {/* Page Header */}
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-stone-900">Usuarios</h2>
+          <p className="text-stone-600">Gestiona usuarios y configuraciones del sistema.</p>
+        </div>
         <button 
-          className="btn-primary inline-flex items-center gap-2"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black shadow-sm transition-colors"
           onClick={() => {
             setEditingUser(null);
             setFormData({ nombre: '', email: '', password: '', rol: 'usuario_final', gym_id: '', trainer_id: '', planId: '' });
@@ -161,7 +165,7 @@ export default function AdminUsers() {
 
       {/* Form Section */}
       {showForm && (
-      <div className="card">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-2">
           <h4 className="text-md font-semibold text-stone-900">
             {editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}
@@ -292,7 +296,7 @@ export default function AdminUsers() {
       )}
 
       {/* Table Section */}
-      <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden">
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-stone-50">
@@ -327,7 +331,7 @@ export default function AdminUsers() {
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">
                         <button 
-                          className="text-lime-700 hover:text-black bg-stone-100 hover:bg-lime-400 p-2 rounded-lg transition-colors inline-flex items-center gap-1"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-lime-300 text-lime-700 bg-white hover:bg-lime-100 transition-colors"
                           onClick={() => startEdit(user)}
                           title="Editar usuario"
                         >
@@ -335,7 +339,7 @@ export default function AdminUsers() {
                           <span className="hidden sm:inline">Editar</span>
                         </button>
                         <button 
-                          className="text-white bg-red-600 hover:bg-red-700 disabled:bg-slate-200 disabled:text-slate-400 p-2 rounded-lg transition-colors inline-flex items-center gap-1"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white disabled:bg-slate-200 disabled:text-slate-400 transition-colors"
                           onClick={() => handleDelete(user.id)}
                           disabled={currentUser && currentUser.id === user.id}
                           title="Eliminar usuario"
