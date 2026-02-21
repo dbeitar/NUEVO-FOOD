@@ -21,6 +21,32 @@ const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true';
 
 // Datos temporales en memoria (mientras no tenemos BD)
 const users = [];
+// Seed de desarrollo: crea cuentas base si el arreglo está vacío
+if (String(process.env.NODE_ENV).toLowerCase() !== 'production') {
+  if (users.length === 0) {
+    try {
+      users.push({
+        id: 1,
+        nombre: 'Super Admin',
+        email: 'admin@foodplan.local',
+        clave_hash: bcryptjs.hashSync('admin123', 10),
+        rol: 'super_admin',
+      });
+      users.push({
+        id: 2,
+        nombre: 'Cliente Ejemplo',
+        email: 'cliente@foodplan.local',
+        clave_hash: bcryptjs.hashSync('cliente123', 10),
+        rol: 'usuario_final',
+        gym_id: null,
+        trainer_id: null,
+      });
+      console.log('🔑 Seed de usuarios en memoria creado (admin@foodplan.local / admin123)');
+    } catch (e) {
+      console.warn('No se pudo crear el seed de desarrollo:', e?.message || e);
+    }
+  }
+}
 
 // Middleware
 app.use(express.json());

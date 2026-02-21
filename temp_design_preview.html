@@ -1,84 +1,118 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Vista Previa de Diseño Food Plan</title>
-    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
-    <style>
-        body {
-            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-            background-color: #f7fafc; /* Color de fondo claro similar a bg-zinc-100 */
-            color: #2d3748; /* Color de texto oscuro similar a text-stone-700 */
-            padding: 2rem;
-        }
-        .card {
-            background-color: #f0f4f8; /* Un poco más oscuro que el fondo para destacar */
-            padding: 1.5rem;
-            border-radius: 1.5rem; /* rounded-3xl */
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
-            border: 1px solid #e2e8f0; /* border-zinc-200 */
-            transition: box-shadow 0.2s ease-in-out;
-        }
-        .card:hover {
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15); /* shadow-lg */
-        }
-        .btn-primary {
-            display: inline-flex;
-            align-items: center;
-            justify-content: center;
-            padding: 0.5rem 1rem;
-            border-radius: 0.75rem; /* rounded-xl */
-            font-weight: 500;
-            transition: all 0.2s ease-in-out;
-            outline: none;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
-            background-color: #059669; /* emerald-600 */
-            color: white;
-        }
-        .btn-primary:hover {
-            background-color: #047857; /* emerald-700 */
-        }
-        .btn-primary:focus {
-            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.5); /* focus:ring-emerald-500 */
-        }
-    </style>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Preview UI — Food Plan (Lima)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap" rel="stylesheet">
+  <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+  <style>
+    :root { --lime: #84cc16; --lime-hover: #65a30d; }
+    body { font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial; background: #fafaf9; color: #1f2937; }
+    .card { background: #ffffff; border: 1px solid #e5e7eb; border-radius: 1.5rem; box-shadow: 0 1px 2px rgba(0,0,0,.04); transition: transform .2s ease, box-shadow .2s ease; }
+    .card:hover { transform: translateY(-1px) scale(1.02); box-shadow: 0 6px 16px rgba(0,0,0,.08); }
+    .btn-primary { display:inline-flex; align-items:center; justify-content:center; padding:.6rem 1rem; border-radius:1rem; background: var(--lime); color:#000; font-weight:600; box-shadow: 0 1px 2px rgba(0,0,0,.06); transition: background .2s ease, transform .2s ease; }
+    .btn-primary:hover { background: var(--lime-hover); }
+    .badge { display:inline-flex; align-items:center; padding:.25rem .6rem; border-radius: 999px; font-size:.75rem; font-weight:600; border: 1px solid #e5e7eb;}
+    .badge-neutral { background:#e5e7eb; color:#374151; }
+    .badge-success { background:#ecfccb; color:#15803d; border-color:#d9f99d; }
+    .field { width:100%; border:1px solid #d1d5db; border-radius:1rem; padding:.6rem .9rem; outline:none; }
+    .field:focus { border-color: var(--lime); box-shadow: 0 0 0 3px rgba(132,204,22,.4); }
+  </style>
 </head>
-<body>
-    <h1 class="text-2xl font-bold text-emerald-900 mb-8">Vista Previa: Diseño Orgánico y Natural</h1>
+<body class="p-6 md:p-10">
+  <header class="max-w-6xl mx-auto mb-8">
+    <h1 class="text-3xl md:text-4xl font-['Playfair_Display'] text-stone-900">Vista previa de estilo — Paleta Lima</h1>
+    <p class="text-stone-600 mt-1">Revisión visual antes de aplicar en el sistema.</p>
+  </header>
 
-    <div class="max-w-md mx-auto mb-12 card">
-        <h3 class="text-xl font-semibold text-emerald-800 mb-4">Salmón al Horno con Espárragos</h3>
-        <img src="https://via.placeholder.com/300x150/9CA3AF/FFFFFF?text=Imagen+Alimento" alt="Salmón" class="w-full h-40 object-cover rounded-xl shadow-sm mb-4">
-        <p class="text-stone-700 text-base mb-4">Una deliciosa receta rica en proteínas y grasas saludables, perfecta para cualquier comida del día.</p>
-        <div class="flex justify-between items-center w-full text-sm text-stone-600 mb-6">
-            <span> Calorías: <span class="font-medium text-emerald-700">350 kcal</span> </span>
-            <span> Proteínas: <span class="font-medium text-emerald-700">30g</span> </span>
-            <span> Grasas: <span class="font-medium text-emerald-700">20g</span> </span>
+  <!-- Grid de demos -->
+  <div class="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-8">
+    <!-- Login Card -->
+    <section class="card p-6">
+      <h2 class="text-xl font-semibold text-stone-900 mb-1 font-['Playfair_Display']">Login (Tarjeta centrada)</h2>
+      <p class="text-sm text-stone-600 mb-4">Formulario compacto con foco lima.</p>
+      <div class="max-w-md">
+        <div class="text-center mb-5">
+          <div class="text-4xl">🍽️</div>
+          <h3 class="mt-2 text-2xl font-bold text-stone-900">Iniciar Sesión</h3>
+          <p class="text-stone-600">Bienvenido a <span class="font-semibold text-lime-600">Food Plan</span></p>
         </div>
-        <button class="btn-primary self-end">Ver Receta</button>
-    </div>
-
-    <h2 class="text-xl font-bold text-emerald-900 mb-6">Barra Lateral (Sidebar) - Ejemplo</h2>
-    <div class="bg-emerald-900 text-white w-64 p-6 rounded-3xl shadow-xl flex flex-col space-y-4 mb-12">
-        <div class="text-2xl font-bold text-emerald-100">Food Plan</div>
-        <nav class="space-y-2">
-            <a href="#" class="block px-4 py-2 rounded-lg text-emerald-100 hover:bg-emerald-700 hover:text-white transition-colors duration-200">Inicio</a>
-            <a href="#" class="block px-4 py-2 rounded-lg text-emerald-100 hover:bg-emerald-700 hover:text-white transition-colors duration-200">Mi Cuenta</a>
-            <a href="#" class="block px-4 py-2 rounded-lg text-emerald-100 hover:bg-emerald-700 hover:text-white transition-colors duration-200">Recetas</a>
-            <a href="#" class="block px-4 py-2 rounded-lg text-emerald-100 hover:bg-emerald-700 hover:text-white transition-colors duration-200">Calculadora</a>
-            <a href="#" class="block px-4 py-2 rounded-lg text-emerald-100 hover:bg-emerald-700 hover:text-white transition-colors duration-200">Registro de Alimentos</a>
-        </nav>
-    </div>
-
-    <h2 class="text-xl font-bold text-emerald-900 mb-6">Barra de Navegación (Navbar) - Ejemplo</h2>
-    <nav class="bg-white p-4 rounded-xl shadow-lg flex justify-between items-center">
-        <div class="text-emerald-800 font-bold text-xl">Food Plan</div>
-        <div class="space-x-4">
-            <a href="#" class="text-stone-700 hover:text-emerald-600 transition-colors duration-200">Dashboard</a>
-            <a href="#" class="text-stone-700 hover:text-emerald-600 transition-colors duration-200">Mi Cuenta</a>
-            <a href="#" class="btn-primary">Cerrar Sesión</a>
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-stone-700 mb-1">Correo Electrónico</label>
+            <input class="field" placeholder="tu@email.com">
+          </div>
+          <div>
+            <label class="block text-sm font-semibold text-stone-700 mb-1">Contraseña</label>
+            <input type="password" class="field" placeholder="••••••••">
+          </div>
+          <div class="flex items-center gap-2">
+            <input type="checkbox" class="h-4 w-4 rounded border-gray-300 focus:ring-lime-500">
+            <span class="text-sm text-stone-700">Recordar mi usuario</span>
+          </div>
+          <button class="btn-primary w-full">Iniciar Sesión</button>
+          <div class="text-center text-sm text-stone-600">
+            ¿No tienes cuenta? <span class="underline">Regístrate gratis</span>
+          </div>
         </div>
-    </nav>
+      </div>
+    </section>
+
+    <!-- Admin Usuarios -->
+    <section class="card p-6">
+      <div class="flex items-start justify-between mb-4">
+        <div>
+          <h2 class="text-xl font-semibold text-stone-900 font-['Playfair_Display']">Usuarios</h2>
+          <p class="text-sm text-stone-600">Gestiona usuarios y configuraciones del sistema.</p>
+        </div>
+        <button class="btn-primary">+ Nuevo Usuario</button>
+      </div>
+      <div class="rounded-2xl border border-gray-200 overflow-hidden">
+        <table class="min-w-full divide-y divide-gray-200">
+          <thead class="bg-stone-50">
+            <tr>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase">ID</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase">Nombre</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase">Email</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase">Rol</th>
+              <th class="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase">Gimnasio</th>
+              <th class="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase">Acciones</th>
+            </tr>
+          </thead>
+          <tbody class="bg-white divide-y divide-gray-200">
+            <tr class="hover:bg-stone-100">
+              <td class="px-6 py-4 text-sm text-stone-600">#1</td>
+              <td class="px-6 py-4 text-sm font-medium text-stone-900">Super Admin</td>
+              <td class="px-6 py-4 text-sm text-stone-600">admin@foodplan.local</td>
+              <td class="px-6 py-4"><span class="badge badge-neutral">Super Admin</span></td>
+              <td class="px-6 py-4 text-sm text-stone-600">-</td>
+              <td class="px-6 py-4 text-right">
+                <div class="inline-flex gap-2">
+                  <button class="px-3 py-1.5 rounded-2xl border border-lime-300 text-lime-700 bg-white hover:bg-lime-100">Editar</button>
+                  <button class="px-3 py-1.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+            <tr class="hover:bg-stone-100">
+              <td class="px-6 py-4 text-sm text-stone-600">#2</td>
+              <td class="px-6 py-4 text-sm font-medium text-stone-900">Cliente Ejemplo</td>
+              <td class="px-6 py-4 text-sm text-stone-600">cliente@foodplan.local</td>
+              <td class="px-6 py-4"><span class="badge badge-neutral">Usuario Final</span></td>
+              <td class="px-6 py-4 text-sm text-stone-600">Gym Pro Fitness</td>
+              <td class="px-6 py-4 text-right">
+                <div class="inline-flex gap-2">
+                  <button class="px-3 py-1.5 rounded-2xl border border-lime-300 text-lime-700 bg-white hover:bg-lime-100">Editar</button>
+                  <button class="px-3 py-1.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white">Eliminar</button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
 </body>
 </html>
