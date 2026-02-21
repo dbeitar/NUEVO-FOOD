@@ -6,6 +6,9 @@ const aiController = require('../controllers/aiController');
 // Todas las rutas necesitan autenticación
 router.use(auth);
 
+// GET: Verificar si IA (OpenAI) está habilitada
+router.get('/enabled', aiController.isEnabled);
+
 // POST: Obtener sugerencias de alimentos con IA (OpenAI)
 router.post('/suggestions', aiController.getSuggestedFoods);
 

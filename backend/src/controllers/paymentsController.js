@@ -3,23 +3,23 @@ const PaymentsDatabase = require('../models/PaymentsDatabase');
 
 const sessionsForPlan = (planName) => {
   if (planName === 'premium') return { sesiones_restantes: 24, sesiones_totales: 24 };
-  if (planName === 'elite') return { sesiones_restantes: 48, sesiones_totales: 48 };
+  if (planName === 'vip') return { sesiones_restantes: 48, sesiones_totales: 48 };
   return { sesiones_restantes: 0, sesiones_totales: 0 };
 };
 
 const paymentsController = {
   createCheckout: (req, res) => {
     try {
-      const { plan, gym_id, trainer_id = null } = req.body || {};
-      if (!plan || !gym_id) {
-        return res.status(400).json({ error: 'plan y gym_id son requeridos' });
+      const { plan, gym_id = null, trainer_id = null } = req.body || {};
+      if (!plan) {
+        return res.status(400).json({ error: 'plan es requerido' });
       }
       const planData = AccountsDatabase.getPlanByNombre(plan);
       if (!planData) {
         return res.status(400).json({ error: 'Plan no válido' });
       }
-      if (typeof planData.max_usuarios === 'number' && planData.max_usuarios > 0) {
-        if (planData.usuarios_activos >= planData.max_usuarios) {
+      if (typeof planData.max_users === 'number' && planData.max_users > 0) {
+        if (planData.usuarios_activos >= planData.max_users) {
           return res.status(409).json({ error: 'Capacidad del plan alcanzada' });
         }
       }

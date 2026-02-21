@@ -42,7 +42,7 @@ class AccountsDatabase {
         descripcion: 'Acceso a calculadora y food log',
         precio_mensual: 99000,
         features: ['Calculadora Nutricional', 'Food Log', 'Historial de alimentos'],
-        max_usuarios: 0,
+        max_usuarios: 1000,
         usuarios_activos: 0,
       },
       {
@@ -50,7 +50,7 @@ class AccountsDatabase {
         descripcion: 'Acceso completo + entrenador personal',
         precio_mensual: 299000,
         features: ['Todos del plan básico', 'Entrenador personal', 'Recomendaciones IA', '2 sesiones/semana'],
-        max_usuarios: 0,
+        max_usuarios: 500,
         usuarios_activos: 0,
       },
       {
@@ -58,10 +58,15 @@ class AccountsDatabase {
         descripcion: 'Plan completo personalizado',
         precio_mensual: 499000,
         features: ['Todos del plan premium', 'Nutricionista incluido', '4 sesiones/semana', 'Análisis corporal'],
-        max_usuarios: 0,
+        max_usuarios: 100,
         usuarios_activos: 0,
       },
     ];
+    // Recalcular usuarios activos por plan según cuentas iniciales
+    this.accounts.forEach(a => {
+      const p = this.planes.find(pl => pl.nombre === a.plan);
+      if (p) p.usuarios_activos = (p.usuarios_activos || 0) + 1;
+    });
   }
 
   getAll() {
@@ -110,19 +115,41 @@ class AccountsDatabase {
   getPlanByNombre(nombre) {
     return this.planes.find(p => p.nombre === nombre);
   }
-  
-  incPlanUsers(nombre) {
-    const p = this.getPlanByNombre(nombre);
-    if (p) {
-      p.usuarios_activos = (p.usuarios_activos || 0) + 1;
-    }
+
+  addPlan(plan) {
+    if (!plan || !plan.nombre) return null;
+    if (this.getPlanByNombre(plan.nombre)) return null;
+    this.planes.push({
+      nombre: plan.nombre,
+      descripcion: plan.descripcion || '',
+      precio_mensual: plan.precio_mensual || 0,
+      features: Array.isArray(plan.features) ? plan.features : [],
+      max_usuarios: typeof plan.max_usuarios === 'number' ? plan.max_usuarios : 0,
+      usuarios_activos: 0,
+    });
+    return this.getPlanByNombre(plan.nombre);
   }
-  
-  decPlanUsers(nombre) {
-    const p = this.getPlanByNombre(nombre);
-    if (p) {
-      p.usuarios_activos = Math.max(0, (p.usuarios_activos || 0) - 1);
+
+  updatePlan(nombre, updates) {
+    const plan = this.getPlanByNombre(nombre);
+    if (!plan) return null;
+    if (updates.nombre && updates.nombre !== nombre) {
+      // Prevent duplicate names
+      if (this.getPlanByNombre(updates.nombre)) return null;
+      plan.nombre = updates.nombre;
     }
+    if (typeof updates.descripcion !== 'undefined') plan.descripcion = updates.descripcion;
+    if (typeof updates.precio_mensual !== 'undefined') plan.precio_mensual = updates.precio_mensual;
+    if (Array.isArray(updates.features)) plan.features = updates.features;
+    if (typeof updates.max_usuarios === 'number') plan.max_usuarios = updates.max_usuarios;
+    return plan;
+  }
+
+  deletePlan(nombre) {
+    const idx = this.planes.findIndex(p => p.nombre === nombre);
+    if (idx === -1) return false;
+    this.planes.splice(idx, 1);
+    return true;
   }
 
   getByGymId(gymId) {
@@ -155,6 +182,20 @@ class AccountsDatabase {
     account.estado = 'activo';
     
     return account;
+  }
+
+  incPlanUsers(nombre) {
+    const plan = this.getPlanByNombre(nombre);
+    if (!plan) return false;
+    plan.usuarios_activos = (plan.usuarios_activos || 0) + 1;
+    return true;
+    }
+
+  decPlanUsers(nombre) {
+    const plan = this.getPlanByNombre(nombre);
+    if (!plan) return false;
+    plan.usuarios_activos = Math.max(0, (plan.usuarios_activos || 0) - 1);
+    return true;
   }
 }
 

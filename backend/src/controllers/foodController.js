@@ -101,6 +101,85 @@ const foodController = {
     }
   },
 
+  importFoods: (req, res) => {
+    try {
+      if (req.user.rol !== "super_admin" && req.user.rol !== "admin_gimnasio") {
+        return res.status(403).json({
+          success: false,
+          error: "No tienes permisos para importar alimentos",
+        });
+      }
+      const { items } = req.body || {};
+      if (!Array.isArray(items) || items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          error: "Se requiere items como array de alimentos",
+        });
+      }
+      const normalize = (it) => {
+        const categoria = it.categoria || it.category || "";
+        return {
+          nombre: it.nombre || it.name,
+          barcode: it.barcode || it.codigo || null,
+          categoria: categoria
+            .toLowerCase()
+            .replace("carbohidrato", "Carbohidratos")
+            .replace("carbohidratos", "Carbohidratos")
+            .replace("proteinas", "Proteínas")
+            .replace("proteína", "Proteínas")
+            .replace("proteinas", "Proteínas")
+            .replace("grasas", "Grasas")
+            .replace("grasa", "Grasas")
+            .replace(/^prote.*$/i, "Proteínas")
+            .replace(/^carbo.*$/i, "Carbohidratos")
+            .replace(/^gras.*$/i, "Grasas")
+            .replace(/^$/i, "Proteínas")
+            .replace(/^\w/, (c) => c.toUpperCase()),
+          marca: it.marca || it.brand || "Genérica",
+          cantidad: parseFloat(it.cantidad || it.portion || it.serving || 100),
+          unidad: it.unidad || it.unit || "g",
+          calorias:
+            parseFloat(it.calorias ?? it.kcal ?? it.calories ?? it.energy) || 0,
+          proteina:
+            parseFloat(it.proteina ?? it.protein ?? it.proteins ?? 0) || 0,
+          carbohidratos:
+            parseFloat(
+              it.carbohidratos ?? it.carbs ?? it.carbohydrates ?? 0
+            ) || 0,
+          grasas: parseFloat(it.grasas ?? it.fats ?? it.fat ?? 0) || 0,
+        };
+      };
+      let created = 0;
+      let skipped = 0;
+      const createdItems = [];
+      items.forEach((raw) => {
+        const data = normalize(raw);
+        if (!data.nombre || !data.categoria || !data.cantidad || !data.unidad) {
+          skipped++;
+          return;
+        }
+        if (data.barcode && FoodDatabase.findByBarcode(data.barcode)) {
+          skipped++;
+          return;
+        }
+        const item = FoodDatabase.create(data);
+        created++;
+        createdItems.push(item);
+      });
+      res.json({
+        success: true,
+        created,
+        skipped,
+        data: createdItems,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: "Error al importar alimentos",
+      });
+    }
+  },
+
   // ADMIN: Crear nuevo alimento
   createFood: (req, res) => {
     try {

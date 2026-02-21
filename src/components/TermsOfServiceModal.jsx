@@ -1,5 +1,4 @@
 import React from 'react';
-import './PolicyModal.css';
 
 const TermsOfServiceModal = ({ onClose, onAccept }) => {
   const termsContent = `# Términos y Condiciones de Uso

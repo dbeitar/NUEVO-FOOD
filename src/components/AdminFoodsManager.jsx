@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import './AdminFoodsManager.css';
 
 export default function AdminFoodsManager() {
   const [foods, setFoods] = useState([]);
@@ -10,6 +9,10 @@ export default function AdminFoodsManager() {
   const [message, setMessage] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importMode, setImportMode] = useState('json');
+  const [importResult, setImportResult] = useState(null);
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -133,6 +136,51 @@ export default function AdminFoodsManager() {
     setShowForm(false);
   };
 
+  const handleImport = async () => {
+    try {
+      let payload;
+      if (importMode === 'json') {
+        const parsed = JSON.parse(importText);
+        payload = Array.isArray(parsed) ? { items: parsed } : parsed;
+      } else {
+        const rows = parseCSV(importText);
+        payload = { items: rows };
+      }
+      const response = await api.post('/foods/import', payload);
+      setImportResult(response.data);
+      loadFoods();
+      setTimeout(() => setImportResult(null), 5000);
+    } catch (error) {
+      setImportResult({ success: false, error: 'Error al importar. Revisa el JSON.' });
+    }
+  };
+  
+  const parseCSV = (text) => {
+    const lines = text.trim().split(/\r?\n/).filter(Boolean);
+    if (lines.length < 2) return [];
+    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
+    const items = [];
+    for (let i = 1; i < lines.length; i++) {
+      const cells = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
+      const row = {};
+      headers.forEach((h, idx) => (row[h] = cells[idx] ?? ''));
+      const item = {
+        nombre: row['nombre'] || row['name'],
+        categoria: row['categoria'] || row['category'],
+        marca: row['marca'] || row['brand'] || 'Genérica',
+        cantidad: row['cantidad'] || row['portion'] || row['serving'] || 0,
+        unidad: row['unidad'] || row['unit'] || 'g',
+        calorias: row['calorias'] || row['calories'] || row['kcal'] || 0,
+        proteina: row['proteina'] || row['protein'] || 0,
+        carbohidratos: row['carbohidratos'] || row['carbs'] || row['carbohydrates'] || 0,
+        grasas: row['grasas'] || row['fat'] || row['fats'] || 0,
+        barcode: row['barcode'] || row['codigo'] || '',
+      };
+      items.push(item);
+    }
+    return items;
+  };
+
   // Filtrar alimentos
   let filteredFoods = foods;
   if (searchQuery) {
@@ -146,15 +194,60 @@ export default function AdminFoodsManager() {
 
   return (
     <div className="admin-foods-manager">
-      <h1>🍽️ Gestión de Alimentos Maestros</h1>
+      <h1>Gestión de Alimentos Maestros</h1>
 
       {message && <div className="message">{message}</div>}
 
       {/* Botón para mostrar/ocultar formulario */}
-      {!showForm && (
+      {!showForm && !showImport && (
         <button onClick={() => setShowForm(true)} className="btn-create">
-          ➕ Nuevo Alimento
+          Nuevo Alimento
         </button>
+      )}
+      {!showForm && !showImport && (
+        <button onClick={() => setShowImport(true)} className="btn-create" style={{ marginLeft: 10 }}>
+          Importar desde JSON
+        </button>
+      )}
+      {showImport && (
+        <div className="form-section">
+          <h2>Importar Alimentos</h2>
+          <div style={{display:'flex', gap:8, marginBottom:10}}>
+            <button onClick={() => setImportMode('json')} className="btn-create" style={{opacity: importMode==='json'?1:0.7}}>Pegar JSON</button>
+            <button onClick={() => setImportMode('csv')} className="btn-create" style={{opacity: importMode==='csv'?1:0.7}}>Pegar CSV</button>
+          </div>
+          <p style={{margin:'8px 0 12px 0', color:'#666', fontSize:13}}>
+            {importMode === 'json' ? 'Pega un JSON con formato:' : 'Pega CSV con encabezados: nombre,categoria,marca,cantidad,unidad,calorias,proteina,carbohidratos,grasas,barcode'}
+          </p>
+          <pre style={{background:'#f8f9fa', padding:12, borderRadius:8, fontSize:12, overflow:'auto', display: importMode==='json'?'block':'none'}}>
+{`[
+  {"nombre":"Yogur natural","categoria":"Proteínas","marca":"Genérica","cantidad":100,"unidad":"g","calorias":63,"proteina":3.5,"carbohidratos":4.7,"grasas":3.3,"barcode":"5901234123457"},
+  {"nombre":"Avena","categoria":"Carbohidratos","marca":"Genérica","cantidad":100,"unidad":"g","calorias":389,"proteina":16.9,"carbohidratos":66.3,"grasas":6.9}
+]`}
+          </pre>
+          <pre style={{background:'#f8f9fa', padding:12, borderRadius:8, fontSize:12, overflow:'auto', display: importMode==='csv'?'block':'none'}}>
+{`nombre,categoria,marca,cantidad,unidad,calorias,proteina,carbohidratos,grasas,barcode
+Yogur natural,Proteínas,Genérica,100,g,63,3.5,4.7,3.3,5901234123457
+Avena,Carbohidratos,Genérica,100,g,389,16.9,66.3,6.9,`}
+          </pre>
+          <textarea
+            value={importText}
+            onChange={(e) => setImportText(e.target.value)}
+            placeholder={importMode==='json' ? 'Pega aquí el JSON a importar' : 'Pega aquí el CSV a importar'}
+            style={{width:'100%', minHeight:180, padding:12, border:'2px solid #e0e0e0', borderRadius:8}}
+          />
+          <div className="form-actions">
+            <button onClick={handleImport} className="btn-save">Importar</button>
+            <button onClick={() => { setShowImport(false); setImportText(''); setImportResult(null); }} className="btn-cancel">Cancelar</button>
+          </div>
+          {importResult && (
+            <div className="message" style={{marginTop:10}}>
+              {importResult.success 
+                ? `✅ Importados: ${importResult.created} | Omitidos: ${importResult.skipped}` 
+                : `❌ ${importResult.error}`}
+            </div>
+          )}
+        </div>
       )}
 
       {/* Formulario de creación/edición */}

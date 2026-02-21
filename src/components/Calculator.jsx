@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
-import './Calculator.css';
 
 export default function Calculator() {
   const { user } = useAuth();
@@ -198,7 +197,13 @@ export default function Calculator() {
 
             <div className="form-group">
               <label>Nivel de Actividad</label>
-              <select name="nivelActividad" value={formData.nivelActividad} onChange={handleChange}>
+              <select 
+                name="nivelActividad" 
+                value={formData.nivelActividad} 
+                onChange={handleChange}
+                disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio')}
+                title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') ? 'Solo editable por Admin o Gimnasio' : undefined}
+              >
                 {nivelActividades.map(n => (
                   <option key={n.id} value={n.valor}>
                     {n.nombre}
@@ -209,7 +214,13 @@ export default function Calculator() {
 
             <div className="form-group">
               <label>Objetivo</label>
-              <select name="objetivo" value={formData.objetivo} onChange={handleChange}>
+              <select 
+                name="objetivo" 
+                value={formData.objetivo} 
+                onChange={handleChange}
+                disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio')}
+                title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') ? 'Solo editable por Admin o Gimnasio' : undefined}
+              >
                 <option value="mantenimiento">Mantenimiento</option>
                 <option value="perdida_grasa">Pérdida de Grasa</option>
                 <option value="ganancia_muscular">Ganancia Muscular</option>

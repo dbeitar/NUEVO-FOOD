@@ -19,5 +19,8 @@ router.post('/:id/use-session', authenticateToken, accountsController.useSession
 router.get('/', authenticateToken, accountsController.getAllAccounts);
 router.get('/gym/:gymId', authenticateToken, accountsController.getAccountsByGym);
 router.get('/expiring', authenticateToken, accountsController.getExpiringAccounts);
+router.post('/plans', authenticateToken, accountsController.createPlan);
+router.put('/plans/:nombre', authenticateToken, accountsController.updatePlan);
+router.delete('/plans/:nombre', authenticateToken, accountsController.deletePlan);
 
 module.exports = router;

@@ -14,7 +14,6 @@ const trainersRoutes = require('./src/routes/trainersRoutes');
 const accountsRoutes = require('./src/routes/accountsRoutes');
 const planRoutes = require('./src/routes/planRoutes');
 const authMiddleware = require('./src/middleware/auth');
-const paymentsRoutes = require('./src/routes/paymentsRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -31,31 +30,13 @@ app.use(cors({
 }));
 app.use(morgan('dev'));
 
-// Seed de desarrollo: super admin por defecto
-if (!USE_DB_AUTH && process.env.DEV_SEED_ADMIN !== 'false') {
-  const exists = users.find(u => u.email === 'admin@foodplan.local');
-  if (!exists) {
-    const hash = bcryptjs.hashSync('admin123', 10);
-    users.push({
-      id: 1,
-      nombre: 'Super Admin',
-      email: 'admin@foodplan.local',
-      clave_hash: hash,
-      rol: 'super_admin',
-      gym_id: null,
-      trainer_id: null,
-    });
-    console.log('⚙️  Usuario seed creado: admin@foodplan.local / admin123 (super_admin)');
-  }
-}
-
 // Rutas de Autenticación
 if (USE_DB_AUTH) {
   app.use('/api/auth', authRoutes);
 } else {
   app.post('/api/auth/register', async (req, res) => {
     try {
-      const { nombre, email, password, teléfono, fecha_nacimiento, peso, altura, objetivo, rol = 'usuario_final', gym_id = null, trainer_id = null } = req.body;
+      const { nombre, email, password, teléfono, fecha_nacimiento, peso, altura, objetivo, rol = 'usuario_final' } = req.body;
 
       if (!nombre || !email || !password) {
         return res.status(400).json({ error: 'Nombre, email y contraseña son requeridos' });
@@ -82,8 +63,6 @@ if (USE_DB_AUTH) {
         objetivo,
         clave_hash: hashedPassword,
         rol,
-        gym_id,
-        trainer_id,
       };
 
       users.push(newUser);
@@ -172,47 +151,16 @@ if (USE_DB_AUTH) {
   });
 }
 
+// Admin: Usuarios y Roles (modo memoria)
 app.get('/api/admin/users', authMiddleware, (req, res) => {
   try {
     if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
       return res.status(403).json({ error: 'No tienes permiso para ver usuarios' });
     }
-    const list = users.map(u => ({ id: u.id, nombre: u.nombre, email: u.email, rol: u.rol, gym_id: u.gym_id || null, trainer_id: u.trainer_id || null }));
+    const list = users.map(u => ({ id: u.id, nombre: u.nombre, email: u.email, rol: u.rol }));
     res.json({ success: true, data: list });
   } catch (e) {
     res.status(500).json({ error: 'Error listando usuarios' });
-  }
-});
-
-app.post('/api/admin/users', authMiddleware, async (req, res) => {
-  try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
-      return res.status(403).json({ error: 'No tienes permiso para crear usuarios' });
-    }
-    const { nombre, email, password, rol = 'usuario_final', gym_id = null, trainer_id = null } = req.body || {};
-    if (!nombre || !email || !password) {
-      return res.status(400).json({ error: 'Nombre, email y contraseña son requeridos' });
-    }
-    if (['super_admin', 'admin_gimnasio'].includes(rol) && req.user.rol !== 'super_admin') {
-      return res.status(403).json({ error: 'Solo super_admin puede crear usuarios administradores' });
-    }
-    if (users.find(u => u.email === email)) {
-      return res.status(409).json({ error: 'El email ya está registrado' });
-    }
-    const hashedPassword = await bcryptjs.hash(password, 10);
-    const newUser = {
-      id: users.length + 1,
-      nombre,
-      email,
-      clave_hash: hashedPassword,
-      rol,
-      gym_id,
-      trainer_id,
-    };
-    users.push(newUser);
-    res.status(201).json({ success: true, data: { id: newUser.id, nombre, email, rol, gym_id, trainer_id } });
-  } catch (e) {
-    res.status(500).json({ error: 'Error creando usuario' });
   }
 });
 
@@ -224,9 +172,11 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
     if (!allowedRoles.includes(rol)) {
       return res.status(400).json({ error: 'Rol no válido' });
     }
+    // Permisos: solo super_admin puede asignar roles admin
     if (['super_admin', 'admin_gimnasio'].includes(rol) && req.user.rol !== 'super_admin') {
       return res.status(403).json({ error: 'Solo super_admin puede asignar roles administrativos' });
     }
+    // Buscar usuario
     const idx = users.findIndex(u => u.id === parseInt(id, 10));
     if (idx === -1) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -235,25 +185,6 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
     res.json({ success: true, data: { id: users[idx].id, nombre: users[idx].nombre, email: users[idx].email, rol: users[idx].rol } });
   } catch (e) {
     res.status(500).json({ error: 'Error actualizando rol' });
-  }
-});
-
-app.put('/api/admin/users/:id/assign', authMiddleware, (req, res) => {
-  try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
-      return res.status(403).json({ error: 'No tienes permiso para asignar' });
-    }
-    const { id } = req.params;
-    const { gym_id = null, trainer_id = null } = req.body || {};
-    const idx = users.findIndex(u => u.id === parseInt(id, 10));
-    if (idx === -1) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-    users[idx].gym_id = gym_id || null;
-    users[idx].trainer_id = trainer_id || null;
-    res.json({ success: true, data: { id: users[idx].id, gym_id: users[idx].gym_id, trainer_id: users[idx].trainer_id } });
-  } catch (e) {
-    res.status(500).json({ error: 'Error asignando usuario' });
   }
 });
 
@@ -274,25 +205,14 @@ app.use('/api/food-log', foodLogRoutes);
 // Rutas de IA (sugerencias inteligentes de alimentos)
 app.use('/api/ai', aiRoutes);
 
+// Plan del Usuario
+app.use('/api/plan', planRoutes);
+
 // Rutas de Módulo 2: Maestros de Administración
 app.use('/api/gyms', gymRoutes);
 app.use('/api/trainers', trainersRoutes);
 app.use('/api/accounts', accountsRoutes);
-app.use('/api/plan', planRoutes);
-app.use('/api/payments', paymentsRoutes);
 
-app.post('/api/dev/make-me-super', authMiddleware, (req, res) => {
-  try {
-    const idx = users.findIndex(u => u.id === req.user.id);
-    if (idx === -1) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-    users[idx].rol = 'super_admin';
-    res.json({ success: true, rol: users[idx].rol });
-  } catch (e) {
-    res.status(500).json({ error: 'Error elevando permisos' });
-  }
-});
 // Error handler
 app.use((err, req, res, next) => {
   console.error(err.stack);

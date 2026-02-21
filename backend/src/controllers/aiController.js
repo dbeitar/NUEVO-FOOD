@@ -1,17 +1,32 @@
 const axios = require('axios');
 const FoodDatabase = require('../models/FoodDatabase');
 
-// Configurar cliente OpenAI
+// Configurar clientes IA
 const openaiApiKey = process.env.OPENAI_API_KEY;
+const googleApiKey = process.env.GOOGLE_API_KEY;
 
 const aiController = {
+  // Indicar si la IA (OpenAI o Google) está habilitada
+  isEnabled: (req, res) => {
+    try {
+      const enabled = Boolean(
+        (openaiApiKey && openaiApiKey.trim().length > 0) ||
+        (googleApiKey && googleApiKey.trim().length > 0)
+      );
+      res.json({ success: true, enabled });
+    } catch (error) {
+      res.status(500).json({ success: false, error: 'Error verificando estado de IA' });
+    }
+  },
   // Generar sugerencias de alimentos basadas en ingesta actual
   getSuggestedFoods: async (req, res) => {
     try {
-      if (!openaiApiKey) {
+      const hasOpenAI = Boolean(openaiApiKey && openaiApiKey.trim().length > 0);
+      const hasGoogle = Boolean(googleApiKey && googleApiKey.trim().length > 0);
+      if (!hasOpenAI && !hasGoogle) {
         return res.status(400).json({
           success: false,
-          error: 'API Key de OpenAI no configurada',
+          error: 'IA no configurada (falta API Key)',
         });
       }
 
@@ -104,41 +119,82 @@ Responde en JSON con esta estructura:
 }
       `;
 
-      // Llamar a OpenAI
-      const response = await axios.post(
-        'https://api.openai.com/v1/chat/completions',
-        {
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'user',
-              content: prompt,
-            },
-          ],
-          temperature: 0.7,
-          max_tokens: 1000,
-        },
-        {
-          headers: {
-            'Content-Type': 'application/json',
-            Authorization: `Bearer ${openaiApiKey}`,
-          },
-        }
-      );
-
-      // Parsear respuesta de OpenAI
-      const aiContent = response.data.choices[0].message.content;
       let sugerencias = {};
-
-      try {
-        // Intentar extraer JSON de la respuesta
-        const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-        if (jsonMatch) {
-          sugerencias = JSON.parse(jsonMatch[0]);
+      if (hasOpenAI) {
+        // Llamar a OpenAI
+        const response = await axios.post(
+          'https://api.openai.com/v1/chat/completions',
+          {
+            model: 'gpt-3.5-turbo',
+            messages: [
+              {
+                role: 'user',
+                content: prompt,
+              },
+            ],
+            temperature: 0.7,
+            max_tokens: 1000,
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${openaiApiKey}`,
+            },
+          }
+        );
+        const aiContent = response.data.choices[0].message.content;
+        try {
+          const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            sugerencias = JSON.parse(jsonMatch[0]);
+          }
+        } catch (parseError) {
+          console.error('Error parsing AI response:', parseError);
+          sugerencias = { sugerencias: [], resumen: aiContent };
         }
-      } catch (parseError) {
-        console.error('Error parsing AI response:', parseError);
-        sugerencias = { sugerencias: [], resumen: aiContent };
+      } else if (hasGoogle) {
+        // Llamar a Google Gemini (Generative Language API)
+        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleApiKey}`;
+        const response = await axios.post(
+          url,
+          {
+            contents: [
+              {
+                role: 'user',
+                parts: [{ text: prompt }],
+              },
+            ],
+            generationConfig: {
+              temperature: 0.7,
+              maxOutputTokens: 1000,
+            },
+          },
+          {
+            headers: {
+              'Content-Type': 'application/json',
+            },
+          }
+        );
+        // Parsear respuesta de Gemini
+        let text = '';
+        try {
+          text =
+            response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+            response.data?.candidates?.[0]?.output || '';
+        } catch {
+          text = '';
+        }
+        try {
+          const jsonMatch = text.match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            sugerencias = JSON.parse(jsonMatch[0]);
+          } else {
+            sugerencias = { sugerencias: [], resumen: text };
+          }
+        } catch (parseError) {
+          console.error('Error parsing Gemini response:', parseError);
+          sugerencias = { sugerencias: [], resumen: text };
+        }
       }
 
       res.json({

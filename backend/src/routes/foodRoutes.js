@@ -18,6 +18,9 @@ router.get("/search", foodController.searchFoods);
 // GET: Buscar por código de barras
 router.get("/barcode/:barcode", foodController.getByBarcode);
 
+// ADMIN ONLY: Importar alimentos masivos
+router.post("/import", foodController.importFoods);
+
 // ADMIN ONLY: Crear alimento
 router.post("/", foodController.createFood);
 

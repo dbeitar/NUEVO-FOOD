@@ -1,5 +1,4 @@
 import React from 'react';
-import './PolicyModal.css';
 
 const PrivacyPolicyModal = ({ onClose, onAccept }) => {
   const privacyContent = `# Política de Privacidad

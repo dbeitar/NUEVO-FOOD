@@ -2,7 +2,6 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
 import TermsOfServiceModal from './TermsOfServiceModal';
-import './Auth.css';
 
 export default function Register({ onSwitchToLogin }) {
   const [formData, setFormData] = useState({
@@ -255,6 +254,26 @@ export default function Register({ onSwitchToLogin }) {
           <button type="submit" disabled={loading} className="btn-primary">
             {loading ? 'Registrando...' : 'Registrarse'}
           </button>
+          
+          <p className="auth-subtitle" style={{ marginTop: '10px' }}>
+            Al registrarte aceptas la{' '}
+            <button
+              type="button"
+              onClick={() => setShowPrivacyModal(true)}
+              className="policy-link"
+            >
+              Política de Privacidad
+            </button>{' '}
+            y los{' '}
+            <button
+              type="button"
+              onClick={() => setShowTermsModal(true)}
+              className="policy-link"
+            >
+              Términos y Condiciones de Uso
+            </button>
+            .
+          </p>
         </form>
 
         <p className="auth-switch">

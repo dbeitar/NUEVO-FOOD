@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import api from '../services/api';
-import './AISuggestions.css';
 
 export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -8,6 +7,21 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
   const [loading, setLoading] = useState(false);
   const [useAI, setUseAI] = useState(true);
   const [mensaje, setMensaje] = useState('');
+
+  // Detectar si la IA está habilitada en el backend
+  useEffect(() => {
+    const checkAI = async () => {
+      try {
+        const resp = await api.get('/ai/enabled');
+        if (resp?.data && resp.data.enabled === false) {
+          setUseAI(false);
+        }
+      } catch {
+        // Si falla, dejamos el valor por defecto y el flujo caerá a modo rápido
+      }
+    };
+    checkAI();
+  }, []);
 
   // Cargar sugerencias cuando cambian los datos
   useEffect(() => {

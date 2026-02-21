@@ -1,14 +1,31 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Calculator from './Calculator';
 import AdminCalculator from './AdminCalculator';
 import FoodLog from './FoodLog';
 import AdminFoodsManager from './AdminFoodsManager';
-import './Dashboard.css';
+import AdminUsers from './AdminUsers';
+import AdminPlans from './AdminPlans';
+import MyAccount from './MyAccount';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const [currentView, setCurrentView] = useState('home');
+  const [dayTotals, setDayTotals] = useState(null);
+  const [plan, setPlan] = useState({ calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 });
+  const today = new Date().toISOString().split('T')[0];
+  
+  useEffect(() => {
+    const fetchTotals = async () => {
+      try {
+        const resp = await (await import('../services/api')).default.get('/food-log/totals', { params: { fecha: today } });
+        setDayTotals(resp.data.data);
+      } catch (e) {
+        // noop
+      }
+    };
+    fetchTotals();
+  }, []);
 
   const renderContent = () => {
     switch (currentView) {
@@ -20,6 +37,12 @@ export default function Dashboard() {
         return <FoodLog />;
       case 'foodsmanager':
         return <AdminFoodsManager />;
+      case 'adminusers':
+        return <AdminUsers />;
+      case 'adminplans':
+        return <AdminPlans />;
+      case 'myaccount':
+        return <MyAccount />;
       default:
         return (
           <>
@@ -43,10 +66,25 @@ export default function Dashboard() {
                 </div>
               ) : null}
 
+              {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+                <div className="card" onClick={() => setCurrentView('adminusers')}>
+                  <h3>👥 Usuarios y Roles</h3>
+                  <p>Consulta y ajusta los roles de usuarios</p>
+                  <button className="btn-card">Abrir Usuarios</button>
+                </div>
+              )}
+              {user?.rol === 'super_admin' && (
+                <div className="card" onClick={() => setCurrentView('adminplans')}>
+                  <h3>🧾 Planes de Suscripción</h3>
+                  <p>Crea, edita y elimina planes</p>
+                  <button className="btn-card">Gestionar Planes</button>
+                </div>
+              )}
+
               <div className="card">
                 <h3>📊 Mi Plan</h3>
                 <p>Consulta tu plan de alimentación personalizado</p>
-                <button className="btn-card">Ver Plan</button>
+                <button className="btn-card" onClick={() => setCurrentView('myaccount')}>Ver Plan</button>
               </div>
 
               <div className="card" onClick={() => setCurrentView('foodlog')}>
@@ -73,30 +111,30 @@ export default function Dashboard() {
               <div className="stats-grid">
                 <div className="stat-box">
                   <label>Calorías</label>
-                  <p>0 / 2500 kcal</p>
+                  <p>{Math.round(dayTotals?.totalCalorias || 0)} / {plan.calorias} kcal</p>
                   <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '0%' }}></div>
+                    <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalCalorias || 0) / plan.calorias) * 100, 100)}%` }}></div>
                   </div>
                 </div>
                 <div className="stat-box">
                   <label>Proteína</label>
-                  <p>0 / 150g</p>
+                  <p>{Math.round(dayTotals?.totalProteina || 0)} / {plan.proteina}g</p>
                   <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '0%' }}></div>
+                    <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalProteina || 0) / plan.proteina) * 100, 100)}%` }}></div>
                   </div>
                 </div>
                 <div className="stat-box">
                   <label>Carbohidratos</label>
-                  <p>0 / 300g</p>
+                  <p>{Math.round(dayTotals?.totalCarbohidratos || 0)} / {plan.carbohidratos}g</p>
                   <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '0%' }}></div>
+                    <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalCarbohidratos || 0) / plan.carbohidratos) * 100, 100)}%` }}></div>
                   </div>
                 </div>
                 <div className="stat-box">
                   <label>Grasas</label>
-                  <p>0 / 80g</p>
+                  <p>{Math.round(dayTotals?.totalGrasas || 0)} / {plan.grasas}g</p>
                   <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: '0%' }}></div>
+                    <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalGrasas || 0) / plan.grasas) * 100, 100)}%` }}></div>
                   </div>
                 </div>
               </div>
@@ -131,6 +169,12 @@ export default function Dashboard() {
           >
             Alimentos
           </button>
+          <button 
+            onClick={() => setCurrentView('myaccount')}
+            className={currentView === 'myaccount' ? 'nav-link active' : 'nav-link'}
+          >
+            Mi Cuenta
+          </button>
           {user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' ? (
             <>
               <button 
@@ -140,10 +184,22 @@ export default function Dashboard() {
                 Maestro de Alimentos
               </button>
               <button 
+                onClick={() => setCurrentView('adminplans')}
+                className={currentView === 'adminplans' ? 'nav-link active' : 'nav-link'}
+              >
+                Planes
+              </button>
+              <button 
+                onClick={() => setCurrentView('adminusers')}
+                className={currentView === 'adminusers' ? 'nav-link active' : 'nav-link'}
+              >
+                Usuarios
+              </button>
+              <button 
                 onClick={() => setCurrentView('admin')}
                 className={currentView === 'admin' ? 'nav-link active' : 'nav-link'}
               >
-                Panel de Control
+                Admin
               </button>
             </>
           ) : null}

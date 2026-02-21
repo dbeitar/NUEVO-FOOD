@@ -3,7 +3,6 @@ import { useAuth } from './context/AuthContext'
 import Login from './components/Login'
 import Register from './components/Register'
 import Dashboard from './components/Dashboard'
-import './App.css'
 
 function App() {
   const { user, loading } = useAuth()

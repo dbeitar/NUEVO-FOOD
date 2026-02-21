@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vista Previa de Diseño Food Plan</title>
+    <link href="https://cdn.jsdelivr.net/npm/tailwindcss@2.2.19/dist/tailwind.min.css" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
+            background-color: #f7fafc; /* Color de fondo claro similar a bg-zinc-100 */
+            color: #2d3748; /* Color de texto oscuro similar a text-stone-700 */
+            padding: 2rem;
+        }
+        .card {
+            background-color: #f0f4f8; /* Un poco más oscuro que el fondo para destacar */
+            padding: 1.5rem;
+            border-radius: 1.5rem; /* rounded-3xl */
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+            border: 1px solid #e2e8f0; /* border-zinc-200 */
+            transition: box-shadow 0.2s ease-in-out;
+        }
+        .card:hover {
+            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.15); /* shadow-lg */
+        }
+        .btn-primary {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            padding: 0.5rem 1rem;
+            border-radius: 0.75rem; /* rounded-xl */
+            font-weight: 500;
+            transition: all 0.2s ease-in-out;
+            outline: none;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); /* shadow-md */
+            background-color: #059669; /* emerald-600 */
+            color: white;
+        }
+        .btn-primary:hover {
+            background-color: #047857; /* emerald-700 */
+        }
+        .btn-primary:focus {
+            box-shadow: 0 0 0 3px rgba(5, 150, 105, 0.5); /* focus:ring-emerald-500 */
+        }
+    </style>
+</head>
+<body>
+    <h1 class="text-2xl font-bold text-emerald-900 mb-8">Vista Previa: Diseño Orgánico y Natural</h1>
+
+    <div class="max-w-md mx-auto mb-12 card">
+        <h3 class="text-xl font-semibold text-emerald-800 mb-4">Salmón al Horno con Espárragos</h3>
+        <img src="https://via.placeholder.com/300x150/9CA3AF/FFFFFF?text=Imagen+Alimento" alt="Salmón" class="w-full h-40 object-cover rounded-xl shadow-sm mb-4">
+        <p class="text-stone-700 text-base mb-4">Una deliciosa receta rica en proteínas y grasas saludables, perfecta para cualquier comida del día.</p>
+        <div class="flex justify-between items-center w-full text-sm text-stone-600 mb-6">
+            <span> Calorías: <span class="font-medium text-emerald-700">350 kcal</span> </span>
+            <span> Proteínas: <span class="font-medium text-emerald-700">30g</span> </span>
+            <span> Grasas: <span class="font-medium text-emerald-700">20g</span> </span>
+        </div>
+        <button class="btn-primary self-end">Ver Receta</button>
+    </div>
+
+    <h2 class="text-xl font-bold text-emerald-900 mb-6">Barra Lateral (Sidebar) - Ejemplo</h2>
+    <div class="bg-emerald-900 text-white w-64 p-6 rounded-3xl shadow-xl flex flex-col space-y-4 mb-12">
+        <div class="text-2xl font-bold text-emerald-100">Food Plan</div>
+        <nav class="space-y-2">
+            <a href="#" class="block px-4 py-2 rounded-lg text-emerald-100 hover:bg-emerald-700 hover:text-white transition-colors duration-200">Inicio</a>
+            <a href="#" class="block px-4 py-2 rounded-lg text-emerald-100 hover:bg-emerald-700 hover:text-white transition-colors duration-200">Mi Cuenta</a>
+            <a href="#" class="block px-4 py-2 rounded-lg text-emerald-100 hover:bg-emerald-700 hover:text-white transition-colors duration-200">Recetas</a>
+            <a href="#" class="block px-4 py-2 rounded-lg text-emerald-100 hover:bg-emerald-700 hover:text-white transition-colors duration-200">Calculadora</a>
+            <a href="#" class="block px-4 py-2 rounded-lg text-emerald-100 hover:bg-emerald-700 hover:text-white transition-colors duration-200">Registro de Alimentos</a>
+        </nav>
+    </div>
+
+    <h2 class="text-xl font-bold text-emerald-900 mb-6">Barra de Navegación (Navbar) - Ejemplo</h2>
+    <nav class="bg-white p-4 rounded-xl shadow-lg flex justify-between items-center">
+        <div class="text-emerald-800 font-bold text-xl">Food Plan</div>
+        <div class="space-x-4">
+            <a href="#" class="text-stone-700 hover:text-emerald-600 transition-colors duration-200">Dashboard</a>
+            <a href="#" class="text-stone-700 hover:text-emerald-600 transition-colors duration-200">Mi Cuenta</a>
+            <a href="#" class="btn-primary">Cerrar Sesión</a>
+        </div>
+    </nav>
+</body>
+</html>

@@ -58,6 +58,63 @@ const getPlans = (req, res) => {
   }
 };
 
+// Crear nuevo plan (solo super_admin)
+const createPlan = (req, res) => {
+  try {
+    if (!req.user || req.user.rol !== 'super_admin') {
+      return res.status(403).json({ error: 'Solo super admin puede crear planes' });
+    }
+    const { nombre, descripcion, precio_mensual, features } = req.body || {};
+    if (!nombre) {
+      return res.status(400).json({ error: 'Nombre del plan es requerido' });
+    }
+    const created = AccountsDatabase.addPlan({ nombre, descripcion, precio_mensual, features });
+    if (!created) {
+      return res.status(409).json({ error: 'Plan ya existe o datos inválidos' });
+    }
+    res.status(201).json(created);
+  } catch (error) {
+    console.error('Error creando plan:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+// Actualizar plan (solo super_admin)
+const updatePlan = (req, res) => {
+  try {
+    if (!req.user || req.user.rol !== 'super_admin') {
+      return res.status(403).json({ error: 'Solo super admin puede actualizar planes' });
+    }
+    const { nombre } = req.params;
+    const updated = AccountsDatabase.updatePlan(nombre, req.body || {});
+    if (!updated) {
+      return res.status(404).json({ error: 'Plan no encontrado o nombre duplicado' });
+    }
+    res.json(updated);
+  } catch (error) {
+    console.error('Error actualizando plan:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+// Eliminar plan (solo super_admin)
+const deletePlan = (req, res) => {
+  try {
+    if (!req.user || req.user.rol !== 'super_admin') {
+      return res.status(403).json({ error: 'Solo super admin puede eliminar planes' });
+    }
+    const { nombre } = req.params;
+    const ok = AccountsDatabase.deletePlan(nombre);
+    if (!ok) {
+      return res.status(404).json({ error: 'Plan no encontrado' });
+    }
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error eliminando plan:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
 // Crear nueva suscripción
 const createAccount = (req, res) => {
   try {
@@ -71,6 +128,11 @@ const createAccount = (req, res) => {
     const planData = AccountsDatabase.getPlanByNombre(plan);
     if (!planData) {
       return res.status(400).json({ error: 'Plan no válido' });
+    }
+    if (typeof planData.max_usuarios === 'number') {
+      if (planData.usuarios_activos >= planData.max_usuarios) {
+        return res.status(409).json({ error: 'Capacidad del plan alcanzada' });
+      }
     }
 
     // Verificar si el usuario ya tiene una suscripción activa
@@ -92,6 +154,8 @@ const createAccount = (req, res) => {
       fecha_vencimiento: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000),
       metodoPago: req.body.metodoPago || 'pendiente',
     });
+
+    AccountsDatabase.incPlanUsers(plan);
 
     res.status(201).json({ 
       message: 'Suscripción creada exitosamente', 
@@ -147,6 +211,8 @@ const cancelAccount = (req, res) => {
       return res.status(404).json({ error: 'Cuenta no encontrada' });
     }
 
+    AccountsDatabase.decPlanUsers(account.plan);
+
     res.json({ message: 'Suscripción cancelada exitosamente' });
   } catch (error) {
     console.error('Error cancelando cuenta:', error);
@@ -174,10 +240,26 @@ const renewPlan = (req, res) => {
       return res.status(403).json({ error: 'No tienes permiso para renovar esta cuenta' });
     }
 
+    const planData = AccountsDatabase.getPlanByNombre(newPlan);
+    if (!planData) {
+      return res.status(400).json({ error: 'Plan no válido' });
+    }
+    if (typeof planData.max_usuarios === 'number') {
+      if (planData.usuarios_activos >= planData.max_usuarios && newPlan !== account.plan) {
+        return res.status(409).json({ error: 'Capacidad del plan alcanzada' });
+      }
+    }
+
+    const prevPlan = account.plan;
     const renewedAccount = AccountsDatabase.renovarPlan(parseInt(id), newPlan);
 
     if (!renewedAccount) {
       return res.status(400).json({ error: 'No se pudo renovar el plan' });
+    }
+
+    if (newPlan !== prevPlan) {
+      AccountsDatabase.decPlanUsers(prevPlan);
+      AccountsDatabase.incPlanUsers(newPlan);
     }
 
     res.json({ message: 'Plan renovado exitosamente', account: renewedAccount });
@@ -235,6 +317,9 @@ module.exports = {
   getMyAccount,
   getAccountsByGym,
   getPlans,
+  createPlan,
+  updatePlan,
+  deletePlan,
   createAccount,
   updateAccount,
   cancelAccount,
