@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
 import TermsOfServiceModal from './TermsOfServiceModal';
+import AuthLayout from './AuthLayout';
 
 export default function Register({ onSwitchToLogin }) {
   const [formData, setFormData] = useState({
@@ -77,10 +78,8 @@ export default function Register({ onSwitchToLogin }) {
   };
 
   return (
-    <div className="auth-container">
-      <div className="auth-box auth-box-large">
-        <h2 className="text-3xl font-['Playfair_Display'] text-stone-900">Crear Cuenta</h2>
-        <p className="auth-subtitle">Únete a Food Plan</p>
+    <>
+      <AuthLayout title="Crear Cuenta" subtitle="Únete a Food Plan">
 
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
@@ -291,9 +290,8 @@ export default function Register({ onSwitchToLogin }) {
             Inicia sesión aquí
           </button>
         </p>
-      </div>
+      </AuthLayout>
 
-      {/* Modales de Políticas */}
       {showPrivacyModal && (
         <PrivacyPolicyModal
           onClose={() => setShowPrivacyModal(false)}
@@ -313,6 +311,6 @@ export default function Register({ onSwitchToLogin }) {
           }}
         />
       )}
-    </div>
+    </>
   );
 }

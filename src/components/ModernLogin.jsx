@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import AuthLayout from './AuthLayout';
 
 export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
   const [email, setEmail] = useState('');
@@ -34,19 +35,11 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex items-center justify-center p-6">
-      <div className="w-full max-w-md bg-white rounded-3xl border border-slate-200 shadow-sm p-6 transition-transform duration-200 hover:scale-[1.01]">
-        <div className="text-center">
-          <div className="text-4xl">🍽️</div>
-          <h2 className="mt-2 text-3xl font-['Playfair_Display'] text-stone-900">Iniciar Sesión</h2>
-          <p className="text-stone-600 mt-1">Bienvenido a <span className="font-semibold text-lime-600">Food Plan</span></p>
-        </div>
-
-        {error ? (
-          <div className="mt-4 bg-red-50 text-red-700 border border-red-200 rounded-xl p-3 text-sm">{error}</div>
-        ) : null}
-
-        <form onSubmit={handleSubmit} className="mt-5 space-y-4">
+    <AuthLayout title="Iniciar Sesión" subtitle="Bienvenido a Food Plan">
+      {error ? (
+        <div className="bg-red-50 text-red-700 border border-red-200 rounded-xl p-3 text-sm">{error}</div>
+      ) : null}
+      <form onSubmit={handleSubmit} className="space-y-4">
           <div>
             <label htmlFor="email" className="block text-sm font-semibold text-stone-700 mb-1">Correo Electrónico</label>
             <div className="relative">
@@ -104,19 +97,17 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
             )}
             {loading ? 'Iniciando...' : 'Iniciar Sesión'}
           </button>
-        </form>
-
-        <div className="mt-6 text-center text-sm text-stone-600">
-          ¿No tienes cuenta?{' '}
-          <button
-            type="button"
-            onClick={onSwitchToRegister}
-            className="underline hover:text-stone-900"
-          >
-            Regístrate
-          </button>
-        </div>
+      </form>
+      <div className="mt-6 text-center text-sm text-stone-600">
+        ¿No tienes cuenta?{' '}
+        <button
+          type="button"
+          onClick={onSwitchToRegister}
+          className="underline hover:text-stone-900"
+        >
+          Regístrate
+        </button>
       </div>
-    </div>
+    </AuthLayout>
   );
 }
