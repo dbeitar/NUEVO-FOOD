@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useAuth } from './context/AuthContext'
-import Login from './components/Login'
+import ModernLogin from './components/ModernLogin'
 import Register from './components/Register'
 import Dashboard from './components/Dashboard'
 
@@ -16,7 +16,7 @@ function App() {
     return showRegister ? (
       <Register onSwitchToLogin={() => setShowRegister(false)} />
     ) : (
-      <Login onSwitchToRegister={() => setShowRegister(true)} />
+      <ModernLogin onSwitchToRegister={() => setShowRegister(true)} />
     )
   }
 
