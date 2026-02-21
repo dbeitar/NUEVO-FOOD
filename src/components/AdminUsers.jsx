@@ -141,7 +141,7 @@ export default function AdminUsers() {
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-stone-900">Usuarios</h2>
+          <h2 className="text-2xl font-bold text-stone-900 font-['Playfair_Display']">Usuarios</h2>
           <p className="text-stone-600">Gestiona usuarios y configuraciones del sistema.</p>
         </div>
         <button 

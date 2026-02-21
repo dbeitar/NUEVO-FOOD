@@ -5,15 +5,9 @@
     font-family: Inter, ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
     @apply bg-stone-50 text-stone-800 antialiased;
   }
-  h1 {
-    @apply text-3xl font-bold text-stone-900 mb-4;
-  }
-  h2 {
-    @apply text-2xl font-bold text-stone-900 mb-3;
-  }
-  h3 {
-    @apply text-xl font-semibold text-stone-800 mb-2;
-  }
+  h1 { @apply text-3xl font-bold text-stone-900 mb-4; font-family: "Playfair Display", ui-serif, Georgia, serif; }
+  h2 { @apply text-2xl font-bold text-stone-900 mb-3; font-family: "Playfair Display", ui-serif, Georgia, serif; }
+  h3 { @apply text-xl font-semibold text-stone-800 mb-2; font-family: "Playfair Display", ui-serif, Georgia, serif; }
   p {
     @apply text-stone-700 mb-4;
   }
@@ -40,7 +34,7 @@
     @apply bg-emerald-500 text-white hover:bg-emerald-600 focus:ring-emerald-500 shadow-2xl shadow-black;
   }
   .card {
-    @apply bg-white p-6 rounded-2xl shadow-lg border border-slate-200 hover:shadow-xl transition-shadow duration-200;
+    @apply bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:scale-[1.02] transition-transform duration-200;
   }
   .input {
     @apply w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors;
@@ -120,7 +114,7 @@
     @apply p-6;
   }
   .dashboard-header {
-    @apply p-6 bg-white rounded-2xl shadow border border-slate-200 mb-6;
+    @apply p-6 bg-white rounded-3xl shadow-sm border border-slate-200 mb-6;
   }
   .dashboard-grid {
     @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
@@ -144,7 +138,7 @@
     @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
   }
   .stat-box {
-    @apply bg-white p-4 rounded-2xl shadow border border-slate-200;
+    @apply bg-white p-4 rounded-3xl shadow-sm border border-slate-200;
   }
   .progress-bar {
     @apply w-full h-2 bg-slate-200 rounded-full overflow-hidden;
@@ -157,7 +151,7 @@
     @apply p-6;
   }
   .calculator-box {
-    @apply bg-white p-6 rounded-2xl shadow border border-slate-200;
+    @apply bg-white p-6 rounded-3xl shadow-sm border border-slate-200;
   }
   .calculator-form {
     @apply space-y-4;
@@ -172,7 +166,7 @@
     @apply btn-primary;
   }
   .resultado {
-    @apply mt-6 bg-white p-6 rounded-2xl shadow border border-slate-200;
+    @apply mt-6 bg-white p-6 rounded-3xl shadow-sm border border-slate-200;
   }
   .macros-grid {
     @apply grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4;
@@ -194,7 +188,7 @@
     @apply min-h-screen bg-stone-50 flex items-center justify-center p-6;
   }
   .auth-box {
-    @apply bg-white p-6 rounded-2xl shadow border border-slate-200 w-full max-w-3xl;
+    @apply bg-white p-6 rounded-3xl shadow-sm border border-slate-200 w-full max-w-3xl;
   }
   .auth-box-large {
     @apply auth-box;

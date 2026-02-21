@@ -79,7 +79,7 @@ export default function Register({ onSwitchToLogin }) {
   return (
     <div className="auth-container">
       <div className="auth-box auth-box-large">
-        <h2>Crear Cuenta</h2>
+        <h2 className="text-3xl font-['Playfair_Display'] text-stone-900">Crear Cuenta</h2>
         <p className="auth-subtitle">Únete a Food Plan</p>
 
         {error && <div className="error-message">{error}</div>}
