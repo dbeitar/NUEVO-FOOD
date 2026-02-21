@@ -126,7 +126,7 @@
     @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6;
   }
   .btn-card {
-    @apply mt-3 inline-flex items-center justify-center px-3 py-2 rounded-xl bg-stone-900 text-white hover:bg-stone-800 transition-colors;
+    @apply mt-3 inline-flex items-center justify-center px-3 py-2 rounded-xl bg-lime-500 text-black hover:bg-lime-400 transition-colors;
   }
   .navbar {
     @apply bg-white border-b border-slate-200 px-4 py-3 flex items-center justify-between sticky top-0 z-40;
@@ -135,7 +135,7 @@
     @apply px-3 py-1.5 rounded-lg text-stone-700 hover:bg-slate-100;
   }
   .nav-link.active {
-    @apply bg-stone-900 text-white;
+    @apply bg-lime-100 text-stone-900 ring-1 ring-lime-200;
   }
   .btn-logout {
     @apply btn-secondary px-3 py-1.5;
@@ -198,6 +198,12 @@
   }
   .auth-box-large {
     @apply auth-box;
+  }
+  .auth-form-row {
+    @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+  }
+  .form-group {
+    @apply space-y-1;
   }
   .auth-subtitle {
     @apply text-stone-600;

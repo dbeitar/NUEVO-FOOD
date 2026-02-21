@@ -85,10 +85,10 @@ export default function Register({ onSwitchToLogin }) {
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
 
-        <form onSubmit={handleSubmit}>
-          <div className="form-row">
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="auth-form-row">
             <div className="form-group">
-              <label htmlFor="nombre">Nombre Completo</label>
+              <label htmlFor="nombre" className="label">Nombre Completo</label>
               <input
                 type="text"
                 id="nombre"
@@ -97,11 +97,12 @@ export default function Register({ onSwitchToLogin }) {
                 onChange={handleChange}
                 required
                 placeholder="Tu nombre"
+                className="input"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="email">Email</label>
+              <label htmlFor="email" className="label">Email</label>
               <input
                 type="email"
                 id="email"
@@ -110,13 +111,14 @@ export default function Register({ onSwitchToLogin }) {
                 onChange={handleChange}
                 required
                 placeholder="tu@email.com"
+                className="input"
               />
             </div>
           </div>
 
-          <div className="form-row">
+          <div className="auth-form-row">
             <div className="form-group">
-              <label htmlFor="password">Contraseña</label>
+              <label htmlFor="password" className="label">Contraseña</label>
               <input
                 type="password"
                 id="password"
@@ -125,11 +127,12 @@ export default function Register({ onSwitchToLogin }) {
                 onChange={handleChange}
                 required
                 placeholder="Mínimo 6 caracteres"
+                className="input"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="confirmPassword">Confirmar Contraseña</label>
+              <label htmlFor="confirmPassword" className="label">Confirmar Contraseña</label>
               <input
                 type="password"
                 id="confirmPassword"
@@ -138,13 +141,14 @@ export default function Register({ onSwitchToLogin }) {
                 onChange={handleChange}
                 required
                 placeholder="Repite tu contraseña"
+                className="input"
               />
             </div>
           </div>
 
-          <div className="form-row">
+          <div className="auth-form-row">
             <div className="form-group">
-              <label htmlFor="teléfono">Teléfono</label>
+              <label htmlFor="teléfono" className="label">Teléfono</label>
               <input
                 type="tel"
                 id="teléfono"
@@ -152,24 +156,26 @@ export default function Register({ onSwitchToLogin }) {
                 value={formData.teléfono}
                 onChange={handleChange}
                 placeholder="+1234567890"
+                className="input"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="fecha_nacimiento">Fecha de Nacimiento</label>
+              <label htmlFor="fecha_nacimiento" className="label">Fecha de Nacimiento</label>
               <input
                 type="date"
                 id="fecha_nacimiento"
                 name="fecha_nacimiento"
                 value={formData.fecha_nacimiento}
                 onChange={handleChange}
+                className="input"
               />
             </div>
           </div>
 
-          <div className="form-row">
+          <div className="auth-form-row">
             <div className="form-group">
-              <label htmlFor="peso">Peso (kg)</label>
+              <label htmlFor="peso" className="label">Peso (kg)</label>
               <input
                 type="number"
                 id="peso"
@@ -178,11 +184,12 @@ export default function Register({ onSwitchToLogin }) {
                 onChange={handleChange}
                 placeholder="70"
                 step="0.1"
+                className="input"
               />
             </div>
 
             <div className="form-group">
-              <label htmlFor="altura">Altura (cm)</label>
+              <label htmlFor="altura" className="label">Altura (cm)</label>
               <input
                 type="number"
                 id="altura"
@@ -191,17 +198,19 @@ export default function Register({ onSwitchToLogin }) {
                 onChange={handleChange}
                 placeholder="180"
                 step="0.1"
+                className="input"
               />
             </div>
           </div>
 
           <div className="form-group">
-            <label htmlFor="objetivo">Objetivo</label>
+            <label htmlFor="objetivo" className="label">Objetivo</label>
             <select
               id="objetivo"
               name="objetivo"
               value={formData.objetivo}
               onChange={handleChange}
+              className="input"
             >
               <option value="">Selecciona tu objetivo</option>
               <option value="pérdida_de_grasa">Pérdida de Grasa</option>

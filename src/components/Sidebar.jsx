@@ -59,8 +59,8 @@ export default function Sidebar() {
             to={item.path}
             className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
               isActive(item.path)
-                ? 'bg-stone-100 text-stone-900 font-medium ring-1 ring-stone-200'
-                : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 hover:ring-1 hover:ring-stone-200'
+                ? 'bg-stone-100 text-stone-900 font-medium ring-1 ring-lime-200'
+                : 'text-stone-600 hover:bg-stone-100 hover:text-stone-900 hover:ring-1 hover:ring-lime-200'
             }`}
           >
             {item.icon}
