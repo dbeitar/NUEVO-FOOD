@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -15,8 +15,11 @@ export default function Calculator() {
   });
   const [resultado, setResultado] = useState(null);
   const [loading, setLoading] = useState(false);
+  const saveTimeoutRef = useRef(null);
 
-  // Función para calcular edad desde fecha de nacimiento
+  const isUsuarioFinalSinGymNiEntrenador = user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id && !user?.gymId;
+  const canEditNivelYObjetivo = isUsuarioFinalSinGymNiEntrenador || user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio';
+
   const calcularEdad = (fechaNacimiento) => {
     if (!fechaNacimiento) return null;
     const hoy = new Date();
@@ -31,18 +34,17 @@ export default function Calculator() {
 
   useEffect(() => {
     loadConcepts();
-    
-    // Auto-rellenar datos del usuario si existen
     if (user) {
       const edad = calcularEdad(user.fecha_nacimiento);
       setFormData(prev => ({
         ...prev,
         edad: edad || '',
-        peso: user.peso || '',
-        altura: user.altura || '',
-        objetivo: user.objetivo === 'pérdida_de_grasa' ? 'perdida_grasa' : 
-                  user.objetivo === 'ganancia_muscular' ? 'ganancia_muscular' : 
-                  'mantenimiento',
+        peso: user.peso ?? prev.peso,
+        altura: user.altura ?? prev.altura,
+        nivelActividad: user.nivel_actividad || prev.nivelActividad,
+        objetivo: user.objetivo === 'pérdida_de_grasa' ? 'perdida_grasa' :
+                  user.objetivo === 'ganancia_muscular' ? 'ganancia_muscular' :
+                  (user.objetivo || 'mantenimiento'),
       }));
     }
   }, [user]);
@@ -56,12 +58,31 @@ export default function Calculator() {
     }
   };
 
+  const saveProfileNivelYObjetivo = async (objetivo, nivelActividad) => {
+    try {
+      await api.put('/auth/profile', {
+        objetivo: objetivo,
+        nivel_actividad: nivelActividad,
+      });
+      // No llamar refreshProfile() para no actualizar el contexto y no sacar al usuario del formulario
+    } catch (err) {
+      console.error('Error guardando nivel/objetivo', err);
+    }
+  };
+
   const handleChange = (e) => {
+    e.preventDefault();
     const { name, value } = e.target;
-    setFormData(prev => ({
-      ...prev,
-      [name]: value,
-    }));
+    setFormData(prev => {
+      const next = { ...prev, [name]: value };
+      if (isUsuarioFinalSinGymNiEntrenador && (name === 'nivelActividad' || name === 'objetivo')) {
+        if (saveTimeoutRef.current) clearTimeout(saveTimeoutRef.current);
+        saveTimeoutRef.current = setTimeout(() => {
+          saveProfileNivelYObjetivo(next.objetivo, next.nivelActividad);
+        }, 400);
+      }
+      return next;
+    });
   };
 
   const calcularTMB = (peso, altura, edad, genero) => {
@@ -197,12 +218,12 @@ export default function Calculator() {
 
             <div className="form-group">
               <label>Nivel de Actividad</label>
-              <select 
-                name="nivelActividad" 
-                value={formData.nivelActividad} 
+              <select
+                name="nivelActividad"
+                value={formData.nivelActividad}
                 onChange={handleChange}
-                disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio')}
-                title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') ? 'Solo editable por Admin o Gimnasio' : undefined}
+                disabled={!canEditNivelYObjetivo}
+                title={!canEditNivelYObjetivo ? 'Solo editable por usuario sin gimnasio/entrenador o por Admin' : undefined}
               >
                 {nivelActividades.map(n => (
                   <option key={n.id} value={n.valor}>
@@ -214,12 +235,12 @@ export default function Calculator() {
 
             <div className="form-group">
               <label>Objetivo</label>
-              <select 
-                name="objetivo" 
-                value={formData.objetivo} 
+              <select
+                name="objetivo"
+                value={formData.objetivo}
                 onChange={handleChange}
-                disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio')}
-                title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') ? 'Solo editable por Admin o Gimnasio' : undefined}
+                disabled={!canEditNivelYObjetivo}
+                title={!canEditNivelYObjetivo ? 'Solo editable por usuario sin gimnasio/entrenador o por Admin' : undefined}
               >
                 <option value="mantenimiento">Mantenimiento</option>
                 <option value="perdida_grasa">Pérdida de Grasa</option>

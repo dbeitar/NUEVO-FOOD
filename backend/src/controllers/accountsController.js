@@ -15,16 +15,14 @@ const getAllAccounts = (req, res) => {
   }
 };
 
-// Obtener cuenta del usuario autenticado
+// Obtener cuenta del usuario autenticado (200 con hasAccount: false si no tiene plan)
 const getMyAccount = (req, res) => {
   try {
     const account = AccountsDatabase.getByUserId(req.user.id);
-    
     if (!account) {
-      return res.status(404).json({ error: 'No tienes una suscripción activa' });
+      return res.status(200).json({ hasAccount: false, account: null });
     }
-    
-    res.json(account);
+    res.json({ hasAccount: true, account });
   } catch (error) {
     console.error('Error obteniendo mi cuenta:', error);
     res.status(500).json({ error: 'Error interno del servidor' });

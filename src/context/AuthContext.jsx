@@ -46,8 +46,16 @@ export const AuthProvider = ({ children }) => {
     setUser(null);
   };
 
+  const refreshProfile = async () => {
+    if (!token) return;
+    try {
+      const response = await authService.getProfile();
+      setUser(response.data);
+    } catch (_) {}
+  };
+
   return (
-    <AuthContext.Provider value={{ user, token, loading, login, register, logout }}>
+    <AuthContext.Provider value={{ user, token, loading, login, register, logout, refreshProfile }}>
       {children}
     </AuthContext.Provider>
   );

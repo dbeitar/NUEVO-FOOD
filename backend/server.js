@@ -141,8 +141,33 @@ if (USE_DB_AUTH) {
         peso: user.peso,
         altura: user.altura,
         objetivo: user.objetivo,
+        nivel_actividad: user.nivel_actividad,
         rol: user.rol,
+        gym_id: user.gym_id,
+        trainer_id: user.trainer_id,
       });
+    } catch (error) {
+      res.status(403).json({ error: 'Token inválido o expirado' });
+    }
+  });
+
+  app.put('/api/auth/profile', (req, res) => {
+    try {
+      const token = req.headers['authorization']?.split(' ')[1];
+      if (!token) return res.status(401).json({ error: 'Token no proporcionado' });
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_dev');
+      const user = userDB.getById(decoded.id);
+      if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
+      const { telefono, fecha_nacimiento, peso, altura, objetivo, nivel_actividad } = req.body;
+      const updates = {};
+      if (telefono !== undefined) updates.telefono = telefono;
+      if (fecha_nacimiento !== undefined) updates.fecha_nacimiento = fecha_nacimiento;
+      if (peso !== undefined) updates.peso = peso;
+      if (altura !== undefined) updates.altura = altura;
+      if (objetivo !== undefined) updates.objetivo = objetivo;
+      if (nivel_actividad !== undefined) updates.nivel_actividad = nivel_actividad;
+      const updated = userDB.update(decoded.id, updates);
+      res.json(updated);
     } catch (error) {
       res.status(403).json({ error: 'Token inválido o expirado' });
     }

@@ -19,6 +19,16 @@
     "updatedAt": "2026-02-22T00:18:40.716Z",
     "updatedBy": null
   },
+  "3": {
+    "calorias": 2000,
+    "proteina": 150,
+    "carbohidratos": 250,
+    "grasas": 65,
+    "objetivo": "Mantenimiento",
+    "nivelActividad": "Moderado",
+    "updatedAt": "2026-02-22T19:58:54.334Z",
+    "updatedBy": null
+  },
   "6": {
     "calorias": 2000,
     "proteina": 150,
