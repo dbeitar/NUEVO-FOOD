@@ -13,8 +13,12 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
     try {
       const qsEmail = new URLSearchParams(window.location.search).get('email');
       const remembered = localStorage.getItem('rememberedEmail');
-      const prefill = qsEmail || remembered || '';
-      if (prefill) setEmail(prefill);
+      const fromRegister = localStorage.getItem('prefillEmail');
+      const prefill = qsEmail || remembered || fromRegister || '';
+      if (prefill) {
+        setEmail(prefill);
+        if (fromRegister) localStorage.removeItem('prefillEmail');
+      }
     } catch {}
   }, []);
 

@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
+import api from '../services/api';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
 import TermsOfServiceModal from './TermsOfServiceModal';
 import AuthLayout from './AuthLayout';
@@ -15,15 +16,40 @@ export default function Register({ onSwitchToLogin }) {
     peso: '',
     altura: '',
     objetivo: '',
+    planId: '',
+    gym_id: '',
+    trainer_id: '',
   });
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
+  const [rememberEmail, setRememberEmail] = useState(true);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
+  const [plans, setPlans] = useState([]);
+  const [gyms, setGyms] = useState([]);
+  const [trainers, setTrainers] = useState([]);
   const { register } = useAuth();
+
+  useEffect(() => {
+    const fetchOptions = async () => {
+      try {
+        const [plansRes, gymsRes, trainersRes] = await Promise.all([
+          api.get('/accounts/plans').catch(() => ({ data: [] })),
+          api.get('/gyms').catch(() => ({ data: [] })),
+          api.get('/trainers').catch(() => ({ data: [] })),
+        ]);
+        setPlans(Array.isArray(plansRes.data) ? plansRes.data : []);
+        setGyms(Array.isArray(gymsRes.data) ? gymsRes.data : []);
+        setTrainers(Array.isArray(trainersRes.data) ? trainersRes.data : []);
+      } catch (e) {
+        // Opciones opcionales; no bloqueamos el registro
+      }
+    };
+    fetchOptions();
+  }, []);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -67,9 +93,17 @@ export default function Register({ onSwitchToLogin }) {
         peso: formData.peso,
         altura: formData.altura,
         objetivo: formData.objetivo,
+        planId: formData.planId || undefined,
+        gym_id: formData.gym_id || undefined,
+        trainer_id: formData.trainer_id || undefined,
       });
-      setSuccess('¡Registro exitoso! Redirigiendo al login...');
-      setTimeout(onSwitchToLogin, 2000);
+      setSuccess('¡Registro exitoso! Redirigiendo al inicio de sesión...');
+      if (rememberEmail && formData.email) {
+        try {
+          localStorage.setItem('prefillEmail', formData.email);
+        } catch (_) {}
+      }
+      setTimeout(() => onSwitchToLogin(), 1500);
     } catch (err) {
       setError(err.response?.data?.error || 'Error en el registro');
     } finally {
@@ -216,6 +250,65 @@ export default function Register({ onSwitchToLogin }) {
               <option value="mantenimiento">Mantenimiento</option>
               <option value="ganancia_muscular">Ganancia Muscular</option>
             </select>
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="planId" className="label">Plan (opcional)</label>
+            <select
+              id="planId"
+              name="planId"
+              value={formData.planId}
+              onChange={handleChange}
+              className="input"
+            >
+              <option value="">Ninguno / Elegir después</option>
+              {plans.map((p) => (
+                <option key={p.nombre || p.id} value={p.nombre || p.id}>{p.nombre}</option>
+              ))}
+            </select>
+          </div>
+
+          <div className="auth-form-row">
+            <div className="form-group">
+              <label htmlFor="gym_id" className="label">Gimnasio (opcional)</label>
+              <select
+                id="gym_id"
+                name="gym_id"
+                value={formData.gym_id}
+                onChange={handleChange}
+                className="input"
+              >
+                <option value="">Ninguno</option>
+                {gyms.map((g) => (
+                  <option key={g.id} value={g.id}>{g.nombre}</option>
+                ))}
+              </select>
+            </div>
+            <div className="form-group">
+              <label htmlFor="trainer_id" className="label">Entrenador (opcional)</label>
+              <select
+                id="trainer_id"
+                name="trainer_id"
+                value={formData.trainer_id}
+                onChange={handleChange}
+                className="input"
+              >
+                <option value="">Ninguno</option>
+                {trainers.map((t) => (
+                  <option key={t.id} value={t.id}>{t.nombre}</option>
+                ))}
+              </select>
+            </div>
+          </div>
+
+          <div className="checkbox-group">
+            <input
+              type="checkbox"
+              id="rememberEmail"
+              checked={rememberEmail}
+              onChange={(e) => setRememberEmail(e.target.checked)}
+            />
+            <label htmlFor="rememberEmail">Recordar mi correo para iniciar sesión después</label>
           </div>
 
           {/* Aceptación de Políticas */}

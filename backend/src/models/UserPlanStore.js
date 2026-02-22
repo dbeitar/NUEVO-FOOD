@@ -1,4 +1,14 @@
-const store = new Map();
+const JsonStore = require('../utils/JsonStore');
+
+const store = new JsonStore('user_plans.json', {});
+let plans = store.getAll();
+if (typeof plans !== 'object' || plans === null || Array.isArray(plans)) {
+  plans = {};
+}
+
+function save() {
+  store.setAll(plans);
+}
 
 function defaultPlan() {
   return {
@@ -15,12 +25,15 @@ function defaultPlan() {
 
 module.exports = {
   get(userId) {
-    if (!store.has(userId)) {
-      store.set(userId, defaultPlan());
+    const key = String(userId);
+    if (!plans[key]) {
+      plans[key] = defaultPlan();
+      save();
     }
-    return store.get(userId);
+    return plans[key];
   },
   update(userId, updates = {}, updatedBy = null) {
+    const key = String(userId);
     const prev = this.get(userId);
     const merged = {
       ...prev,
@@ -28,7 +41,8 @@ module.exports = {
       updatedAt: new Date(),
       updatedBy,
     };
-    store.set(userId, merged);
+    plans[key] = merged;
+    save();
     return merged;
   },
 };

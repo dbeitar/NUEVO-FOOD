@@ -1,7 +1,17 @@
+const JsonStore = require('../utils/JsonStore');
+
 class PaymentsDatabase {
   constructor() {
-    this.payments = [];
-    this.nextId = 1;
+    this.store = new JsonStore('payments.json', []);
+    this.payments = this.store.getAll();
+    this.nextId =
+      this.payments && this.payments.length > 0
+        ? Math.max(...this.payments.map((p) => p.id || 0)) + 1
+        : 1;
+  }
+
+  save() {
+    this.store.setAll(this.payments);
   }
 
   create({ user_id, plan, amount_cents, currency = 'COP', gym_id = null, trainer_id = null }) {
@@ -18,6 +28,7 @@ class PaymentsDatabase {
       paidAt: null,
     };
     this.payments.push(payment);
+    this.save();
     return payment;
   }
 
@@ -30,6 +41,7 @@ class PaymentsDatabase {
     if (!p) return null;
     p.status = status;
     if (status === 'pagado') p.paidAt = new Date();
+    this.save();
     return p;
   }
 

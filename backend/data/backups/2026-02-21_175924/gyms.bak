@@ -1,0 +1,40 @@
+[
+  {
+    "id": 1,
+    "nombre": "Gym Pro Fitness",
+    "direccion": "Calle 50 #25-45, Bogotá",
+    "teléfono": "+57 (1) 2345-6789",
+    "email": "info@gympro.com",
+    "ciudad": "Bogotá",
+    "país": "Colombia",
+    "latitude": 4.711,
+    "longitude": -74.0055,
+    "activo": true,
+    "creado": "2026-01-15T00:00:00.000Z",
+    "plan_id": "basico"
+  },
+  {
+    "id": 2,
+    "nombre": "Fitness Hub Medellín",
+    "direccion": "Carrera 45 #15-20, Medellín",
+    "teléfono": "+57 (4) 4455-6789",
+    "email": "contact@fitnesshub.com",
+    "ciudad": "Medellín",
+    "país": "Colombia",
+    "latitude": 6.2442,
+    "longitude": -75.5812,
+    "activo": true,
+    "creado": "2026-01-20T00:00:00.000Z",
+    "plan_id": "vip"
+  },
+  {
+    "id": 3,
+    "nombre": "Gym QA",
+    "email": "gym.qa@example.com",
+    "ciudad": "Bogotá",
+    "latitude": null,
+    "longitude": null,
+    "activo": true,
+    "creado": "2026-02-21T18:43:43.414Z"
+  }
+]

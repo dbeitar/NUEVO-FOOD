@@ -115,14 +115,13 @@ const deletePlan = (req, res) => {
   }
 };
 
-// Crear nueva suscripción
+// Crear nueva suscripción (plan obligatorio; gimnasio y entrenador opcionales)
 const createAccount = (req, res) => {
   try {
     const { plan, gym_id, trainer_id } = req.body;
     
-    // Validaciones
-    if (!plan || !gym_id) {
-      return res.status(400).json({ error: 'Plan y gym_id son requeridos' });
+    if (!plan) {
+      return res.status(400).json({ error: 'El plan es requerido' });
     }
 
     const planData = AccountsDatabase.getPlanByNombre(plan);
@@ -135,18 +134,16 @@ const createAccount = (req, res) => {
       }
     }
 
-    // Verificar si el usuario ya tiene una suscripción activa
     const existingAccount = AccountsDatabase.getByUserId(req.user.id);
     if (existingAccount) {
       return res.status(409).json({ error: 'Ya tienes una suscripción activa' });
     }
 
-    // Crear la nueva cuenta
     const newAccount = AccountsDatabase.create({
       user_id: req.user.id,
       plan,
-      gym_id,
-      trainer_id: trainer_id || null,
+      gym_id: gym_id != null && gym_id !== '' ? parseInt(gym_id, 10) : null,
+      trainer_id: trainer_id != null && trainer_id !== '' ? parseInt(trainer_id, 10) : null,
       estado: 'activo',
       sesiones_restantes: plan === 'premium' ? 24 : plan === 'elite' ? 48 : 0,
       sesiones_totales: plan === 'premium' ? 24 : plan === 'elite' ? 48 : 0,

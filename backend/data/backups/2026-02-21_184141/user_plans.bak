@@ -1,0 +1,22 @@
+{
+  "1": {
+    "calorias": 2000,
+    "proteina": 150,
+    "carbohidratos": 250,
+    "grasas": 65,
+    "objetivo": "Mantenimiento",
+    "nivelActividad": "Moderado",
+    "updatedAt": "2026-02-21T23:11:40.898Z",
+    "updatedBy": null
+  },
+  "6": {
+    "calorias": 2000,
+    "proteina": 150,
+    "carbohidratos": 250,
+    "grasas": 65,
+    "objetivo": "Mantenimiento",
+    "nivelActividad": "Moderado",
+    "updatedAt": "2026-02-21T23:10:57.566Z",
+    "updatedBy": null
+  }
+}

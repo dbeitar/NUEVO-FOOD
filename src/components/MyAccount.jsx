@@ -279,30 +279,31 @@ export default function MyAccount() {
             <p className="text-lime-400 text-2xl font-extrabold mb-4">${selectedPlan.precio_mensual.toLocaleString()}</p>
             
             <form onSubmit={handleSubscribe} className="space-y-4">
+              <p className="text-stone-600 text-sm">Puedes elegir gimnasio, entrenador, ambos o ninguno. Solo el plan es obligatorio.</p>
               <div>
-                <label className="label">Sede / Gimnasio (Opcional)</label>
+                <label className="label">Gimnasio (opcional)</label>
                 <select
                   value={formData.gym_id}
                   onChange={(e) => setFormData({...formData, gym_id: e.target.value})}
                   className="input"
                 >
-                  <option value="">Selecciona una sede...</option>
+                  <option value="">Ninguno</option>
                   {gyms.map(gym => (
-                    <option key={gym.id} value={gym.id}>{gym.nombre} ({gym.ciudad})</option>
+                    <option key={gym.id} value={gym.id}>{gym.nombre}{gym.ciudad ? ` (${gym.ciudad})` : ''}</option>
                   ))}
                 </select>
               </div>
 
               <div>
-                <label className="label">Entrenador (Opcional)</label>
+                <label className="label">Entrenador (opcional)</label>
                 <select 
                   value={formData.trainer_id}
                   onChange={(e) => setFormData({...formData, trainer_id: e.target.value})}
                   className="input"
                 >
-                  <option value="">Sin entrenador preferido</option>
+                  <option value="">Ninguno</option>
                   {trainers.map(trainer => (
-                    <option key={trainer.id} value={trainer.id}>{trainer.nombre} ({trainer.especialidad})</option>
+                    <option key={trainer.id} value={trainer.id}>{trainer.nombre}{trainer.especialidad ? ` (${trainer.especialidad})` : ''}</option>
                   ))}
                 </select>
               </div>
@@ -323,7 +324,7 @@ export default function MyAccount() {
               <div className="flex items-center justify-end gap-3">
                 <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">Cancelar</button>
                 <button type="submit" className="btn-primary">
-                  {(!!!formData.gym_id && !!!formData.trainer_id) ? 'Confirmar y Pagar' : 'Confirmar'}
+                  {(!formData.gym_id && !formData.trainer_id) ? 'Confirmar y Pagar' : 'Confirmar'}
                 </button>
               </div>
             </form>

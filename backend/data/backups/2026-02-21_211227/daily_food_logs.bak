@@ -1,0 +1,18 @@
+[
+  {
+    "id": 1,
+    "userId": 2,
+    "foodId": 1,
+    "foodNombre": "Pechuga de Pollo (cocida)",
+    "foodCategoria": "Proteínas",
+    "cantidad": 1,
+    "unidad": "g",
+    "comida": "Desayuno",
+    "fecha": "2026-02-22",
+    "createdAt": "2026-02-22T00:48:18.027Z",
+    "calorias": 1.65,
+    "proteina": 0.31,
+    "carbohidratos": 0,
+    "grasas": 0.036000000000000004
+  }
+]

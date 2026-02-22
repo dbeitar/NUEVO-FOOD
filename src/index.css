@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
 @layer base {
   body {
@@ -13,6 +14,11 @@
   }
 }
 
+/* IMPORTANTE (Tailwind v4): Dentro de @layer components solo usar @apply con
+   utilidades de Tailwind (ej: bg-white, rounded-2xl). NUNCA usar @apply con
+   clases propias del archivo (ej: @apply btn-secondary) — genera error
+   "Cannot apply unknown utility class". Si una clase debe verse como otra,
+   copiar las mismas utilidades, no referenciar la clase. */
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
@@ -132,7 +138,8 @@
     @apply bg-lime-100 text-stone-900 ring-1 ring-lime-200;
   }
   .btn-logout {
-    @apply btn-secondary px-3 py-1.5;
+    @apply inline-flex items-center justify-center px-3 py-1.5 rounded-2xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-white text-stone-700 border border-slate-300 hover:bg-slate-100 focus:ring-slate-300 shadow-sm;
   }
   .stats-grid {
     @apply grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4;
@@ -163,7 +170,8 @@
     @apply text-stone-600;
   }
   .btn-calculate {
-    @apply btn-primary;
+    @apply inline-flex items-center justify-center px-4 py-2 rounded-2xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+    @apply bg-lime-500 text-black hover:bg-lime-400 focus:ring-lime-400 shadow-2xl shadow-black;
   }
   .resultado {
     @apply mt-6 bg-white p-6 rounded-3xl shadow-sm border border-slate-200;
@@ -191,7 +199,7 @@
     @apply bg-white p-6 rounded-3xl shadow-sm border border-slate-200 w-full max-w-2xl;
   }
   .auth-box-large {
-    @apply auth-box;
+    @apply bg-white p-6 rounded-3xl shadow-sm border border-slate-200 w-full max-w-2xl;
   }
   .auth-form-row {
     @apply grid grid-cols-1 md:grid-cols-2 gap-4;
