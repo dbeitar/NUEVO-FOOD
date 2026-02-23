@@ -4,6 +4,7 @@ const cors = require('cors');
 const morgan = require('morgan');
 const bcryptjs = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const userDB = require('./src/models/UserDatabase');
 const authRoutes = require('./src/routes/authRoutes');
 const calculatorRoutes = require('./src/routes/calculatorRoutes');
 const foodRoutes = require('./src/routes/foodRoutes');
@@ -19,8 +20,7 @@ const app = express();
 const PORT = process.env.PORT || 3001;
 const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true';
 
-// Datos temporales en memoria (mientras no tenemos BD)
-const users = [];
+// En modo DEV usamos almacenamiento JSON persistente (UserDatabase)
 
 // Middleware
 app.use(express.json());
@@ -45,7 +45,7 @@ if (USE_DB_AUTH) {
 } else {
   app.post('/api/auth/register', async (req, res) => {
     try {
-      const { nombre, email, password, teléfono, fecha_nacimiento, peso, altura, objetivo, rol = 'usuario_final' } = req.body;
+      const { nombre, email, password, teléfono, telefono, fecha_nacimiento, peso, altura, objetivo, rol = 'usuario_final' } = req.body;
 
       if (!nombre || !email || !password) {
         return res.status(400).json({ error: 'Nombre, email y contraseña son requeridos' });
@@ -55,30 +55,27 @@ if (USE_DB_AUTH) {
         return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
       }
 
-      if (users.find(u => u.email === email)) {
+      if (userDB.getByEmail(email)) {
         return res.status(409).json({ error: 'El email ya está registrado' });
       }
 
       const hashedPassword = await bcryptjs.hash(password, 10);
 
-      const newUser = {
-        id: users.length + 1,
+      const created = userDB.create({
         nombre,
         email,
-        telefono: teléfono,
+        telefono: teléfono || telefono || null,
         fecha_nacimiento,
         peso,
         altura,
         objetivo,
         clave_hash: hashedPassword,
         rol,
-      };
-
-      users.push(newUser);
+      });
 
       res.status(201).json({
         message: 'Usuario registrado exitosamente',
-        user: { id: newUser.id, nombre, email, rol },
+        user: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol },
       });
     } catch (error) {
       console.error('Error registrando usuario:', error);
@@ -94,7 +91,7 @@ if (USE_DB_AUTH) {
         return res.status(400).json({ error: 'Email y contraseña son requeridos' });
       }
 
-      const user = users.find(u => u.email === email);
+      const user = userDB.getByEmail(email);
 
       if (!user) {
         return res.status(401).json({ error: 'Email o contraseña incorrectos' });
@@ -137,7 +134,7 @@ if (USE_DB_AUTH) {
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_dev');
-      const user = users.find(u => u.id === decoded.id);
+      const user = userDB.getById(decoded.id);
 
       if (!user) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -147,7 +144,7 @@ if (USE_DB_AUTH) {
         id: user.id,
         nombre: user.nombre,
         email: user.email,
-        telefono: user.telefono,
+        telefono: user.telefono || null,
         fecha_nacimiento: user.fecha_nacimiento,
         peso: user.peso,
         altura: user.altura,
@@ -166,7 +163,7 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
     if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
       return res.status(403).json({ error: 'No tienes permiso para ver usuarios' });
     }
-    const list = users.map(u => ({ id: u.id, nombre: u.nombre, email: u.email, rol: u.rol }));
+    const list = userDB.getAll().map(u => ({ id: u.id, nombre: u.nombre, email: u.email, rol: u.rol }));
     res.json({ success: true, data: list });
   } catch (e) {
     res.status(500).json({ error: 'Error listando usuarios' });
@@ -186,12 +183,13 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
       return res.status(403).json({ error: 'Solo super_admin puede asignar roles administrativos' });
     }
     // Buscar usuario
-    const idx = users.findIndex(u => u.id === parseInt(id, 10));
-    if (idx === -1) {
+    const target = userDB.getById(parseInt(id, 10));
+    if (!target) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    users[idx].rol = rol;
-    res.json({ success: true, data: { id: users[idx].id, nombre: users[idx].nombre, email: users[idx].email, rol: users[idx].rol } });
+    userDB.update(target.id, { rol });
+    const updated = userDB.getById(target.id);
+    res.json({ success: true, data: { id: updated.id, nombre: updated.nombre, email: updated.email, rol: updated.rol } });
   } catch (e) {
     res.status(500).json({ error: 'Error actualizando rol' });
   }
