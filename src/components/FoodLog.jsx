@@ -47,6 +47,17 @@ export default function FoodLog() {
   const [foodModalFood, setFoodModalFood] = useState(null);
   const [foodModalPortions, setFoodModalPortions] = useState(1);
   const [foodModalMeal, setFoodModalMeal] = useState('Desayuno');
+  const [startDate, setStartDate] = useState(() => {
+    const d = new Date();
+    const day = d.getDay();
+    const diff = (day === 0 ? 6 : day - 1); // lunes inicio
+    const monday = new Date(d);
+    monday.setDate(d.getDate() - diff);
+    return monday.toISOString().split('T')[0];
+  });
+  const [endDate, setEndDate] = useState(today);
+  const [history, setHistory] = useState({});
+  const [weekly, setWeekly] = useState([]);
 
   // Cargar alimentos y categorías
   useEffect(() => {
@@ -69,6 +80,32 @@ export default function FoodLog() {
   useEffect(() => {
     loadDayLogs();
   }, [selectedDate]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await api.get('/food-log/history', { params: { days: 30 } });
+        setHistory(r.data?.data || {});
+      } catch {}
+    })();
+  }, []);
+
+  useEffect(() => {
+    try {
+      const s = new Date(startDate);
+      const e = new Date(endDate);
+      if (s > e) return;
+      const dates = Object.keys(history).sort();
+      const inRange = dates.filter((d) => {
+        const x = new Date(d);
+        return x >= new Date(startDate) && x <= new Date(endDate);
+      });
+      const list = inRange.map((d) => ({ date: d, totals: history[d] || null }));
+      setWeekly(list);
+    } catch {
+      setWeekly([]);
+    }
+  }, [startDate, endDate, history]);
 
   useEffect(() => {
     (async () => {
@@ -346,88 +383,140 @@ export default function FoodLog() {
           <p className="subtitle">Añade tus comidas del día y controla tus metas</p>
         </div>
       </div>
-      
-      {/* Panel fijo de Plan del Usuario */}
-      <div className="plan-summary sticky">
-        <h2>Plan Nutricional</h2>
-        <div className="totals-card">
-          <div className="progress-item">
-            <label>Calorías</label>
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: dayTotals ? `${Math.min((dayTotals.totalCalorias / plan.calorias) * 100, 100)}%` : '0%' }}
-              />
-            </div>
-            <span>{dayTotals ? Math.round(dayTotals.totalCalorias) : 0} / {plan.calorias} cal</span>
-          </div>
-          <div className="progress-item">
-            <label>Proteína</label>
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: dayTotals ? `${Math.min((dayTotals.totalProteina / plan.proteina) * 100, 100)}%` : '0%' }}
-              />
-            </div>
-            <span>{dayTotals ? Math.round(dayTotals.totalProteina) : 0}g / {plan.proteina}g</span>
-          </div>
-          <div className="progress-item">
-            <label>Carbohidratos</label>
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: dayTotals ? `${Math.min((dayTotals.totalCarbohidratos / plan.carbohidratos) * 100, 100)}%` : '0%' }}
-              />
-            </div>
-            <span>{dayTotals ? Math.round(dayTotals.totalCarbohidratos) : 0}g / {plan.carbohidratos}g</span>
-          </div>
-          <div className="progress-item">
-            <label>Grasas</label>
-            <div className="progress-bar">
-              <div
-                className="progress-fill"
-                style={{ width: dayTotals ? `${Math.min((dayTotals.totalGrasas / plan.grasas) * 100, 100)}%` : '0%' }}
-              />
-            </div>
-            <span>{dayTotals ? Math.round(dayTotals.totalGrasas) : 0}g / {plan.grasas}g</span>
-          </div>
-        </div>
-      </div>
 
-      {/* Selector de fecha */}
-      <div className="date-selector">
-        <label>Fecha:</label>
-        <input
-          type="date"
-          value={selectedDate}
-          onChange={(e) => setSelectedDate(e.target.value)}
-          max={today}
-        />
-      </div>
-
-      <div className="search-section" style={{ marginBottom: 16 }}>
-        <h2>Selecciona la comida</h2>
-        <div className="search-filters">
-          <select value={selectedMeal} onChange={(e) => setSelectedMeal(e.target.value)}>
-            <option value="Desayuno">🌅 Desayuno</option>
-            <option value="Almuerzo">🌞 Almuerzo</option>
-            <option value="Cena">🌙 Cena</option>
-            <option value="Snack">🍿 Snack</option>
-          </select>
-        </div>
-        <div className="foods-grid">
-          {combos.map((f) => (
-            <div key={f.id} className="food-card" onClick={() => openFoodModal(f)}>
-              <h3>{f.nombre}</h3>
-              <p className="category">{f.categoria} · {f.cantidad} {f.unidad}</p>
-              <div className="macros-preview">
-                <span>🔥 {Math.round(f.calorias)}</span>
-                <span>🥚 {f.proteina.toFixed(1)}g</span>
+      <div className="two-col-grid">
+        <div className="left-col">
+          <div className="plan-summary">
+            <h2>Plan Nutricional</h2>
+            <div className="totals-card">
+              <div className="progress-item">
+                <label>Calorías</label>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: dayTotals ? `${Math.min((dayTotals.totalCalorias / plan.calorias) * 100, 100)}%` : '0%' }}
+                  />
+                </div>
+                <span>{dayTotals ? Math.round(dayTotals.totalCalorias) : 0} / {plan.calorias} cal</span>
+              </div>
+              <div className="progress-item">
+                <label>Proteína</label>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: dayTotals ? `${Math.min((dayTotals.totalProteina / plan.proteina) * 100, 100)}%` : '0%' }}
+                  />
+                </div>
+                <span>{dayTotals ? Math.round(dayTotals.totalProteina) : 0}g / {plan.proteina}g</span>
+              </div>
+              <div className="progress-item">
+                <label>Carbohidratos</label>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: dayTotals ? `${Math.min((dayTotals.totalCarbohidratos / plan.carbohidratos) * 100, 100)}%` : '0%' }}
+                  />
+                </div>
+                <span>{dayTotals ? Math.round(dayTotals.totalCarbohidratos) : 0}g / {plan.carbohidratos}g</span>
+              </div>
+              <div className="progress-item">
+                <label>Grasas</label>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{ width: dayTotals ? `${Math.min((dayTotals.totalGrasas / plan.grasas) * 100, 100)}%` : '0%' }}
+                  />
+                </div>
+                <span>{dayTotals ? Math.round(dayTotals.totalGrasas) : 0}g / {plan.grasas}g</span>
               </div>
             </div>
-          ))}
+          </div>
+
+          <div className="range-card">
+            <h2>Rango de Fechas</h2>
+            <div className="range-grid">
+              <div>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">Inicio</label>
+                <input type="date" value={startDate} max={endDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-4 py-2 rounded-2xl border border-slate-300" />
+              </div>
+              <div>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">Fin</label>
+                <input type="date" value={endDate} min={startDate} max={today} onChange={(e) => setEndDate(e.target.value)} className="w-full px-4 py-2 rounded-2xl border border-slate-300" />
+              </div>
+            </div>
+          </div>
+
+          <div className="weekly-card">
+            <h2>Avance Semanal</h2>
+            <div className="space-y-2">
+              {weekly.length === 0 ? (
+                <p className="text-sm text-stone-600">Sin datos para el rango.</p>
+              ) : (
+                weekly.map(({ date, totals }) => (
+                  <div key={date} className="weekly-row">
+                    <div className="weekly-date">{date}</div>
+                    <div className="weekly-progress">
+                      <div className="progress-bar">
+                        <div className="progress-fill" style={{ width: totals ? `${Math.min(((totals.totalCalorias || 0) / plan.calorias) * 100, 100)}%` : '0%' }} />
+                      </div>
+                    </div>
+                    <div className="text-sm w-24 text-right">{totals ? Math.round(totals.totalCalorias || 0) : 0} kcal</div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          {dayTotals && (
+            <AISuggestions 
+              dayTotals={dayTotals}
+              targetGoals={{
+                calorias: 2000,
+                proteina: 150,
+                carbohidratos: 250,
+                grasas: 65
+              }}
+              objetivo="Mantenimiento"
+            />
+          )}
         </div>
-      </div>
+
+        <div className="right-col">
+          <div className="date-selector">
+            <label>Fecha</label>
+            <input
+              type="date"
+              value={selectedDate}
+              onChange={(e) => setSelectedDate(e.target.value)}
+              max={today}
+            />
+          </div>
+
+          <div className="search-section" style={{ marginBottom: 16 }}>
+            <h2>Selecciona la comida</h2>
+            <div className="search-filters">
+              <select value={selectedMeal} onChange={(e) => setSelectedMeal(e.target.value)}>
+                <option value="Desayuno">🌅 Desayuno</option>
+                <option value="Almuerzo">🌞 Almuerzo</option>
+                <option value="Cena">🌙 Cena</option>
+                <option value="Snack">🍿 Snack</option>
+              </select>
+            </div>
+            <div className="foods-grid">
+              {combos.map((f) => (
+                <div key={f.id} className="food-card" onClick={() => openFoodModal(f)}>
+                  <h3>{f.nombre}</h3>
+                  <p className="category">{f.categoria} · {f.cantidad} {f.unidad}</p>
+                  <div className="macros-preview">
+                    <span>🔥 {Math.round(f.calorias)}</span>
+                    <span>🥚 {f.proteina.toFixed(1)}g</span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+          {/* Sección de búsqueda y agregado de alimentos */}
 
       {/* Búsqueda de alimentos */}
       <div className="search-section">
@@ -664,11 +753,10 @@ export default function FoodLog() {
         )}
 
         {message && <div className="message">{message}</div>}
-      </div>
+        </div>
 
-      {/* Resumen del día */}
-      <div className="day-summary-section">
-        <h2>Resumen del Día - {selectedDate}</h2>
+        <div className="day-summary-section">
+          <h2>Resumen del Día - {selectedDate}</h2>
 
         {dayTotals && (
           <div className="totals-card">
@@ -717,10 +805,9 @@ export default function FoodLog() {
             </div>
           </div>
         )}
-      </div>
+        </div>
 
-      {/* Registros por comida */}
-      <div className="meal-logs-section">
+        <div className="meal-logs-section">
         {Object.entries(mealGroups).map(([meal, logs]) => (
           <div key={meal} className="meal-group">
             <h3>
@@ -761,21 +848,9 @@ export default function FoodLog() {
             )}
           </div>
         ))}
+        </div>
+        </div>
       </div>
-
-      {/* Asistente IA de Sugerencias */}
-      {dayTotals && (
-        <AISuggestions 
-          dayTotals={dayTotals}
-          targetGoals={{
-            calorias: 2000,
-            proteina: 150,
-            carbohidratos: 250,
-            grasas: 65
-          }}
-          objetivo="Mantenimiento"
-        />
-      )}
     </div>
   );
 }
