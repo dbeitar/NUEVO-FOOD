@@ -40,4 +40,4 @@ if (!hasGit()) {
 console.log('[autosave] Iniciado. Guardará automáticamente cada 5 minutos.')
 // ejecución inmediata y luego cada 5 minutos
 autosave()
-every(5 * 60 * 1000, autosave)
+every(autosave, 5 * 60 * 1000)
