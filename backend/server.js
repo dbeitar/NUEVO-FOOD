@@ -14,11 +14,13 @@ const trainersRoutes = require('./src/routes/trainersRoutes');
 const accountsRoutes = require('./src/routes/accountsRoutes');
 const planRoutes = require('./src/routes/planRoutes');
 const authMiddleware = require('./src/middleware/auth');
-const userDB = require('./src/models/UserDatabase');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
 const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true';
+
+// Datos temporales en memoria (mientras no tenemos BD)
+const users = [];
 
 // Middleware
 app.use(express.json());
@@ -34,7 +36,7 @@ if (USE_DB_AUTH) {
 } else {
   app.post('/api/auth/register', async (req, res) => {
     try {
-      const { nombre, email, password, teléfono, fecha_nacimiento, peso, altura, objetivo, rol = 'usuario_final', planId, gym_id, trainer_id } = req.body;
+      const { nombre, email, password, teléfono, fecha_nacimiento, peso, altura, objetivo, rol = 'usuario_final' } = req.body;
 
       if (!nombre || !email || !password) {
         return res.status(400).json({ error: 'Nombre, email y contraseña son requeridos' });
@@ -44,13 +46,14 @@ if (USE_DB_AUTH) {
         return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
       }
 
-      if (userDB.getByEmail(email)) {
+      if (users.find(u => u.email === email)) {
         return res.status(409).json({ error: 'El email ya está registrado' });
       }
 
       const hashedPassword = await bcryptjs.hash(password, 10);
 
-      const newUser = userDB.create({
+      const newUser = {
+        id: users.length + 1,
         nombre,
         email,
         telefono: teléfono,
@@ -60,10 +63,9 @@ if (USE_DB_AUTH) {
         objetivo,
         clave_hash: hashedPassword,
         rol,
-        planId: planId || null,
-        gym_id: gym_id != null && gym_id !== '' ? parseInt(gym_id, 10) : null,
-        trainer_id: trainer_id != null && trainer_id !== '' ? parseInt(trainer_id, 10) : null,
-      });
+      };
+
+      users.push(newUser);
 
       res.status(201).json({
         message: 'Usuario registrado exitosamente',
@@ -83,7 +85,7 @@ if (USE_DB_AUTH) {
         return res.status(400).json({ error: 'Email y contraseña son requeridos' });
       }
 
-      const user = userDB.getByEmail(email);
+      const user = users.find(u => u.email === email);
 
       if (!user) {
         return res.status(401).json({ error: 'Email o contraseña incorrectos' });
@@ -126,7 +128,7 @@ if (USE_DB_AUTH) {
       }
 
       const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_dev');
-      const user = userDB.getById(decoded.id);
+      const user = users.find(u => u.id === decoded.id);
 
       if (!user) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -141,46 +143,21 @@ if (USE_DB_AUTH) {
         peso: user.peso,
         altura: user.altura,
         objetivo: user.objetivo,
-        nivel_actividad: user.nivel_actividad,
         rol: user.rol,
-        gym_id: user.gym_id,
-        trainer_id: user.trainer_id,
       });
-    } catch (error) {
-      res.status(403).json({ error: 'Token inválido o expirado' });
-    }
-  });
-
-  app.put('/api/auth/profile', (req, res) => {
-    try {
-      const token = req.headers['authorization']?.split(' ')[1];
-      if (!token) return res.status(401).json({ error: 'Token no proporcionado' });
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_dev');
-      const user = userDB.getById(decoded.id);
-      if (!user) return res.status(404).json({ error: 'Usuario no encontrado' });
-      const { telefono, fecha_nacimiento, peso, altura, objetivo, nivel_actividad } = req.body;
-      const updates = {};
-      if (telefono !== undefined) updates.telefono = telefono;
-      if (fecha_nacimiento !== undefined) updates.fecha_nacimiento = fecha_nacimiento;
-      if (peso !== undefined) updates.peso = peso;
-      if (altura !== undefined) updates.altura = altura;
-      if (objetivo !== undefined) updates.objetivo = objetivo;
-      if (nivel_actividad !== undefined) updates.nivel_actividad = nivel_actividad;
-      const updated = userDB.update(decoded.id, updates);
-      res.json(updated);
     } catch (error) {
       res.status(403).json({ error: 'Token inválido o expirado' });
     }
   });
 }
 
-// Admin: Usuarios y Roles (usa UserDatabase / users.json cuando no hay BD)
+// Admin: Usuarios y Roles (modo memoria)
 app.get('/api/admin/users', authMiddleware, (req, res) => {
   try {
     if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
       return res.status(403).json({ error: 'No tienes permiso para ver usuarios' });
     }
-    const list = (!USE_DB_AUTH ? userDB.getAll() : []).map(u => ({ id: u.id, nombre: u.nombre, email: u.email, rol: u.rol }));
+    const list = users.map(u => ({ id: u.id, nombre: u.nombre, email: u.email, rol: u.rol }));
     res.json({ success: true, data: list });
   } catch (e) {
     res.status(500).json({ error: 'Error listando usuarios' });
@@ -195,15 +172,17 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
     if (!allowedRoles.includes(rol)) {
       return res.status(400).json({ error: 'Rol no válido' });
     }
+    // Permisos: solo super_admin puede asignar roles admin
     if (['super_admin', 'admin_gimnasio'].includes(rol) && req.user.rol !== 'super_admin') {
       return res.status(403).json({ error: 'Solo super_admin puede asignar roles administrativos' });
     }
-    if (!USE_DB_AUTH) {
-      const updated = userDB.update(parseInt(id, 10), { rol });
-      if (!updated) return res.status(404).json({ error: 'Usuario no encontrado' });
-      return res.json({ success: true, data: { id: updated.id, nombre: updated.nombre, email: updated.email, rol: updated.rol } });
+    // Buscar usuario
+    const idx = users.findIndex(u => u.id === parseInt(id, 10));
+    if (idx === -1) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    return res.status(501).json({ error: 'Cambio de rol con BD no disponible en este endpoint' });
+    users[idx].rol = rol;
+    res.json({ success: true, data: { id: users[idx].id, nombre: users[idx].nombre, email: users[idx].email, rol: users[idx].rol } });
   } catch (e) {
     res.status(500).json({ error: 'Error actualizando rol' });
   }

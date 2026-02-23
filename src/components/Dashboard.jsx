@@ -8,26 +8,9 @@ import AdminUsers from './AdminUsers';
 import AdminPlans from './AdminPlans';
 import MyAccount from './MyAccount';
 
-const STORAGE_VIEW_KEY = 'foodplan_dashboard_view';
-
-function getStoredView() {
-  try {
-    const v = sessionStorage.getItem(STORAGE_VIEW_KEY);
-    if (v && ['home', 'calculator', 'foodlog', 'myaccount', 'admin', 'adminusers', 'adminplans', 'foodsmanager'].includes(v)) return v;
-  } catch (_) {}
-  return 'home';
-}
-
 export default function Dashboard() {
   const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState(getStoredView);
-
-  const setView = (view) => {
-    setCurrentView(view);
-    try {
-      sessionStorage.setItem(STORAGE_VIEW_KEY, view);
-    } catch (_) {}
-  };
+  const [currentView, setCurrentView] = useState('home');
   const [dayTotals, setDayTotals] = useState(null);
   const [plan, setPlan] = useState({ calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 });
   const today = new Date().toISOString().split('T')[0];
@@ -69,14 +52,14 @@ export default function Dashboard() {
             </header>
 
             <div className="dashboard-grid">
-              <div className="card" onClick={() => setView('calculator')}>
+              <div className="card" onClick={() => setCurrentView('calculator')}>
                 <h3>🧮 Calculadora Nutricional</h3>
                 <p>Calcula tu plan personalizado basado en tus datos</p>
                 <button className="btn-card">Ir a Calculadora</button>
               </div>
 
               {user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' ? (
-                <div className="card" onClick={() => setView('admin')}>
+                <div className="card" onClick={() => setCurrentView('admin')}>
                   <h3>⚙️ Administración</h3>
                   <p>Gestiona los conceptos de la calculadora</p>
                   <button className="btn-card">Panel Admin</button>
@@ -84,14 +67,14 @@ export default function Dashboard() {
               ) : null}
 
               {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
-                <div className="card" onClick={() => setView('adminusers')}>
+                <div className="card" onClick={() => setCurrentView('adminusers')}>
                   <h3>👥 Usuarios y Roles</h3>
                   <p>Consulta y ajusta los roles de usuarios</p>
                   <button className="btn-card">Abrir Usuarios</button>
                 </div>
               )}
               {user?.rol === 'super_admin' && (
-                <div className="card" onClick={() => setView('adminplans')}>
+                <div className="card" onClick={() => setCurrentView('adminplans')}>
                   <h3>🧾 Planes de Suscripción</h3>
                   <p>Crea, edita y elimina planes</p>
                   <button className="btn-card">Gestionar Planes</button>
@@ -101,10 +84,10 @@ export default function Dashboard() {
               <div className="card">
                 <h3>📊 Mi Plan</h3>
                 <p>Consulta tu plan de alimentación personalizado</p>
-                <button className="btn-card" onClick={() => setView('myaccount')}>Ver Plan</button>
+                <button className="btn-card" onClick={() => setCurrentView('myaccount')}>Ver Plan</button>
               </div>
 
-              <div className="card" onClick={() => setView('foodlog')}>
+              <div className="card" onClick={() => setCurrentView('foodlog')}>
                 <h3>🍔 Registro de Comidas</h3>
                 <p>Registra lo que comiste hoy</p>
                 <button className="btn-card">Registrar Comida</button>
@@ -169,25 +152,25 @@ export default function Dashboard() {
         </div>
         <div className="navbar-menu">
           <button 
-            onClick={() => setView('home')}
+            onClick={() => setCurrentView('home')}
             className={currentView === 'home' ? 'nav-link active' : 'nav-link'}
           >
             Inicio
           </button>
           <button 
-            onClick={() => setView('calculator')}
+            onClick={() => setCurrentView('calculator')}
             className={currentView === 'calculator' ? 'nav-link active' : 'nav-link'}
           >
             Calculadora
           </button>
           <button 
-            onClick={() => setView('foodlog')}
+            onClick={() => setCurrentView('foodlog')}
             className={currentView === 'foodlog' ? 'nav-link active' : 'nav-link'}
           >
             Alimentos
           </button>
           <button 
-            onClick={() => setView('myaccount')}
+            onClick={() => setCurrentView('myaccount')}
             className={currentView === 'myaccount' ? 'nav-link active' : 'nav-link'}
           >
             Mi Cuenta
@@ -195,25 +178,25 @@ export default function Dashboard() {
           {user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' ? (
             <>
               <button 
-                onClick={() => setView('foodsmanager')}
+                onClick={() => setCurrentView('foodsmanager')}
                 className={currentView === 'foodsmanager' ? 'nav-link active' : 'nav-link'}
               >
                 Maestro de Alimentos
               </button>
               <button 
-                onClick={() => setView('adminplans')}
+                onClick={() => setCurrentView('adminplans')}
                 className={currentView === 'adminplans' ? 'nav-link active' : 'nav-link'}
               >
                 Planes
               </button>
               <button 
-                onClick={() => setView('adminusers')}
+                onClick={() => setCurrentView('adminusers')}
                 className={currentView === 'adminusers' ? 'nav-link active' : 'nav-link'}
               >
                 Usuarios
               </button>
               <button 
-                onClick={() => setView('admin')}
+                onClick={() => setCurrentView('admin')}
                 className={currentView === 'admin' ? 'nav-link active' : 'nav-link'}
               >
                 Admin

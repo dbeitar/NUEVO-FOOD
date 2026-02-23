@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import AISuggestions from './AISuggestions';
+import './FoodLog.css';
 
 export default function FoodLog() {
   const today = new Date().toISOString().split('T')[0];

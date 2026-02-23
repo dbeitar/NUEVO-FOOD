@@ -1,5 +1,4 @@
 @import "tailwindcss";
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:wght@600;700&display=swap');
 
 @layer base {
   body {
@@ -14,11 +13,6 @@
   }
 }
 
-/* IMPORTANTE (Tailwind v4): Dentro de @layer components solo usar @apply con
-   utilidades de Tailwind (ej: bg-white, rounded-2xl). NUNCA usar @apply con
-   clases propias del archivo (ej: @apply btn-secondary) — genera error
-   "Cannot apply unknown utility class". Si una clase debe verse como otra,
-   copiar las mismas utilidades, no referenciar la clase. */
 @layer components {
   .btn {
     @apply inline-flex items-center justify-center px-4 py-2 rounded-xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;

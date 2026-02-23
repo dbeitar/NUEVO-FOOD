@@ -15,14 +15,16 @@ const getAllAccounts = (req, res) => {
   }
 };
 
-// Obtener cuenta del usuario autenticado (200 con hasAccount: false si no tiene plan)
+// Obtener cuenta del usuario autenticado
 const getMyAccount = (req, res) => {
   try {
     const account = AccountsDatabase.getByUserId(req.user.id);
+    
     if (!account) {
-      return res.status(200).json({ hasAccount: false, account: null });
+      return res.status(404).json({ error: 'No tienes una suscripción activa' });
     }
-    res.json({ hasAccount: true, account });
+    
+    res.json(account);
   } catch (error) {
     console.error('Error obteniendo mi cuenta:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -113,13 +115,14 @@ const deletePlan = (req, res) => {
   }
 };
 
-// Crear nueva suscripción (plan obligatorio; gimnasio y entrenador opcionales)
+// Crear nueva suscripción
 const createAccount = (req, res) => {
   try {
     const { plan, gym_id, trainer_id } = req.body;
     
-    if (!plan) {
-      return res.status(400).json({ error: 'El plan es requerido' });
+    // Validaciones
+    if (!plan || !gym_id) {
+      return res.status(400).json({ error: 'Plan y gym_id son requeridos' });
     }
 
     const planData = AccountsDatabase.getPlanByNombre(plan);
@@ -132,16 +135,18 @@ const createAccount = (req, res) => {
       }
     }
 
+    // Verificar si el usuario ya tiene una suscripción activa
     const existingAccount = AccountsDatabase.getByUserId(req.user.id);
     if (existingAccount) {
       return res.status(409).json({ error: 'Ya tienes una suscripción activa' });
     }
 
+    // Crear la nueva cuenta
     const newAccount = AccountsDatabase.create({
       user_id: req.user.id,
       plan,
-      gym_id: gym_id != null && gym_id !== '' ? parseInt(gym_id, 10) : null,
-      trainer_id: trainer_id != null && trainer_id !== '' ? parseInt(trainer_id, 10) : null,
+      gym_id,
+      trainer_id: trainer_id || null,
       estado: 'activo',
       sesiones_restantes: plan === 'premium' ? 24 : plan === 'elite' ? 48 : 0,
       sesiones_totales: plan === 'premium' ? 24 : plan === 'elite' ? 48 : 0,
