@@ -24,7 +24,7 @@ const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true';
 
 // Middleware
 app.use(express.json());
-const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5178')
+const allowedOrigins = (process.env.CORS_ORIGIN || 'http://localhost:5173,http://localhost:5178,http://localhost:5180')
   .split(',')
   .map(o => o.trim())
   .filter(Boolean);
@@ -238,8 +238,8 @@ app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
   if (USE_DB_AUTH) {
-    console.log('🔐 Autenticación usando Base de Datos (PostgreSQL)');
+    console.log('🔐 Autenticación usando Base de Datos (PostgreSQL) ');
   } else {
-    console.log('🗂️  MODO DESARROLLO - Autenticación persistente en JSON (backend/data/users.json)');
+    console.log('🗂️  MODO DESARROLLO - Autenticación persistente en JSON (backend/data/users.json) ');
   }
 });

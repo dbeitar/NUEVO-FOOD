@@ -23,11 +23,55 @@ const aiController = {
     try {
       const hasOpenAI = Boolean(openaiApiKey && openaiApiKey.trim().length > 0);
       const hasGoogle = Boolean(googleApiKey && googleApiKey.trim().length > 0);
+      // Si no hay IA configurada, hacer fallback a sugerencias rápidas en lugar de error
+      const fallbackQuick = () => {
+        const { currentIntake, targetGoals, objetivo } = req.body || {};
+        const alimentos = FoodDatabase.getAll();
+        const faltantes = {
+          calorias: targetGoals.calorias - currentIntake.calorias,
+          proteina: targetGoals.proteina - currentIntake.proteina,
+          carbohidratos: targetGoals.carbohidratos - currentIntake.carbohidratos,
+          grasas: targetGoals.grasas - currentIntake.grasas,
+        };
+        const sugerencias = [];
+        if (objetivo === 'Ganancia Muscular' && faltantes.proteina > 5) {
+          sugerencias.push(...alimentos.filter((f) => f.categoria === 'Proteínas').slice(0, 2));
+        }
+        if (faltantes.carbohidratos > 20) {
+          sugerencias.push(...alimentos.filter((f) => f.categoria === 'Carbohidratos').slice(0, 2));
+        }
+        if (faltantes.grasas > 5) {
+          sugerencias.push(...alimentos.filter((f) => f.categoria === 'Grasas').slice(0, 1));
+        }
+        return {
+          success: true,
+          cumplioMetas: false,
+          faltantes: {
+            calorias: Math.max(0, faltantes.calorias),
+            proteina: Math.max(0, faltantes.proteina),
+            carbohidratos: Math.max(0, faltantes.carbohidratos),
+            grasas: Math.max(0, faltantes.grasas),
+          },
+          aiSuggestions: {
+            sugerencias: sugerencias.slice(0, 5).map((f) => ({
+              alimento: f.nombre,
+              razon: 'Coincide con el nutriente más faltante',
+              porcion: `${f.cantidad}${f.unidad}`,
+              aporte: {
+                calorias: f.calorias,
+                proteina: f.proteina,
+                carbohidratos: f.carbohidratos,
+                grasas: f.grasas,
+              },
+            })),
+            resumen: 'Sugerencias rápidas basadas en faltantes',
+            consejo: 'Prioriza el nutriente más bajo con porciones moderadas',
+          },
+        };
+      };
       if (!hasOpenAI && !hasGoogle) {
-        return res.status(400).json({
-          success: false,
-          error: 'IA no configurada (falta API Key)',
-        });
+        const resp = fallbackQuick();
+        return res.json(resp);
       }
 
       const { 
@@ -121,79 +165,89 @@ Responde en JSON con esta estructura:
 
       let sugerencias = {};
       if (hasOpenAI) {
-        // Llamar a OpenAI
-        const response = await axios.post(
-          'https://api.openai.com/v1/chat/completions',
-          {
-            model: 'gpt-3.5-turbo',
-            messages: [
-              {
-                role: 'user',
-                content: prompt,
-              },
-            ],
-            temperature: 0.7,
-            max_tokens: 1000,
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-              Authorization: `Bearer ${openaiApiKey}`,
-            },
-          }
-        );
-        const aiContent = response.data.choices[0].message.content;
         try {
-          const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            sugerencias = JSON.parse(jsonMatch[0]);
+          const response = await axios.post(
+            'https://api.openai.com/v1/chat/completions',
+            {
+              model: 'gpt-3.5-turbo',
+              messages: [
+                {
+                  role: 'user',
+                  content: prompt,
+                },
+              ],
+              temperature: 0.7,
+              max_tokens: 1000,
+            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+                Authorization: `Bearer ${openaiApiKey}`,
+              },
+            }
+          );
+          const aiContent = response.data.choices[0].message.content;
+          try {
+            const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              sugerencias = JSON.parse(jsonMatch[0]);
+            }
+          } catch (parseError) {
+            console.error('Error parsing AI response:', parseError);
+            sugerencias = { sugerencias: [], resumen: aiContent };
           }
-        } catch (parseError) {
-          console.error('Error parsing AI response:', parseError);
-          sugerencias = { sugerencias: [], resumen: aiContent };
+        } catch (e) {
+          console.warn('OpenAI falló, usando sugerencias rápidas:', e.message);
+          const resp = fallbackQuick();
+          return res.json(resp);
         }
       } else if (hasGoogle) {
-        // Llamar a Google Gemini (Generative Language API)
-        const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleApiKey}`;
-        const response = await axios.post(
-          url,
-          {
-            contents: [
-              {
-                role: 'user',
-                parts: [{ text: prompt }],
+        try {
+          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleApiKey}`;
+          const response = await axios.post(
+            url,
+            {
+              contents: [
+                {
+                  role: 'user',
+                  parts: [{ text: prompt }],
+                },
+              ],
+              generationConfig: {
+                temperature: 0.7,
+                maxOutputTokens: 1000,
               },
-            ],
-            generationConfig: {
-              temperature: 0.7,
-              maxOutputTokens: 1000,
             },
-          },
-          {
-            headers: {
-              'Content-Type': 'application/json',
-            },
+            {
+              headers: {
+                'Content-Type': 'application/json',
+              },
+            }
+          );
+          // Parsear respuesta de Gemini
+          let text = '';
+          try {
+            text =
+              response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
+              response.data?.candidates?.[0]?.output || '';
+          } catch {
+            text = '';
           }
-        );
-        // Parsear respuesta de Gemini
-        let text = '';
-        try {
-          text =
-            response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-            response.data?.candidates?.[0]?.output || '';
-        } catch {
-          text = '';
-        }
-        try {
-          const jsonMatch = text.match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            sugerencias = JSON.parse(jsonMatch[0]);
-          } else {
+          try {
+            const jsonMatch = text.match(/\{[\s\S]*\}/);
+            if (jsonMatch) {
+              sugerencias = JSON.parse(jsonMatch[0]);
+            } else {
+              sugerencias = { sugerencias: [], resumen: text };
+            }
+          } catch (parseError) {
+            console.error('Error parsing Gemini response:', parseError);
             sugerencias = { sugerencias: [], resumen: text };
           }
-        } catch (parseError) {
-          console.error('Error parsing Gemini response:', parseError);
-          sugerencias = { sugerencias: [], resumen: text };
+        } catch (e) {
+          console.warn('Gemini falló, usando sugerencias rápidas:', e.message);
+          const resp = fallbackQuick();
+          return res.json(resp);
         }
       }
 

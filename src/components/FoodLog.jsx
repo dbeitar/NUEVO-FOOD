@@ -47,6 +47,7 @@ export default function FoodLog() {
   const [foodModalFood, setFoodModalFood] = useState(null);
   const [foodModalPortions, setFoodModalPortions] = useState(1);
   const [foodModalMeal, setFoodModalMeal] = useState('Desayuno');
+  const [summaryOpen, setSummaryOpen] = useState(false);
   const [startDate, setStartDate] = useState(() => {
     const d = new Date();
     const day = d.getDay();
@@ -491,6 +492,9 @@ export default function FoodLog() {
               max={today}
             />
           </div>
+          <div style={{marginBottom:12}}>
+            <button className="btn-secondary" onClick={() => setSummaryOpen(true)}>Resumen de alimentos</button>
+          </div>
 
           <div className="search-section" style={{ marginBottom: 16 }}>
             <h2>Selecciona la comida</h2>
@@ -755,57 +759,7 @@ export default function FoodLog() {
         {message && <div className="message">{message}</div>}
         </div>
 
-        <div className="day-summary-section">
-          <h2>Resumen del Día - {selectedDate}</h2>
-
-        {dayTotals && (
-          <div className="totals-card">
-            <div className="progress-item">
-              <label>Calorías</label>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${Math.min((dayTotals.totalCalorias / plan.calorias) * 100, 100)}%` }}
-                />
-              </div>
-              <span>{Math.round(dayTotals.totalCalorias)} / {plan.calorias} cal</span>
-            </div>
-
-            <div className="progress-item">
-              <label>Proteína</label>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${Math.min((dayTotals.totalProteina / plan.proteina) * 100, 100)}%` }}
-                />
-              </div>
-              <span>{Math.round(dayTotals.totalProteina)}g / {plan.proteina}g</span>
-            </div>
-
-            <div className="progress-item">
-              <label>Carbohidratos</label>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${Math.min((dayTotals.totalCarbohidratos / plan.carbohidratos) * 100, 100)}%` }}
-                />
-              </div>
-              <span>{Math.round(dayTotals.totalCarbohidratos)}g / {plan.carbohidratos}g</span>
-            </div>
-
-            <div className="progress-item">
-              <label>Grasas</label>
-              <div className="progress-bar">
-                <div
-                  className="progress-fill"
-                  style={{ width: `${Math.min((dayTotals.totalGrasas / plan.grasas) * 100, 100)}%` }}
-                />
-              </div>
-              <span>{Math.round(dayTotals.totalGrasas)}g / {plan.grasas}g</span>
-            </div>
-          </div>
-        )}
-        </div>
+        {/* Se elimina el resumen fijo del día; ahora se muestra en modal con el botón */}
 
         <div className="meal-logs-section">
         {Object.entries(mealGroups).map(([meal, logs]) => (
@@ -850,6 +804,87 @@ export default function FoodLog() {
         ))}
         </div>
         </div>
+        {/* Modal de Resumen de Alimentos por Comida */}
+        {summaryOpen && (
+          <div className="policy-modal-overlay" onClick={() => setSummaryOpen(false)}>
+            <div className="policy-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="policy-modal-header">
+                <h2>Resumen de alimentos - {selectedDate}</h2>
+                <button className="policy-close-btn" onClick={() => setSummaryOpen(false)}>✕</button>
+              </div>
+              <div className="policy-modal-content" style={{maxHeight:'60vh', overflow:'auto'}}>
+                {(['Desayuno','Almuerzo','Cena','Snack']).map((meal) => {
+                  const logs = mealGroups[meal] || [];
+                  const totals = logs.reduce((acc, l) => {
+                    acc.calorias += l.calorias || 0;
+                    acc.proteina += l.proteina || 0;
+                    acc.carbohidratos += l.carbohidratos || 0;
+                    acc.grasas += l.grasas || 0;
+                    return acc;
+                  }, {calorias:0, proteina:0, carbohidratos:0, grasas:0});
+                  return (
+                    <div key={meal} className="plan-summary" style={{marginBottom:16}}>
+                      <h2 style={{marginBottom:8}}>{meal}</h2>
+                      <div className="totals-card">
+                        <div className="progress-item">
+                          <label>Calorías</label>
+                          <div className="progress-bar">
+                            <div className="progress-fill" style={{ width: `${Math.min((totals.calorias / plan.calorias) * 100, 100)}%` }} />
+                          </div>
+                          <span>{Math.round(totals.calorias)} kcal</span>
+                        </div>
+                        <div className="progress-item">
+                          <label>Proteína</label>
+                          <div className="progress-bar">
+                            <div className="progress-fill" style={{ width: `${Math.min(((totals.proteina) / plan.proteina) * 100, 100)}%` }} />
+                          </div>
+                          <span>{totals.proteina.toFixed(1)} g</span>
+                        </div>
+                        <div className="progress-item">
+                          <label>Carbohidratos</label>
+                          <div className="progress-bar">
+                            <div className="progress-fill" style={{ width: `${Math.min(((totals.carbohidratos) / plan.carbohidratos) * 100, 100)}%` }} />
+                          </div>
+                          <span>{totals.carbohidratos.toFixed(1)} g</span>
+                        </div>
+                        <div className="progress-item">
+                          <label>Grasas</label>
+                          <div className="progress-bar">
+                            <div className="progress-fill" style={{ width: `${Math.min(((totals.grasas) / plan.grasas) * 100, 100)}%` }} />
+                          </div>
+                          <span>{totals.grasas.toFixed(1)} g</span>
+                        </div>
+                      </div>
+                      {logs.length > 0 ? (
+                        <div className="logs-list" style={{marginTop:8}}>
+                          {logs.map((log) => (
+                            <div key={log.id} className="log-item">
+                              <div className="log-info">
+                                <h4>{log.foodNombre}</h4>
+                                <p className="portion">{log.cantidad} {log.unidad}</p>
+                              </div>
+                              <div className="log-macros">
+                                <span>🔥 {Math.round(log.calorias)}</span>
+                                <span>🥚 {log.proteina.toFixed(1)}g</span>
+                                <span>🥣 {log.carbohidratos.toFixed(1)}g</span>
+                                <span>🧈 {log.grasas.toFixed(1)}g</span>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      ) : (
+                        <p className="no-foods">Sin registros en {meal}</p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+              <div className="policy-modal-footer">
+                <button className="btn-primary" onClick={() => setSummaryOpen(false)}>Cerrar</button>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
