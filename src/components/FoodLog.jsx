@@ -41,6 +41,12 @@ export default function FoodLog() {
   const [loading, setLoading] = useState(false);
   const [showCount, setShowCount] = useState(24);
   const [plan, setPlan] = useState(defaultPlan);
+  const [combos, setCombos] = useState([]);
+  const [bulk, setBulk] = useState({});
+  const [foodModalOpen, setFoodModalOpen] = useState(false);
+  const [foodModalFood, setFoodModalFood] = useState(null);
+  const [foodModalPortions, setFoodModalPortions] = useState(1);
+  const [foodModalMeal, setFoodModalMeal] = useState('Desayuno');
 
   // Cargar alimentos y categorías
   useEffect(() => {
@@ -64,12 +70,81 @@ export default function FoodLog() {
     loadDayLogs();
   }, [selectedDate]);
 
+  useEffect(() => {
+    (async () => {
+      try {
+        const r = await api.get('/food-log/combos', { params: { comida: selectedMeal } });
+        setCombos(r.data?.data || []);
+        setBulk({});
+      } catch {}
+    })();
+  }, [selectedMeal]);
+
   const loadFoods = async () => {
     try {
       const response = await api.get('/foods');
       setFoods(response.data.data);
     } catch (error) {
       console.error('Error cargando alimentos:', error);
+    }
+  };
+
+  const openFoodModal = (food) => {
+    setFoodModalFood(food);
+    setFoodModalPortions(1);
+    setFoodModalMeal(selectedMeal);
+    setFoodModalOpen(true);
+  };
+
+  const closeFoodModal = () => {
+    setFoodModalOpen(false);
+    setFoodModalFood(null);
+  };
+
+  const submitFoodModal = async () => {
+    if (!foodModalFood) return;
+    const pors = parseInt(foodModalPortions, 10);
+    if (!Number.isInteger(pors) || pors <= 0) {
+      setMessage('La porción debe ser un entero mayor a 0');
+      setTimeout(() => setMessage(''), 2500);
+      return;
+    }
+    try {
+      const cantidadConsumida = pors * foodModalFood.cantidad;
+      await api.post('/food-log', {
+        foodId: foodModalFood.id,
+        cantidadConsumida,
+        comida: foodModalMeal,
+        fecha: selectedDate,
+      });
+      setMessage('✅ Alimento agregado');
+      setTimeout(() => setMessage(''), 2000);
+      closeFoodModal();
+      loadDayLogs();
+    } catch {
+      setMessage('❌ Error al guardar');
+      setTimeout(() => setMessage(''), 3000);
+    }
+  };
+
+  const handleBulkSave = async () => {
+    const items = Object.entries(bulk)
+      .map(([foodId, porciones]) => ({ foodId: Number(foodId), porciones: parseInt(porciones, 10) }))
+      .filter((it) => Number.isInteger(it.porciones) && it.porciones > 0);
+    if (items.length === 0) {
+      setMessage('Selecciona al menos un alimento y porciones');
+      setTimeout(() => setMessage(''), 2500);
+      return;
+    }
+    try {
+      await api.post('/food-log/bulk', { comida: selectedMeal, fecha: selectedDate, items });
+      setMessage('✅ Registro guardado');
+      setBulk({});
+      setTimeout(() => setMessage(''), 2500);
+      loadDayLogs();
+    } catch {
+      setMessage('❌ Error guardando selección');
+      setTimeout(() => setMessage(''), 3000);
     }
   };
 
@@ -330,6 +405,30 @@ export default function FoodLog() {
         />
       </div>
 
+      <div className="search-section" style={{ marginBottom: 16 }}>
+        <h2>Selecciona la comida</h2>
+        <div className="search-filters">
+          <select value={selectedMeal} onChange={(e) => setSelectedMeal(e.target.value)}>
+            <option value="Desayuno">🌅 Desayuno</option>
+            <option value="Almuerzo">🌞 Almuerzo</option>
+            <option value="Cena">🌙 Cena</option>
+            <option value="Snack">🍿 Snack</option>
+          </select>
+        </div>
+        <div className="foods-grid">
+          {combos.map((f) => (
+            <div key={f.id} className="food-card" onClick={() => openFoodModal(f)}>
+              <h3>{f.nombre}</h3>
+              <p className="category">{f.categoria} · {f.cantidad} {f.unidad}</p>
+              <div className="macros-preview">
+                <span>🔥 {Math.round(f.calorias)}</span>
+                <span>🥚 {f.proteina.toFixed(1)}g</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
       {/* Búsqueda de alimentos */}
       <div className="search-section">
         <h2>Buscar y Agregar Alimentos</h2>
@@ -473,13 +572,13 @@ export default function FoodLog() {
             <div
               key={food.id}
               className={`food-card ${selectedFood?.id === food.id ? 'active' : ''}`}
-              onClick={() => setSelectedFood(food)}
+              onClick={() => openFoodModal(food)}
             >
               <h3>{food.nombre}</h3>
               <p className="category">{food.categoria}</p>
               <div className="macros-preview">
-                <span>🔥 {Math.round(food.calorias * (cantidadConsumida / food.cantidad))}</span>
-                <span>🥚 {Math.round(food.proteina * (cantidadConsumida / food.cantidad))}g</span>
+                <span>🔥 {Math.round(food.calorias)}</span>
+                <span>🥚 {food.proteina.toFixed(1)}g</span>
               </div>
             </div>
           ))}
@@ -492,59 +591,75 @@ export default function FoodLog() {
           </div>
         )}
 
-        {/* Detalle del alimento seleccionado */}
-        {selectedFood && (
-          <div className="selected-food-detail">
-            <div className="detail-info">
-              <h3>{selectedFood.nombre}</h3>
-              <p>{selectedFood.categoria}</p>
-              <p className="portion">Porción base: {selectedFood.cantidad} {selectedFood.unidad}</p>
-
-              <div className="quantity-picker">
-                <label>Cantidad consumida:</label>
-                <input
-                  type="number"
-                  min="0.1"
-                  step="0.1"
-                  value={cantidadConsumida}
-                  onChange={(e) => setCantidadConsumida(e.target.value)}
-                />
-                <span>{selectedFood.unidad}</span>
+        {/* Modal para asignar alimento */}
+        {foodModalOpen && foodModalFood && (
+          <div className="policy-modal-overlay" onClick={closeFoodModal}>
+            <div className="policy-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="policy-modal-header">
+                <h2>Asignar alimento</h2>
+                <button className="policy-close-btn" onClick={closeFoodModal}>✕</button>
               </div>
+              <div className="policy-modal-content">
+                <div className="selected-food-detail" style={{ marginTop: 0 }}>
+                  <div className="detail-info">
+                    <h3>{foodModalFood.nombre}</h3>
+                    <p className="portion">Porción base: {foodModalFood.cantidad} {foodModalFood.unidad} · {foodModalFood.categoria}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div className="form-group">
+                        <label>Porciones (enteros)</label>
+                        <input
+                          type="number"
+                          min="1"
+                          step="1"
+                          value={foodModalPortions}
+                          onChange={(e) => setFoodModalPortions(e.target.value)}
+                        />
+                      </div>
+                      <div className="form-group">
+                        <label>Comida</label>
+                        <select value={foodModalMeal} onChange={(e) => setFoodModalMeal(e.target.value)}>
+                          <option value="Desayuno">Desayuno</option>
+                          <option value="Almuerzo">Almuerzo</option>
+                          <option value="Cena">Cena</option>
+                          <option value="Snack">Snack</option>
+                        </select>
+                      </div>
+                      <div className="form-group">
+                        <label>Equivale a</label>
+                        <input
+                          type="text"
+                          readOnly
+                          value={`${foodModalPortions * foodModalFood.cantidad} ${foodModalFood.unidad}`}
+                        />
+                      </div>
+                    </div>
+                  </div>
 
-              <select
-                value={selectedMeal}
-                onChange={(e) => setSelectedMeal(e.target.value)}
-              >
-                <option value="Desayuno">🌅 Desayuno</option>
-                <option value="Almuerzo">🌞 Almuerzo</option>
-                <option value="Cena">🌙 Cena</option>
-                <option value="Snack">🍿 Snack</option>
-              </select>
+                  <div className="detail-macros">
+                    <div className="macro-box">
+                      <span>Calorías</span>
+                      <strong>{Math.round(foodModalFood.calorias * foodModalPortions)}</strong>
+                    </div>
+                    <div className="macro-box">
+                      <span>Proteína</span>
+                      <strong>{(foodModalFood.proteina * foodModalPortions).toFixed(1)}g</strong>
+                    </div>
+                    <div className="macro-box">
+                      <span>Carbohidratos</span>
+                      <strong>{(foodModalFood.carbohidratos * foodModalPortions).toFixed(1)}g</strong>
+                    </div>
+                    <div className="macro-box">
+                      <span>Grasas</span>
+                      <strong>{(foodModalFood.grasas * foodModalPortions).toFixed(1)}g</strong>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="policy-modal-footer">
+                <button className="btn-secondary" onClick={closeFoodModal}>Cancelar</button>
+                <button className="btn-primary" onClick={submitFoodModal}>Agregar al registro</button>
+              </div>
             </div>
-
-            <div className="detail-macros">
-              <div className="macro calorias">
-                <span>Calorías</span>
-                <strong>{Math.round(selectedFood.calorias * (cantidadConsumida / selectedFood.cantidad))}</strong>
-              </div>
-              <div className="macro proteina">
-                <span>Proteína</span>
-                <strong>{(selectedFood.proteina * (cantidadConsumida / selectedFood.cantidad)).toFixed(1)}g</strong>
-              </div>
-              <div className="macro carbohidratos">
-                <span>Carbohidratos</span>
-                <strong>{(selectedFood.carbohidratos * (cantidadConsumida / selectedFood.cantidad)).toFixed(1)}g</strong>
-              </div>
-              <div className="macro grasas">
-                <span>Grasas</span>
-                <strong>{(selectedFood.grasas * (cantidadConsumida / selectedFood.cantidad)).toFixed(1)}g</strong>
-              </div>
-            </div>
-
-            <button onClick={handleAddFood} className="btn-add-food">
-              ➕ Agregar al Registro
-            </button>
           </div>
         )}
 

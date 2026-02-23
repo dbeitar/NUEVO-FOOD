@@ -130,12 +130,12 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
   if (!analysis) return null;
 
   return (
-    <div className="ai-suggestions-container">
-      <div className="suggestions-header">
+    <div className="ai-suggestions-section">
+      <div className="flex items-center justify-between mb-3">
         <h2>🤖 Asistente Nutricional IA</h2>
         <button 
           onClick={() => setUseAI(!useAI)}
-          className={`toggle-ai ${useAI ? 'active' : ''}`}
+          className="btn-secondary"
           disabled={loading}
         >
           {useAI ? '🔴 IA Activada' : '⚪ Modo Rápido'}
@@ -145,14 +145,14 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
       {mensaje && <div className="ai-mensaje">{mensaje}</div>}
 
       {/* Análisis de Balance */}
-      <div className="balance-analysis">
+      <div>
         <h3>📊 Análisis de tu día</h3>
-        <div className="analysis-grid">
-          <div className={`analysis-item ${analysis.calorias.porcentaje >= 100 ? 'cumplido' : 'faltante'}`}>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="stat-box">
             <label>Calorías</label>
-            <div className="progress">
+            <div className="progress-bar">
               <div 
-                className="progress-bar"
+                className="progress-fill"
                 style={{ width: `${Math.min(analysis.calorias.porcentaje, 100)}%` }}
               />
             </div>
@@ -162,11 +162,11 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
             )}
           </div>
 
-          <div className={`analysis-item ${analysis.proteina.porcentaje >= 100 ? 'cumplido' : 'faltante'}`}>
+          <div className="stat-box">
             <label>Proteína</label>
-            <div className="progress">
+            <div className="progress-bar">
               <div 
-                className="progress-bar"
+                className="progress-fill"
                 style={{ width: `${Math.min(analysis.proteina.porcentaje, 100)}%` }}
               />
             </div>
@@ -176,11 +176,11 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
             )}
           </div>
 
-          <div className={`analysis-item ${analysis.carbohidratos.porcentaje >= 100 ? 'cumplido' : 'faltante'}`}>
+          <div className="stat-box">
             <label>Carbohidratos</label>
-            <div className="progress">
+            <div className="progress-bar">
               <div 
-                className="progress-bar"
+                className="progress-fill"
                 style={{ width: `${Math.min(analysis.carbohidratos.porcentaje, 100)}%` }}
               />
             </div>
@@ -190,11 +190,11 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
             )}
           </div>
 
-          <div className={`analysis-item ${analysis.grasas.porcentaje >= 100 ? 'cumplido' : 'faltante'}`}>
+          <div className="stat-box">
             <label>Grasas</label>
-            <div className="progress">
+            <div className="progress-bar">
               <div 
-                className="progress-bar"
+                className="progress-fill"
                 style={{ width: `${Math.min(analysis.grasas.porcentaje, 100)}%` }}
               />
             </div>
@@ -211,35 +211,39 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
         <div className="loading">Generando sugerencias personalizadas...</div>
       ) : (
         suggestions && suggestions.length > 0 && (
-          <div className="suggestions-list">
+          <div>
             <h3>💡 Recomendaciones para Completar tu Meta</h3>
-            {suggestions.map((sugerencia, idx) => (
-              <div key={idx} className="suggestion-item">
-                <div className="sugerencia-header">
-                  <h4>{sugerencia.alimento || sugerencia.nombre}</h4>
-                  {sugerencia.razon && <p className="razon">{sugerencia.razon}</p>}
-                </div>
-                {sugerencia.porcion && (
-                  <p className="porcion">📏 Porción recomendada: {sugerencia.porcion}</p>
-                )}
-                {(sugerencia.aporte || sugerencia.nutrientes) && (
-                  <div className="macros-sugerencia">
-                    <span>🔥 {Math.round(sugerencia.aporte?.calorias || sugerencia.nutrientes?.calorias || 0)}</span>
-                    <span>🥚 {(sugerencia.aporte?.proteina || sugerencia.nutrientes?.proteina || 0).toFixed(1)}g</span>
-                    <span>🥣 {(sugerencia.aporte?.carbohidratos || sugerencia.nutrientes?.carbohidratos || 0).toFixed(1)}g</span>
-                    <span>🧈 {(sugerencia.aporte?.grasas || sugerencia.nutrientes?.grasas || 0).toFixed(1)}g</span>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {suggestions.map((sugerencia, idx) => (
+                <div key={idx} className="stat-box">
+                  <div className="flex items-center justify-between">
+                    <h4>{sugerencia.alimento || sugerencia.nombre}</h4>
                   </div>
-                )}
-              </div>
-            ))}
+                  {sugerencia.razon && <p className="text-sm text-stone-600 mt-1">{sugerencia.razon}</p>}
+                  {sugerencia.porcion && (
+                    <p className="text-sm mt-1">📏 Porción recomendada: {sugerencia.porcion}</p>
+                  )}
+                  {(sugerencia.aporte || sugerencia.nutrientes) && (
+                    <div className="flex items-center gap-4 text-sm text-stone-700 mt-2">
+                      <span>🔥 {Math.round(sugerencia.aporte?.calorias || sugerencia.nutrientes?.calorias || 0)}</span>
+                      <span>🥚 {(sugerencia.aporte?.proteina || sugerencia.nutrientes?.proteina || 0).toFixed(1)}g</span>
+                      <span>🥣 {(sugerencia.aporte?.carbohidratos || sugerencia.nutrientes?.carbohidratos || 0).toFixed(1)}g</span>
+                      <span>🧈 {(sugerencia.aporte?.grasas || sugerencia.nutrientes?.grasas || 0).toFixed(1)}g</span>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
           </div>
         )
       )}
 
       {/* Botón para refrescar */}
-      <button onClick={loadSuggestions} disabled={loading} className="btn-refresh">
+      <div className="mt-4">
+        <button onClick={loadSuggestions} disabled={loading} className="btn-primary">
         🔄 Actualizar Sugerencias
-      </button>
+        </button>
+      </div>
     </div>
   );
 }
