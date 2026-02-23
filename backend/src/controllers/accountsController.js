@@ -4,7 +4,7 @@ const AccountsDatabase = require('../models/AccountsDatabase');
 const getAllAccounts = (req, res) => {
   try {
     if (!req.user || req.user.rol !== 'super_admin') {
-      return res.status(403).json({ error: 'Solo super adminloración pueda ver todas las cuentas' });
+      return res.status(403).json({ error: 'Solo super admin puede ver todas las cuentas' });
     }
 
     const accounts = AccountsDatabase.getAll();
@@ -120,9 +120,9 @@ const createAccount = (req, res) => {
   try {
     const { plan, gym_id, trainer_id } = req.body;
     
-    // Validaciones
-    if (!plan || !gym_id) {
-      return res.status(400).json({ error: 'Plan y gym_id son requeridos' });
+    // Validaciones: plan requerido; gym_id opcional
+    if (!plan) {
+      return res.status(400).json({ error: 'Plan es requerido' });
     }
 
     const planData = AccountsDatabase.getPlanByNombre(plan);
@@ -145,7 +145,9 @@ const createAccount = (req, res) => {
     const newAccount = AccountsDatabase.create({
       user_id: req.user.id,
       plan,
-      gym_id,
+      gym_id: typeof gym_id === 'string' || typeof gym_id === 'number'
+        ? (gym_id === '' ? null : parseInt(gym_id, 10))
+        : null,
       trainer_id: trainer_id || null,
       estado: 'activo',
       sesiones_restantes: plan === 'premium' ? 24 : plan === 'elite' ? 48 : 0,
