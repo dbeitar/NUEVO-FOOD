@@ -48,18 +48,24 @@ if (USE_DB_AUTH) {
       const { nombre, email, password, teléfono, telefono, fecha_nacimiento, peso, altura, objetivo, rol = 'usuario_final' } = req.body;
 
       if (!nombre || !email || !password) {
-        return res.status(400).json({ error: 'Nombre, email y contraseña son requeridos' });
+        // Alineado con cambios de la tarde: permitir contraseña temporal si no llega password
+        if (!nombre || !email) {
+          return res.status(400).json({ error: 'Nombre y email son requeridos' });
+        }
       }
 
-      if (password.length < 6) {
-        return res.status(400).json({ error: 'La contraseña debe tener al menos 6 caracteres' });
+      let finalPassword = password;
+      if (!finalPassword || String(finalPassword).length < 6) {
+        // Generar contraseña temporal de 8 caracteres
+        finalPassword = Math.random().toString(36).slice(-8);
+        console.log(`Contraseña temporal generada para ${email}: ${finalPassword}`);
       }
 
       if (userDB.getByEmail(email)) {
         return res.status(409).json({ error: 'El email ya está registrado' });
       }
 
-      const hashedPassword = await bcryptjs.hash(password, 10);
+      const hashedPassword = await bcryptjs.hash(finalPassword, 10);
 
       const created = userDB.create({
         nombre,
@@ -73,10 +79,12 @@ if (USE_DB_AUTH) {
         rol,
       });
 
-      res.status(201).json({
-        message: 'Usuario registrado exitosamente',
-        user: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol },
-      });
+      // Si la contraseña fue temporal, informamos en el mensaje (el front no depende de este texto)
+      const usedTemp = !password || String(password).length < 6;
+      const message = usedTemp
+        ? 'Usuario registrado exitosamente. Se generó una clave temporal.'
+        : 'Usuario registrado exitosamente';
+      res.status(201).json({ message, user: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol } });
     } catch (error) {
       console.error('Error registrando usuario:', error);
       res.status(500).json({ error: 'Error interno del servidor' });
