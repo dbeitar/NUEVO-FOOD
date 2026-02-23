@@ -232,6 +232,6 @@ app.listen(PORT, () => {
   if (USE_DB_AUTH) {
     console.log('🔐 Autenticación usando Base de Datos (PostgreSQL)');
   } else {
-    console.log('⚠️  MODO DESARROLLO - Autenticación en memoria (se pierden al reiniciar)');
+    console.log('🗂️  MODO DESARROLLO - Autenticación persistente en JSON (backend/data/users.json)');
   }
 });
