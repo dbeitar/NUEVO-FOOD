@@ -26,6 +26,11 @@ export default function Progress() {
   const [dayTotals, setDayTotals] = useState(null);
   const [aggGyms, setAggGyms] = useState({});
   const [aggTrainers, setAggTrainers] = useState({});
+  const [aggTab, setAggTab] = useState('gyms');
+  const [gymsPage, setGymsPage] = useState(1);
+  const [gymsSize, setGymsSize] = useState(5);
+  const [trainersPage, setTrainersPage] = useState(1);
+  const [trainersSize, setTrainersSize] = useState(5);
 
   useEffect(() => {
     (async () => {
@@ -86,7 +91,7 @@ export default function Progress() {
       const pct = Math.min(((t.totalCalorias || 0) / (planCalories * daysCount)) * 100, 999);
       return { id: gid, name, kcal: Math.round(t.totalCalorias || 0), pct: Math.round(pct) };
     });
-    return items.sort((a, b) => b.pct - a.pct).slice(0, 5);
+    return items.sort((a, b) => b.pct - a.pct);
   })();
   const topTrainers = (() => {
     const items = Object.entries(aggTrainers || {}).map(([tid, t]) => {
@@ -95,8 +100,12 @@ export default function Progress() {
       const pct = Math.min(((t.totalCalorias || 0) / (planCalories * daysCount)) * 100, 999);
       return { id: tid, name, kcal: Math.round(t.totalCalorias || 0), pct: Math.round(pct) };
     });
-    return items.sort((a, b) => b.pct - a.pct).slice(0, 5);
+    return items.sort((a, b) => b.pct - a.pct);
   })();
+  const gymsTotalPages = Math.max(1, Math.ceil(topGyms.length / gymsSize));
+  const trainersTotalPages = Math.max(1, Math.ceil(topTrainers.length / trainersSize));
+  const pageGymsData = topGyms.slice((gymsPage - 1) * gymsSize, gymsPage * gymsSize);
+  const pageTrainersData = topTrainers.slice((trainersPage - 1) * trainersSize, trainersPage * trainersSize);
   const weekly = (() => {
     const hist = Array.isArray(userHistory) ? [...userHistory] : [];
     hist.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
@@ -106,6 +115,20 @@ export default function Progress() {
       return { fecha: d.fecha, kcal: Math.round(d.totales?.calorias || 0), pct: Math.round(pct) };
     });
   })();
+  const exportCsv = (filename, rows) => {
+    const header = 'Nombre,Cumplimiento,Kcal\n';
+    const body = rows.map((r) => `${r.name},${r.pct}%,${r.kcal}`).join('\n');
+    const csv = header + body;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     (async () => {
@@ -352,59 +375,103 @@ export default function Progress() {
 
           {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
             <div className="plan-summary">
-              <h2>Top Gimnasios</h2>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left">Nombre</th>
-                    <th className="text-right">Cumpl.</th>
-                    <th className="text-right">Kcal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topGyms.map((g) => (
-                    <tr key={g.id}>
-                      <td>{g.name}</td>
-                      <td className="text-right">{g.pct}%</td>
-                      <td className="text-right">{g.kcal}</td>
-                    </tr>
-                  ))}
-                  {topGyms.length === 0 && (
-                    <tr>
-                      <td colSpan={3}>Sin datos en el rango</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
-            </div>
-          )}
-
-          {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
-            <div className="plan-summary">
-              <h2>Top Entrenadores</h2>
-              <table className="w-full text-sm">
-                <thead>
-                  <tr>
-                    <th className="text-left">Nombre</th>
-                    <th className="text-right">Cumpl.</th>
-                    <th className="text-right">Kcal</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {topTrainers.map((t) => (
-                    <tr key={t.id}>
-                      <td>{t.name}</td>
-                      <td className="text-right">{t.pct}%</td>
-                      <td className="text-right">{t.kcal}</td>
-                    </tr>
-                  ))}
-                  {topTrainers.length === 0 && (
-                    <tr>
-                      <td colSpan={3}>Sin datos en el rango</td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+              <h2>Analítica por Grupos</h2>
+              <div className="totals-card">
+                <div className="flex gap-2 mb-2">
+                  <button className={aggTab === 'gyms' ? 'btn-primary' : 'btn'} onClick={() => setAggTab('gyms')}>Gimnasios</button>
+                  <button className={aggTab === 'trainers' ? 'btn-primary' : 'btn'} onClick={() => setAggTab('trainers')}>Entrenadores</button>
+                </div>
+                {aggTab === 'gyms' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <label className="mr-2 text-sm">Tamaño página</label>
+                        <select value={gymsSize} onChange={(e) => { setGymsSize(parseInt(e.target.value, 10)); setGymsPage(1); }}>
+                          <option value={5}>5</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                        </select>
+                      </div>
+                      <button onClick={() => exportCsv('top_gimnasios.csv', topGyms)}>Exportar CSV</button>
+                    </div>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr>
+                          <th className="text-left">Nombre</th>
+                          <th className="text-right">Cumpl.</th>
+                          <th className="text-right">Kcal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageGymsData.map((g) => (
+                          <tr key={g.id}>
+                            <td>{g.name}</td>
+                            <td className="text-right">{g.pct}%</td>
+                            <td className="text-right">{g.kcal}</td>
+                          </tr>
+                        ))}
+                        {pageGymsData.length === 0 && (
+                          <tr>
+                            <td colSpan={3}>Sin datos en el rango</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-sm">Página {gymsPage} de {gymsTotalPages}</span>
+                      <div className="flex gap-2">
+                        <button disabled={gymsPage <= 1} onClick={() => setGymsPage((p) => Math.max(1, p - 1))}>Anterior</button>
+                        <button disabled={gymsPage >= gymsTotalPages} onClick={() => setGymsPage((p) => Math.min(gymsTotalPages, p + 1))}>Siguiente</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+                {aggTab === 'trainers' && (
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <div>
+                        <label className="mr-2 text-sm">Tamaño página</label>
+                        <select value={trainersSize} onChange={(e) => { setTrainersSize(parseInt(e.target.value, 10)); setTrainersPage(1); }}>
+                          <option value={5}>5</option>
+                          <option value={10}>10</option>
+                          <option value={20}>20</option>
+                        </select>
+                      </div>
+                      <button onClick={() => exportCsv('top_entrenadores.csv', topTrainers)}>Exportar CSV</button>
+                    </div>
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr>
+                          <th className="text-left">Nombre</th>
+                          <th className="text-right">Cumpl.</th>
+                          <th className="text-right">Kcal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {pageTrainersData.map((t) => (
+                          <tr key={t.id}>
+                            <td>{t.name}</td>
+                            <td className="text-right">{t.pct}%</td>
+                            <td className="text-right">{t.kcal}</td>
+                          </tr>
+                        ))}
+                        {pageTrainersData.length === 0 && (
+                          <tr>
+                            <td colSpan={3}>Sin datos en el rango</td>
+                          </tr>
+                        )}
+                      </tbody>
+                    </table>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-sm">Página {trainersPage} de {trainersTotalPages}</span>
+                      <div className="flex gap-2">
+                        <button disabled={trainersPage <= 1} onClick={() => setTrainersPage((p) => Math.max(1, p - 1))}>Anterior</button>
+                        <button disabled={trainersPage >= trainersTotalPages} onClick={() => setTrainersPage((p) => Math.min(trainersTotalPages, p + 1))}>Siguiente</button>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </div>
             </div>
           )}
 
