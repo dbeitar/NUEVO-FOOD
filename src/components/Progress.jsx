@@ -84,81 +84,6 @@ export default function Progress() {
     })();
   }, [startDate, endDate]);
 
-  const daysCount = Math.max(kpis.días || 0, 1);
-  const planCalories = Math.max(plan?.calorias || 0, 1);
-  const topGyms = (() => {
-    const items = Object.entries(aggGyms || {}).map(([gid, t]) => {
-      const g = gyms.find((x) => String(x.id) === String(gid));
-      const name = g?.nombre || `Gimnasio ${gid}`;
-      const pct = Math.min(((t.totalCalorias || 0) / (planCalories * daysCount)) * 100, 999);
-      return { id: gid, name, kcal: Math.round(t.totalCalorias || 0), pct: Math.round(pct) };
-    });
-    return items.sort((a, b) => b.pct - a.pct);
-  })();
-  const topTrainers = (() => {
-    const items = Object.entries(aggTrainers || {}).map(([tid, t]) => {
-      const tr = trainers.find((x) => String(x.id) === String(tid));
-      const name = tr?.nombre || `Entrenador ${tid}`;
-      const pct = Math.min(((t.totalCalorias || 0) / (planCalories * daysCount)) * 100, 999);
-      return { id: tid, name, kcal: Math.round(t.totalCalorias || 0), pct: Math.round(pct) };
-    });
-    return items.sort((a, b) => b.pct - a.pct);
-  })();
-  const gymsTotalPages = Math.max(1, Math.ceil(topGyms.length / gymsSize));
-  const trainersTotalPages = Math.max(1, Math.ceil(topTrainers.length / trainersSize));
-  const gymsFiltered = topGyms.filter((g) => g.name.toLowerCase().includes((gymsFilter || '').toLowerCase()));
-  const trainersFiltered = topTrainers.filter((t) => t.name.toLowerCase().includes((trainersFilter || '').toLowerCase()));
-  const pageGymsData = gymsFiltered.slice((gymsPage - 1) * gymsSize, gymsPage * gymsSize);
-  const pageTrainersData = trainersFiltered.slice((trainersPage - 1) * trainersSize, trainersPage * trainersSize);
-  const weekly = (() => {
-    const hist = Array.isArray(userHistory) ? [...userHistory] : [];
-    hist.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
-    const last7 = hist.slice(-7);
-    return last7.map((d) => {
-      const pct = Math.min(((d.totales?.calorias || 0) / planCalories) * 100, 100);
-      return { fecha: d.fecha, kcal: Math.round(d.totales?.calorias || 0), pct: Math.round(pct) };
-    });
-  })();
-  const exportCsv = (filename, rows) => {
-    const header = 'Nombre,Cumplimiento,Kcal\n';
-    const body = rows.map((r) => `${r.name},${r.pct}%,${r.kcal}`).join('\n');
-    const csv = header + body;
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-  const exportBothCsv = (filename) => {
-    const header = 'Tipo,Nombre,Cumplimiento,Kcal\n';
-    const gBody = topGyms.map((r) => `Gimnasio,${r.name},${r.pct}%,${r.kcal}`).join('\n');
-    const tBody = topTrainers.map((r) => `Entrenador,${r.name},${r.pct}%,${r.kcal}`).join('\n');
-    const csv = header + [gBody, tBody].filter(Boolean).join('\n');
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url = URL.createObjectURL(blob);
-    const link = document.createElement('a');
-    link.href = url;
-    link.setAttribute('download', filename);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    URL.revokeObjectURL(url);
-  };
-
-  useEffect(() => {
-    (async () => {
-      try {
-        const d = new Date().toISOString().split('T')[0];
-        const resp = await api.get('/food-log/totals', { params: { fecha: d } });
-        setDayTotals(resp.data?.data || null);
-      } catch {}
-    })();
-  }, []);
-
   const rangeList = useMemo(() => {
     try {
       const s = new Date(startDate);
@@ -210,6 +135,83 @@ export default function Progress() {
       cumplimiento: Math.round(cumplimiento),
     };
   }, [rangeList, plan]);
+
+  const daysCount = Math.max(kpis.días || 0, 1);
+  const planCalories = Math.max(plan?.calorias || 0, 1);
+  const topGyms = (() => {
+    const items = Object.entries(aggGyms || {}).map(([gid, t]) => {
+      const g = gyms.find((x) => String(x.id) === String(gid));
+      const name = g?.nombre || `Gimnasio ${gid}`;
+      const pct = Math.min(((t.totalCalorias || 0) / (planCalories * daysCount)) * 100, 999);
+      return { id: gid, name, kcal: Math.round(t.totalCalorias || 0), pct: Math.round(pct) };
+    });
+    return items.sort((a, b) => b.pct - a.pct);
+  })();
+  const topTrainers = (() => {
+    const items = Object.entries(aggTrainers || {}).map(([tid, t]) => {
+      const tr = trainers.find((x) => String(x.id) === String(tid));
+      const name = tr?.nombre || `Entrenador ${tid}`;
+      const pct = Math.min(((t.totalCalorias || 0) / (planCalories * daysCount)) * 100, 999);
+      return { id: tid, name, kcal: Math.round(t.totalCalorias || 0), pct: Math.round(pct) };
+    });
+    return items.sort((a, b) => b.pct - a.pct);
+  })();
+  const gymsTotalPages = Math.max(1, Math.ceil(topGyms.length / gymsSize));
+  const trainersTotalPages = Math.max(1, Math.ceil(topTrainers.length / trainersSize));
+  const gymsFiltered = topGyms.filter((g) => g.name.toLowerCase().includes((gymsFilter || '').toLowerCase()));
+  const trainersFiltered = topTrainers.filter((t) => t.name.toLowerCase().includes((trainersFilter || '').toLowerCase()));
+  const pageGymsData = gymsFiltered.slice((gymsPage - 1) * gymsSize, gymsPage * gymsSize);
+  const pageTrainersData = trainersFiltered.slice((trainersPage - 1) * trainersSize, trainersPage * trainersSize);
+  const weekly = (() => {
+    const sorted = [...rangeList].sort((a, b) => new Date(a.date) - new Date(b.date));
+    const last7 = sorted.slice(-7);
+    return last7.map((d) => {
+      const kcal = Math.round(d.totals?.totalCalorias || 0);
+      const pct = Math.min(((kcal || 0) / planCalories) * 100, 100);
+      return { fecha: d.date, kcal, pct: Math.round(pct) };
+    });
+  })();
+  const exportCsv = (filename, rows) => {
+    const header = 'Nombre,Cumplimiento,Kcal\n';
+    const body = rows.map((r) => `${r.name},${r.pct}%,${r.kcal}`).join('\n');
+    const csv = header + body;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+  const exportBothCsv = (filename) => {
+    const header = 'Tipo,Nombre,Cumplimiento,Kcal\n';
+    const gBody = topGyms.map((r) => `Gimnasio,${r.name},${r.pct}%,${r.kcal}`).join('\n');
+    const tBody = topTrainers.map((r) => `Entrenador,${r.name},${r.pct}%,${r.kcal}`).join('\n');
+    const csv = header + [gBody, tBody].filter(Boolean).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const d = new Date().toISOString().split('T')[0];
+        const resp = await api.get('/food-log/totals', { params: { fecha: d } });
+        setDayTotals(resp.data?.data || null);
+      } catch {}
+    })();
+  }, []);
+
+  // moved rangeList and kpis above to avoid temporal dead zone references
 
   return (
     <div className="food-log-container">
