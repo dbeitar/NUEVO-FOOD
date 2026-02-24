@@ -14,6 +14,7 @@ const gymRoutes = require('./src/routes/gymRoutes');
 const trainersRoutes = require('./src/routes/trainersRoutes');
 const accountsRoutes = require('./src/routes/accountsRoutes');
 const planRoutes = require('./src/routes/planRoutes');
+const recipeRoutes = require('./src/routes/recipeRoutes');
 const authMiddleware = require('./src/middleware/auth');
 
 const app = express();
@@ -222,6 +223,9 @@ app.use('/api/ai', aiRoutes);
 
 // Plan del Usuario
 app.use('/api/plan', planRoutes);
+
+// Recetas
+app.use('/api/recipes', recipeRoutes);
 
 // Rutas de Módulo 2: Maestros de Administración
 app.use('/api/gyms', gymRoutes);

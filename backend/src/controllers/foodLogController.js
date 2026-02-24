@@ -1,5 +1,6 @@
 const foodItems = require("../models/FoodItems");
 const DailyFoodLog = require("../models/DailyFoodLog");
+const UserDB = require("../models/UserDatabase");
 
 const foodLogController = {
   // Buscar alimentos por nombre o categoría
@@ -292,6 +293,60 @@ const foodLogController = {
         success: false,
         error: "Error al obtener histórico",
       });
+    }
+  },
+
+  // Agregaciones por gimnasio
+  aggregateByGym: (req, res) => {
+    try {
+      const { start, end } = req.query;
+      if (!start || !end) {
+        return res.status(400).json({ success: false, error: "Parámetros start y end requeridos (YYYY-MM-DD)" });
+      }
+      const users = UserDB.getAll();
+      const gyms = {};
+      const gymGroups = {};
+      for (const u of users) {
+        const gid = u.gymId || u.gym_id || null;
+        if (gid == null) continue;
+        if (!gymGroups[gid]) gymGroups[gid] = [];
+        gymGroups[gid].push(u.id);
+      }
+      for (const gid of Object.keys(gymGroups)) {
+        const ids = gymGroups[gid];
+        const totals = DailyFoodLog.getRangeTotalsForUsers(ids, start, end);
+        gyms[gid] = totals.overall;
+      }
+      res.json({ success: true, start, end, gyms });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "Error en agregación por gimnasio" });
+    }
+  },
+
+  // Agregaciones por entrenador
+  aggregateByTrainer: (req, res) => {
+    try {
+      const { start, end } = req.query;
+      if (!start || !end) {
+        return res.status(400).json({ success: false, error: "Parámetros start y end requeridos (YYYY-MM-DD)" });
+      }
+      const users = UserDB.getAll();
+      const trainerGroups = {};
+      for (const u of users) {
+        const tid = u.trainerId || u.trainer_id || null;
+        if (tid == null) continue;
+        if (!trainerGroups[tid]) trainerGroups[tid] = [];
+        trainerGroups[tid].push(u.id);
+      }
+      const trainers = {};
+      for (const tid of Object.keys(trainerGroups)) {
+        const ids = trainerGroups[tid];
+        const totals = DailyFoodLog.getRangeTotalsForUsers(ids, start, end);
+        trainers[tid] = totals.overall;
+      }
+      res.json({ success: true, start, end, trainers });
+    } catch (e) {
+      res.status(500).json({ success: false, error: "Error en agregación por entrenador" });
     }
   },
 

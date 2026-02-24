@@ -17,6 +17,8 @@ router.post("/", foodLogController.addFoodToLog);
 router.get("/day", foodLogController.getDayLogs);
 router.get("/totals", foodLogController.getDayTotals);
 router.get("/history", foodLogController.getUserHistory);
+router.get("/aggregate/by-gym", foodLogController.aggregateByGym);
+router.get("/aggregate/by-trainer", foodLogController.aggregateByTrainer);
 
 // Rutas de edición y eliminación
 router.put("/:entryId", foodLogController.updateLogEntry);

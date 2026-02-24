@@ -77,6 +77,42 @@ const DailyFoodLog = {
     return history;
   },
 
+  // Obtener totales por usuario en un rango de fechas (incluye suma agregada)
+  getRangeTotalsForUsers: (userIds, startDate, endDate) => {
+    try {
+      const s = new Date(startDate);
+      const e = new Date(endDate);
+      const inRange = dailyFoodLogs.filter((log) => {
+        const d = new Date(log.fecha);
+        return userIds.includes(log.userId) && d >= s && d <= e;
+      });
+      const perUser = {};
+      for (const l of inRange) {
+        if (!perUser[l.userId]) {
+          perUser[l.userId] = { totalCalorias: 0, totalProteina: 0, totalCarbohidratos: 0, totalGrasas: 0, totalEntries: 0 };
+        }
+        perUser[l.userId].totalCalorias += l.calorias;
+        perUser[l.userId].totalProteina += l.proteina;
+        perUser[l.userId].totalCarbohidratos += l.carbohidratos;
+        perUser[l.userId].totalGrasas += l.grasas;
+        perUser[l.userId].totalEntries += 1;
+      }
+      const overall = Object.values(perUser).reduce(
+        (acc, t) => ({
+          totalCalorias: acc.totalCalorias + t.totalCalorias,
+          totalProteina: acc.totalProteina + t.totalProteina,
+          totalCarbohidratos: acc.totalCarbohidratos + t.totalCarbohidratos,
+          totalGrasas: acc.totalGrasas + t.totalGrasas,
+          totalEntries: acc.totalEntries + t.totalEntries,
+        }),
+        { totalCalorias: 0, totalProteina: 0, totalCarbohidratos: 0, totalGrasas: 0, totalEntries: 0 }
+      );
+      return { perUser, overall };
+    } catch {
+      return { perUser: {}, overall: { totalCalorias: 0, totalProteina: 0, totalCarbohidratos: 0, totalGrasas: 0, totalEntries: 0 } };
+    }
+  },
+
   // Editar una entrada
   updateEntry: (entryId, userId, updates) => {
     const entry = dailyFoodLogs.find(

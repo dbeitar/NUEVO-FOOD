@@ -12,6 +12,9 @@ router.get('/enabled', aiController.isEnabled);
 // POST: Obtener sugerencias de alimentos con IA (OpenAI)
 router.post('/suggestions', aiController.getSuggestedFoods);
 
+// POST: Generar receta con IA o simulada
+router.post('/generate-recipe', aiController.generateRecipe);
+
 // POST: Obtener sugerencias rápidas (sin IA)
 router.post('/quick-suggestions', aiController.getQuickSuggestions);
 

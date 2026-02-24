@@ -7,10 +7,11 @@ import AdminFoodsManager from './AdminFoodsManager';
 import AdminUsers from './AdminUsers';
 import AdminPlans from './AdminPlans';
 import MyAccount from './MyAccount';
+import Progress from './Progress';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState('home');
+  const [currentView, setCurrentView] = useState('progress');
   const [dayTotals, setDayTotals] = useState(null);
   const [plan, setPlan] = useState({ calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 });
   const today = new Date().toISOString().split('T')[0];
@@ -43,6 +44,8 @@ export default function Dashboard() {
         return <AdminPlans />;
       case 'myaccount':
         return <MyAccount />;
+      case 'progress':
+        return <Progress />;
       default:
         return (
           <>
@@ -93,7 +96,7 @@ export default function Dashboard() {
                 <button className="btn-card">Registrar Comida</button>
               </div>
 
-              <div className="card">
+              <div className="card" onClick={() => setCurrentView('progress')}>
                 <h3>📈 Progreso</h3>
                 <p>Visualiza tu evolución</p>
                 <button className="btn-card">Ver Estadísticas</button>
@@ -151,6 +154,12 @@ export default function Dashboard() {
           <h1>🍽️ Food Plan</h1>
         </div>
         <div className="navbar-menu">
+          <button 
+            onClick={() => setCurrentView('progress')}
+            className={currentView === 'progress' ? 'nav-link active' : 'nav-link'}
+          >
+            Progreso
+          </button>
           <button 
             onClick={() => setCurrentView('home')}
             className={currentView === 'home' ? 'nav-link active' : 'nav-link'}
