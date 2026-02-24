@@ -24,6 +24,8 @@ export default function Progress() {
   const [selectedGym, setSelectedGym] = useState('');
   const [selectedTrainer, setSelectedTrainer] = useState('');
   const [dayTotals, setDayTotals] = useState(null);
+  const [aggGyms, setAggGyms] = useState({});
+  const [aggTrainers, setAggTrainers] = useState({});
 
   useEffect(() => {
     (async () => {
@@ -57,6 +59,53 @@ export default function Progress() {
       } catch {}
     })();
   }, []);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const q = { params: { start: startDate, end: endDate } };
+        const [byGym, byTrainer] = await Promise.all([
+          api.get('/food-log/aggregate/by-gym', q),
+          api.get('/food-log/aggregate/by-trainer', q),
+        ]);
+        setAggGyms(byGym.data?.gyms || {});
+        setAggTrainers(byTrainer.data?.trainers || {});
+      } catch {
+        setAggGyms({});
+        setAggTrainers({});
+      }
+    })();
+  }, [startDate, endDate]);
+
+  const daysCount = Math.max(kpis.días || 0, 1);
+  const planCalories = Math.max(plan?.calorias || 0, 1);
+  const topGyms = (() => {
+    const items = Object.entries(aggGyms || {}).map(([gid, t]) => {
+      const g = gyms.find((x) => String(x.id) === String(gid));
+      const name = g?.nombre || `Gimnasio ${gid}`;
+      const pct = Math.min(((t.totalCalorias || 0) / (planCalories * daysCount)) * 100, 999);
+      return { id: gid, name, kcal: Math.round(t.totalCalorias || 0), pct: Math.round(pct) };
+    });
+    return items.sort((a, b) => b.pct - a.pct).slice(0, 5);
+  })();
+  const topTrainers = (() => {
+    const items = Object.entries(aggTrainers || {}).map(([tid, t]) => {
+      const tr = trainers.find((x) => String(x.id) === String(tid));
+      const name = tr?.nombre || `Entrenador ${tid}`;
+      const pct = Math.min(((t.totalCalorias || 0) / (planCalories * daysCount)) * 100, 999);
+      return { id: tid, name, kcal: Math.round(t.totalCalorias || 0), pct: Math.round(pct) };
+    });
+    return items.sort((a, b) => b.pct - a.pct).slice(0, 5);
+  })();
+  const weekly = (() => {
+    const hist = Array.isArray(userHistory) ? [...userHistory] : [];
+    hist.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
+    const last7 = hist.slice(-7);
+    return last7.map((d) => {
+      const pct = Math.min(((d.totales?.calorias || 0) / planCalories) * 100, 100);
+      return { fecha: d.fecha, kcal: Math.round(d.totales?.calorias || 0), pct: Math.round(pct) };
+    });
+  })();
 
   useEffect(() => {
     (async () => {
@@ -251,6 +300,128 @@ export default function Progress() {
               <li>Carbs promedio: {kpis.carbs} g</li>
               <li>Grasas promedio: {kpis.grasas} g</li>
             </ul>
+          </div>
+
+          {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
+            <div className="plan-summary">
+              <h2>Agregados</h2>
+              <div className="totals-card">
+                <div className="progress-item">
+                  <label>Gimnasio seleccionado</label>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${Math.min(
+                          (((selectedGym && aggGyms[selectedGym]?.totalCalorias) || 0) / (plan.calorias * Math.max(kpis.días, 1))) * 100,
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <span>
+                    {selectedGym && aggGyms[selectedGym]
+                      ? Math.round(aggGyms[selectedGym].totalCalorias)
+                      : 0}{' '}
+                    kcal en rango
+                  </span>
+                </div>
+                <div className="progress-item">
+                  <label>Entrenador seleccionado</label>
+                  <div className="progress-bar">
+                    <div
+                      className="progress-fill"
+                      style={{
+                        width: `${Math.min(
+                          (((selectedTrainer && aggTrainers[selectedTrainer]?.totalCalorias) || 0) / (plan.calorias * Math.max(kpis.días, 1))) * 100,
+                          100
+                        )}%`,
+                      }}
+                    />
+                  </div>
+                  <span>
+                    {selectedTrainer && aggTrainers[selectedTrainer]
+                      ? Math.round(aggTrainers[selectedTrainer].totalCalorias)
+                      : 0}{' '}
+                    kcal en rango
+                  </span>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
+            <div className="plan-summary">
+              <h2>Top Gimnasios</h2>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="text-left">Nombre</th>
+                    <th className="text-right">Cumpl.</th>
+                    <th className="text-right">Kcal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topGyms.map((g) => (
+                    <tr key={g.id}>
+                      <td>{g.name}</td>
+                      <td className="text-right">{g.pct}%</td>
+                      <td className="text-right">{g.kcal}</td>
+                    </tr>
+                  ))}
+                  {topGyms.length === 0 && (
+                    <tr>
+                      <td colSpan={3}>Sin datos en el rango</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
+            <div className="plan-summary">
+              <h2>Top Entrenadores</h2>
+              <table className="w-full text-sm">
+                <thead>
+                  <tr>
+                    <th className="text-left">Nombre</th>
+                    <th className="text-right">Cumpl.</th>
+                    <th className="text-right">Kcal</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {topTrainers.map((t) => (
+                    <tr key={t.id}>
+                      <td>{t.name}</td>
+                      <td className="text-right">{t.pct}%</td>
+                      <td className="text-right">{t.kcal}</td>
+                    </tr>
+                  ))}
+                  {topTrainers.length === 0 && (
+                    <tr>
+                      <td colSpan={3}>Sin datos en el rango</td>
+                    </tr>
+                  )}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="plan-summary">
+            <h2>Tendencia semanal</h2>
+            <div className="totals-card">
+              {weekly.map((d) => (
+                <div key={d.fecha} className="progress-item">
+                  <label>{d.fecha}</label>
+                  <div className="progress-bar">
+                    <div className="progress-fill" style={{ width: `${d.pct}%` }} />
+                  </div>
+                  <span>{d.kcal} kcal</span>
+                </div>
+              ))}
+              {weekly.length === 0 && <div className="text-sm text-stone-600">Sin datos recientes</div>}
+            </div>
           </div>
 
           <div className="plan-summary">
