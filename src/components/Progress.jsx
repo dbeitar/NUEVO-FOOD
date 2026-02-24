@@ -31,6 +31,8 @@ export default function Progress() {
   const [gymsSize, setGymsSize] = useState(5);
   const [trainersPage, setTrainersPage] = useState(1);
   const [trainersSize, setTrainersSize] = useState(5);
+  const [gymsFilter, setGymsFilter] = useState('');
+  const [trainersFilter, setTrainersFilter] = useState('');
 
   useEffect(() => {
     (async () => {
@@ -104,8 +106,10 @@ export default function Progress() {
   })();
   const gymsTotalPages = Math.max(1, Math.ceil(topGyms.length / gymsSize));
   const trainersTotalPages = Math.max(1, Math.ceil(topTrainers.length / trainersSize));
-  const pageGymsData = topGyms.slice((gymsPage - 1) * gymsSize, gymsPage * gymsSize);
-  const pageTrainersData = topTrainers.slice((trainersPage - 1) * trainersSize, trainersPage * trainersSize);
+  const gymsFiltered = topGyms.filter((g) => g.name.toLowerCase().includes((gymsFilter || '').toLowerCase()));
+  const trainersFiltered = topTrainers.filter((t) => t.name.toLowerCase().includes((trainersFilter || '').toLowerCase()));
+  const pageGymsData = gymsFiltered.slice((gymsPage - 1) * gymsSize, gymsPage * gymsSize);
+  const pageTrainersData = trainersFiltered.slice((trainersPage - 1) * trainersSize, trainersPage * trainersSize);
   const weekly = (() => {
     const hist = Array.isArray(userHistory) ? [...userHistory] : [];
     hist.sort((a, b) => new Date(a.fecha) - new Date(b.fecha));
@@ -119,6 +123,21 @@ export default function Progress() {
     const header = 'Nombre,Cumplimiento,Kcal\n';
     const body = rows.map((r) => `${r.name},${r.pct}%,${r.kcal}`).join('\n');
     const csv = header + body;
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.setAttribute('download', filename);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+  const exportBothCsv = (filename) => {
+    const header = 'Tipo,Nombre,Cumplimiento,Kcal\n';
+    const gBody = topGyms.map((r) => `Gimnasio,${r.name},${r.pct}%,${r.kcal}`).join('\n');
+    const tBody = topTrainers.map((r) => `Entrenador,${r.name},${r.pct}%,${r.kcal}`).join('\n');
+    const csv = header + [gBody, tBody].filter(Boolean).join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement('a');
@@ -377,20 +396,34 @@ export default function Progress() {
             <div className="plan-summary">
               <h2>Analítica por Grupos</h2>
               <div className="totals-card">
-                <div className="flex gap-2 mb-2">
-                  <button className={aggTab === 'gyms' ? 'btn-primary' : 'btn'} onClick={() => setAggTab('gyms')}>Gimnasios</button>
-                  <button className={aggTab === 'trainers' ? 'btn-primary' : 'btn'} onClick={() => setAggTab('trainers')}>Entrenadores</button>
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex gap-2">
+                    <button onClick={() => setAggTab('gyms')}>Gimnasios</button>
+                    <button onClick={() => setAggTab('trainers')}>Entrenadores</button>
+                  </div>
+                  <button onClick={() => exportBothCsv('agregados_rango.csv')}>Exportar ambos CSV</button>
                 </div>
                 {aggTab === 'gyms' && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <div>
+                      <div className="flex items-center gap-3">
+                        <div>
                         <label className="mr-2 text-sm">Tamaño página</label>
                         <select value={gymsSize} onChange={(e) => { setGymsSize(parseInt(e.target.value, 10)); setGymsPage(1); }}>
                           <option value={5}>5</option>
                           <option value={10}>10</option>
                           <option value={20}>20</option>
                         </select>
+                        </div>
+                        <div>
+                          <label className="mr-2 text-sm">Buscar</label>
+                          <input
+                            value={gymsFilter}
+                            onChange={(e) => { setGymsFilter(e.target.value); setGymsPage(1); }}
+                            placeholder="Nombre de gimnasio"
+                          />
+                          <button onClick={() => { setGymsFilter(''); setGymsPage(1); }}>Limpiar</button>
+                        </div>
                       </div>
                       <button onClick={() => exportCsv('top_gimnasios.csv', topGyms)}>Exportar CSV</button>
                     </div>
@@ -418,10 +451,15 @@ export default function Progress() {
                       </tbody>
                     </table>
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm">Página {gymsPage} de {gymsTotalPages}</span>
+                      <span className="text-sm">Página {gymsPage} de {Math.max(1, Math.ceil(gymsFiltered.length / gymsSize))}</span>
                       <div className="flex gap-2">
                         <button disabled={gymsPage <= 1} onClick={() => setGymsPage((p) => Math.max(1, p - 1))}>Anterior</button>
-                        <button disabled={gymsPage >= gymsTotalPages} onClick={() => setGymsPage((p) => Math.min(gymsTotalPages, p + 1))}>Siguiente</button>
+                        <button
+                          disabled={gymsPage >= Math.max(1, Math.ceil(gymsFiltered.length / gymsSize))}
+                          onClick={() => setGymsPage((p) => Math.min(Math.max(1, Math.ceil(gymsFiltered.length / gymsSize)), p + 1))}
+                        >
+                          Siguiente
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -429,13 +467,24 @@ export default function Progress() {
                 {aggTab === 'trainers' && (
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <div>
+                      <div className="flex items-center gap-3">
+                        <div>
                         <label className="mr-2 text-sm">Tamaño página</label>
                         <select value={trainersSize} onChange={(e) => { setTrainersSize(parseInt(e.target.value, 10)); setTrainersPage(1); }}>
                           <option value={5}>5</option>
                           <option value={10}>10</option>
                           <option value={20}>20</option>
                         </select>
+                        </div>
+                        <div>
+                          <label className="mr-2 text-sm">Buscar</label>
+                          <input
+                            value={trainersFilter}
+                            onChange={(e) => { setTrainersFilter(e.target.value); setTrainersPage(1); }}
+                            placeholder="Nombre de entrenador"
+                          />
+                          <button onClick={() => { setTrainersFilter(''); setTrainersPage(1); }}>Limpiar</button>
+                        </div>
                       </div>
                       <button onClick={() => exportCsv('top_entrenadores.csv', topTrainers)}>Exportar CSV</button>
                     </div>
@@ -463,10 +512,15 @@ export default function Progress() {
                       </tbody>
                     </table>
                     <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm">Página {trainersPage} de {trainersTotalPages}</span>
+                      <span className="text-sm">Página {trainersPage} de {Math.max(1, Math.ceil(trainersFiltered.length / trainersSize))}</span>
                       <div className="flex gap-2">
                         <button disabled={trainersPage <= 1} onClick={() => setTrainersPage((p) => Math.max(1, p - 1))}>Anterior</button>
-                        <button disabled={trainersPage >= trainersTotalPages} onClick={() => setTrainersPage((p) => Math.min(trainersTotalPages, p + 1))}>Siguiente</button>
+                        <button
+                          disabled={trainersPage >= Math.max(1, Math.ceil(trainersFiltered.length / trainersSize))}
+                          onClick={() => setTrainersPage((p) => Math.min(Math.max(1, Math.ceil(trainersFiltered.length / trainersSize)), p + 1))}
+                        >
+                          Siguiente
+                        </button>
                       </div>
                     </div>
                   </div>
