@@ -5,7 +5,110 @@ const FoodDatabase = require('../models/FoodDatabase');
 const openaiApiKey = process.env.OPENAI_API_KEY;
 const googleApiKey = process.env.GOOGLE_API_KEY;
 
+// Sistema de Sustitutos (categorías equivalentes)
+const EQUIVALENTES = {
+  categorias_equivalentes: {
+    proteina_magra: {
+      base: '100g de pechuga de pollo (cocida)',
+      sustitutos: [
+        { nombre: 'Pescado blanco', cantidad: '120g', nota: 'Aporta Omega-3' },
+        { nombre: 'Claras de huevo', cantidad: '5 unidades', nota: 'Bajo en grasa' },
+        { nombre: 'Tofu firme', cantidad: '150g', nota: 'Opción vegana' },
+      ],
+    },
+    carbohidrato_complejo: {
+      base: '100g de arroz integral (cocido)',
+      sustitutos: [
+        { nombre: 'Papa cocida', cantidad: '150g', nota: 'Mayor saciedad' },
+        { nombre: 'Quinoa', cantidad: '90g', nota: 'Mayor aporte proteico' },
+        { nombre: 'Camote/Batata', cantidad: '120g', nota: 'Índice glucémico medio' },
+      ],
+    },
+    grasas_saludables: {
+      base: '1 cucharada de aceite de oliva',
+      sustitutos: [
+        { nombre: 'Aguacate', cantidad: '50g', nota: 'Grasas monoinsaturadas' },
+        { nombre: 'Nueces', cantidad: '20g', nota: 'Omega-3 vegetal' },
+        { nombre: 'Mantequilla de maní', cantidad: '1 cucharada', nota: 'Úsalo con moderación' },
+      ],
+    },
+    lacteos_bajos_grasa: {
+      base: 'Yogur griego descremado 150g',
+      sustitutos: [
+        { nombre: 'Leche descremada', cantidad: '200ml', nota: 'Fuente de calcio' },
+        { nombre: 'Queso cottage', cantidad: '100g', nota: 'Proteína alta' },
+        { nombre: 'Kéfir', cantidad: '200ml', nota: 'Probióticos' },
+      ],
+    },
+    frutas: {
+      base: 'Manzana 150g',
+      sustitutos: [
+        { nombre: 'Banano', cantidad: '120g', nota: 'Potasio' },
+        { nombre: 'Fresas', cantidad: '150g', nota: 'Bajo en calorías' },
+        { nombre: 'Naranja', cantidad: '180g', nota: 'Vitamina C' },
+      ],
+    },
+    vegetales: {
+      base: 'Brócoli 150g',
+      sustitutos: [
+        { nombre: 'Espinaca', cantidad: '100g', nota: 'Hierro y folatos' },
+        { nombre: 'Zanahoria', cantidad: '120g', nota: 'Beta-carotenos' },
+        { nombre: 'Pimentón', cantidad: '120g', nota: 'Antioxidantes' },
+      ],
+    },
+    fibra_integral: {
+      base: 'Pan integral 1 rebanada',
+      sustitutos: [
+        { nombre: 'Avena', cantidad: '40g', nota: 'Beta-glucanos' },
+        { nombre: 'Cebada', cantidad: '50g', nota: 'Fibra soluble' },
+        { nombre: 'Tortilla integral', cantidad: '1 unidad', nota: 'Alternativa práctica' },
+      ],
+    },
+  },
+};
+
 const aiController = {
+  // Endpoint: obtener equivalentes por grupo
+  getEquivalentes: (req, res) => {
+    try {
+      return res.json({ success: true, data: EQUIVALENTES });
+    } catch (e) {
+      return res.status(500).json({ success: false, error: 'Error obteniendo equivalentes' });
+    }
+  },
+  _translateName(name, lang) {
+    if (!name || lang !== 'en') return name;
+    const map = {
+      'Arroz blanco cocido': 'Cooked White Rice',
+      'Arroz cocido': 'Cooked Rice',
+      'Pan Integral': 'Whole Wheat Bread',
+      'Aguacate': 'Avocado',
+      'Aceite de Oliva': 'Olive Oil',
+      'Plátano': 'Banana',
+      'Pechuga de Pollo (cocida)': 'Chicken Breast (cooked)',
+      'Huevo completo': 'Whole Egg',
+      'Atún en agua (enlatado)': 'Tuna in Water (canned)',
+      'Salmón (cocido)': 'Salmon (cooked)',
+      'Carne Magra (res)': 'Lean Beef',
+    };
+    return map[name] || name;
+  },
+  _translatePortion(porcion, lang) {
+    if (!porcion || lang !== 'en') return porcion;
+    return porcion
+      .replace(/rebanada/gi, 'slice')
+      .replace(/unidad/gi, 'unit')
+      .replace(/cucharada/gi, 'tablespoon')
+      .replace(/porción/gi, 'serving')
+      .replace(/(\d)([a-zA-Z])/g, '$1 $2');
+  },
+  _translateReason(razon, lang) {
+    if (!razon || lang !== 'en') return razon;
+    if (razon === 'Coincide con el nutriente más faltante') {
+      return 'Matches the most lacking nutrient';
+    }
+    return razon;
+  },
   // Indicar si la IA (OpenAI o Google) está habilitada
   isEnabled: (req, res) => {
     try {
@@ -25,7 +128,7 @@ const aiController = {
       const hasGoogle = Boolean(googleApiKey && googleApiKey.trim().length > 0);
       // Si no hay IA configurada, hacer fallback a sugerencias rápidas en lugar de error
       const fallbackQuick = () => {
-        const { currentIntake, targetGoals, objetivo } = req.body || {};
+        const { currentIntake, targetGoals, objetivo, lang } = req.body || {};
         const alimentos = FoodDatabase.getAll();
         const faltantes = {
           calorias: targetGoals.calorias - currentIntake.calorias,
@@ -54,9 +157,9 @@ const aiController = {
           },
           aiSuggestions: {
             sugerencias: sugerencias.slice(0, 5).map((f) => ({
-              alimento: f.nombre,
-              razon: 'Coincide con el nutriente más faltante',
-              porcion: `${f.cantidad}${f.unidad}`,
+              alimento: aiController._translateName(f.nombre, lang),
+              razon: aiController._translateReason('Coincide con el nutriente más faltante', lang),
+              porcion: aiController._translatePortion(`${f.cantidad}${f.unidad}`, lang),
               aporte: {
                 calorias: f.calorias,
                 proteina: f.proteina,
@@ -114,54 +217,47 @@ const aiController = {
       // Obtener alimentos disponibles
       const todosAlimentos = FoodDatabase.getAll();
 
-      // Prompt para OpenAI
+      // Prompt Maestro adaptado
       const prompt = `
-Eres un nutricionista experto. Analiza los siguientes datos y sugiere los 3-5 MEJORES alimentos para completar la meta alimentaria de hoy, sin exceder.
+INSTRUCCIONES DE ACTUACIÓN PROFESIONAL
+Actúa como un experto en Nutrición Deportiva y Clínica con enfoque en medicina basada en evidencia. Tu tarea es procesar los datos de la calculadora de la app FOOD PLAN para generar un protocolo nutricional y de entrenamiento de alta precisión.
 
-CONSUMO ACTUAL DEL DÍA:
-- Calorías: ${currentIntake.calorias} kcal
-- Proteína: ${currentIntake.proteina}g
-- Carbohidratos: ${currentIntake.carbohidratos}g
-- Grasas: ${currentIntake.grasas}g
+DATOS DE ENTRADA (Calculados por el sistema):
+Datos Biométricos: { "currentIntake": ${JSON.stringify(currentIntake)}, "targetGoals": ${JSON.stringify(targetGoals)} }
+Restricciones Médicas/Patologías: ${req.body?.patologias || 'N/A'}
+Nivel de Actividad: ${req.body?.nivelActividad || 'N/A'}
+Objetivo Fisiológico: ${objetivo || 'N/A'}
+Preferencias/Restricciones Alimentarias: ${Array.isArray(preferencias) ? preferencias.join(', ') : (req.body?.restricciones_text || 'N/A')}
 
-META DEL DÍA:
-- Calorías: ${targetGoals.calorias} kcal (faltante: ${faltantes.calorias})
-- Proteína: ${targetGoals.proteina}g (faltante: ${faltantes.proteina}g)
-- Carbohidratos: ${targetGoals.carbohidratos}g (faltante: ${faltantes.carbohidratos}g)
-- Grasas: ${targetGoals.grasas}g (faltante: ${faltantes.grasas}g)
-
-OBJETIVO DEL USUARIO: ${objetivo}
-PREFERENCIAS: ${preferencias?.join(', ') || 'Sin preferencias específicas'}
+REGLAS DE PROCESAMIENTO:
+- Cálculo Metabólico: Utiliza Mifflin-St Jeor para determinar el gasto energético total. Si el % de grasa es conocido, prioriza Katch-McArdle.
+- Seguridad Médica: Cruza las patologías con la dieta. (Ej: Si hay resistencia a la insulina, prioriza carbohidratos de carga glucémica baja y cita a la ADA - American Diabetes Association).
+- Distribución de Macros: Sigue el consenso de la ISSN para la ingesta proteica según el objetivo (ej. 1.6g a 2.2g/kg para hipertrofia).
+- Sistema de Sustitutos: Genera un menú ejemplo, pero añade siempre una sección de "Equivalentes por Grupo" para que el usuario pueda intercambiar alimentos manteniendo los macros.
 
 ALIMENTOS DISPONIBLES:
-${todosAlimentos
-  .slice(0, 15)
-  .map(
-    (f) =>
-      `- ${f.nombre}: ${f.calorias}cal, ${f.proteina}g proteína, ${f.carbohidratos}g carbs, ${f.grasas}g grasas (porción: ${f.cantidad}${f.unidad})`
-  )
-  .join('\n')}
+${todosAlimentos.slice(0, 15).map((f) => `- ${f.nombre}: ${f.calorias}cal, ${f.proteina}g proteína, ${f.carbohidratos}g carbs, ${f.grasas}g grasas (porción: ${f.cantidad}${f.unidad})`).join('\n')}
 
-Por favor, recomienda los mejores alimentos que:
-1. Ayuden a completar los faltantes sin excedernismos
-2. Sean apropiados para el objetivo "${objetivo}"
-3. Prioricen los nutrientes más deficientes
-4. Sean variados y prácticos
+SISTEMA DE SUSTITUTOS (JSON):
+${JSON.stringify(EQUIVALENTES, null, 2)}
 
-Responde en JSON con esta estructura:
+FORMATO DE SALIDA REQUERIDO:
+- Análisis Biomecánico: breve explicación de por qué elegiste esas calorías.
+- Plan Nutricional: desglose por comidas (Macros incluidos).
+- Sustitutos Sugeridos: tabla de intercambios rápidos.
+- Recomendación de Ejercicio: basada en las guías de la ACSM.
+- Fuentes: cita al menos 2 estudios o consensos internacionales (PubMed/ISSN/WHO) que avalen este plan específico.
+
+Devuelve SIEMPRE un JSON con esta estructura mínima:
 {
   "sugerencias": [
-    {
-      "alimento": "nombre del alimento",
-      "razon": "por qué lo recomiendo",
-      "porcion": "cantidad sugerida",
-      "aporte": {"calorias": X, "proteina": X, "carbohidratos": X, "grasas": X}
-    }
+    {"alimento": "string", "razon": "string", "porcion": "string", "aporte": {"calorias": 0, "proteina": 0, "carbohidratos": 0, "grasas": 0}}
   ],
-  "resumen": "análisis breve de qué falta y estrategia",
-  "consejo": "consejo personalizado"
+  "resumen": "string",
+  "consejo": "string",
+  "equivalentes_por_grupo": ${JSON.stringify(EQUIVALENTES.categorias_equivalentes)}
 }
-      `;
+`;
 
       let sugerencias = {};
       if (hasOpenAI) {
@@ -249,6 +345,20 @@ Responde en JSON con esta estructura:
           const resp = fallbackQuick();
           return res.json(resp);
         }
+      }
+
+      // Localizar nombres/porciones si lang=en
+      if (req.body?.lang === 'en' && sugerencias?.sugerencias?.length) {
+        sugerencias.sugerencias = sugerencias.sugerencias.map((s) => ({
+          ...s,
+          alimento: aiController._translateName(s.alimento, 'en'),
+          porcion: aiController._translatePortion(s.porcion, 'en'),
+          razon: aiController._translateReason(s.razon, 'en'),
+        }));
+      }
+      // Asegurar inclusión del sistema de sustitutos en respuesta con IA
+      if (sugerencias && !sugerencias.equivalentes_por_grupo) {
+        sugerencias.equivalentes_por_grupo = EQUIVALENTES.categorias_equivalentes;
       }
 
       res.json({

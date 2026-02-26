@@ -325,6 +325,35 @@ const foodController = {
       });
     }
   },
+
+  // ADMIN: Crear respaldo manual del archivo de alimentos
+  backupFoods: (req, res) => {
+    try {
+      if (req.user.rol !== "super_admin" && req.user.rol !== "admin_gimnasio") {
+        return res.status(403).json({
+          success: false,
+          error: "No tienes permisos para crear respaldos",
+        });
+      }
+      const path = FoodDatabase.backup();
+      if (!path) {
+        return res.status(500).json({
+          success: false,
+          error: "No se pudo crear el respaldo",
+        });
+      }
+      res.json({
+        success: true,
+        message: "Respaldo creado",
+        path,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: "Error al crear respaldo",
+      });
+    }
+  },
 };
 
 module.exports = foodController;

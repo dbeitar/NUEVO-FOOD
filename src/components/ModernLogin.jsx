@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import AuthLayout from './AuthLayout';
 
@@ -19,7 +19,9 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
         setEmail(prefill);
         if (fromRegister) localStorage.removeItem('prefillEmail');
       }
-    } catch {}
+    } catch (err) {
+      console.warn('Failed to prefill modern login email', err);
+    }
   }, []);
 
   const handleSubmit = async (e) => {
@@ -30,7 +32,9 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
       await login(email, password);
       try {
         localStorage.setItem('rememberedEmail', email);
-      } catch {}
+      } catch (err) {
+        console.warn('Failed to persist rememberedEmail', err);
+      }
     } catch (err) {
       setError(err?.response?.data?.error || err?.message || 'Error en el login');
     } finally {

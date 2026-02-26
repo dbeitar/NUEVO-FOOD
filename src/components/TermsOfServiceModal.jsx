@@ -1,4 +1,4 @@
-import React from 'react';
+ 
 
 const TermsOfServiceModal = ({ onClose, onAccept }) => {
   const termsContent = `# Términos y Condiciones de Uso

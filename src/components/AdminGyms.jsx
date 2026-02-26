@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { Building2, MapPin, Phone, Mail, Plus, Edit2, Trash2, X, Save, Search, AlertCircle, CheckCircle, ClipboardList } from 'lucide-react';
+import { Building2, MapPin, Phone, Mail, Plus, Edit2, Trash2, X, Save, Search, AlertCircle, CheckCircle } from 'lucide-react';
+import { useI18n } from '../context/I18nContext';
 
 export default function AdminGyms() {
   const [gyms, setGyms] = useState([]);
@@ -13,6 +14,7 @@ export default function AdminGyms() {
   const [showForm, setShowForm] = useState(false);
   const [plans, setPlans] = useState([]);
   const [assigningPlan, setAssigningPlan] = useState(null);
+  const { t } = useI18n();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -23,10 +25,32 @@ export default function AdminGyms() {
     email_contacto: ''
   });
 
+  const fetchGyms = useCallback(async () => {
+    try {
+      setLoading(true);
+      const res = await api.get('/gyms');
+      setGyms(res.data || []);
+      setFilteredGyms(res.data || []);
+    } catch {
+      setError(t('gyms.error_loading', 'Error cargando gimnasios'));
+    } finally {
+      setLoading(false);
+    }
+  }, [t]);
+
+  const fetchPlans = useCallback(async () => {
+    try {
+      const res = await api.get('/accounts/plans');
+      setPlans(res.data || []);
+    } catch {
+      console.error('Error cargando planes');
+    }
+  }, []);
+
   useEffect(() => {
     fetchGyms();
     fetchPlans();
-  }, []);
+  }, [fetchGyms, fetchPlans]);
 
   useEffect(() => {
     if (searchTerm) {
@@ -40,27 +64,7 @@ export default function AdminGyms() {
     }
   }, [searchTerm, gyms]);
 
-  const fetchGyms = async () => {
-    try {
-      setLoading(true);
-      const res = await api.get('/gyms');
-      setGyms(res.data || []);
-      setFilteredGyms(res.data || []);
-    } catch (err) {
-      setError('Error cargando gimnasios');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const fetchPlans = async () => {
-    try {
-      const res = await api.get('/accounts/plans');
-      setPlans(res.data || []);
-    } catch (err) {
-      console.error('Error cargando planes:', err);
-    }
-  };
+  
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -75,10 +79,10 @@ export default function AdminGyms() {
     try {
       if (editingGym) {
         await api.put(`/gyms/${editingGym.id}`, formData);
-        setSuccess('Gimnasio actualizado correctamente');
+      setSuccess(t('gyms.updated', 'Gimnasio actualizado correctamente'));
       } else {
         await api.post('/gyms', formData);
-        setSuccess('Gimnasio creado exitosamente');
+        setSuccess(t('gyms.created', 'Gimnasio creado exitosamente'));
       }
       setEditingGym(null);
       setFormData({ nombre: '', ciudad: '', direccion: '', telefono: '', email_contacto: '' });
@@ -86,7 +90,7 @@ export default function AdminGyms() {
       fetchGyms();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al guardar gimnasio');
+      setError(err.response?.data?.error || t('gyms.save_error', 'Error al guardar gimnasio'));
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -106,14 +110,14 @@ export default function AdminGyms() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este gimnasio?')) {
+    if (window.confirm(t('gyms.delete_confirm', '¿Estás seguro de eliminar este gimnasio?'))) {
       try {
         await api.delete(`/gyms/${id}`);
-        setSuccess('Gimnasio eliminado correctamente');
+        setSuccess(t('gyms.deleted', 'Gimnasio eliminado correctamente'));
         fetchGyms();
         setTimeout(() => setSuccess(''), 3000);
-      } catch (err) {
-        setError('Error al eliminar gimnasio');
+    } catch {
+        setError(t('gyms.delete_error', 'Error al eliminar gimnasio'));
         setTimeout(() => setError(''), 3000);
       }
     }
@@ -122,12 +126,12 @@ export default function AdminGyms() {
   const handleAssignPlan = async (gymId, planId) => {
     try {
       await api.put(`/gyms/${gymId}/assign-plan`, { plan_id: planId });
-      setSuccess('Plan asignado correctamente');
+      setSuccess(t('gyms.plan_assigned', 'Plan asignado correctamente'));
       setAssigningPlan(null);
       fetchGyms();
       setTimeout(() => setSuccess(''), 3000);
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al asignar plan');
+      setError(err.response?.data?.error || t('gyms.assign_error', 'Error al asignar plan'));
       setTimeout(() => setError(''), 3000);
     }
   };
@@ -146,9 +150,9 @@ export default function AdminGyms() {
         <div>
           <h3 className="text-2xl font-bold text-stone-900 flex items-center gap-2">
             <Building2 className="text-lime-400" size={28} />
-            Gestión de Gimnasios
+            {t('gyms.title', 'Gestión de Gimnasios')}
           </h3>
-          <p className="text-stone-600 text-sm mt-1">Administra las sedes y ubicaciones</p>
+          <p className="text-stone-600 text-sm mt-1">{t('gyms.subtitle', 'Administra las sedes y ubicaciones')}</p>
         </div>
         
         {!showForm && (
@@ -161,7 +165,7 @@ export default function AdminGyms() {
             }}
           >
             <Plus size={18} />
-            Nuevo Gimnasio
+            {t('gyms.new', 'Nuevo Gimnasio')}
           </button>
         )}
       </div>
@@ -188,7 +192,7 @@ export default function AdminGyms() {
           <input
             type="text"
             className="input pl-10"
-            placeholder="Buscar por nombre, ciudad o dirección..."
+            placeholder={t('gyms.search_ph', 'Buscar por nombre, ciudad o dirección...')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -199,7 +203,7 @@ export default function AdminGyms() {
         <div className="bg-white rounded-2xl shadow-lg border border-slate-200 overflow-hidden animate-fade-in-up">
           <div className="px-6 py-4 border-b border-slate-200 bg-white flex justify-between items-center">
             <h4 className="text-md font-semibold text-stone-900">
-              {editingGym ? 'Editar Gimnasio' : 'Crear Nuevo Gimnasio'}
+              {editingGym ? t('gyms.edit', 'Editar Gimnasio') : t('gyms.create', 'Crear Nuevo Gimnasio')}
             </h4>
             <button 
               className="text-stone-500 hover:text-stone-900 transition-colors" 
@@ -212,7 +216,7 @@ export default function AdminGyms() {
           <form onSubmit={handleSubmit} className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="md:col-span-2">
-                <label className="label">Nombre del Gimnasio</label>
+                <label className="label">{t('gyms.name', 'Nombre del Gimnasio')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Building2 className="h-4 w-4 text-slate-400" />
@@ -222,14 +226,14 @@ export default function AdminGyms() {
                     value={formData.nombre} 
                     onChange={handleInputChange} 
                     required 
-                    placeholder="Ej: Smart Fit Centro"
+                    placeholder={t('gyms.name_ph', 'Ej: Smart Fit Centro')}
                     className="input pl-10"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="label">Ciudad</label>
+                <label className="label">{t('common.city', 'Ciudad')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MapPin className="h-4 w-4 text-slate-400" />
@@ -239,14 +243,14 @@ export default function AdminGyms() {
                     value={formData.ciudad} 
                     onChange={handleInputChange} 
                     required 
-                    placeholder="Ej: Bogotá"
+                    placeholder={t('gyms.city_ph', 'Ej: Bogotá')}
                     className="input pl-10"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="label">Dirección</label>
+                <label className="label">{t('common.address', 'Dirección')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MapPin className="h-4 w-4 text-slate-400" />
@@ -255,14 +259,14 @@ export default function AdminGyms() {
                     name="direccion" 
                     value={formData.direccion} 
                     onChange={handleInputChange} 
-                    placeholder="Ej: Calle 123 # 45-67"
+                    placeholder={t('gyms.address_ph', 'Ej: Calle 123 # 45-67')}
                     className="input pl-10"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="label">Teléfono</label>
+                <label className="label">{t('common.phone', 'Teléfono')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Phone className="h-4 w-4 text-slate-400" />
@@ -271,14 +275,14 @@ export default function AdminGyms() {
                     name="telefono" 
                     value={formData.telefono} 
                     onChange={handleInputChange} 
-                    placeholder="Ej: 300 123 4567"
+                    placeholder={t('gyms.phone_ph', 'Ej: 300 123 4567')}
                     className="input pl-10"
                   />
                 </div>
               </div>
               
               <div>
-                <label className="label">Email Contacto</label>
+                <label className="label">{t('gyms.contact_email', 'Email Contacto')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Mail className="h-4 w-4 text-slate-400" />
@@ -287,7 +291,7 @@ export default function AdminGyms() {
                     name="email_contacto" 
                     value={formData.email_contacto} 
                     onChange={handleInputChange} 
-                    placeholder="Ej: contacto@gimnasio.com"
+                    placeholder={t('gyms.email_ph', 'Ej: contacto@gimnasio.com')}
                     className="input pl-10"
                   />
                 </div>
@@ -300,14 +304,14 @@ export default function AdminGyms() {
                 onClick={handleCancel}
                 className="btn-secondary"
               >
-                Cancelar
+                {t('common.cancel', 'Cancelar')}
               </button>
               <button 
                 type="submit" 
                 className="btn-primary inline-flex items-center gap-2"
               >
                 <Save size={16} />
-                Guardar
+                {t('common.save', 'Guardar')}
               </button>
             </div>
           </form>
@@ -318,23 +322,23 @@ export default function AdminGyms() {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-stone-50">
                 <tr>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Nombre</th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Ubicación</th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Contacto</th>
-                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Plan</th>
-                  <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Acciones</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.name', 'Nombre')}</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('gyms.location', 'Ubicación')}</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.contact', 'Contacto')}</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.plan', 'Plan')}</th>
+                  <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {loading ? (
-                  <tr><td colSpan="5" className="px-6 py-8 text-center text-sm text-slate-400">Cargando gimnasios...</td></tr>
+                  <tr><td colSpan="5" className="px-6 py-8 text-center text-sm text-slate-400">{t('gyms.loading', 'Cargando gimnasios...')}</td></tr>
                 ) : filteredGyms.length === 0 ? (
                   <tr>
                     <td colSpan="5" className="px-6 py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center">
                         <Building2 className="h-12 w-12 text-slate-600 mb-3" />
-                        <p className="text-lg font-medium text-stone-600">No se encontraron gimnasios</p>
-                        <p className="text-sm text-slate-400">Intenta ajustar tu búsqueda o crea un nuevo gimnasio.</p>
+                        <p className="text-lg font-medium text-stone-600">{t('gyms.none', 'No se encontraron gimnasios')}</p>
+                        <p className="text-sm text-slate-400">{t('gyms.none_help', 'Intenta ajustar tu búsqueda o crea un nuevo gimnasio.')}</p>
                       </div>
                     </td>
                   </tr>
@@ -376,7 +380,7 @@ export default function AdminGyms() {
                               onChange={(e) => handleAssignPlan(gym.id, e.target.value)}
                               defaultValue=""
                             >
-                              <option value="" disabled>Seleccionar...</option>
+                              <option value="" disabled>{t('common.select', 'Seleccionar...')}</option>
                               {plans.map(plan => (
                                 <option key={plan.nombre} value={plan.nombre}>{plan.nombre}</option>
                               ))}
@@ -388,13 +392,13 @@ export default function AdminGyms() {
                         ) : (
                           <div className="flex items-center gap-2">
                             <span className="badge badge-neutral">
-                              {gym.plan_id || 'Sin plan'}
+                              {gym.plan_id || t('companies.no_plan', 'Sin plan')}
                             </span>
                             <button 
                               onClick={() => setAssigningPlan(gym.id)}
                               className="text-lime-700 hover:text-black bg-stone-100 hover:bg-lime-400 px-2 py-1 rounded-lg text-xs font-medium transition-colors"
                             >
-                              Cambiar
+                              {t('common.change', 'Cambiar')}
                             </button>
                           </div>
                         )}
@@ -404,14 +408,14 @@ export default function AdminGyms() {
                           <button 
                             className="text-lime-700 hover:text-black bg-stone-100 hover:bg-lime-400 p-2 rounded-lg transition-colors"
                             onClick={() => startEdit(gym)}
-                            title="Editar"
+                            title={t('common.edit', 'Editar')}
                           >
                             <Edit2 size={16} />
                           </button>
                           <button 
                             className="text-white bg-red-600 hover:bg-red-700 p-2 rounded-lg transition-colors"
                             onClick={() => handleDelete(gym.id)}
-                            title="Eliminar"
+                            title={t('common.delete', 'Eliminar')}
                           >
                             <Trash2 size={16} />
                           </button>

@@ -10,3 +10,17 @@ coverage/
 .trae/
 *.local
 *.tmp
+
+# Vercel
+.vercel/
+vercel-env.txt
+
+# Backups
+backups/
+*.bak
+*.zip
+backend/data/*.backup.*
+
+# Local scripts
+scripts/verify-local.cjs
+scripts/test-db-connection.cjs

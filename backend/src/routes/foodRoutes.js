@@ -21,6 +21,9 @@ router.get("/barcode/:barcode", foodController.getByBarcode);
 // ADMIN ONLY: Importar alimentos masivos
 router.post("/import", foodController.importFoods);
 
+// ADMIN ONLY: Crear respaldo manual
+router.post("/backup", foodController.backupFoods);
+
 // ADMIN ONLY: Crear alimento
 router.post("/", foodController.createFood);
 

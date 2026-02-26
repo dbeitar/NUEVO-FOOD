@@ -1,9 +1,5 @@
-import React from 'react';
-import { useAuth } from '../context/AuthContext';
-import { Link } from 'react-router-dom';
-
 export default function Navbar() {
-  const { user } = useAuth();
+  
 
   return (
     <header className="bg-white shadow-sm border-b border-slate-200 h-16 flex items-center justify-between px-6 md:hidden">

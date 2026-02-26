@@ -1,12 +1,14 @@
-import React, { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import AISuggestions from './AISuggestions';
 import './FoodLog.css';
+import { useI18n } from '../context/I18nContext';
 
 export default function Progress() {
   const { user } = useAuth();
   const today = new Date().toISOString().split('T')[0];
+  const { t } = useI18n();
 
   const [plan, setPlan] = useState({ calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 });
   const [history, setHistory] = useState({});
@@ -41,7 +43,9 @@ export default function Progress() {
         if (r.data?.success && r.data.data) {
           setPlan(r.data.data);
         }
-      } catch {}
+      } catch (err) {
+        console.warn('Failed to load plan', err);
+      }
     })();
   }, []);
 
@@ -50,7 +54,9 @@ export default function Progress() {
       try {
         const r = await api.get('/food-log/history', { params: { days: 30 } });
         setHistory(r.data?.data || {});
-      } catch {}
+      } catch (err) {
+        console.warn('Failed to load history', err);
+      }
     })();
   }, []);
 
@@ -61,9 +67,11 @@ export default function Progress() {
           api.get('/gyms'),
           api.get('/trainers'),
         ]);
-        setGyms(gy.data?.data || []);
-        setTrainers(tr.data?.data || []);
-      } catch {}
+        setGyms(Array.isArray(gy.data) ? gy.data : (gy.data?.data || []));
+        setTrainers(Array.isArray(tr.data) ? tr.data : (tr.data?.data || []));
+      } catch (err) {
+        console.warn('Failed to load gyms/trainers', err);
+      }
     })();
   }, []);
 
@@ -77,7 +85,8 @@ export default function Progress() {
         ]);
         setAggGyms(byGym.data?.gyms || {});
         setAggTrainers(byTrainer.data?.trainers || {});
-      } catch {
+      } catch (err) {
+        console.warn('Failed to load aggregates', err);
         setAggGyms({});
         setAggTrainers({});
       }
@@ -96,7 +105,8 @@ export default function Progress() {
           return x >= new Date(startDate) && x <= new Date(endDate);
         })
         .map((d) => ({ date: d, totals: history[d] || null }));
-    } catch {
+    } catch (err) {
+      console.warn('rangeList compute failed', err);
       return [];
     }
   }, [startDate, endDate, history]);
@@ -156,8 +166,6 @@ export default function Progress() {
     });
     return items.sort((a, b) => b.pct - a.pct);
   })();
-  const gymsTotalPages = Math.max(1, Math.ceil(topGyms.length / gymsSize));
-  const trainersTotalPages = Math.max(1, Math.ceil(topTrainers.length / trainersSize));
   const gymsFiltered = topGyms.filter((g) => g.name.toLowerCase().includes((gymsFilter || '').toLowerCase()));
   const trainersFiltered = topTrainers.filter((t) => t.name.toLowerCase().includes((trainersFilter || '').toLowerCase()));
   const pageGymsData = gymsFiltered.slice((gymsPage - 1) * gymsSize, gymsPage * gymsSize);
@@ -207,7 +215,9 @@ export default function Progress() {
         const d = new Date().toISOString().split('T')[0];
         const resp = await api.get('/food-log/totals', { params: { fecha: d } });
         setDayTotals(resp.data?.data || null);
-      } catch {}
+      } catch (err) {
+        console.warn('Failed to load day totals', err);
+      }
     })();
   }, []);
 
@@ -217,46 +227,46 @@ export default function Progress() {
     <div className="food-log-container">
       <div className="page-header">
         <div>
-          <h1>Progreso</h1>
-          <p className="subtitle">Seguimiento y recomendaciones</p>
+          <h1>{t('progress.title', 'Progreso')}</h1>
+          <p className="subtitle">{t('progress.subtitle', 'Seguimiento y recomendaciones')}</p>
         </div>
       </div>
 
-      <div className="two-col-grid lg:grid-cols-3">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="left-col lg:col-span-2">
           <div className="plan-summary">
-            <h2>KPIs del Rango</h2>
+            <h2>{t('progress.kpis', 'KPIs del Rango')}</h2>
             <div className="totals-card">
               <div className="progress-item">
-                <label>Cumplimiento promedio</label>
+                <label>{t('progress.avg_adherence', 'Cumplimiento promedio')}</label>
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${kpis.cumplimiento}%` }} />
                 </div>
                 <span>{kpis.cumplimiento}%</span>
               </div>
               <div className="progress-item">
-                <label>Calorías promedio</label>
+                <label>{t('progress.avg_calories', 'Calorías promedio')}</label>
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${Math.min((kpis.calorías / plan.calorias) * 100, 100)}%` }} />
                 </div>
                 <span>{kpis.calorías} / {plan.calorias} kcal</span>
               </div>
               <div className="progress-item">
-                <label>Proteína promedio</label>
+                <label>{t('progress.avg_protein', 'Proteína promedio')}</label>
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${Math.min((kpis.proteína / plan.proteina) * 100, 100)}%` }} />
                 </div>
                 <span>{kpis.proteína}g / {plan.proteina}g</span>
               </div>
               <div className="progress-item">
-                <label>Carbohidratos promedio</label>
+                <label>{t('progress.avg_carbs', 'Carbohidratos promedio')}</label>
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${Math.min((kpis.carbs / plan.carbohidratos) * 100, 100)}%` }} />
                 </div>
                 <span>{kpis.carbs}g / {plan.carbohidratos}g</span>
               </div>
               <div className="progress-item">
-                <label>Grasas promedio</label>
+                <label>{t('progress.avg_fats', 'Grasas promedio')}</label>
                 <div className="progress-bar">
                   <div className="progress-fill" style={{ width: `${Math.min((kpis.grasas / plan.grasas) * 100, 100)}%` }} />
                 </div>
@@ -266,32 +276,32 @@ export default function Progress() {
           </div>
 
           <div className="range-card">
-            <h2>Rango y Filtros</h2>
+            <h2>{t('progress.range_filters', 'Rango y Filtros')}</h2>
             <div className="range-grid">
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Inicio</label>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('progress.start', 'Inicio')}</label>
                 <input type="date" value={startDate} max={endDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-4 py-2 rounded-2xl border border-slate-300" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Fin</label>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('progress.end', 'Fin')}</label>
                 <input type="date" value={endDate} min={startDate} max={today} onChange={(e) => setEndDate(e.target.value)} className="w-full px-4 py-2 rounded-2xl border border-slate-300" />
               </div>
             </div>
             {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
               <div className="range-grid" style={{ marginTop: 12 }}>
                 <div>
-                  <label className="block text-sm font-semibold text-stone-700 mb-1">Gimnasio</label>
+                  <label className="block text-sm font-semibold text-stone-700 mb-1">{t('progress.gym', 'Gimnasio')}</label>
                   <select value={selectedGym} onChange={(e) => setSelectedGym(e.target.value)} className="w-full px-4 py-2 rounded-2xl border border-slate-300">
-                    <option value="">Todos</option>
+                    <option value="">{t('progress.all', 'Todos')}</option>
                     {gyms.map((g) => <option key={g.id} value={g.id}>{g.nombre || `Gym ${g.id}`}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-semibold text-stone-700 mb-1">Entrenador</label>
+                  <label className="block text-sm font-semibold text-stone-700 mb-1">{t('progress.trainer', 'Entrenador')}</label>
                   <select value={selectedTrainer} onChange={(e) => setSelectedTrainer(e.target.value)} className="w-full px-4 py-2 rounded-2xl border border-slate-300">
-                    <option value="">Todos</option>
+                    <option value="">{t('progress.all', 'Todos')}</option>
                     {trainers
-                      .filter((t) => !selectedGym || String(t.gymId) === String(selectedGym))
+                      .filter((t) => !selectedGym || String(t.gym_id) === String(selectedGym))
                       .map((t) => <option key={t.id} value={t.id}>{t.nombre || `Entrenador ${t.id}`}</option>)}
                   </select>
                 </div>
@@ -300,10 +310,10 @@ export default function Progress() {
           </div>
 
           <div className="weekly-card">
-            <h2>Avance por Día</h2>
+            <h2>{t('progress.by_day', 'Avance por Día')}</h2>
             <div className="space-y-2">
               {rangeList.length === 0 ? (
-                <p className="text-sm text-stone-600">Sin datos en el rango.</p>
+                <p className="text-sm text-stone-600">{t('progress.no_data_range', 'Sin datos en el rango.')}</p>
               ) : (
                 rangeList.map(({ date, totals }) => (
                   <div key={date} className="weekly-row">
@@ -319,7 +329,9 @@ export default function Progress() {
               )}
             </div>
           </div>
+        </div>
 
+        <div className="right-col lg:col-span-1">
           {dayTotals && (
             <AISuggestions
               dayTotals={dayTotals}
@@ -329,228 +341,222 @@ export default function Progress() {
                 carbohidratos: plan.carbohidratos,
                 grasas: plan.grasas,
               }}
-              objetivo="Mantenimiento"
+              objetivo={t('ai.goal_maintenance', 'Mantenimiento')}
             />
           )}
         </div>
+        </div>
 
-        <div className="right-col lg:col-span-1">
+      <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        <div className="plan-summary">
+          <h2>{t('progress.quick_summary', 'Resumen Rápido')}</h2>
+          <ul className="totals-card">
+            <li>{t('progress.days_in_range', 'Días en rango')}: {kpis.días}</li>
+            <li>{t('progress.avg_calories', 'Calorías promedio')}: {kpis.calorías} kcal</li>
+            <li>{t('progress.avg_protein', 'Proteína promedio')}: {kpis.proteína} g</li>
+            <li>{t('progress.avg_carbs', 'Carbs promedio')}: {kpis.carbs} g</li>
+            <li>{t('progress.avg_fats', 'Grasas promedio')}: {kpis.grasas} g</li>
+          </ul>
+        </div>
+
+        {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
           <div className="plan-summary">
-            <h2>Resumen Rápido</h2>
-            <ul className="totals-card">
-              <li>Días en rango: {kpis.días}</li>
-              <li>Calorías promedio: {kpis.calorías} kcal</li>
-              <li>Proteína promedio: {kpis.proteína} g</li>
-              <li>Carbs promedio: {kpis.carbs} g</li>
-              <li>Grasas promedio: {kpis.grasas} g</li>
-            </ul>
-          </div>
-
-          {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
-            <div className="plan-summary">
-              <h2>Agregados</h2>
-              <div className="totals-card">
-                <div className="progress-item">
-                  <label>Gimnasio seleccionado</label>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${Math.min(
-                          (((selectedGym && aggGyms[selectedGym]?.totalCalorias) || 0) / (plan.calorias * Math.max(kpis.días, 1))) * 100,
-                          100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                  <span>
-                    {selectedGym && aggGyms[selectedGym]
-                      ? Math.round(aggGyms[selectedGym].totalCalorias)
-                      : 0}{' '}
-                    kcal en rango
-                  </span>
-                </div>
-                <div className="progress-item">
-                  <label>Entrenador seleccionado</label>
-                  <div className="progress-bar">
-                    <div
-                      className="progress-fill"
-                      style={{
-                        width: `${Math.min(
-                          (((selectedTrainer && aggTrainers[selectedTrainer]?.totalCalorias) || 0) / (plan.calorias * Math.max(kpis.días, 1))) * 100,
-                          100
-                        )}%`,
-                      }}
-                    />
-                  </div>
-                  <span>
-                    {selectedTrainer && aggTrainers[selectedTrainer]
-                      ? Math.round(aggTrainers[selectedTrainer].totalCalorias)
-                      : 0}{' '}
-                    kcal en rango
-                  </span>
-                </div>
-              </div>
-            </div>
-          )}
-
-          {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
-            <div className="plan-summary">
-              <h2>Analítica por Grupos</h2>
-              <div className="totals-card">
-                <div className="flex items-center justify-between mb-2">
-                  <div className="flex gap-2">
-                    <button onClick={() => setAggTab('gyms')}>Gimnasios</button>
-                    <button onClick={() => setAggTab('trainers')}>Entrenadores</button>
-                  </div>
-                  <button onClick={() => exportBothCsv('agregados_rango.csv')}>Exportar ambos CSV</button>
-                </div>
-                {aggTab === 'gyms' && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div>
-                        <label className="mr-2 text-sm">Tamaño página</label>
-                        <select value={gymsSize} onChange={(e) => { setGymsSize(parseInt(e.target.value, 10)); setGymsPage(1); }}>
-                          <option value={5}>5</option>
-                          <option value={10}>10</option>
-                          <option value={20}>20</option>
-                        </select>
-                        </div>
-                        <div>
-                          <label className="mr-2 text-sm">Buscar</label>
-                          <input
-                            value={gymsFilter}
-                            onChange={(e) => { setGymsFilter(e.target.value); setGymsPage(1); }}
-                            placeholder="Nombre de gimnasio"
-                          />
-                          <button onClick={() => { setGymsFilter(''); setGymsPage(1); }}>Limpiar</button>
-                        </div>
-                      </div>
-                      <button onClick={() => exportCsv('top_gimnasios.csv', topGyms)}>Exportar CSV</button>
-                    </div>
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr>
-                          <th className="text-left">Nombre</th>
-                          <th className="text-right">Cumpl.</th>
-                          <th className="text-right">Kcal</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pageGymsData.map((g) => (
-                          <tr key={g.id}>
-                            <td>{g.name}</td>
-                            <td className="text-right">{g.pct}%</td>
-                            <td className="text-right">{g.kcal}</td>
-                          </tr>
-                        ))}
-                        {pageGymsData.length === 0 && (
-                          <tr>
-                            <td colSpan={3}>Sin datos en el rango</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm">Página {gymsPage} de {Math.max(1, Math.ceil(gymsFiltered.length / gymsSize))}</span>
-                      <div className="flex gap-2">
-                        <button disabled={gymsPage <= 1} onClick={() => setGymsPage((p) => Math.max(1, p - 1))}>Anterior</button>
-                        <button
-                          disabled={gymsPage >= Math.max(1, Math.ceil(gymsFiltered.length / gymsSize))}
-                          onClick={() => setGymsPage((p) => Math.min(Math.max(1, Math.ceil(gymsFiltered.length / gymsSize)), p + 1))}
-                        >
-                          Siguiente
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-                {aggTab === 'trainers' && (
-                  <div>
-                    <div className="flex items-center justify-between mb-2">
-                      <div className="flex items-center gap-3">
-                        <div>
-                        <label className="mr-2 text-sm">Tamaño página</label>
-                        <select value={trainersSize} onChange={(e) => { setTrainersSize(parseInt(e.target.value, 10)); setTrainersPage(1); }}>
-                          <option value={5}>5</option>
-                          <option value={10}>10</option>
-                          <option value={20}>20</option>
-                        </select>
-                        </div>
-                        <div>
-                          <label className="mr-2 text-sm">Buscar</label>
-                          <input
-                            value={trainersFilter}
-                            onChange={(e) => { setTrainersFilter(e.target.value); setTrainersPage(1); }}
-                            placeholder="Nombre de entrenador"
-                          />
-                          <button onClick={() => { setTrainersFilter(''); setTrainersPage(1); }}>Limpiar</button>
-                        </div>
-                      </div>
-                      <button onClick={() => exportCsv('top_entrenadores.csv', topTrainers)}>Exportar CSV</button>
-                    </div>
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr>
-                          <th className="text-left">Nombre</th>
-                          <th className="text-right">Cumpl.</th>
-                          <th className="text-right">Kcal</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {pageTrainersData.map((t) => (
-                          <tr key={t.id}>
-                            <td>{t.name}</td>
-                            <td className="text-right">{t.pct}%</td>
-                            <td className="text-right">{t.kcal}</td>
-                          </tr>
-                        ))}
-                        {pageTrainersData.length === 0 && (
-                          <tr>
-                            <td colSpan={3}>Sin datos en el rango</td>
-                          </tr>
-                        )}
-                      </tbody>
-                    </table>
-                    <div className="flex items-center justify-between mt-2">
-                      <span className="text-sm">Página {trainersPage} de {Math.max(1, Math.ceil(trainersFiltered.length / trainersSize))}</span>
-                      <div className="flex gap-2">
-                        <button disabled={trainersPage <= 1} onClick={() => setTrainersPage((p) => Math.max(1, p - 1))}>Anterior</button>
-                        <button
-                          disabled={trainersPage >= Math.max(1, Math.ceil(trainersFiltered.length / trainersSize))}
-                          onClick={() => setTrainersPage((p) => Math.min(Math.max(1, Math.ceil(trainersFiltered.length / trainersSize)), p + 1))}
-                        >
-                          Siguiente
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
-
-          <div className="plan-summary">
-            <h2>Tendencia semanal</h2>
+            <h2>{t('progress.agg', 'Agregados')}</h2>
             <div className="totals-card">
-              {weekly.map((d) => (
-                <div key={d.fecha} className="progress-item">
-                  <label>{d.fecha}</label>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${d.pct}%` }} />
-                  </div>
-                  <span>{d.kcal} kcal</span>
+              <div className="progress-item">
+                <label>{t('progress.selected_gym', 'Gimnasio seleccionado')}</label>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.min(
+                        (((selectedGym && aggGyms[selectedGym]?.totalCalorias) || 0) / (plan.calorias * Math.max(kpis.días, 1))) * 100,
+                        100
+                      )}%`,
+                    }}
+                  />
                 </div>
-              ))}
-              {weekly.length === 0 && <div className="text-sm text-stone-600">Sin datos recientes</div>}
+                <span>
+                  {selectedGym && aggGyms[selectedGym]
+                    ? Math.round(aggGyms[selectedGym].totalCalorias)
+                    : 0}{' '}
+                  {t('progress.kcal_in_range', 'kcal en rango')}
+                </span>
+              </div>
+              <div className="progress-item">
+                <label>{t('progress.selected_trainer', 'Entrenador seleccionado')}</label>
+                <div className="progress-bar">
+                  <div
+                    className="progress-fill"
+                    style={{
+                      width: `${Math.min(
+                        (((selectedTrainer && aggTrainers[selectedTrainer]?.totalCalorias) || 0) / (plan.calorias * Math.max(kpis.días, 1))) * 100,
+                        100
+                      )}%`,
+                    }}
+                  />
+                </div>
+                <span>
+                  {selectedTrainer && aggTrainers[selectedTrainer]
+                    ? Math.round(aggTrainers[selectedTrainer].totalCalorias)
+                    : 0}{' '}
+                  {t('progress.kcal_in_range', 'kcal en rango')}
+                </span>
+              </div>
             </div>
           </div>
+        )}
 
-          <div className="plan-summary">
-            <h2>Recomendaciones</h2>
-            <p className="text-sm text-stone-600">Basadas en tus consumos recientes y tu plan.</p>
-            <p className="text-sm text-stone-700">Revisa “Avance por Día” y el bloque de IA para ver sugerencias de alimentos que te ayuden a cumplir metas.</p>
+        {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
+          <div className="plan-summary md:col-span-2 lg:col-span-2">
+            <h2>{t('progress.analytics_groups', 'Analítica por Grupos')}</h2>
+            <div className="totals-card">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex gap-2">
+                  <button onClick={() => setAggTab('gyms')}>{t('progress.gyms', 'Gimnasios')}</button>
+                  <button onClick={() => setAggTab('trainers')}>{t('progress.trainers', 'Entrenadores')}</button>
+                </div>
+                <button onClick={() => exportBothCsv('agregados_rango.csv')}>{t('progress.export_both', 'Exportar ambos CSV')}</button>
+              </div>
+              {aggTab === 'gyms' && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div>
+                      <label className="mr-2 text-sm">{t('progress.page_size', 'Tamaño página')}</label>
+                      <select value={gymsSize} onChange={(e) => { setGymsSize(parseInt(e.target.value, 10)); setGymsPage(1); }}>
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                      </select>
+                      </div>
+                      <div>
+                        <label className="mr-2 text-sm">{t('common.search', 'Buscar')}</label>
+                        <input
+                          value={gymsFilter}
+                          onChange={(e) => { setGymsFilter(e.target.value); setGymsPage(1); }}
+                          placeholder={t('progress.gym_name_ph', 'Nombre de gimnasio')}
+                        />
+                        <button onClick={() => { setGymsFilter(''); setGymsPage(1); }}>{t('progress.clear', 'Limpiar')}</button>
+                      </div>
+                    </div>
+                    <button onClick={() => exportCsv('top_gimnasios.csv', topGyms)}>{t('progress.export_csv', 'Exportar CSV')}</button>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="text-left">{t('common.name', 'Nombre')}</th>
+                        <th className="text-right">{t('progress.compliance_short', 'Cumpl.')}</th>
+                        <th className="text-right">{t('progress.kcal', 'Kcal')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageGymsData.map((g) => (
+                        <tr key={g.id}>
+                          <td>{g.name}</td>
+                          <td className="text-right">{g.pct}%</td>
+                          <td className="text-right">{g.kcal}</td>
+                        </tr>
+                      ))}
+                      {pageGymsData.length === 0 && (
+                        <tr>
+                          <td colSpan={3}>{t('progress.no_data_range', 'Sin datos en el rango')}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-sm">{t('progress.page', 'Página')} {gymsPage} {t('progress.of', 'de')} {Math.max(1, Math.ceil(gymsFiltered.length / gymsSize))}</span>
+                    <div className="flex gap-2">
+                      <button disabled={gymsPage <= 1} onClick={() => setGymsPage((p) => Math.max(1, p - 1))}>{t('progress.prev', 'Anterior')}</button>
+                      <button
+                        disabled={gymsPage >= Math.max(1, Math.ceil(gymsFiltered.length / gymsSize))}
+                        onClick={() => setGymsPage((p) => Math.min(Math.max(1, Math.ceil(gymsFiltered.length / gymsSize)), p + 1))}
+                      >
+                        {t('progress.next', 'Siguiente')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+              {aggTab === 'trainers' && (
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <div className="flex items-center gap-3">
+                      <div>
+                      <label className="mr-2 text-sm">{t('progress.page_size', 'Tamaño página')}</label>
+                      <select value={trainersSize} onChange={(e) => { setTrainersSize(parseInt(e.target.value, 10)); setTrainersPage(1); }}>
+                        <option value={5}>5</option>
+                        <option value={10}>10</option>
+                        <option value={20}>20</option>
+                      </select>
+                      </div>
+                      <div>
+                        <label className="mr-2 text-sm">{t('common.search', 'Buscar')}</label>
+                        <input
+                          value={trainersFilter}
+                          onChange={(e) => { setTrainersFilter(e.target.value); setTrainersPage(1); }}
+                          placeholder={t('progress.trainer_name_ph', 'Nombre de entrenador')}
+                        />
+                        <button onClick={() => { setTrainersFilter(''); setTrainersPage(1); }}>{t('progress.clear', 'Limpiar')}</button>
+                      </div>
+                    </div>
+                    <button onClick={() => exportCsv('top_entrenadores.csv', topTrainers)}>{t('progress.export_csv', 'Exportar CSV')}</button>
+                  </div>
+                  <table className="w-full text-sm">
+                    <thead>
+                      <tr>
+                        <th className="text-left">{t('common.name', 'Nombre')}</th>
+                        <th className="text-right">{t('progress.compliance_short', 'Cumpl.')}</th>
+                        <th className="text-right">{t('progress.kcal', 'Kcal')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {pageTrainersData.map((tRow) => (
+                        <tr key={tRow.id}>
+                          <td>{tRow.name}</td>
+                          <td className="text-right">{tRow.pct}%</td>
+                          <td className="text-right">{tRow.kcal}</td>
+                        </tr>
+                      ))}
+                      {pageTrainersData.length === 0 && (
+                        <tr>
+                          <td colSpan={3}>{t('progress.no_data_range', 'Sin datos en el rango')}</td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-sm">{t('progress.page', 'Página')} {trainersPage} {t('progress.of', 'de')} {Math.max(1, Math.ceil(trainersFiltered.length / trainersSize))}</span>
+                    <div className="flex gap-2">
+                      <button disabled={trainersPage <= 1} onClick={() => setTrainersPage((p) => Math.max(1, p - 1))}>{t('progress.prev', 'Anterior')}</button>
+                      <button
+                        disabled={trainersPage >= Math.max(1, Math.ceil(trainersFiltered.length / trainersSize))}
+                        onClick={() => setTrainersPage((p) => Math.min(Math.max(1, Math.ceil(trainersFiltered.length / trainersSize)), p + 1))}
+                      >
+                        {t('progress.next', 'Siguiente')}
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        <div className="plan-summary">
+          <h2>{t('progress.weekly_trend', 'Tendencia semanal')}</h2>
+          <div className="totals-card">
+            {weekly.map((d) => (
+              <div key={d.fecha} className="progress-item">
+                <label>{d.fecha}</label>
+                <div className="progress-bar">
+                  <div className="progress-fill" style={{ width: `${d.pct}%` }} />
+                </div>
+                <span>{d.kcal} kcal</span>
+              </div>
+            ))}
+            {weekly.length === 0 && <div className="text-sm text-stone-600">{t('progress.no_recent_data', 'Sin datos recientes')}</div>}
           </div>
         </div>
       </div>

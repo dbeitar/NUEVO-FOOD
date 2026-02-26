@@ -46,13 +46,18 @@ if (USE_DB_AUTH) {
 } else {
   app.post('/api/auth/register', async (req, res) => {
     try {
-      const { nombre, email, password, teléfono, telefono, fecha_nacimiento, peso, altura, objetivo, rol = 'usuario_final' } = req.body;
+      const { nombre, email, password, teléfono, telefono, fecha_nacimiento, peso, altura, objetivo, genero = null, rol = 'usuario_final', tiene_restricciones = false, restricciones_detalles = '' } = req.body;
 
       if (!nombre || !email || !password) {
         // Alineado con cambios de la tarde: permitir contraseña temporal si no llega password
         if (!nombre || !email) {
           return res.status(400).json({ error: 'Nombre y email son requeridos' });
         }
+      }
+      // Validar género obligatorio en inscripción
+      const validGeneros = ['masculino', 'femenino'];
+      if (!genero || !validGeneros.includes(genero)) {
+        return res.status(400).json({ error: 'El género es obligatorio y debe ser masculino o femenino' });
       }
 
       let finalPassword = password;
@@ -76,6 +81,9 @@ if (USE_DB_AUTH) {
         peso,
         altura,
         objetivo,
+        genero,
+        tiene_restricciones: Boolean(tiene_restricciones),
+        restricciones_detalles: restricciones_detalles || '',
         clave_hash: hashedPassword,
         rol,
       });
@@ -158,7 +166,12 @@ if (USE_DB_AUTH) {
         peso: user.peso,
         altura: user.altura,
         objetivo: user.objetivo,
+        genero: user.genero || null,
+        tiene_restricciones: user.tiene_restricciones ?? false,
+        restricciones_detalles: user.restricciones_detalles || '',
         rol: user.rol,
+        gym_id: user.gym_id || user.gymId || null,
+        trainer_id: user.trainer_id || null,
       });
     } catch (error) {
       res.status(403).json({ error: 'Token inválido o expirado' });
@@ -172,10 +185,53 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
     if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
       return res.status(403).json({ error: 'No tienes permiso para ver usuarios' });
     }
-    const list = userDB.getAll().map(u => ({ id: u.id, nombre: u.nombre, email: u.email, rol: u.rol }));
+    const list = userDB.getAll().map(u => ({
+      id: u.id,
+      nombre: u.nombre,
+      email: u.email,
+      rol: u.rol,
+      gym_id: u.gym_id || u.gymId || null,
+      trainer_id: u.trainer_id || null,
+      planId: u.planId || null,
+    }));
     res.json({ success: true, data: list });
   } catch (e) {
     res.status(500).json({ error: 'Error listando usuarios' });
+  }
+});
+
+app.post('/api/admin/users', authMiddleware, async (req, res) => {
+  try {
+    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+      return res.status(403).json({ error: 'No tienes permiso para crear usuarios' });
+    }
+    const { nombre, email, password, rol = 'usuario_final', gym_id, trainer_id, planId, telefono, fecha_nacimiento, peso, altura, objetivo } = req.body || {};
+    if (!nombre || !email) {
+      return res.status(400).json({ error: 'Nombre y email son requeridos' });
+    }
+    if (userDB.getByEmail(email)) {
+      return res.status(409).json({ error: 'El email ya está registrado' });
+    }
+    const pwd = password && String(password).length >= 6 ? password : Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcryptjs.hash(pwd, 10);
+    const created = userDB.create({
+      nombre,
+      email,
+      clave_hash: hashedPassword,
+      rol,
+      telefono: telefono || null,
+      fecha_nacimiento: fecha_nacimiento || null,
+      peso: peso ?? null,
+      altura: altura ?? null,
+      objetivo: objetivo || null,
+      gym_id: gym_id ?? null,
+      trainer_id: trainer_id ?? null,
+      gymId: gym_id ?? null,
+      planId: planId || null,
+    });
+    res.status(201).json({ success: true, data: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol } });
+  } catch (e) {
+    res.status(500).json({ error: 'Error creando usuario' });
   }
 });
 
@@ -201,6 +257,67 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
     res.json({ success: true, data: { id: updated.id, nombre: updated.nombre, email: updated.email, rol: updated.rol } });
   } catch (e) {
     res.status(500).json({ error: 'Error actualizando rol' });
+  }
+});
+
+app.put('/api/admin/users/:id/assign', authMiddleware, (req, res) => {
+  try {
+    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+      return res.status(403).json({ error: 'No tienes permiso para asignar' });
+    }
+    const { id } = req.params;
+    const { gym_id = null, trainer_id = null, planId = undefined } = req.body || {};
+    const user = userDB.getById(parseInt(id, 10));
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    const updates = { gym_id, trainer_id, gymId: gym_id, ...(planId !== undefined ? { planId } : {}) };
+    const updated = userDB.update(user.id, updates);
+    res.json({ success: true, data: { id: updated.id, gym_id: updated.gym_id || updated.gymId || null, trainer_id: updated.trainer_id || null, planId: updated.planId || null } });
+  } catch (e) {
+    res.status(500).json({ error: 'Error asignando usuario' });
+  }
+});
+
+app.put('/api/admin/users/:id/password', authMiddleware, async (req, res) => {
+  try {
+    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+      return res.status(403).json({ error: 'No tienes permiso para cambiar contraseñas' });
+    }
+    const { id } = req.params;
+    const { password } = req.body || {};
+    if (!password || String(password).length < 6) {
+      return res.status(400).json({ error: 'Contraseña mínima de 6 caracteres' });
+    }
+    const user = userDB.getById(parseInt(id, 10));
+    if (!user) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    const hash = await bcryptjs.hash(password, 10);
+    userDB.update(user.id, { clave_hash: hash });
+    res.json({ success: true, message: 'Contraseña actualizada' });
+  } catch (e) {
+    res.status(500).json({ error: 'Error actualizando contraseña' });
+  }
+});
+
+app.delete('/api/admin/users/:id', authMiddleware, (req, res) => {
+  try {
+    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+      return res.status(403).json({ error: 'No tienes permiso para eliminar' });
+    }
+    const { id } = req.params;
+    const targetId = parseInt(id, 10);
+    if (req.user.id === targetId) {
+      return res.status(400).json({ error: 'No puedes eliminar tu propio usuario' });
+    }
+    const ok = userDB.delete(targetId);
+    if (!ok) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    res.json({ success: true, message: 'Usuario eliminado' });
+  } catch (e) {
+    res.status(500).json({ error: 'Error eliminando usuario' });
   }
 });
 
@@ -238,12 +355,16 @@ app.use((err, req, res, next) => {
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  if (USE_DB_AUTH) {
-    console.log('🔐 Autenticación usando Base de Datos (PostgreSQL) ');
-  } else {
-    console.log('🗂️  MODO DESARROLLO - Autenticación persistente en JSON (backend/data/users.json) ');
-  }
-});
+if (require.main === module) {
+  app.listen(PORT, () => {
+    console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
+    console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
+    if (USE_DB_AUTH) {
+      console.log('🔐 Autenticación usando Base de Datos (PostgreSQL) ');
+    } else {
+      console.log('🗂️  MODO DESARROLLO - Autenticación persistente en JSON (backend/data/users.json) ');
+    }
+  });
+}
+
+module.exports = app;

@@ -1,7 +1,8 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { Pencil, UserPlus, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -9,10 +10,15 @@ export default function AdminUsers() {
   const [error, setError] = useState('');
   const [editingUser, setEditingUser] = useState(null);
   const { user: currentUser } = useAuth();
+  const { t } = useI18n();
   const [gyms, setGyms] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const [plans, setPlans] = useState([]);
   const [showForm, setShowForm] = useState(false);
+  const [viewTab, setViewTab] = useState('users'); // 'users' | 'gyms' | 'trainers'
+  const [showAssignedModal, setShowAssignedModal] = useState(false);
+  const [assignedTitle, setAssignedTitle] = useState('');
+  const [assignedList, setAssignedList] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -34,8 +40,8 @@ export default function AdminUsers() {
     try {
       const res = await api.get('/admin/users');
       setUsers(res.data.data || []);
-    } catch (err) {
-      setError('Error cargando usuarios');
+    } catch {
+      setError(t('users.error_loading', 'Error cargando usuarios'));
     } finally {
       setLoading(false);
     }
@@ -52,8 +58,8 @@ export default function AdminUsers() {
       setTrainers(trainerRes.data || []);
       const plansData = Array.isArray(plansRes.data) ? plansRes.data : (plansRes.data.data || []);
       setPlans(plansData);
-    } catch (err) {
-      console.error('Error loading resources', err);
+    } catch {
+      console.error('Error loading resources');
     }
   };
 
@@ -69,13 +75,17 @@ export default function AdminUsers() {
         // Edit logic (assign/role)
         await api.put(`/admin/users/${editingUser.id}/role`, { rol: formData.rol });
         await api.put(`/admin/users/${editingUser.id}/assign`, { 
-          gym_id: formData.gym_id || null, 
+          gym_id: formData.rol === 'usuario_final' ? (formData.gym_id || null) : null, 
           trainer_id: formData.trainer_id || null 
         });
       } else {
         // Validaciones obligatorias para nuevo usuario
-        if (!formData.planId || !formData.gym_id) {
-          setError('Plan de Suscripción y Gimnasio son obligatorios');
+        if (!formData.planId) {
+          setError('Plan de Suscripción es obligatorio');
+          return;
+        }
+        if (formData.rol === 'usuario_final' && !formData.gym_id) {
+          setError('Gimnasio es obligatorio para Usuario Final');
           return;
         }
         // Validar email duplicado en cliente
@@ -87,16 +97,16 @@ export default function AdminUsers() {
         // Create logic
         await api.post('/admin/users', {
           ...formData,
-          gym_id: parseInt(formData.gym_id, 10),
-          gymId: parseInt(formData.gym_id, 10),
+          gym_id: formData.rol === 'usuario_final' && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined,
+          gymId: formData.rol === 'usuario_final' && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined,
           planId: formData.planId
         });
       }
       setEditingUser(null);
       setFormData({ nombre: '', email: '', password: '', rol: 'usuario_final', gym_id: '', trainer_id: '', planId: '' });
       fetchUsers();
-    } catch (err) {
-      setError(err.response?.data?.error || 'Error al guardar');
+    } catch {
+      setError('Error al guardar');
     }
   };
 
@@ -118,7 +128,7 @@ export default function AdminUsers() {
     try {
       await api.delete(`/admin/users/${id}`);
       fetchUsers();
-    } catch (err) {
+    } catch {
       setError('Error al eliminar usuario');
     }
   };
@@ -141,8 +151,15 @@ export default function AdminUsers() {
       {/* Page Header */}
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-stone-900 font-['Playfair_Display']">Usuarios</h2>
-          <p className="text-stone-600">Gestiona usuarios y configuraciones del sistema.</p>
+          <h2 className="text-2xl font-bold text-stone-900 font-['Playfair_Display']">{t('users.title', 'Usuarios')}</h2>
+          <p className="text-stone-600">{t('users.subtitle', 'Gestiona usuarios y configuraciones del sistema.')}</p>
+          {(currentUser?.rol === 'super_admin') && (
+            <div className="mt-3 inline-flex gap-2 bg-stone-100 p-1 rounded-2xl">
+              <button className={`px-3 py-1.5 rounded-2xl ${viewTab==='users'?'bg-white shadow':''}`} onClick={() => setViewTab('users')}>{t('users.tabs.users', 'Usuarios')}</button>
+              <button className={`px-3 py-1.5 rounded-2xl ${viewTab==='gyms'?'bg-white shadow':''}`} onClick={() => setViewTab('gyms')}>{t('users.tabs.gyms', 'Gimnasios')}</button>
+              <button className={`px-3 py-1.5 rounded-2xl ${viewTab==='trainers'?'bg-white shadow':''}`} onClick={() => setViewTab('trainers')}>{t('users.tabs.trainers', 'Entrenadores')}</button>
+            </div>
+          )}
         </div>
         <button 
           className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black shadow-sm transition-colors"
@@ -153,7 +170,7 @@ export default function AdminUsers() {
           }}
         >
           <UserPlus className="w-4 h-4" />
-          Nuevo Usuario
+          {t('users.new_user', 'Nuevo Usuario')}
         </button>
       </div>
 
@@ -168,7 +185,7 @@ export default function AdminUsers() {
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
         <div className="flex items-center justify-between mb-4 border-b border-slate-200 pb-2">
           <h4 className="text-md font-semibold text-stone-900">
-            {editingUser ? 'Editar Usuario' : 'Crear Nuevo Usuario'}
+            {editingUser ? t('users.edit_user', 'Editar Usuario') : t('users.create_user', 'Crear Nuevo Usuario')}
           </h4>
           <button
             type="button"
@@ -179,7 +196,7 @@ export default function AdminUsers() {
               setFormData({ nombre: '', email: '', password: '', rol: 'usuario_final', gym_id: '', trainer_id: '', planId: '' });
             }}
           >
-            Cerrar
+            {t('common.close', 'Cerrar')}
           </button>
         </div>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -248,31 +265,35 @@ export default function AdminUsers() {
               <option value="super_admin">Super Admin</option>
             </select>
           </div>
-          <div>
-            <label className="label">Gimnasio</label>
-            <select 
-              name="gym_id" 
-              value={formData.gym_id} 
-              onChange={handleInputChange}
-              required={!editingUser}
-              className="input"
-            >
-              <option value="">Ninguno</option>
-              {gyms.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
-            </select>
-          </div>
-          <div>
-            <label className="label">Entrenador</label>
-            <select 
-              name="trainer_id" 
-              value={formData.trainer_id} 
-              onChange={handleInputChange}
-              className="input"
-            >
-              <option value="">Ninguno</option>
-              {trainers.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-            </select>
-          </div>
+          {formData.rol === 'usuario_final' && (
+            <>
+              <div>
+                <label className="label">Gimnasio</label>
+                <select 
+                  name="gym_id" 
+                  value={formData.gym_id} 
+                  onChange={handleInputChange}
+                  required={!editingUser}
+                  className="input"
+                >
+                  <option value="">Ninguno</option>
+                  {gyms.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
+                </select>
+              </div>
+              <div>
+                <label className="label">Entrenador</label>
+                <select 
+                  name="trainer_id" 
+                  value={formData.trainer_id} 
+                  onChange={handleInputChange}
+                  className="input"
+                >
+                  <option value="">Ninguno</option>
+                  {trainers.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                </select>
+              </div>
+            </>
+          )}
           <div className="md:col-span-2 flex justify-end">
             <button 
               type="submit" 
@@ -283,7 +304,7 @@ export default function AdminUsers() {
                   !formData.email ||
                   !formData.password ||
                   !formData.planId ||
-                  !formData.gym_id ||
+                  (formData.rol === 'usuario_final' && !formData.gym_id) ||
                   users.some(u => String(u.email).toLowerCase() === String(formData.email).toLowerCase())
                 )
               }
@@ -295,7 +316,98 @@ export default function AdminUsers() {
       </div>
       )}
 
+      {/* Gyms Summary */}
+      {viewTab === 'gyms' && (
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-200">
+            <h4 className="text-md font-semibold text-stone-900">Resumen de Gimnasios</h4>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-stone-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Nombre</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Ciudad</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Capacidad</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {gyms.map(g => (
+                  <tr key={g.id} className="hover:bg-stone-100 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">#{g.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">{g.nombre}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{g.ciudad || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-stone-600">{g.capacidad_usuarios ?? 50}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <button
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-stone-300 text-stone-700 bg-white hover:bg-stone-100 transition-colors"
+                        onClick={() => {
+                          const list = users.filter(u => (u.gym_id || u.gymId) === g.id);
+                          setAssignedTitle(`Usuarios del Gimnasio: ${g.nombre}`);
+                          setAssignedList(list);
+                          setShowAssignedModal(true);
+                        }}
+                      >
+                        Ver usuarios
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* Trainers Summary */}
+      {viewTab === 'trainers' && (
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+          <div className="p-4 border-b border-slate-200">
+            <h4 className="text-md font-semibold text-stone-900">Resumen de Entrenadores</h4>
+          </div>
+          <div className="overflow-x-auto">
+            <table className="min-w-full divide-y divide-slate-200">
+              <thead className="bg-stone-50">
+                <tr>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">ID</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Nombre</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Especialidad</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Capacidad</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="bg-white divide-y divide-slate-200">
+                {trainers.map(t => (
+                  <tr key={t.id} className="hover:bg-stone-100 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">#{t.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">{t.nombre}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{t.especialidad || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-stone-600">{t.capacidad_usuarios ?? 50}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right">
+                      <button
+                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-stone-300 text-stone-700 bg-white hover:bg-stone-100 transition-colors"
+                        onClick={() => {
+                          const list = users.filter(u => u.trainer_id === t.id);
+                          setAssignedTitle(`Usuarios del Entrenador: ${t.nombre}`);
+                          setAssignedList(list);
+                          setShowAssignedModal(true);
+                        }}
+                      >
+                        Ver usuarios
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
       {/* Table Section */}
+      {viewTab === 'users' && (
       <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200">
@@ -311,9 +423,9 @@ export default function AdminUsers() {
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {loading ? (
-                <tr><td colSpan="6" className="px-6 py-4 text-center text-sm text-stone-600">Cargando usuarios...</td></tr>
+                    <tr><td colSpan="6" className="px-6 py-4 text-center text-sm text-stone-600">{t('users.loading', 'Cargando usuarios...')}</td></tr>
               ) : users.length === 0 ? (
-                 <tr><td colSpan="6" className="px-6 py-4 text-center text-sm text-stone-600">No hay usuarios registrados.</td></tr>
+                 <tr><td colSpan="6" className="px-6 py-4 text-center text-sm text-stone-600">{t('users.none', 'No hay usuarios registrados.')}</td></tr>
               ) : (
                 users.map(user => (
                   <tr key={user.id} className="hover:bg-stone-100 transition-colors">
@@ -339,6 +451,26 @@ export default function AdminUsers() {
                           <span className="hidden sm:inline">Editar</span>
                         </button>
                         <button 
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-amber-300 text-amber-700 bg-white hover:bg-amber-100 transition-colors"
+                          onClick={async () => {
+                            const pwd = window.prompt('Nueva contraseña (mín. 6 caracteres):');
+                            if (!pwd) return;
+                            if (pwd.length < 6) {
+                              setError('La contraseña debe tener al menos 6 caracteres');
+                              return;
+                            }
+                            try {
+                              await api.put(`/admin/users/${user.id}/password`, { password: pwd });
+                              alert('Contraseña actualizada');
+                            } catch {
+                              setError('Error actualizando contraseña');
+                            }
+                          }}
+                          title="Resetear contraseña"
+                        >
+                          <span className="hidden sm:inline">Reset Clave</span>
+                        </button>
+                        <button 
                           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white disabled:bg-slate-200 disabled:text-slate-400 transition-colors"
                           onClick={() => handleDelete(user.id)}
                           disabled={currentUser && currentUser.id === user.id}
@@ -356,6 +488,48 @@ export default function AdminUsers() {
           </table>
         </div>
       </div>
+      )}
+      
+      {/* Assigned Users Modal */}
+      {showAssignedModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="bg-white rounded-3xl shadow-xl border border-slate-200 w-full max-w-3xl">
+            <div className="p-5 border-b border-slate-200 flex items-center justify-between">
+              <h4 className="text-lg font-semibold text-stone-900">{assignedTitle}</h4>
+              <button className="btn-secondary" onClick={() => setShowAssignedModal(false)}>{t('common.close', 'Cerrar')}</button>
+            </div>
+            <div className="p-5 max-h-[70vh] overflow-y-auto">
+              {assignedList.length === 0 ? (
+                <p className="text-sm text-stone-600">No hay usuarios asociados.</p>
+              ) : (
+                <table className="min-w-full divide-y divide-slate-200">
+                  <thead className="bg-stone-50">
+                    <tr>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">ID</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">Nombre</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">Email</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">Plan</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white divide-y divide-slate-200">
+                    {assignedList.map(u => (
+                      <tr key={u.id} className="hover:bg-stone-50">
+                        <td className="px-4 py-2 text-sm text-stone-700">#{u.id}</td>
+                        <td className="px-4 py-2 text-sm text-stone-900">{u.nombre}</td>
+                        <td className="px-4 py-2 text-sm text-stone-700">{u.email}</td>
+                        <td className="px-4 py-2 text-sm text-stone-700">{u.planId || '-'}</td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              )}
+            </div>
+            <div className="p-4 border-t border-slate-200 flex justify-end">
+              <button className="btn-primary" onClick={() => setShowAssignedModal(false)}>{t('common.close', 'Cerrar')}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

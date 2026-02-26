@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
 
 export default function AdminCalculator() {
@@ -25,7 +25,7 @@ export default function AdminCalculator() {
     try {
       const response = await api.get('/calculator/concepts');
       setConcepts(response.data);
-    } catch (err) {
+    } catch {
       setError('Error cargando conceptos');
     }
   };
@@ -91,10 +91,13 @@ export default function AdminCalculator() {
   };
 
   return (
-    <div className="admin-calculator">
-      <div className="admin-header">
-        <h2>Gestión de Conceptos de Calculadora</h2>
-        <button onClick={() => setShowForm(!showForm)} className="btn-add">
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-stone-900 font-['Playfair_Display']">Gestión de Conceptos de Calculadora</h2>
+          <p className="text-stone-600">Factores de actividad y reglas para el cálculo.</p>
+        </div>
+        <button onClick={() => setShowForm(!showForm)} className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black shadow-sm transition-colors">
           {showForm ? 'Cancelar' : '+ Agregar Concepto'}
         </button>
       </div>
@@ -103,7 +106,7 @@ export default function AdminCalculator() {
       {success && <div className="success-message">{success}</div>}
 
       {showForm && (
-        <form onSubmit={handleSubmit} className="concept-form">
+        <form onSubmit={handleSubmit} className="concept-form bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
           <div className="form-row">
             <div className="form-group">
               <label>Nombre</label>
@@ -113,12 +116,13 @@ export default function AdminCalculator() {
                 value={formData.nombre}
                 onChange={handleChange}
                 required
+                className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
               />
             </div>
 
             <div className="form-group">
               <label>Tipo</label>
-              <select name="tipo" value={formData.tipo} onChange={handleChange} required>
+              <select name="tipo" value={formData.tipo} onChange={handleChange} required className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors">
                 <option value="">Selecciona tipo</option>
                 <option value="factor_actividad">Factor Actividad</option>
                 <option value="distribucion_macro">Distribución Macros</option>
@@ -135,6 +139,7 @@ export default function AdminCalculator() {
                 value={formData.valor}
                 onChange={handleChange}
                 required
+                className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
               />
             </div>
           </div>
@@ -146,17 +151,18 @@ export default function AdminCalculator() {
               value={formData.descripcion}
               onChange={handleChange}
               rows="3"
+              className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
             />
           </div>
 
-          <button type="submit" disabled={loading} className="btn-primary">
+          <button type="submit" disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black shadow-sm transition-colors">
             {loading ? 'Guardando...' : editingId ? 'Actualizar' : 'Crear'}
           </button>
         </form>
       )}
 
-      <div className="concepts-table">
-        <table>
+      <div className="concepts-table bg-white rounded-3xl shadow-sm border border-slate-200 overflow-x-auto">
+        <table className="min-w-full">
           <thead>
             <tr>
               <th>Nombre</th>
@@ -170,14 +176,14 @@ export default function AdminCalculator() {
             {concepts.map(concept => (
               <tr key={concept.id}>
                 <td>{concept.nombre}</td>
-                <td><span className="badge">{concept.tipo}</span></td>
+                <td><span className="inline-flex px-2 py-1 rounded-full bg-slate-100 text-stone-700 text-xs">{concept.tipo}</span></td>
                 <td><strong>{concept.valor}</strong></td>
                 <td>{concept.descripcion}</td>
                 <td>
-                  <button onClick={() => handleEdit(concept)} className="btn-edit">
+                  <button onClick={() => handleEdit(concept)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-lime-300 text-lime-700 bg-white hover:bg-lime-100 transition-colors">
                     Editar
                   </button>
-                  <button onClick={() => handleDelete(concept.id)} className="btn-delete">
+                  <button onClick={() => handleDelete(concept.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white transition-colors">
                     Eliminar
                   </button>
                 </td>

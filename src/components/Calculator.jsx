@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 
@@ -40,6 +40,7 @@ export default function Calculator() {
         edad: edad || '',
         peso: user.peso || '',
         altura: user.altura || '',
+        genero: user.genero === 'femenino' ? 'femenino' : 'masculino',
         objetivo: user.objetivo === 'pérdida_de_grasa' ? 'perdida_grasa' : 
                   user.objetivo === 'ganancia_muscular' ? 'ganancia_muscular' : 
                   'mantenimiento',
@@ -51,7 +52,7 @@ export default function Calculator() {
     try {
       const response = await api.get('/calculator/concepts');
       setConcepts(response.data);
-    } catch (err) {
+    } catch {
       console.error('Error cargando conceptos');
     }
   };
@@ -201,8 +202,8 @@ export default function Calculator() {
                 name="nivelActividad" 
                 value={formData.nivelActividad} 
                 onChange={handleChange}
-                disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio')}
-                title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') ? 'Solo editable por Admin o Gimnasio' : undefined}
+                disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || (user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id))}
+                title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || (user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id)) ? 'Editable si no tienes Gimnasio/Entrenador asignado' : undefined}
               >
                 {nivelActividades.map(n => (
                   <option key={n.id} value={n.valor}>
@@ -218,8 +219,8 @@ export default function Calculator() {
                 name="objetivo" 
                 value={formData.objetivo} 
                 onChange={handleChange}
-                disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio')}
-                title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') ? 'Solo editable por Admin o Gimnasio' : undefined}
+                disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || (user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id))}
+                title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || (user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id)) ? 'Editable si no tienes Gimnasio/Entrenador asignado' : undefined}
               >
                 <option value="mantenimiento">Mantenimiento</option>
                 <option value="perdida_grasa">Pérdida de Grasa</option>

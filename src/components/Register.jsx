@@ -1,9 +1,10 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
 import TermsOfServiceModal from './TermsOfServiceModal';
 import AuthLayout from './AuthLayout';
+import { useNavigate } from 'react-router-dom';
 
 export default function Register({ onSwitchToLogin }) {
   const [step, setStep] = useState(1);
@@ -16,10 +17,13 @@ export default function Register({ onSwitchToLogin }) {
     fecha_nacimiento: '',
     peso: '',
     altura: '',
+    genero: '',
     objetivo: '',
     gym_id: '',
     trainer_id: '',
     metodoPago: 'tarjeta_credito',
+    tiene_restricciones: false,
+    restricciones_detalles: '',
   });
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [error, setError] = useState('');
@@ -34,6 +38,7 @@ export default function Register({ onSwitchToLogin }) {
   const [gyms, setGyms] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const { register, login } = useAuth();
+  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -46,7 +51,9 @@ export default function Register({ onSwitchToLogin }) {
         setPlans(Array.isArray(plansRes.data) ? plansRes.data : []);
         setGyms(Array.isArray(gymsRes.data) ? gymsRes.data : []);
         setTrainers(Array.isArray(trainersRes.data) ? trainersRes.data : []);
-      } catch (e) {}
+      } catch (e) {
+        console.warn('fetchOptions failed', e);
+      }
     };
     fetchOptions();
   }, []);
@@ -71,6 +78,10 @@ export default function Register({ onSwitchToLogin }) {
       setError('La contraseña debe tener al menos 6 caracteres');
       return;
     }
+    if (!formData.genero) {
+      setError('Por favor selecciona tu género');
+      return;
+    }
     setStep(2);
   };
 
@@ -88,7 +99,10 @@ export default function Register({ onSwitchToLogin }) {
         fecha_nacimiento: formData.fecha_nacimiento,
         peso: formData.peso,
         altura: formData.altura,
+         genero: formData.genero,
         objetivo: formData.objetivo,
+        tiene_restricciones: formData.tiene_restricciones,
+        restricciones_detalles: formData.restricciones_detalles,
       });
       await login(formData.email, formData.password);
       if (selectedPlan) {
@@ -100,9 +114,19 @@ export default function Register({ onSwitchToLogin }) {
         });
       }
       if (rememberEmail && formData.email) {
-        try { localStorage.setItem('prefillEmail', formData.email); } catch (_) {}
+        try {
+          localStorage.setItem('prefillEmail', formData.email);
+        } catch (err) {
+          console.warn('Failed to persist prefillEmail', err);
+        }
       }
       setSuccess('¡Registro completado! Entrando a tu cuenta...');
+      try {
+        localStorage.setItem('afterRegisterHome', '1');
+      } catch (err) {
+        console.warn('Failed to set afterRegisterHome flag', err);
+      }
+      navigate('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al completar el registro');
     } finally {
@@ -160,6 +184,37 @@ export default function Register({ onSwitchToLogin }) {
                 <label htmlFor="altura" className="label">Altura (cm)</label>
                 <input type="number" id="altura" name="altura" value={formData.altura} onChange={handleChange} placeholder="180" step="0.1" className="input" />
               </div>
+              <div className="form-group">
+                <label htmlFor="genero" className="label">Género</label>
+                <select id="genero" name="genero" value={formData.genero} onChange={handleChange} className="input" required>
+                  <option value="">Selecciona tu género</option>
+                  <option value="masculino">Masculino</option>
+                  <option value="femenino">Femenino</option>
+                </select>
+              </div>
+            </div>
+            <div className="form-group">
+              <div className="checkbox-group">
+                <input
+                  type="checkbox"
+                  id="tiene_restricciones"
+                  name="tiene_restricciones"
+                  checked={formData.tiene_restricciones}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, tiene_restricciones: e.target.checked }))}
+                />
+                <label htmlFor="tiene_restricciones">Tengo restricciones o recomendaciones de alimentación</label>
+              </div>
+              {formData.tiene_restricciones && (
+                <textarea
+                  id="restricciones_detalles"
+                  name="restricciones_detalles"
+                  value={formData.restricciones_detalles}
+                  onChange={handleChange}
+                  placeholder="Especifica alergias, preferencias (ej. vegetariano), recomendaciones médicas, etc."
+                  className="input"
+                  rows="3"
+                />
+              )}
             </div>
             <div className="form-group">
               <label htmlFor="objetivo" className="label">Objetivo</label>

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import { 
@@ -21,27 +21,33 @@ import AdminCalculator from './AdminCalculator';
 import AdminFoodsManager from './AdminFoodsManager';
 import AdminGyms from './AdminGyms';
 import AdminTrainers from './AdminTrainers';
+import AdminCompanies from './AdminCompanies';
+import { useI18n } from '../context/I18nContext';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('users');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const navigate = useNavigate();
   const { logout, user } = useAuth();
+  const { t } = useI18n();
 
   const handleLogout = () => {
     logout();
     navigate('/login');
   };
 
-  const menuItems = [
-    { id: 'users', label: 'Usuarios', icon: Users },
-    { id: 'plans', label: 'Planes', icon: ClipboardList },
-    { id: 'gyms', label: 'Gimnasios', icon: Building2 },
-    { id: 'trainers', label: 'Entrenadores', icon: Dumbbell },
-    { id: 'foods', label: 'Alimentos', icon: Apple },
-    { id: 'calculator', label: 'Calculadora', icon: Calculator },
-    { id: 'payments', label: 'Pagos', icon: CreditCard },
+  const baseMenu = [
+    { id: 'users', label: t('admin.menu.users', 'Usuarios'), icon: Users },
+    { id: 'plans', label: t('admin.menu.plans', 'Planes'), icon: ClipboardList },
+    { id: 'gyms', label: t('admin.menu.gyms', 'Gimnasios'), icon: Building2 },
+    { id: 'trainers', label: t('admin.menu.trainers', 'Entrenadores'), icon: Dumbbell },
+    { id: 'foods', label: t('admin.menu.foods', 'Alimentos'), icon: Apple },
+    { id: 'calculator', label: t('admin.menu.calculator', 'Calculadora'), icon: Calculator },
+    { id: 'payments', label: t('admin.menu.payments', 'Pagos'), icon: CreditCard },
   ];
+  const menuItems = user?.rol === 'super_admin'
+    ? [{ id: 'companies', label: t('admin.menu.companies', 'Empresas'), icon: Building2 }, ...baseMenu]
+    : baseMenu;
 
   const renderContent = () => {
     switch (activeTab) {
@@ -51,6 +57,7 @@ export default function AdminDashboard() {
       case 'trainers': return <AdminTrainers />;
       case 'foods': return <AdminFoodsManager />;
       case 'calculator': return <AdminCalculator />;
+      case 'companies': return <AdminCompanies />;
       case 'payments':
         return (
           <div className="card max-w-2xl mx-auto mt-8">
@@ -183,19 +190,19 @@ export default function AdminDashboard() {
 
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-slate-200">
-            <button 
+                <button 
               onClick={() => navigate('/')}
               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-lime-600 rounded-xl transition-all duration-200 mb-2"
             >
               <ExternalLink className="w-5 h-5" />
-              Ver Sitio Web
+                  {t('admin.view_site', 'Ver Sitio Web')}
             </button>
             <button 
               onClick={handleLogout}
               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-red-600 hover:bg-red-600/10 rounded-xl transition-all duration-200"
             >
               <LogOut className="w-5 h-5" />
-              Cerrar Sesión
+                  {t('auth.logout', 'Cerrar Sesión')}
             </button>
           </div>
         </div>
@@ -228,7 +235,7 @@ export default function AdminDashboard() {
                   {menuItems.find(item => item.id === activeTab)?.label}
                 </h1>
                 <p className="text-stone-600 mt-1 text-sm">
-                  Gestiona {menuItems.find(item => item.id === activeTab)?.label.toLowerCase()} y configuraciones del sistema.
+                  {t('admin.subtitle', 'Gestiona {section} y configuraciones del sistema.').replace('{section}', (menuItems.find(item => item.id === activeTab)?.label || '').toLowerCase())}
                 </p>
               </div>
             </div>

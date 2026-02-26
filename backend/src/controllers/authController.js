@@ -1,6 +1,7 @@
 const pool = require('../config/database');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+require('dotenv').config();
 
 // Registrar nuevo usuario
 const registerUser = async (req, res) => {
@@ -87,10 +88,11 @@ const loginUser = async (req, res) => {
     }
 
     // Generar JWT
+    const secret = process.env.JWT_SECRET || 'secret_key_dev_fallback';
     const token = jwt.sign(
       { id: user.id, email: user.email, rol: user.rol },
-      process.env.JWT_SECRET,
-      { expiresIn: process.env.JWT_EXPIRES_IN }
+      secret,
+      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
     );
 
     res.json({

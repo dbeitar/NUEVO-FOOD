@@ -1,5 +1,6 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
+import { useI18n } from '../context/I18nContext';
 
 export default function Login({ onSwitchToRegister }) {
   const [email, setEmail] = useState('');
@@ -8,6 +9,7 @@ export default function Login({ onSwitchToRegister }) {
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
   const { login } = useAuth();
+  const { t } = useI18n();
 
   useEffect(() => {
     try {
@@ -18,7 +20,9 @@ export default function Login({ onSwitchToRegister }) {
       if (candidate) setEmail(candidate);
       if (remembered) setRemember(true);
       if (prefill) localStorage.removeItem('prefillEmail');
-    } catch {}
+    } catch (err) {
+      console.warn('Failed to prefill login email', err);
+    }
   }, []);
 
   const handleSubmit = async (e) => {
@@ -34,9 +38,11 @@ export default function Login({ onSwitchToRegister }) {
         } else {
           localStorage.removeItem('rememberedEmail');
         }
-      } catch {}
+      } catch (err) {
+        console.warn('Failed to persist rememberedEmail', err);
+      }
     } catch (err) {
-      setError(err?.response?.data?.error || err?.message || 'Error en el login');
+      setError(err?.response?.data?.error || err?.message || t('auth.login_error', 'Error en el login'));
     } finally {
       setLoading(false);
     }
@@ -48,10 +54,10 @@ export default function Login({ onSwitchToRegister }) {
         <div className="text-center mb-6">
           <div className="text-4xl">🍽️</div>
           <h2 className="mt-4 text-3xl font-extrabold text-stone-900 tracking-tight">
-            Iniciar Sesión
+            {t('auth.login', 'Iniciar Sesión')}
           </h2>
           <p className="auth-subtitle">
-            Bienvenido a <span className="font-semibold text-lime-500">Food Plan</span>
+            {t('auth.welcome', 'Bienvenido a')} <span className="font-semibold text-lime-500">Food Plan</span>
           </p>
         </div>
 
@@ -64,7 +70,7 @@ export default function Login({ onSwitchToRegister }) {
 
           <div>
             <label htmlFor="email" className="label">
-              Correo Electrónico
+              {t('auth.email', 'Correo Electrónico')}
             </label>
             <input
               id="email"
@@ -75,13 +81,13 @@ export default function Login({ onSwitchToRegister }) {
               value={email}
               onChange={(e) => setEmail(e.target.value)}
               className="input"
-              placeholder="tu@email.com"
+              placeholder={t('auth.email_placeholder', 'tu@email.com')}
             />
           </div>
 
           <div>
             <label htmlFor="password" className="label">
-              Contraseña
+              {t('auth.password', 'Contraseña')}
             </label>
             <input
               id="password"
@@ -105,7 +111,7 @@ export default function Login({ onSwitchToRegister }) {
               className="h-4 w-4 text-lime-400 border-slate-300 rounded focus:ring-lime-400"
             />
             <label htmlFor="remember" className="ml-2 block text-sm text-stone-700">
-              Recordar mi usuario
+              {t('auth.remember_me', 'Recordar mi usuario')}
             </label>
           </div>
 
@@ -114,7 +120,7 @@ export default function Login({ onSwitchToRegister }) {
             disabled={loading}
             className="w-full btn-primary"
           >
-            {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            {loading ? t('auth.logging_in', 'Iniciando sesión...') : t('auth.login', 'Iniciar Sesión')}
           </button>
         </form>
 
@@ -125,7 +131,7 @@ export default function Login({ onSwitchToRegister }) {
             </div>
             <div className="relative flex justify-center text-sm">
               <span className="px-2 bg-white text-stone-600">
-                ¿No tienes cuenta?
+                {t('auth.no_account', '¿No tienes cuenta?')}
               </span>
             </div>
           </div>
@@ -136,7 +142,7 @@ export default function Login({ onSwitchToRegister }) {
             }}
             className="w-full btn-secondary"
           >
-            Regístrate gratis
+            {t('auth.register_free', 'Regístrate gratis')}
           </button>
         </div>
       </div>

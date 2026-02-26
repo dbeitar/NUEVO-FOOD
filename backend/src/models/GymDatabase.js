@@ -12,6 +12,7 @@ class GymDatabase {
         país: 'Colombia',
         latitude: 4.7110,
         longitude: -74.0055,
+        capacidad_usuarios: 50,
         activo: true,
         creado: new Date('2026-01-15'),
       },
@@ -25,6 +26,7 @@ class GymDatabase {
         país: 'Colombia',
         latitude: 6.2442,
         longitude: -75.5812,
+        capacidad_usuarios: 50,
         activo: true,
         creado: new Date('2026-01-20'),
       },
@@ -44,6 +46,7 @@ class GymDatabase {
     const newGym = {
       id: this.nextId++,
       ...gymData,
+      capacidad_usuarios: gymData.capacidad_usuarios ?? 50,
       activo: true,
       creado: new Date(),
     };

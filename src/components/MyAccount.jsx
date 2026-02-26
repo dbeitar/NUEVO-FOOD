@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '../context/AuthContext';
 import api from '../services/api';
 import { useLocation, useNavigate } from 'react-router-dom';
@@ -61,8 +61,8 @@ export default function MyAccount() {
             // Compatibilidad con respuesta antigua (objeto cuenta directa)
             setCurrentPlan(d || null);
           }
-        } catch (e) {
-          // Sin plan: en /my-account mostramos mensaje; en /planes omitimos la consulta
+        } catch {
+          console.warn('Sin plan activo al consultar /accounts/me');
         }
       }
     } catch (err) {
@@ -92,12 +92,16 @@ export default function MyAccount() {
       let raw = null;
       try {
         raw = localStorage.getItem('pendingSubscription');
-      } catch {}
+      } catch {
+        console.warn('No se pudo leer pendingSubscription');
+      }
       if (!raw) return;
       let pending = null;
       try {
         pending = JSON.parse(raw);
-      } catch {}
+      } catch {
+        console.warn('JSON inválido en pendingSubscription');
+      }
       if (!pending || !pending.plan) return;
       try {
         const res = await api.post('/accounts', {
@@ -108,7 +112,7 @@ export default function MyAccount() {
         });
         setCurrentPlan(res.data?.account || null);
         emitToast({ type: 'success', title: 'Suscripción activada', message: `Plan ${pending.plan.toUpperCase()} activo` });
-        try { localStorage.removeItem('pendingSubscription'); } catch {}
+        try { localStorage.removeItem('pendingSubscription'); } catch { console.warn('No se pudo limpiar pendingSubscription'); }
         if (isPlanSelection) navigate('/my-account');
       } catch (e) {
         // Si falla, no bloqueamos la vista
@@ -165,7 +169,7 @@ export default function MyAccount() {
       });
       await refreshProfile();
       emitToast({ type: 'success', title: 'Perfil actualizado', message: 'Tus datos fueron guardados' });
-    } catch (e) {
+    } catch {
       setError('No se pudo actualizar el perfil');
     }
   };

@@ -1,5 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useI18n } from '../context/I18nContext';
 
 export default function AdminFoodsManager() {
   const [foods, setFoods] = useState([]);
@@ -9,10 +10,7 @@ export default function AdminFoodsManager() {
   const [message, setMessage] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [showForm, setShowForm] = useState(false);
-  const [showImport, setShowImport] = useState(false);
-  const [importText, setImportText] = useState('');
-  const [importMode, setImportMode] = useState('json');
-  const [importResult, setImportResult] = useState(null);
+  const { t } = useI18n();
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -136,50 +134,7 @@ export default function AdminFoodsManager() {
     setShowForm(false);
   };
 
-  const handleImport = async () => {
-    try {
-      let payload;
-      if (importMode === 'json') {
-        const parsed = JSON.parse(importText);
-        payload = Array.isArray(parsed) ? { items: parsed } : parsed;
-      } else {
-        const rows = parseCSV(importText);
-        payload = { items: rows };
-      }
-      const response = await api.post('/foods/import', payload);
-      setImportResult(response.data);
-      loadFoods();
-      setTimeout(() => setImportResult(null), 5000);
-    } catch (error) {
-      setImportResult({ success: false, error: 'Error al importar. Revisa el JSON.' });
-    }
-  };
-  
-  const parseCSV = (text) => {
-    const lines = text.trim().split(/\r?\n/).filter(Boolean);
-    if (lines.length < 2) return [];
-    const headers = lines[0].split(',').map(h => h.trim().toLowerCase().replace(/"/g,''));
-    const items = [];
-    for (let i = 1; i < lines.length; i++) {
-      const cells = lines[i].split(',').map(c => c.trim().replace(/^"|"$/g, ''));
-      const row = {};
-      headers.forEach((h, idx) => (row[h] = cells[idx] ?? ''));
-      const item = {
-        nombre: row['nombre'] || row['name'],
-        categoria: row['categoria'] || row['category'],
-        marca: row['marca'] || row['brand'] || 'Genérica',
-        cantidad: row['cantidad'] || row['portion'] || row['serving'] || 0,
-        unidad: row['unidad'] || row['unit'] || 'g',
-        calorias: row['calorias'] || row['calories'] || row['kcal'] || 0,
-        proteina: row['proteina'] || row['protein'] || 0,
-        carbohidratos: row['carbohidratos'] || row['carbs'] || row['carbohydrates'] || 0,
-        grasas: row['grasas'] || row['fat'] || row['fats'] || 0,
-        barcode: row['barcode'] || row['codigo'] || '',
-      };
-      items.push(item);
-    }
-    return items;
-  };
+  // flujo de importación removido al no estar en uso
 
   // Filtrar alimentos
   let filteredFoods = foods;
@@ -193,95 +148,56 @@ export default function AdminFoodsManager() {
   }
 
   return (
-    <div className="admin-foods-manager">
-      <h1>Gestión de Alimentos Maestros</h1>
-
-      {message && <div className="message">{message}</div>}
-
-      {/* Botón para mostrar/ocultar formulario */}
-      {!showForm && !showImport && (
-        <button onClick={() => setShowForm(true)} className="btn-create">
-          Nuevo Alimento
-        </button>
-      )}
-      {!showForm && !showImport && (
-        <button onClick={() => setShowImport(true)} className="btn-create" style={{ marginLeft: 10 }}>
-          Importar desde JSON
-        </button>
-      )}
-      {showImport && (
-        <div className="form-section">
-          <h2>Importar Alimentos</h2>
-          <div style={{display:'flex', gap:8, marginBottom:10}}>
-            <button onClick={() => setImportMode('json')} className="btn-create" style={{opacity: importMode==='json'?1:0.7}}>Pegar JSON</button>
-            <button onClick={() => setImportMode('csv')} className="btn-create" style={{opacity: importMode==='csv'?1:0.7}}>Pegar CSV</button>
-          </div>
-          <p style={{margin:'8px 0 12px 0', color:'#666', fontSize:13}}>
-            {importMode === 'json' ? 'Pega un JSON con formato:' : 'Pega CSV con encabezados: nombre,categoria,marca,cantidad,unidad,calorias,proteina,carbohidratos,grasas,barcode'}
-          </p>
-          <pre style={{background:'#f8f9fa', padding:12, borderRadius:8, fontSize:12, overflow:'auto', display: importMode==='json'?'block':'none'}}>
-{`[
-  {"nombre":"Yogur natural","categoria":"Proteínas","marca":"Genérica","cantidad":100,"unidad":"g","calorias":63,"proteina":3.5,"carbohidratos":4.7,"grasas":3.3,"barcode":"5901234123457"},
-  {"nombre":"Avena","categoria":"Carbohidratos","marca":"Genérica","cantidad":100,"unidad":"g","calorias":389,"proteina":16.9,"carbohidratos":66.3,"grasas":6.9}
-]`}
-          </pre>
-          <pre style={{background:'#f8f9fa', padding:12, borderRadius:8, fontSize:12, overflow:'auto', display: importMode==='csv'?'block':'none'}}>
-{`nombre,categoria,marca,cantidad,unidad,calorias,proteina,carbohidratos,grasas,barcode
-Yogur natural,Proteínas,Genérica,100,g,63,3.5,4.7,3.3,5901234123457
-Avena,Carbohidratos,Genérica,100,g,389,16.9,66.3,6.9,`}
-          </pre>
-          <textarea
-            value={importText}
-            onChange={(e) => setImportText(e.target.value)}
-            placeholder={importMode==='json' ? 'Pega aquí el JSON a importar' : 'Pega aquí el CSV a importar'}
-            style={{width:'100%', minHeight:180, padding:12, border:'2px solid #e0e0e0', borderRadius:8}}
-          />
-          <div className="form-actions">
-            <button onClick={handleImport} className="btn-save">Importar</button>
-            <button onClick={() => { setShowImport(false); setImportText(''); setImportResult(null); }} className="btn-cancel">Cancelar</button>
-          </div>
-          {importResult && (
-            <div className="message" style={{marginTop:10}}>
-              {importResult.success 
-                ? `✅ Importados: ${importResult.created} | Omitidos: ${importResult.skipped}` 
-                : `❌ ${importResult.error}`}
-            </div>
-          )}
+    <div className="space-y-6">
+      <div className="flex items-start justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-stone-900 font-['Playfair_Display']">{t('foods.title', 'Gestión de Alimentos Maestros')}</h2>
+          <p className="text-stone-600">{t('foods.subtitle', 'Administra el catálogo de alimentos con valores nutricionales.')}</p>
         </div>
-      )}
+        {!showForm && (
+          <button onClick={() => setShowForm(true)} className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black shadow-sm transition-colors">
+            {t('foods.new', 'Nuevo Alimento')}
+          </button>
+        )}
+      </div>
+
+      {message && <div className="bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl p-3">{message}</div>}
+      
 
       {/* Formulario de creación/edición */}
       {showForm && (
-        <div className="form-section">
-          <h2>{editingId ? 'Editar Alimento' : 'Crear Nuevo Alimento'}</h2>
+        <div className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
+          <h2 className="text-lg font-semibold text-stone-900 mb-3">{editingId ? t('foods.edit', 'Editar Alimento') : t('foods.create', 'Crear Nuevo Alimento')}</h2>
           <form onSubmit={handleSubmit}>
             <div className="form-group">
-              <label>Nombre *</label>
+              <label className="block text-sm font-semibold text-stone-700 mb-1">{t('common.name_required', 'Nombre *')}</label>
               <input
                 type="text"
                 name="nombre"
                 value={formData.nombre}
                 onChange={handleInputChange}
-                placeholder="Ej: Pechuga de Pollo"
+                placeholder={t('foods.name_ph', 'Ej: Pechuga de Pollo')}
+                className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
               />
             </div>
 
             <div className="form-group">
-              <label>Código de Barras</label>
+              <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foods.barcode', 'Código de Barras')}</label>
               <input
                 type="text"
                 name="barcode"
                 value={formData.barcode}
                 onChange={handleInputChange}
-                placeholder="Escanear o escribir código..."
+                placeholder={t('foods.barcode_ph', 'Escanear o escribir código...')}
+                className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
               />
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label>Categoría *</label>
-                <select name="categoria" value={formData.categoria} onChange={handleInputChange}>
-                  <option value="">Seleccionar categoría</option>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foods.category_required', 'Categoría *')}</label>
+                <select name="categoria" value={formData.categoria} onChange={handleInputChange} className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors">
+                  <option value="">{t('foods.select_category', 'Seleccionar categoría')}</option>
                   {categories.map((cat) => (
                     <option key={cat} value={cat}>
                       {cat}
@@ -291,20 +207,21 @@ Avena,Carbohidratos,Genérica,100,g,389,16.9,66.3,6.9,`}
               </div>
 
               <div className="form-group">
-                <label>Marca</label>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foods.brand', 'Marca')}</label>
                 <input
                   type="text"
                   name="marca"
                   value={formData.marca}
                   onChange={handleInputChange}
-                  placeholder="Ej: Genérica"
+                  placeholder={t('foods.brand_ph', 'Ej: Genérica')}
+                  className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
                 />
               </div>
             </div>
 
             <div className="form-row">
               <div className="form-group">
-                <label>Cantidad *</label>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foods.amount_required', 'Cantidad *')}</label>
                 <input
                   type="number"
                   name="cantidad"
@@ -312,26 +229,27 @@ Avena,Carbohidratos,Genérica,100,g,389,16.9,66.3,6.9,`}
                   onChange={handleInputChange}
                   placeholder="100"
                   step="0.1"
+                  className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
                 />
               </div>
 
               <div className="form-group">
-                <label>Unidad *</label>
-                <select name="unidad" value={formData.unidad} onChange={handleInputChange}>
-                  <option value="g">Gramos (g)</option>
-                  <option value="ml">Mililitros (ml)</option>
-                  <option value="unidad">Unidad</option>
-                  <option value="cucharada">Cucharada</option>
-                  <option value="taza">Taza</option>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foods.unit_required', 'Unidad *')}</label>
+                <select name="unidad" value={formData.unidad} onChange={handleInputChange} className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors">
+                  <option value="g">{t('foods.unit_g', 'Gramos (g)')}</option>
+                  <option value="ml">{t('foods.unit_ml', 'Mililitros (ml)')}</option>
+                  <option value="unidad">{t('foods.unit_unidad', 'Unidad')}</option>
+                  <option value="cucharada">{t('foods.unit_tbsp', 'Cucharada')}</option>
+                  <option value="taza">{t('foods.unit_cup', 'Taza')}</option>
                 </select>
               </div>
             </div>
 
-            <h3>Valores Nutricionales por Porción</h3>
+            <h3 className="text-md font-semibold text-stone-900 mb-2">{t('foods.nutrients_title', 'Valores Nutricionales por Porción')}</h3>
 
             <div className="form-row">
               <div className="form-group">
-                <label>Calorías</label>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foods.calories', 'Calorías')}</label>
                 <input
                   type="number"
                   name="calorias"
@@ -339,11 +257,12 @@ Avena,Carbohidratos,Genérica,100,g,389,16.9,66.3,6.9,`}
                   onChange={handleInputChange}
                   placeholder="0"
                   step="0.1"
+                  className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
                 />
               </div>
 
               <div className="form-group">
-                <label>Proteína (g)</label>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foods.protein', 'Proteína (g)')}</label>
                 <input
                   type="number"
                   name="proteina"
@@ -351,11 +270,12 @@ Avena,Carbohidratos,Genérica,100,g,389,16.9,66.3,6.9,`}
                   onChange={handleInputChange}
                   placeholder="0"
                   step="0.1"
+                  className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
                 />
               </div>
 
               <div className="form-group">
-                <label>Carbohidratos (g)</label>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foods.carbs', 'Carbohidratos (g)')}</label>
                 <input
                   type="number"
                   name="carbohidratos"
@@ -363,11 +283,12 @@ Avena,Carbohidratos,Genérica,100,g,389,16.9,66.3,6.9,`}
                   onChange={handleInputChange}
                   placeholder="0"
                   step="0.1"
+                  className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
                 />
               </div>
 
               <div className="form-group">
-                <label>Grasas (g)</label>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foods.fats', 'Grasas (g)')}</label>
                 <input
                   type="number"
                   name="grasas"
@@ -375,17 +296,14 @@ Avena,Carbohidratos,Genérica,100,g,389,16.9,66.3,6.9,`}
                   onChange={handleInputChange}
                   placeholder="0"
                   step="0.1"
+                  className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
                 />
               </div>
             </div>
 
             <div className="form-actions">
-              <button type="submit" className="btn-save">
-                💾 Guardar
-              </button>
-              <button type="button" onClick={resetForm} className="btn-cancel">
-                ✕ Cancelar
-              </button>
+              <button type="submit" className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime- pipeline pipelines">{t('common.save', 'Guardar')}</button>
+              <button type="button" onClick={resetForm} className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-white text-stone-800 border border-slate-300 hover:bg-slate-100 shadow-sm transition-colors">{t('common.cancel', 'Cancelar')}</button>
             </div>
           </form>
         </div>
@@ -396,12 +314,12 @@ Avena,Carbohidratos,Genérica,100,g,389,16.9,66.3,6.9,`}
         <div className="search-filters">
           <input
             type="text"
-            placeholder="Buscar alimento..."
+            placeholder={t('foods.search_ph', 'Buscar alimento...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
           <select value={selectedCategory} onChange={(e) => setSelectedCategory(e.target.value)}>
-            <option value="">Todas las categorías</option>
+            <option value="">{t('foods.all_categories', 'Todas las categorías')}</option>
             {categories.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
@@ -412,56 +330,50 @@ Avena,Carbohidratos,Genérica,100,g,389,16.9,66.3,6.9,`}
       </div>
 
       {/* Tabla de alimentos */}
-      <div className="foods-table-section">
-        <table className="foods-table">
-          <thead>
-            <tr>
-              <th>Código</th>
-              <th>Alimento</th>
-              <th>Categoría</th>
-              <th>Porción</th>
-              <th>Cal</th>
-              <th>Proteína</th>
-              <th>Carbos</th>
-              <th>Grasas</th>
-              <th>Acciones</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filteredFoods.map((food) => (
-              <tr key={food.id}>
-                <td className="barcode">{food.barcode || '-'}</td>
-                <td>
-                  <strong>{food.nombre}</strong>
-                  <br />
-                  <small>{food.marca}</small>
-                </td>
-                <td>{food.categoria}</td>
-                <td>{food.cantidad} {food.unidad}</td>
-                <td>{Math.round(food.calorias)}</td>
-                <td>{food.proteina.toFixed(1)}g</td>
-                <td>{food.carbohidratos.toFixed(1)}g</td>
-                <td>{food.grasas.toFixed(1)}g</td>
-                <td className="actions">
-                  <button onClick={() => handleEdit(food)} className="btn-edit">
-                    ✏️
-                  </button>
-                  <button onClick={() => handleDelete(food.id)} className="btn-delete">
-                    🗑️
-                  </button>
-                </td>
+      <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="min-w-full divide-y divide-slate-200">
+            <thead className="bg-stone-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('foods.code', 'Código')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('foods.food', 'Alimento')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('foods.category', 'Categoría')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('foods.serving', 'Porción')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('foods.cal', 'Cal')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('foods.protein_short', 'Proteína')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('foods.carbs_short', 'Carbos')}</th>
+                <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('foods.fats_short', 'Grasas')}</th>
+                <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
-
-        {filteredFoods.length === 0 && (
-          <p className="no-results">No se encontraron alimentos</p>
-        )}
-
-        <p className="count">
-          Total: <strong>{filteredFoods.length}</strong> alimentos
-        </p>
+            </thead>
+            <tbody className="bg-white divide-y divide-slate-200">
+              {filteredFoods.map((food) => (
+                <tr key={food.id}>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{food.barcode || '-'}</td>
+                  <td className="px-6 py-4 whitespace-nowrap">
+                    <strong>{food.nombre}</strong>
+                    <div className="text-xs text-stone-500">{food.marca || t('foods.generic', 'Genérica')}</div>
+                  </td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-700">{food.categoria}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-700">{food.cantidad} {food.unidad}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-700">{Math.round(food.calorias)}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-700">{food.proteina.toFixed(1)}g</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-700">{food.carbohidratos.toFixed(1)}g</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-700">{food.grasas.toFixed(1)}g</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-right">
+                    <div className="inline-flex gap-2">
+                      <button onClick={() => handleEdit(food)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-lime-300 text-lime-700 bg-white hover:bg-lime-100 transition-colors">✏️</button>
+                      <button onClick={() => handleDelete(food.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white transition-colors">🗑️</button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div className="px-6 py-3 bg-stone-50 border-t border-slate-200 text-sm text-stone-600">
+          {filteredFoods.length === 0 ? t('foods.none', 'No se encontraron alimentos') : <>{t('foods.total', 'Total:')} <strong>{filteredFoods.length}</strong> {t('foods.items', 'alimentos')}</>}
+        </div>
       </div>
     </div>
   );

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import api from '../services/api';
 import AISuggestions from './AISuggestions';
 import './FoodLog.css';
@@ -36,13 +36,12 @@ export default function FoodLog() {
   const [dayLogs, setDayLogs] = useState([]);
   const [dayTotals, setDayTotals] = useState(null);
   const [selectedFood, setSelectedFood] = useState(null);
-  const [cantidadConsumida, setCantidadConsumida] = useState(1);
   const [message, setMessage] = useState('');
   const [loading, setLoading] = useState(false);
   const [showCount, setShowCount] = useState(24);
   const [plan, setPlan] = useState(defaultPlan);
   const [combos, setCombos] = useState([]);
-  const [bulk, setBulk] = useState({});
+  // estado de selección masiva eliminado
   const [foodModalOpen, setFoodModalOpen] = useState(false);
   const [foodModalFood, setFoodModalFood] = useState(null);
   const [foodModalPortions, setFoodModalPortions] = useState(1);
@@ -71,8 +70,8 @@ export default function FoodLog() {
         if (resp.data?.success && resp.data.data) {
           setPlan(resp.data.data);
         }
-      } catch (e) {
-        // sigue con plan por defecto
+      } catch {
+        console.warn('Usando plan por defecto');
       }
     })();
   }, []);
@@ -87,7 +86,9 @@ export default function FoodLog() {
       try {
         const r = await api.get('/food-log/history', { params: { days: 30 } });
         setHistory(r.data?.data || {});
-      } catch {}
+      } catch {
+        console.warn('Historial no disponible');
+      }
     })();
   }, []);
 
@@ -113,8 +114,9 @@ export default function FoodLog() {
       try {
         const r = await api.get('/food-log/combos', { params: { comida: selectedMeal } });
         setCombos(r.data?.data || []);
-        setBulk({});
-      } catch {}
+      } catch {
+        console.warn('No se pudieron cargar combos');
+      }
     })();
   }, [selectedMeal]);
 
@@ -165,26 +167,7 @@ export default function FoodLog() {
     }
   };
 
-  const handleBulkSave = async () => {
-    const items = Object.entries(bulk)
-      .map(([foodId, porciones]) => ({ foodId: Number(foodId), porciones: parseInt(porciones, 10) }))
-      .filter((it) => Number.isInteger(it.porciones) && it.porciones > 0);
-    if (items.length === 0) {
-      setMessage('Selecciona al menos un alimento y porciones');
-      setTimeout(() => setMessage(''), 2500);
-      return;
-    }
-    try {
-      await api.post('/food-log/bulk', { comida: selectedMeal, fecha: selectedDate, items });
-      setMessage('✅ Registro guardado');
-      setBulk({});
-      setTimeout(() => setMessage(''), 2500);
-      loadDayLogs();
-    } catch {
-      setMessage('❌ Error guardando selección');
-      setTimeout(() => setMessage(''), 3000);
-    }
-  };
+  // función de guardado masivo eliminada por no estar en uso en la UI
 
   const loadCategories = async () => {
     try {
@@ -211,35 +194,7 @@ export default function FoodLog() {
     }
   };
 
-  const handleAddFood = async () => {
-    if (!selectedFood) {
-      setMessage('Por favor selecciona un alimento');
-      return;
-    }
-
-    if (cantidadConsumida <= 0) {
-      setMessage('La cantidad debe ser mayor a 0');
-      return;
-    }
-
-    try {
-      await api.post('/food-log', {
-        foodId: selectedFood.id,
-        cantidadConsumida: parseFloat(cantidadConsumida),
-        comida: selectedMeal,
-        fecha: selectedDate,
-      });
-
-      setMessage('✅ Alimento agregado al registro');
-      setSelectedFood(null);
-      setCantidadConsumida(1);
-      setTimeout(() => setMessage(''), 3000);
-      loadDayLogs();
-    } catch (error) {
-      setMessage('❌ Error al agregar alimento');
-      console.error('Error:', error);
-    }
-  };
+  // función de agregado directo eliminada; se usa submitFoodModal
   
   const handleFindByBarcode = async () => {
     if (!barcode.trim()) return;
@@ -248,7 +203,7 @@ export default function FoodLog() {
       setSelectedFood(resp.data.data);
       setMessage('✅ Producto encontrado por código de barras');
       setTimeout(() => setMessage(''), 2500);
-    } catch (err) {
+    } catch {
       setMessage('❌ No se encontró el producto. Puedes crearlo rápidamente aquí.');
       setShowQuickCreate(true);
       setQuickForm((prev) => ({ ...prev, barcode: barcode.trim() }));
@@ -300,13 +255,13 @@ export default function FoodLog() {
               return;
             }
           }
-        } catch (e) {
+        } catch {
           setScanError('Error leyendo el código. Intenta de nuevo.');
         }
         rafRef.current = requestAnimationFrame(loop);
       };
       rafRef.current = requestAnimationFrame(loop);
-    } catch (e) {
+    } catch {
       setScanError('No se pudo acceder a la cámara. Revisa permisos.');
     }
   };
@@ -330,7 +285,7 @@ export default function FoodLog() {
       }
       setShowQuickCreate(false);
       setTimeout(() => setMessage(''), 2500);
-    } catch (e) {
+    } catch {
       setMessage('❌ No tienes permisos o datos incompletos');
       setTimeout(() => setMessage(''), 3500);
     }
@@ -384,6 +339,7 @@ export default function FoodLog() {
           <p className="subtitle">Añade tus comidas del día y controla tus metas</p>
         </div>
       </div>
+      {loading && <div className="message">Cargando...</div>}
 
       <div className="two-col-grid">
         <div className="left-col">

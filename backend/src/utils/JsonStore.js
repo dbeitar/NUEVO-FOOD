@@ -10,6 +10,23 @@ class JsonStore {
     this.data = this.load();
   }
 
+  // Crear respaldo con marca de tiempo
+  backup(prefix = null) {
+    try {
+      if (!fs.existsSync(DATA_DIR)) {
+        fs.mkdirSync(DATA_DIR, { recursive: true });
+      }
+      const ts = new Date().toISOString().replace(/[:.]/g, '-');
+      const base = prefix ? `${prefix}.backup.${ts}.json` : path.basename(this.filepath).replace('.json', `.backup.${ts}.json`);
+      const dest = path.join(DATA_DIR, base);
+      fs.writeFileSync(dest, JSON.stringify(this.data, null, 2), 'utf-8');
+      return dest;
+    } catch (e) {
+      console.error('Error creating backup for', this.filepath, e);
+      return null;
+    }
+  }
+
   load() {
     try {
       if (!fs.existsSync(this.filepath)) {

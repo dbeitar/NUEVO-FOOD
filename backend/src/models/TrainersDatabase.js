@@ -13,6 +13,7 @@ class TrainersDatabase {
         gym_id: 1,
         horario_disponible: 'Lunes-Viernes 6AM-6PM',
         tarifa_sesion: 150000,
+        capacidad_usuarios: 50,
         activo: true,
         creado: new Date('2026-01-10'),
       },
@@ -27,6 +28,7 @@ class TrainersDatabase {
         gym_id: 1,
         horario_disponible: 'Martes-Sábado 5AM-4PM',
         tarifa_sesion: 180000,
+        capacidad_usuarios: 50,
         activo: true,
         creado: new Date('2026-01-12'),
       },
@@ -41,6 +43,7 @@ class TrainersDatabase {
         gym_id: 2,
         horario_disponible: 'Lunes-Viernes 7AM-7PM',
         tarifa_sesion: 160000,
+        capacidad_usuarios: 50,
         activo: true,
         creado: new Date('2026-01-14'),
       },
@@ -64,6 +67,7 @@ class TrainersDatabase {
     const newTrainer = {
       id: this.nextId++,
       ...trainerData,
+      capacidad_usuarios: trainerData.capacidad_usuarios ?? 50,
       activo: true,
       creado: new Date(),
     };

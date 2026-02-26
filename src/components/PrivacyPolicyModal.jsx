@@ -1,4 +1,4 @@
-import React from 'react';
+ 
 
 const PrivacyPolicyModal = ({ onClose, onAccept }) => {
   const privacyContent = `# Política de Privacidad

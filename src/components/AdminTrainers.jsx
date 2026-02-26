@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { 
   UserPlus, 
@@ -13,6 +13,7 @@ import {
   Save,
   Loader
 } from 'lucide-react';
+import { useI18n } from '../context/I18nContext';
 
 export default function AdminTrainers() {
   const [trainers, setTrainers] = useState([]);
@@ -22,6 +23,7 @@ export default function AdminTrainers() {
   const [editingTrainer, setEditingTrainer] = useState(null);
   const [showForm, setShowForm] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
+  const { t } = useI18n();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -32,30 +34,30 @@ export default function AdminTrainers() {
     gym_id: ''
   });
 
-  useEffect(() => {
-    fetchTrainers();
-    fetchGyms();
-  }, []);
-
-  const fetchTrainers = async () => {
+  const fetchTrainers = useCallback(async () => {
     try {
       const res = await api.get('/trainers');
       setTrainers(res.data || []);
-    } catch (err) {
-      setError('Error cargando entrenadores');
+    } catch {
+      setError(t('trainers.error_loading', 'Error cargando entrenadores'));
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  const fetchGyms = async () => {
+  const fetchGyms = useCallback(async () => {
     try {
       const res = await api.get('/gyms');
       setGyms(res.data || []);
-    } catch (err) {
-      setError('Error cargando gimnasios');
+    } catch {
+      setError(t('gyms.error_loading', 'Error cargando gimnasios'));
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchTrainers();
+    fetchGyms();
+  }, [fetchTrainers, fetchGyms]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -77,7 +79,7 @@ export default function AdminTrainers() {
       setShowForm(false);
       fetchTrainers();
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al guardar entrenador');
+      setError(err.response?.data?.error || t('trainers.save_error', 'Error al guardar entrenador'));
     }
   };
 
@@ -94,16 +96,15 @@ export default function AdminTrainers() {
   };
 
   const handleDelete = async (id) => {
-    if (window.confirm('¿Estás seguro de eliminar este entrenador?')) {
+    if (window.confirm(t('trainers.delete_confirm', '¿Estás seguro de eliminar este entrenador?'))) {
       try {
         await api.delete(`/trainers/${id}`);
         fetchTrainers();
-      } catch (err) {
-        setError('Error al eliminar entrenador');
+      } catch {
+        setError(t('trainers.delete_error', 'Error al eliminar entrenador'));
       }
     }
   };
-
   const filteredTrainers = trainers.filter(trainer => 
     trainer.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
     trainer.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -114,8 +115,8 @@ export default function AdminTrainers() {
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-stone-900">Gestión de Entrenadores</h1>
-          <p className="text-stone-600 mt-1">Administra el equipo de entrenadores y sus asignaciones</p>
+          <h1 className="text-2xl font-bold text-stone-900">{t('trainers.title', 'Gestión de Entrenadores')}</h1>
+          <p className="text-stone-600 mt-1">{t('trainers.subtitle', 'Administra el equipo de entrenadores y sus asignaciones')}</p>
         </div>
         {!showForm && (
           <button 
@@ -127,7 +128,7 @@ export default function AdminTrainers() {
             className="btn-primary"
           >
             <UserPlus size={18} />
-            Nuevo Entrenador
+            {t('trainers.new', 'Nuevo Entrenador')}
           </button>
         )}
       </div>
@@ -146,7 +147,7 @@ export default function AdminTrainers() {
         <div className="card overflow-hidden">
           <div className="px-6 py-4 border-b border-slate-200 flex justify-between items-center bg-white">
             <h2 className="text-lg font-semibold text-stone-900">
-              {editingTrainer ? 'Editar Entrenador' : 'Nuevo Entrenador'}
+              {editingTrainer ? t('trainers.edit', 'Editar Entrenador') : t('trainers.new', 'Nuevo Entrenador')}
             </h2>
             <button 
               onClick={() => setShowForm(false)}
@@ -159,7 +160,7 @@ export default function AdminTrainers() {
           <form onSubmit={handleSubmit} className="p-6">
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="space-y-2">
-                <label className="label">Nombre Completo</label>
+                <label className="label">{t('common.fullname', 'Nombre Completo')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <UserPlus size={18} className="text-slate-400" />
@@ -170,13 +171,13 @@ export default function AdminTrainers() {
                     onChange={handleInputChange} 
                     required 
                     className="input pl-10"
-                    placeholder="Ej. Juan Pérez"
+                    placeholder={t('common.fullname_ph', 'Ej. Juan Pérez')}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="label">Email</label>
+                <label className="label">{t('common.email', 'Email')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Mail size={18} className="text-slate-400" />
@@ -188,13 +189,13 @@ export default function AdminTrainers() {
                     onChange={handleInputChange} 
                     required 
                     className="input pl-10"
-                    placeholder="juan@ejemplo.com"
+                    placeholder={t('common.email_ph', 'juan@ejemplo.com')}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="label">Teléfono</label>
+                <label className="label">{t('common.phone', 'Teléfono')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Phone size={18} className="text-slate-400" />
@@ -204,13 +205,13 @@ export default function AdminTrainers() {
                     value={formData.telefono} 
                     onChange={handleInputChange} 
                     className="input pl-10"
-                    placeholder="+34 600 000 000"
+                    placeholder={t('common.phone_ph', '+34 600 000 000')}
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="label">Especialidad</label>
+                <label className="label">{t('trainers.specialty', 'Especialidad')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <Briefcase size={18} className="text-slate-400" />
@@ -220,13 +221,13 @@ export default function AdminTrainers() {
                     value={formData.especialidad} 
                     onChange={handleInputChange} 
                     className="input pl-10"
-                    placeholder="Ej. Musculación, Yoga, Crossfit"
+                    placeholder={t('trainers.specialty_ph', 'Ej. Musculación, Yoga, Crossfit')}
                   />
                 </div>
               </div>
 
               <div className="space-y-2 md:col-span-2">
-                <label className="label">Gimnasio Asignado</label>
+                <label className="label">{t('trainers.assigned_gym', 'Gimnasio Asignado')}</label>
                 <div className="relative">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                     <MapPin size={18} className="text-slate-400" />
@@ -238,7 +239,7 @@ export default function AdminTrainers() {
                     required
                     className="input pl-10 appearance-none"
                   >
-                    <option value="">Seleccione un gimnasio</option>
+                    <option value="">{t('trainers.select_gym', 'Seleccione un gimnasio')}</option>
                     {gyms.map(g => (
                       <option key={g.id} value={g.id}>{g.nombre}</option>
                     ))}
@@ -258,14 +259,14 @@ export default function AdminTrainers() {
                 onClick={() => setShowForm(false)}
                 className="btn-secondary"
               >
-                Cancelar
+                {t('common.cancel', 'Cancelar')}
               </button>
               <button
                 type="submit"
                 className="btn-primary inline-flex gap-2"
               >
                 <Save size={18} />
-                Guardar Entrenador
+                {t('trainers.save', 'Guardar Entrenador')}
               </button>
             </div>
           </form>
@@ -274,14 +275,14 @@ export default function AdminTrainers() {
 
       <div className="card overflow-hidden">
         <div className="p-4 border-b border-slate-200 bg-white flex flex-col sm:flex-row justify-between items-center gap-4">
-          <h2 className="font-semibold text-stone-900">Lista de Entrenadores</h2>
+          <h2 className="font-semibold text-stone-900">{t('trainers.list', 'Lista de Entrenadores')}</h2>
           <div className="relative w-full sm:w-64">
             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
               <Search size={16} className="text-stone-500" />
             </div>
             <input
               type="text"
-              placeholder="Buscar entrenador..."
+              placeholder={t('trainers.search_ph', 'Buscar entrenador...')}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="input pl-9"
@@ -294,19 +295,19 @@ export default function AdminTrainers() {
             <thead className="bg-stone-50">
               <tr>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">
-                  Entrenador
+                  {t('trainers.trainer', 'Entrenador')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">
-                  Contacto
+                  {t('common.contact', 'Contacto')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">
-                  Especialidad
+                  {t('trainers.specialty', 'Especialidad')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-medium text-stone-600 uppercase tracking-wider">
-                  Gimnasio
+                  {t('common.gym', 'Gimnasio')}
                 </th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-medium text-stone-600 uppercase tracking-wider">
-                  Acciones
+                  {t('common.actions', 'Acciones')}
                 </th>
               </tr>
             </thead>
@@ -316,14 +317,14 @@ export default function AdminTrainers() {
                   <td colSpan="5" className="px-6 py-12 text-center text-stone-600">
                     <div className="flex justify-center items-center gap-2">
                       <Loader className="animate-spin h-5 w-5 text-lime-400" />
-                      <span>Cargando entrenadores...</span>
+                      <span>{t('trainers.loading', 'Cargando entrenadores...')}</span>
                     </div>
                   </td>
                 </tr>
               ) : filteredTrainers.length === 0 ? (
                 <tr>
                   <td colSpan="5" className="px-6 py-12 text-center text-stone-600">
-                    No se encontraron entrenadores
+                    {t('trainers.none', 'No se encontraron entrenadores')}
                   </td>
                 </tr>
               ) : (
@@ -353,13 +354,13 @@ export default function AdminTrainers() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap">
                       <span className="px-2 inline-flex text-xs leading-5 font-semibold rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
-                        {trainer.especialidad || 'General'}
+                        {trainer.especialidad || t('trainers.general', 'General')}
                       </span>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
                       <div className="flex items-center gap-2">
                         <MapPin size={14} className="text-stone-500" />
-                        {trainer.gym_id ? (gyms.find(g => g.id === trainer.gym_id)?.nombre || 'Gimnasio ID: ' + trainer.gym_id) : 'Sin asignar'}
+                        {trainer.gym_id ? (gyms.find(g => g.id === trainer.gym_id)?.nombre || (t('trainers.gym_id', 'Gimnasio ID: ') + trainer.gym_id)) : t('trainers.unassigned', 'Sin asignar')}
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
@@ -367,14 +368,14 @@ export default function AdminTrainers() {
                         <button 
                           onClick={() => startEdit(trainer)}
                           className="p-1 text-lime-700 hover:text-black hover:bg-lime-400 rounded transition-colors"
-                          title="Editar"
+                          title={t('common.edit', 'Editar')}
                         >
                           <Edit2 size={18} />
                         </button>
                         <button 
                           onClick={() => handleDelete(trainer.id)}
                           className="p-1 text-red-600 hover:bg-red-600/10 rounded transition-colors"
-                          title="Eliminar"
+                          title={t('common.delete', 'Eliminar')}
                         >
                           <Trash2 size={18} />
                         </button>
@@ -388,7 +389,7 @@ export default function AdminTrainers() {
         </div>
         <div className="px-6 py-4 border-t border-slate-200 bg-white">
           <p className="text-xs text-stone-600 text-center">
-            Mostrando {filteredTrainers.length} de {trainers.length} entrenadores
+            {t('trainers.showing', 'Mostrando {shown} de {total} entrenadores').replace('{shown}', filteredTrainers.length).replace('{total}', trainers.length)}
           </p>
         </div>
       </div>

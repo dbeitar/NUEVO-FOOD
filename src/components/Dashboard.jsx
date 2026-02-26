@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '../context/AuthContext';
 import Calculator from './Calculator';
 import AdminCalculator from './AdminCalculator';
@@ -6,27 +6,46 @@ import FoodLog from './FoodLog';
 import AdminFoodsManager from './AdminFoodsManager';
 import AdminUsers from './AdminUsers';
 import AdminPlans from './AdminPlans';
+import AdminCompanies from './AdminCompanies';
 import MyAccount from './MyAccount';
 import Progress from './Progress';
+import Equivalentes from './Equivalentes';
+import { useI18n } from '../context/I18nContext';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState('progress');
+  const [currentView, setCurrentView] = useState(() => {
+    try {
+      const flag = localStorage.getItem('afterRegisterHome');
+      return flag ? 'home' : 'progress';
+    } catch {
+      return 'progress';
+    }
+  });
   const [dayTotals, setDayTotals] = useState(null);
-  const [plan, setPlan] = useState({ calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 });
+  const plan = { calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 };
   const today = new Date().toISOString().split('T')[0];
+  const { t, lang, setLang } = useI18n();
   
   useEffect(() => {
+    // Limpiar flag de arranque en Home tras registro
+    try {
+      if (localStorage.getItem('afterRegisterHome')) {
+        localStorage.removeItem('afterRegisterHome');
+      }
+    } catch {
+      console.warn('No se pudo limpiar afterRegisterHome');
+    }
     const fetchTotals = async () => {
       try {
         const resp = await (await import('../services/api')).default.get('/food-log/totals', { params: { fecha: today } });
         setDayTotals(resp.data.data);
-      } catch (e) {
-        // noop
+      } catch (err) {
+        console.warn('Failed to fetch day totals', err);
       }
     };
     fetchTotals();
-  }, []);
+  }, [today]);
 
   const renderContent = () => {
     switch (currentView) {
@@ -42,45 +61,56 @@ export default function Dashboard() {
         return <AdminUsers />;
       case 'adminplans':
         return <AdminPlans />;
+      case 'admincompanies':
+        return <AdminCompanies />;
       case 'myaccount':
         return <MyAccount />;
       case 'progress':
         return <Progress />;
+      case 'equivalentes':
+        return <Equivalentes />;
       default:
         return (
           <>
             <header className="dashboard-header">
-              <h2>Bienvenido, {user?.nombre}!</h2>
-              <p>Rol: <strong>{user?.rol}</strong></p>
+              <h2>{t('welcome.title', 'Bienvenido, {name}!').replace('{name}', user?.nombre || '')}</h2>
+              <p>{t('welcome.role', 'Rol')}: <strong>{user?.rol}</strong></p>
             </header>
 
             <div className="dashboard-grid">
+              {user?.rol === 'super_admin' && (
+                <div className="card" onClick={() => setCurrentView('admincompanies')}>
+                  <h3>{t('card.companies.title', '🏢 Empresas')}</h3>
+                  <p>{t('card.companies.desc', 'Consulta gimnasios, entrenadores y usuarios asociados')}</p>
+                  <button className="btn-card">{t('card.companies.button', 'Abrir Empresas')}</button>
+                </div>
+              )}
               <div className="card" onClick={() => setCurrentView('calculator')}>
-                <h3>🧮 Calculadora Nutricional</h3>
-                <p>Calcula tu plan personalizado basado en tus datos</p>
-                <button className="btn-card">Ir a Calculadora</button>
+                <h3>{t('card.calculator.title', '🧮 Calculadora Nutricional')}</h3>
+                <p>{t('card.calculator.desc', 'Calcula tu plan personalizado basado en tus datos')}</p>
+                <button className="btn-card">{t('card.calculator.button', 'Ir a Calculadora')}</button>
               </div>
 
               {user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' ? (
                 <div className="card" onClick={() => setCurrentView('admin')}>
-                  <h3>⚙️ Administración</h3>
-                  <p>Gestiona los conceptos de la calculadora</p>
-                  <button className="btn-card">Panel Admin</button>
+                  <h3>{t('card.admin.title', '⚙️ Administración')}</h3>
+                  <p>{t('card.admin.desc', 'Gestiona los conceptos de la calculadora')}</p>
+                  <button className="btn-card">{t('card.admin.button', 'Panel Admin')}</button>
                 </div>
               ) : null}
 
               {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
                 <div className="card" onClick={() => setCurrentView('adminusers')}>
-                  <h3>👥 Usuarios y Roles</h3>
-                  <p>Consulta y ajusta los roles de usuarios</p>
-                  <button className="btn-card">Abrir Usuarios</button>
+                  <h3>{t('card.users.title', '👥 Usuarios y Roles')}</h3>
+                  <p>{t('card.users.desc', 'Consulta y ajusta los roles de usuarios')}</p>
+                  <button className="btn-card">{t('card.users.button', 'Abrir Usuarios')}</button>
                 </div>
               )}
               {user?.rol === 'super_admin' && (
                 <div className="card" onClick={() => setCurrentView('adminplans')}>
-                  <h3>🧾 Planes de Suscripción</h3>
-                  <p>Crea, edita y elimina planes</p>
-                  <button className="btn-card">Gestionar Planes</button>
+                  <h3>{t('card.plans.title', '🧾 Planes de Suscripción')}</h3>
+                  <p>{t('card.plans.desc', 'Crea, edita y elimina planes')}</p>
+                  <button className="btn-card">{t('card.plans.button', 'Gestionar Planes')}</button>
                 </div>
               )}
 
@@ -100,6 +130,12 @@ export default function Dashboard() {
                 <h3>📈 Progreso</h3>
                 <p>Visualiza tu evolución</p>
                 <button className="btn-card">Ver Estadísticas</button>
+              </div>
+
+              <div className="card" onClick={() => setCurrentView('equivalentes')}>
+                <h3>🔄 Equivalentes por Grupo</h3>
+                <p>Intercambia alimentos manteniendo macros</p>
+                <button className="btn-card">Ver Equivalentes</button>
               </div>
 
               <div className="card">
@@ -158,62 +194,89 @@ export default function Dashboard() {
             onClick={() => setCurrentView('progress')}
             className={currentView === 'progress' ? 'nav-link active' : 'nav-link'}
           >
-            Progreso
+            {t('nav.progress', 'Progreso')}
           </button>
           <button 
             onClick={() => setCurrentView('home')}
             className={currentView === 'home' ? 'nav-link active' : 'nav-link'}
           >
-            Inicio
+            {t('nav.home', 'Inicio')}
           </button>
           <button 
             onClick={() => setCurrentView('calculator')}
             className={currentView === 'calculator' ? 'nav-link active' : 'nav-link'}
           >
-            Calculadora
+            {t('nav.calculator', 'Calculadora')}
           </button>
           <button 
             onClick={() => setCurrentView('foodlog')}
             className={currentView === 'foodlog' ? 'nav-link active' : 'nav-link'}
           >
-            Alimentos
+            {t('nav.foods', 'Alimentos')}
           </button>
           <button 
-            onClick={() => setCurrentView('myaccount')}
-            className={currentView === 'myaccount' ? 'nav-link active' : 'nav-link'}
+            onClick={() => setCurrentView('equivalentes')}
+            className={currentView === 'equivalentes' ? 'nav-link active' : 'nav-link'}
           >
-            Mi Cuenta
+            {t('nav.equivalentes', 'Equivalentes')}
           </button>
+          {user?.rol === 'super_admin' && (
+            <button 
+              onClick={() => setCurrentView('admincompanies')}
+              className={currentView === 'admincompanies' ? 'nav-link active' : 'nav-link'}
+            >
+              {t('nav.companies', 'Empresas')}
+            </button>
+          )}
+          {user?.rol !== 'super_admin' && (
+            <button 
+              onClick={() => setCurrentView('myaccount')}
+              className={currentView === 'myaccount' ? 'nav-link active' : 'nav-link'}
+            >
+              {t('nav.myaccount', 'Mi Cuenta')}
+            </button>
+          )}
           {user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' ? (
             <>
               <button 
                 onClick={() => setCurrentView('foodsmanager')}
                 className={currentView === 'foodsmanager' ? 'nav-link active' : 'nav-link'}
               >
-                Maestro de Alimentos
+                {t('nav.foodsmanager', 'Maestro de Alimentos')}
               </button>
               <button 
                 onClick={() => setCurrentView('adminplans')}
                 className={currentView === 'adminplans' ? 'nav-link active' : 'nav-link'}
               >
-                Planes
+                {t('nav.plans', 'Planes')}
               </button>
               <button 
                 onClick={() => setCurrentView('adminusers')}
                 className={currentView === 'adminusers' ? 'nav-link active' : 'nav-link'}
               >
-                Usuarios
+                {t('nav.users', 'Usuarios')}
               </button>
               <button 
                 onClick={() => setCurrentView('admin')}
                 className={currentView === 'admin' ? 'nav-link active' : 'nav-link'}
               >
-                Admin
+                {t('nav.admin', 'Admin')}
               </button>
             </>
           ) : null}
         </div>
         <div className="navbar-user">
+          <div className="mr-3">
+            <select
+              value={lang}
+              onChange={(e) => setLang(e.target.value)}
+              className="input py-1 text-sm"
+              aria-label={t('lang.label', 'Idioma')}
+            >
+              <option value="es">{t('lang.es', 'Español')}</option>
+              <option value="en">{t('lang.en', 'Inglés')}</option>
+            </select>
+          </div>
           <span className="user-name">{user?.nombre}</span>
           <button onClick={logout} className="btn-logout">
             Cerrar Sesión

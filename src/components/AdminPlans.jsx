@@ -1,6 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Pencil, Trash2, Plus } from 'lucide-react';
+import { useI18n } from '../context/I18nContext';
 
 export default function AdminPlans() {
   const [plans, setPlans] = useState([]);
@@ -8,6 +9,7 @@ export default function AdminPlans() {
   const [error, setError] = useState('');
   const [editingPlan, setEditingPlan] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const { t } = useI18n();
 
   // Form state
   const [formData, setFormData] = useState({
@@ -18,23 +20,22 @@ export default function AdminPlans() {
     features: ''
   });
 
-  useEffect(() => {
-    fetchPlans();
-  }, []);
-
-  const fetchPlans = async () => {
+  const fetchPlans = useCallback(async () => {
     try {
       const res = await api.get('/accounts/plans');
-      // Ensure we get an array
       const plansData = Array.isArray(res.data) ? res.data : (res.data.data || []);
       setPlans(plansData);
     } catch (err) {
-      setError('Error cargando planes');
+      setError(t('plans.error_loading', 'Error cargando planes'));
       console.error(err);
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchPlans();
+  }, [fetchPlans]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -79,19 +80,19 @@ export default function AdminPlans() {
   };
 
   const handleDelete = async (nombre) => {
-    if (!window.confirm('¿Seguro que deseas eliminar este plan?')) return;
+    if (!window.confirm(t('plans.delete_confirm', '¿Seguro que deseas eliminar este plan?'))) return;
     try {
       await api.delete(`/accounts/plans/${nombre}`);
       fetchPlans();
-    } catch (err) {
-      setError('Error al eliminar plan');
+    } catch {
+      setError(t('plans.delete_error', 'Error al eliminar plan'));
     }
   };
 
   return (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h3 className="text-lg font-bold text-stone-900">Planes de Suscripción</h3>
+        <h3 className="text-lg font-bold text-stone-900">{t('plans.title', 'Planes de Suscripción')}</h3>
         {!showForm && (
           <button 
             className="btn-primary inline-flex items-center gap-2"
@@ -102,7 +103,7 @@ export default function AdminPlans() {
             }}
           >
             <Plus className="w-4 h-4" />
-            Nuevo Plan
+            {t('plans.new', 'Nuevo Plan')}
           </button>
         )}
       </div>
@@ -116,17 +117,17 @@ export default function AdminPlans() {
       {showForm ? (
         <div className="card">
           <div className="flex justify-between items-center mb-4 border-b border-slate-200 pb-2">
-            <h4 className="text-md font-semibold text-stone-900">{editingPlan ? 'Editar Plan' : 'Crear Nuevo Plan'}</h4>
+            <h4 className="text-md font-semibold text-stone-900">{editingPlan ? t('plans.edit', 'Editar Plan') : t('plans.create', 'Crear Nuevo Plan')}</h4>
             <button 
               className="text-sm text-stone-500 hover:text-stone-900" 
               onClick={() => setShowForm(false)}
             >
-              Cancelar
+              {t('common.cancel', 'Cancelar')}
             </button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="label">Nombre del Plan</label>
+              <label className="label">{t('plans.name', 'Nombre del Plan')}</label>
               <input 
                 name="nombre" 
                 value={formData.nombre} 
@@ -137,7 +138,7 @@ export default function AdminPlans() {
               />
             </div>
             <div>
-              <label className="label">Descripción</label>
+              <label className="label">{t('common.description', 'Descripción')}</label>
               <textarea 
                 name="descripcion" 
                 value={formData.descripcion} 
@@ -149,7 +150,7 @@ export default function AdminPlans() {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="label">Precio Mensual (COP)</label>
+                <label className="label">{t('plans.monthly_price', 'Precio Mensual (COP)')}</label>
                 <input 
                   name="precio_mensual" 
                   type="number" 
@@ -160,7 +161,7 @@ export default function AdminPlans() {
                 />
               </div>
               <div>
-                <label className="label">Máximo de Usuarios</label>
+                <label className="label">{t('plans.max_users', 'Máximo de Usuarios')}</label>
                 <input 
                   name="max_users" 
                   type="number" 
@@ -172,18 +173,18 @@ export default function AdminPlans() {
               </div>
             </div>
             <div>
-              <label className="label">Características (separadas por coma)</label>
+              <label className="label">{t('plans.features', 'Características (separadas por coma)')}</label>
               <input 
                 name="features" 
                 value={formData.features} 
                 onChange={handleInputChange} 
-                placeholder="Ej: Acceso 24/7, Entrenador Personal"
+                placeholder={t('plans.features_ph', 'Ej: Acceso 24/7, Entrenador Personal')}
                 className="input"
               />
             </div>
             <div className="flex justify-end pt-2">
               <button type="submit" className="btn-primary">
-                Guardar Plan
+                {t('plans.save', 'Guardar Plan')}
               </button>
             </div>
           </form>
@@ -194,16 +195,16 @@ export default function AdminPlans() {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-stone-50">
                 <tr>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Nombre</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Precio</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Cupo Máx</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Activos</th>
-                  <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Acciones</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.name', 'Nombre')}</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('plans.price', 'Precio')}</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('plans.capacity', 'Cupo Máx')}</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('plans.active', 'Activos')}</th>
+                  <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {loading ? (
-                  <tr><td colSpan="5" className="px-6 py-4 text-center text-sm text-slate-400">Cargando planes...</td></tr>
+                  <tr><td colSpan="5" className="px-6 py-4 text-center text-sm text-slate-400">{t('plans.loading', 'Cargando planes...')}</td></tr>
                 ) : plans.length > 0 ? (
                   plans.map(plan => (
                     <tr key={plan.nombre} className="hover:bg-stone-100 transition-colors">
@@ -216,14 +217,14 @@ export default function AdminPlans() {
                           <button 
                             className="text-lime-700 hover:text-black bg-stone-100 hover:bg-lime-400 p-2 rounded-lg transition-colors"
                             onClick={() => handleEdit(plan)}
-                            title="Editar plan"
+                            title={t('common.edit', 'Editar')}
                           >
                             <Pencil className="w-4 h-4" />
                           </button>
                           <button 
                             className="text-white bg-red-600 hover:bg-red-700 p-2 rounded-lg transition-colors"
                             onClick={() => handleDelete(plan.nombre)}
-                            title="Eliminar plan"
+                            title={t('common.delete', 'Eliminar')}
                           >
                             <Trash2 className="w-4 h-4" />
                           </button>
@@ -232,7 +233,7 @@ export default function AdminPlans() {
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan="5" className="px-6 py-4 text-center text-sm text-slate-400">No hay planes disponibles. Crea uno nuevo.</td></tr>
+                  <tr><td colSpan="5" className="px-6 py-4 text-center text-sm text-slate-400">{t('plans.none', 'No hay planes disponibles. Crea uno nuevo.')}</td></tr>
                 )}
               </tbody>
             </table>

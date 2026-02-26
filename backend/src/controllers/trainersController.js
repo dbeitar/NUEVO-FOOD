@@ -81,11 +81,11 @@ const createTrainer = (req, res) => {
       return res.status(403).json({ error: 'No tienes permiso para esta acción' });
     }
 
-    const { nombre, email, teléfono, especialidad, certificaciones, experiencia_años, gym_id, horario_disponible, tarifa_sesion } = req.body;
+    const { nombre, email, teléfono, especialidad, certificaciones, experiencia_años, gym_id, horario_disponible, tarifa_sesion, capacidad_usuarios } = req.body;
     
     // Validaciones
-    if (!nombre || !email || !gym_id) {
-      return res.status(400).json({ error: 'Nombre, email y gym_id son requeridos' });
+    if (!nombre || !email) {
+      return res.status(400).json({ error: 'Nombre y email son requeridos' });
     }
     
     const newTrainer = TrainersDatabase.create({
@@ -95,9 +95,10 @@ const createTrainer = (req, res) => {
       especialidad,
       certificaciones: certificaciones || [],
       experiencia_años: experiencia_años || 0,
-      gym_id,
+      gym_id: gym_id ?? null,
       horario_disponible,
       tarifa_sesion: tarifa_sesion || 0,
+      capacidad_usuarios: capacidad_usuarios ?? 50,
     });
     
     res.status(201).json({ message: 'Entrenador creado exitosamente', trainer: newTrainer });

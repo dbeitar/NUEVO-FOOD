@@ -69,7 +69,7 @@ const searchGyms = (req, res) => {
 const createGym = (req, res) => {
   try {
     checkAdminRole(req, res, () => {
-      const { nombre, direccion, teléfono, email, ciudad, país, latitude, longitude } = req.body;
+      const { nombre, direccion, teléfono, email, ciudad, país, Basico, latitude, longitude, capacidad_usuarios } = req.body;
       
       // Validaciones
       if (!nombre || !email || !ciudad) {
@@ -83,6 +83,7 @@ const createGym = (req, res) => {
         email,
         ciudad,
         país,
+        capacidad_usuarios: capacidad_usuarios ?? 50,
         latitude: latitude || null,
         longitude: longitude || null,
       });

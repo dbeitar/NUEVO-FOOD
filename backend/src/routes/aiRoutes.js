@@ -9,6 +9,9 @@ router.use(auth);
 // GET: Verificar si IA (OpenAI) está habilitada
 router.get('/enabled', aiController.isEnabled);
 
+// GET: Sistema de equivalentes por grupo (para UI)
+router.get('/equivalentes', aiController.getEquivalentes);
+
 // POST: Obtener sugerencias de alimentos con IA (OpenAI)
 router.post('/suggestions', aiController.getSuggestedFoods);
 
