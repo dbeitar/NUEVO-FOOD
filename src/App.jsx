@@ -9,7 +9,11 @@ function App() {
   const [showRegister, setShowRegister] = useState(false)
 
   if (loading) {
-    return <div className="loading">Cargando...</div>
+    return (
+      <div className="flex items-center justify-center h-screen bg-gray-50">
+        <div className="text-xl font-medium text-gray-600">Cargando aplicación...</div>
+      </div>
+    )
   }
 
   if (!user) {

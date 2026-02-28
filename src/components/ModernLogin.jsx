@@ -36,7 +36,8 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
         console.warn('Failed to persist rememberedEmail', err);
       }
     } catch (err) {
-      setError(err?.response?.data?.error || err?.message || 'Error en el login');
+      const errorMessage = err?.response?.data?.error || err?.message || 'Error en el login';
+      setError(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
     } finally {
       setLoading(false);
     }

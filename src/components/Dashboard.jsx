@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import { useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
 import Calculator from './Calculator';
 import AdminCalculator from './AdminCalculator';
@@ -26,6 +27,21 @@ export default function Dashboard() {
   const plan = { calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 };
   const today = new Date().toISOString().split('T')[0];
   const { t, lang, setLang } = useI18n();
+  const location = useLocation();
+
+  useEffect(() => {
+    const path = location.pathname;
+    if (path === '/calculator') setCurrentView('calculator');
+    else if (path === '/food-log') setCurrentView('foodlog');
+    else if (path === '/my-account') setCurrentView('myaccount');
+    else if (path === '/admin') setCurrentView('admin');
+    else if (path === '/admin-users') setCurrentView('adminusers');
+    else if (path === '/admin-plans') setCurrentView('adminplans');
+    else if (path === '/admin-companies') setCurrentView('admincompanies');
+    else if (path === '/foods-manager') setCurrentView('foodsmanager');
+    else if (path === '/equivalentes') setCurrentView('equivalentes');
+    else if (path === '/') setCurrentView('progress');
+  }, [location.pathname]);
   
   useEffect(() => {
     // Limpiar flag de arranque en Home tras registro

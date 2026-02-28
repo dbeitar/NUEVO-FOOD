@@ -1,10 +1,10 @@
-const TrainersDatabase = require('../models/TrainersDatabase');
+const pool = require('../config/database');
 
 // Obtener todos los entrenadores
-const getAllTrainers = (req, res) => {
+const getAllTrainers = async (req, res) => {
   try {
-    const trainers = TrainersDatabase.getAll();
-    res.json(trainers);
+    const result = await pool.query('SELECT * FROM trainers ORDER BY nombre ASC');
+    res.json(result.rows);
   } catch (error) {
     console.error('Error obteniendo entrenadores:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -12,16 +12,16 @@ const getAllTrainers = (req, res) => {
 };
 
 // Obtener entrenador por ID
-const getTrainerById = (req, res) => {
+const getTrainerById = async (req, res) => {
   try {
     const { id } = req.params;
-    const trainer = TrainersDatabase.getById(parseInt(id));
+    const result = await pool.query('SELECT * FROM trainers WHERE id = $1', [id]);
     
-    if (!trainer) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Entrenador no encontrado' });
     }
     
-    res.json(trainer);
+    res.json(result.rows[0]);
   } catch (error) {
     console.error('Error obteniendo entrenador:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -29,11 +29,11 @@ const getTrainerById = (req, res) => {
 };
 
 // Obtener entrenadores por gimnasio
-const getTrainersByGym = (req, res) => {
+const getTrainersByGym = async (req, res) => {
   try {
     const { gymId } = req.params;
-    const trainers = TrainersDatabase.getByGymId(parseInt(gymId));
-    res.json(trainers);
+    const result = await pool.query('SELECT * FROM trainers WHERE id_gimnasio = $1', [gymId]);
+    res.json(result.rows);
   } catch (error) {
     console.error('Error obteniendo entrenadores del gimnasio:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -41,7 +41,7 @@ const getTrainersByGym = (req, res) => {
 };
 
 // Buscar entrenadores por especialidad
-const searchBySpecialty = (req, res) => {
+const searchBySpecialty = async (req, res) => {
   try {
     const { specialty } = req.query;
     
@@ -49,104 +49,81 @@ const searchBySpecialty = (req, res) => {
       return res.status(400).json({ error: 'Parámetro de búsqueda requerido' });
     }
     
-    const trainers = TrainersDatabase.searchBySpecialty(specialty);
-    res.json(trainers);
+    const result = await pool.query('SELECT * FROM trainers WHERE especialidad ILIKE $1', [`%${specialty}%`]);
+    res.json(result.rows);
   } catch (error) {
     console.error('Error buscando entrenadores:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-// Buscar entrenadores general
-const searchTrainers = (req, res) => {
-  try {
-    const { q } = req.query;
-    
-    if (!q) {
-      return res.status(400).json({ error: 'Parámetro de búsqueda requerido' });
-    }
-    
-    const trainers = TrainersDatabase.search(q);
-    res.json(trainers);
-  } catch (error) {
-    console.error('Error buscando entrenadores:', error);
-    res.status(500).json({ error: 'Error interno del servidor' });
-  }
-};
-
-// Crear nuevo entrenador (solo admin)
-const createTrainer = (req, res) => {
+// Crear entrenador (Admin)
+const createTrainer = async (req, res) => {
   try {
     if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
-      return res.status(403).json({ error: 'No tienes permiso para esta acción' });
+      return res.status(403).json({ error: 'No tienes permiso' });
     }
 
-    const { nombre, email, teléfono, especialidad, certificaciones, experiencia_años, gym_id, horario_disponible, tarifa_sesion, capacidad_usuarios } = req.body;
+    const { nombre, email, telefono, id_gimnasio, especialidad } = req.body;
     
-    // Validaciones
     if (!nombre || !email) {
       return res.status(400).json({ error: 'Nombre y email son requeridos' });
     }
-    
-    const newTrainer = TrainersDatabase.create({
-      nombre,
-      email,
-      teléfono,
-      especialidad,
-      certificaciones: certificaciones || [],
-      experiencia_años: experiencia_años || 0,
-      gym_id: gym_id ?? null,
-      horario_disponible,
-      tarifa_sesion: tarifa_sesion || 0,
-      capacidad_usuarios: capacidad_usuarios ?? 50,
-    });
-    
-    res.status(201).json({ message: 'Entrenador creado exitosamente', trainer: newTrainer });
+
+    const result = await pool.query(
+      'INSERT INTO trainers (nombre, email, telefono, id_gimnasio, especialidad) VALUES ($1, $2, $3, $4, $5) RETURNING *',
+      [nombre, email, telefono, id_gimnasio, especialidad]
+    );
+
+    res.status(201).json(result.rows[0]);
   } catch (error) {
     console.error('Error creando entrenador:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-// Actualizar entrenador (solo admin)
-const updateTrainer = (req, res) => {
+// Actualizar entrenador (Admin)
+const updateTrainer = async (req, res) => {
   try {
     if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
-      return res.status(403).json({ error: 'No tienes permiso para esta acción' });
+      return res.status(403).json({ error: 'No tienes permiso' });
     }
 
     const { id } = req.params;
-    const updates = req.body;
-    
-    const updatedTrainer = TrainersDatabase.update(parseInt(id), updates);
-    
-    if (!updatedTrainer) {
+    const { nombre, email, telefono, id_gimnasio, especialidad } = req.body;
+
+    const result = await pool.query(
+      'UPDATE trainers SET nombre = $1, email = $2, telefono = $3, id_gimnasio = $4, especialidad = $5 WHERE id = $6 RETURNING *',
+      [nombre, email, telefono, id_gimnasio, especialidad, id]
+    );
+
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Entrenador no encontrado' });
     }
-    
-    res.json({ message: 'Entrenador actualizado exitosamente', trainer: updatedTrainer });
+
+    res.json(result.rows[0]);
   } catch (error) {
     console.error('Error actualizando entrenador:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-// Eliminar entrenador (solo admin)
-const deleteTrainer = (req, res) => {
+// Eliminar entrenador (Admin)
+const deleteTrainer = async (req, res) => {
   try {
     if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
-      return res.status(403).json({ error: 'No tienes permiso para esta acción' });
+      return res.status(403).json({ error: 'No tienes permiso' });
     }
 
     const { id } = req.params;
     
-    const deleted = TrainersDatabase.delete(parseInt(id));
+    const result = await pool.query('DELETE FROM trainers WHERE id = $1 RETURNING id', [id]);
     
-    if (!deleted) {
+    if (result.rows.length === 0) {
       return res.status(404).json({ error: 'Entrenador no encontrado' });
     }
-    
-    res.json({ message: 'Entrenador eliminado exitosamente' });
+
+    res.json({ message: 'Entrenador eliminado' });
   } catch (error) {
     console.error('Error eliminando entrenador:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -158,8 +135,7 @@ module.exports = {
   getTrainerById,
   getTrainersByGym,
   searchBySpecialty,
-  searchTrainers,
   createTrainer,
   updateTrainer,
-  deleteTrainer,
+  deleteTrainer
 };

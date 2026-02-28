@@ -99,19 +99,26 @@ export default function Register({ onSwitchToLogin }) {
         fecha_nacimiento: formData.fecha_nacimiento,
         peso: formData.peso,
         altura: formData.altura,
-         genero: formData.genero,
+        genero: formData.genero,
         objetivo: formData.objetivo,
         tiene_restricciones: formData.tiene_restricciones,
         restricciones_detalles: formData.restricciones_detalles,
+        gym_id: formData.gym_id,
+        trainer_id: formData.trainer_id,
       });
       await login(formData.email, formData.password);
       if (selectedPlan) {
-        await api.post('/accounts', {
-          plan: selectedPlan.nombre,
-          gym_id: formData.gym_id ? parseInt(formData.gym_id, 10) : null,
-          trainer_id: formData.trainer_id ? parseInt(formData.trainer_id, 10) : null,
-          metodoPago: formData.metodoPago,
-        });
+        try {
+          await api.post('/accounts', {
+            plan: selectedPlan.nombre,
+            gym_id: formData.gym_id ? parseInt(formData.gym_id, 10) : null,
+            trainer_id: formData.trainer_id ? parseInt(formData.trainer_id, 10) : null,
+            metodoPago: formData.metodoPago,
+          });
+        } catch (planError) {
+          console.warn('Error creating subscription:', planError);
+          // Continue even if subscription fails, user is created
+        }
       }
       if (rememberEmail && formData.email) {
         try {
@@ -128,7 +135,8 @@ export default function Register({ onSwitchToLogin }) {
       }
       navigate('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al completar el registro');
+      const errorMessage = err.response?.data?.error || err.message || 'Error al completar el registro';
+      setError(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
     } finally {
       setLoading(false);
     }
