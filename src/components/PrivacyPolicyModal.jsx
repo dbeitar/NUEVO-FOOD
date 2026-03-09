@@ -10,6 +10,13 @@ const PrivacyPolicyModal = ({ onClose, onAccept }) => {
 
 En Food Plan ("nosotros", "nuestro", "nos"), respetamos su privacidad y estamos comprometidos con proteger sus datos personales. Esta Política de Privacidad explica cómo recopilamos, usamos, compartimos y protegemos su información.
 
+**Responsable del Tratamiento de Datos:**
+[JHON NICOLAS DEL RIO CASALLAS
+[Cédula de Ciudadanía 1153465988]
+[KM 1 VIA MANCILLA ALTOS DEL BOSQUE CASA 6B]
+[nicolasdelrio718@gmail.com]
+[3192635819]
+
 ## 2. INFORMACIÓN QUE RECOPILAMOS
 
 ### 2.1 Información Proporcionada Directamente
@@ -22,6 +29,8 @@ En Food Plan ("nosotros", "nuestro", "nos"), respetamos su privacidad y estamos 
 - Historial dietético
 - Contraseña (encriptada)
 - Información de pago (si aplica)
+
+**Nota sobre Datos Sensibles:** Algunos de los datos solicitados, como la fecha de nacimiento, peso, altura, género, objetivo nutricional e historial dietético/restricciones, son considerados datos sensibles bajo la Ley 1581 de 2012. Usted no está obligado a autorizar el tratamiento de estos datos. Sin embargo, la provisión de esta información nos permite ofrecerle un servicio más personalizado y efectivo.
 
 ### 2.2 Información Recopilada Automáticamente
 - Dirección IP
