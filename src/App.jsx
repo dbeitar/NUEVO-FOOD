@@ -5,6 +5,7 @@ import Register from './components/Register'
 import Dashboard from './components/Dashboard'
 
 function App() {
+  // Small change to trigger new Vercel deploy after Git reconnection
   const { user, loading } = useAuth()
   const [showRegister, setShowRegister] = useState(false)
 
