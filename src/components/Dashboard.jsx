@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react';
-import { useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import Calculator from './Calculator';
 import AdminCalculator from './AdminCalculator';
 import FoodLog from './FoodLog';
@@ -11,37 +10,20 @@ import AdminCompanies from './AdminCompanies';
 import MyAccount from './MyAccount';
 import Progress from './Progress';
 import Equivalentes from './Equivalentes';
-import { useI18n } from '../context/I18nContext';
+import Recipes from './Recipes';
+import { useI18n } from '../context/useI18n';
+import NutritionChat from './NutritionChat';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
+  const [chatOpen, setChatOpen] = useState(false);
   const [currentView, setCurrentView] = useState(() => {
-    try {
-      const flag = localStorage.getItem('afterRegisterHome');
-      return flag ? 'home' : 'progress';
-    } catch {
-      return 'progress';
-    }
+    return 'home';
   });
   const [dayTotals, setDayTotals] = useState(null);
   const plan = { calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 };
   const today = new Date().toISOString().split('T')[0];
   const { t, lang, setLang } = useI18n();
-  const location = useLocation();
-
-  useEffect(() => {
-    const path = location.pathname;
-    if (path === '/calculator') setCurrentView('calculator');
-    else if (path === '/food-log') setCurrentView('foodlog');
-    else if (path === '/my-account') setCurrentView('myaccount');
-    else if (path === '/admin') setCurrentView('admin');
-    else if (path === '/admin-users') setCurrentView('adminusers');
-    else if (path === '/admin-plans') setCurrentView('adminplans');
-    else if (path === '/admin-companies') setCurrentView('admincompanies');
-    else if (path === '/foods-manager') setCurrentView('foodsmanager');
-    else if (path === '/equivalentes') setCurrentView('equivalentes');
-    else if (path === '/') setCurrentView('progress');
-  }, [location.pathname]);
   
   useEffect(() => {
     // Limpiar flag de arranque en Home tras registro
@@ -71,6 +53,8 @@ export default function Dashboard() {
         return <AdminCalculator />;
       case 'foodlog':
         return <FoodLog />;
+      case 'recipes':
+        return <Recipes />;
       case 'foodsmanager':
         return <AdminFoodsManager />;
       case 'adminusers':
@@ -131,62 +115,62 @@ export default function Dashboard() {
               )}
 
               <div className="card">
-                <h3>📊 Mi Plan</h3>
-                <p>Consulta tu plan de alimentación personalizado</p>
-                <button className="btn-card" onClick={() => setCurrentView('myaccount')}>Ver Plan</button>
+                <h3>{t('card.myplan.title', '📊 Mi Plan')}</h3>
+                <p>{t('card.myplan.desc', 'Consulta tu plan de alimentación personalizado')}</p>
+                <button className="btn-card" onClick={() => setCurrentView('myaccount')}>{t('card.myplan.button', 'Ver Plan')}</button>
               </div>
 
               <div className="card" onClick={() => setCurrentView('foodlog')}>
-                <h3>🍔 Registro de Comidas</h3>
-                <p>Registra lo que comiste hoy</p>
-                <button className="btn-card">Registrar Comida</button>
+                <h3>{t('card.foodlog.title', '🍔 Registro de Comidas')}</h3>
+                <p>{t('card.foodlog.desc', 'Registra lo que comiste hoy')}</p>
+                <button className="btn-card">{t('card.foodlog.button', 'Registrar Comida')}</button>
               </div>
 
               <div className="card" onClick={() => setCurrentView('progress')}>
-                <h3>📈 Progreso</h3>
-                <p>Visualiza tu evolución</p>
-                <button className="btn-card">Ver Estadísticas</button>
+                <h3>{t('card.progress.title', '📈 Progreso')}</h3>
+                <p>{t('card.progress.desc', 'Visualiza tu evolución')}</p>
+                <button className="btn-card">{t('card.progress.button', 'Ver Estadísticas')}</button>
               </div>
 
               <div className="card" onClick={() => setCurrentView('equivalentes')}>
-                <h3>🔄 Equivalentes por Grupo</h3>
-                <p>Intercambia alimentos manteniendo macros</p>
-                <button className="btn-card">Ver Equivalentes</button>
+                <h3>{t('card.equivalentes.title', '🔄 Equivalentes por Grupo')}</h3>
+                <p>{t('card.equivalentes.desc', 'Intercambia alimentos manteniendo macros')}</p>
+                <button className="btn-card">{t('card.equivalentes.button', 'Ver Equivalentes')}</button>
               </div>
 
               <div className="card">
-                <h3>📚 Recetas</h3>
-                <p>Explora recetas saludables</p>
-                <button className="btn-card">Ver Recetas</button>
+                <h3>{t('card.recipes.title', '📚 Recetas')}</h3>
+                <p>{t('card.recipes.desc', 'Explora recetas saludables')}</p>
+                <button className="btn-card" onClick={() => setCurrentView('recipes')}>{t('card.recipes.button', 'Ver Recetas')}</button>
               </div>
             </div>
 
             <section className="quick-stats">
-              <h3>Resumen del Día</h3>
+              <h3>{t('home.summary.title', 'Resumen del Día')}</h3>
               <div className="stats-grid">
                 <div className="stat-box">
-                  <label>Calorías</label>
+                  <label>{t('ai.calories', 'Calorías')}</label>
                   <p>{Math.round(dayTotals?.totalCalorias || 0)} / {plan.calorias} kcal</p>
                   <div className="progress-bar">
                     <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalCalorias || 0) / plan.calorias) * 100, 100)}%` }}></div>
                   </div>
                 </div>
                 <div className="stat-box">
-                  <label>Proteína</label>
+                  <label>{t('ai.protein', 'Proteína')}</label>
                   <p>{Math.round(dayTotals?.totalProteina || 0)} / {plan.proteina}g</p>
                   <div className="progress-bar">
                     <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalProteina || 0) / plan.proteina) * 100, 100)}%` }}></div>
                   </div>
                 </div>
                 <div className="stat-box">
-                  <label>Carbohidratos</label>
+                  <label>{t('ai.carbs', 'Carbohidratos')}</label>
                   <p>{Math.round(dayTotals?.totalCarbohidratos || 0)} / {plan.carbohidratos}g</p>
                   <div className="progress-bar">
                     <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalCarbohidratos || 0) / plan.carbohidratos) * 100, 100)}%` }}></div>
                   </div>
                 </div>
                 <div className="stat-box">
-                  <label>Grasas</label>
+                  <label>{t('ai.fats', 'Grasas')}</label>
                   <p>{Math.round(dayTotals?.totalGrasas || 0)} / {plan.grasas}g</p>
                   <div className="progress-bar">
                     <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalGrasas || 0) / plan.grasas) * 100, 100)}%` }}></div>
@@ -207,16 +191,16 @@ export default function Dashboard() {
         </div>
         <div className="navbar-menu">
           <button 
-            onClick={() => setCurrentView('progress')}
-            className={currentView === 'progress' ? 'nav-link active' : 'nav-link'}
-          >
-            {t('nav.progress', 'Progreso')}
-          </button>
-          <button 
             onClick={() => setCurrentView('home')}
             className={currentView === 'home' ? 'nav-link active' : 'nav-link'}
           >
             {t('nav.home', 'Inicio')}
+          </button>
+          <button 
+            onClick={() => setCurrentView('progress')}
+            className={currentView === 'progress' ? 'nav-link active' : 'nav-link'}
+          >
+            {t('nav.progress', 'Progreso')}
           </button>
           <button 
             onClick={() => setCurrentView('calculator')}
@@ -235,6 +219,12 @@ export default function Dashboard() {
             className={currentView === 'equivalentes' ? 'nav-link active' : 'nav-link'}
           >
             {t('nav.equivalentes', 'Equivalentes')}
+          </button>
+          <button 
+            onClick={() => setCurrentView('recipes')}
+            className={currentView === 'recipes' ? 'nav-link active' : 'nav-link'}
+          >
+            {t('nav.recipes', 'Recetas')}
           </button>
           {user?.rol === 'super_admin' && (
             <button 
@@ -303,6 +293,20 @@ export default function Dashboard() {
       <div className="dashboard-content">
         {renderContent()}
       </div>
+      <div className="fixed bottom-4 right-4 z-40">
+        {!chatOpen && (
+          <button
+            className="rounded-full bg-lime-500 text-black shadow-lg px-4 py-3"
+            onClick={() => setChatOpen(true)}
+          >
+            Health‑Bot
+          </button>
+        )}
+      </div>
+      {chatOpen && (
+        <div onClick={() => setChatOpen(false)} className="fixed inset-0 pointer-events-none"></div>
+      )}
+      {chatOpen && <NutritionChat />}
     </div>
   );
 }

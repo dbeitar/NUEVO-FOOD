@@ -12,6 +12,9 @@ router.get("/", foodController.getAllFoods);
 // GET: Obtener categorías
 router.get("/categories", foodController.getCategories);
 
+// GET: Estadísticas (resumen por categoría)
+router.get("/stats", foodController.getStats);
+
 // GET: Buscar alimentos
 router.get("/search", foodController.searchFoods);
 

@@ -6,15 +6,19 @@ export default defineConfig(() => {
   const port = 5173
   return {
     plugins: [react(), tailwind()],
+    build: {
+      sourcemap: true,
+    },
     server: {
       port,
       strictPort: false,
       open: true,
     },
     preview: {
-      port,
+      port: 10000,
       strictPort: false,
       open: true,
+      allowedHosts: ['food-plan-steel.vercel.app'],
     },
   }
 })

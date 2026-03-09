@@ -1,0 +1,8 @@
+{
+  "collection": "@nestjs/cli",
+  "sourceRoot": "src",
+  "entryFile": "main",
+  "compilerOptions": {
+    "deleteOutDir": true
+  }
+}

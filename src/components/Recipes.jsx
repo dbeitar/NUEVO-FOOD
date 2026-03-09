@@ -1,11 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useI18n } from '../context/useI18n';
 
 export default function Recipes() {
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  
+  const { t } = useI18n();
+
   // AI Generator State
   const [showAiModal, setShowAiModal] = useState(false);
   const [aiLoading, setAiLoading] = useState(false);
@@ -15,6 +17,14 @@ export default function Recipes() {
     ingredients: '',
     preferences: ''
   });
+  const [showImport, setShowImport] = useState(false);
+  const [importText, setImportText] = useState('');
+  const [importBusy, setImportBusy] = useState(false);
+
+  // Detalle de receta
+  const [detailOpen, setDetailOpen] = useState(false);
+  const [detailRecipe, setDetailRecipe] = useState(null);
+  const [detailPortions, setDetailPortions] = useState(1);
 
   useEffect(() => {
     fetchRecipes();
@@ -66,65 +76,375 @@ export default function Recipes() {
   };
 
   return (
-    <div className="recipes-container">
-      <div className="recipes-header">
-        <h2>📚 Biblioteca de Recetas</h2>
-        <button className="btn-ai-chef" onClick={() => setShowAiModal(true)}>
-          🤖 Chef IA
-        </button>
-      </div>
+    <div className="min-h-screen bg-stone-50 p-6">
+      <div className="max-w-7xl mx-auto space-y-6">
+        <div className="flex items-center justify-between">
+          <h2 className="text-2xl font-bold text-stone-900">{t('recipes.library_title', '📚 Biblioteca de Recetas')}</h2>
+          <div className="flex gap-2">
+            <button className="inline-flex items-center justify-center px-4 py-2 rounded-2xl font-medium bg-white text-stone-700 border border-slate-300 hover:bg-slate-100 transition-colors" onClick={() => setShowAiModal(true)}>
+              {t('recipes.ai_button', '🤖 Chef IA')}
+            </button>
+            <button className="inline-flex items-center justify-center px-4 py-2 rounded-2xl font-medium bg-white text-stone-700 border border-slate-300 hover:bg-slate-100 transition-colors" onClick={() => setShowImport(true)}>
+              {t('recipes.import_add', 'Agregar')}
+            </button>
+          </div>
+        </div>
 
-      <div className="search-bar">
-        <form onSubmit={handleSearch}>
-          <input 
-            type="text" 
-            placeholder="Buscar recetas (ej. Pollo, Keto...)" 
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
-          <button type="submit">Buscar</button>
-        </form>
-      </div>
+        <div className="p-6 bg-white rounded-3xl shadow-sm border border-slate-200">
+          <form onSubmit={handleSearch} className="flex items-center gap-3">
+            <input
+              type="text"
+              placeholder={t('recipes.search_ph', 'Buscar recetas (ej. Pollo, Keto...)')}
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="flex-1 px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
+            />
+            <button type="submit" className="inline-flex items-center justify-center px-4 py-2 rounded-2xl font-medium bg-lime-500 text-black hover:bg-lime-400 focus:outline-none focus:ring-2 focus:ring-lime-400">
+              {t('recipes.search', 'Buscar')}
+            </button>
+          </form>
+        </div>
 
-      {loading ? (
-        <div className="loading">Cargando recetas...</div>
-      ) : (
-        <div className="recipes-grid">
-          {recipes.length > 0 ? recipes.map(recipe => (
-            <div key={recipe.id} className="recipe-card">
-              <div className="recipe-image" style={{backgroundImage: `url(${recipe.imagen || 'https://via.placeholder.com/300x200'})`}}>
-                <span className="recipe-time">⏱ {recipe.tiempo_preparacion}</span>
-              </div>
-              <div className="recipe-content">
-                <h3>{recipe.nombre}</h3>
-                <p className="recipe-desc">{recipe.descripcion}</p>
-                <div className="recipe-macros">
+      {showImport && (
+        <div className="policy-modal-overlay" onClick={() => !importBusy && setShowImport(false)}>
+          <div className="policy-modal" onClick={(e) => e.stopPropagation()} style={{maxWidth: 840}}>
+            <button className="policy-close-btn" onClick={() => !importBusy && setShowImport(false)}>✕</button>
+            <h3>{t('recipes.import_replace', 'Reemplazar biblioteca')}</h3>
+            <p className="text-sm text-stone-600">{t('recipes.import_help', 'Pega una tabla con columnas: ID Receta, Nombre del Plato, Ingredientes Clave (IDs), Cal Totales, Proteína T, Carbos T, Grasas T. Se admiten secciones como "--Desayunos...---ID Receta..."')}</p>
+            <textarea
+              value={importText}
+              onChange={(e) => setImportText(e.target.value)}
+              placeholder={t('recipes.import_ph', 'Pega aquí las recetas...')}
+              className="w-full h-64 p-3 rounded-2xl border border-slate-300"
+            />
+            <div className="flex justify-end gap-2">
+              <button className="btn-secondary" disabled={importBusy} onClick={() => setShowImport(false)}>{t('common.cancel', 'Cancelar')}</button>
+              <button
+                className="btn-secondary"
+                disabled={importBusy || !importText.trim()}
+                onClick={async () => {
+                  const raw = importText.trim();
+                  const toNumber = (v) => {
+                    if (typeof v !== 'string') return Number(v) || 0;
+                    return Number(String(v).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+                  };
+                    const splitCsv = (line) => {
+                    const out = [];
+                    let cur = '';
+                    let inQ = false;
+                    for (let i = 0; i < line.length; i++) {
+                      const ch = line[i];
+                      if (ch === '"') {
+                        inQ = !inQ;
+                        continue;
+                      }
+                      if (ch === ',' && !inQ) {
+                        out.push(cur.trim());
+                        cur = '';
+                      } else {
+                        cur += ch;
+                      }
+                    }
+                    out.push(cur.trim());
+                    return out;
+                  };
+                  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+                  let section = null;
+                  const items = [];
+                  for (const line of lines) {
+                    const lower = line.toLowerCase();
+                    if (lower.includes('id receta')) {
+                      const idx = lower.indexOf('id receta');
+                      const before = line.slice(0, idx).replace(/[-–—]/g, '').trim();
+                      if (before) section = before;
+                      continue;
+                    }
+                    if (/^[-–—]/.test(line)) {
+                      const clean = line.replace(/[-–—]/g, '').trim();
+                      if (clean) section = clean;
+                      continue;
+                    }
+                    if (!/^[r]\d+/i.test(line)) continue;
+                    const cols = splitCsv(line);
+                    if (cols.length < 7) continue;
+                    const [codigo, nombre, ingStr, cal, prot, carb, gras] = cols;
+                    if (!nombre) continue;
+                    const ingList = (ingStr || '')
+                      .replace(/^"|"$|^'|'$/g, '')
+                      .split(',')
+                      .map(s => s.trim())
+                      .map(s => s.replace(/\s*\([^)]*\)\s*/g, '').trim())
+                      .filter(Boolean);
+                    items.push({
+                      codigo: codigo || null,
+                      nombre,
+                      ingredientes: ingList,
+                      macros: {
+                        calorias: toNumber(cal),
+                        proteina: toNumber(prot),
+                        carbohidratos: toNumber(carb),
+                        grasas: toNumber(gras),
+                      },
+                      tags: section ? [section] : []
+                    });
+                  }
+                  if (items.length === 0) {
+                    alert(t('recipes.import_parse_error', 'No se encontraron filas válidas.'));
+                    return;
+                  }
+                  try {
+                    setImportBusy(true);
+                    const resp = await api.post('/recipes/import', { items, mode: 'add' });
+                    if (resp?.data?.success) {
+                      alert(t('recipes.import_done_add', '✅ Recetas agregadas'));
+                      setShowImport(false);
+                      setImportText('');
+                      await fetchRecipes();
+                    } else {
+                      alert(t('recipes.import_error', '❌ Error al importar recetas'));
+                    }
+                  } catch {
+                    alert(t('recipes.import_error', '❌ Error al importar recetas'));
+                  } finally {
+                    setImportBusy(false);
+                  }
+                }}
+              >
+                {importBusy ? t('common.loading', 'Cargando...') : t('recipes.import_add', 'Agregar')}
+              </button>
+              <button
+                className="btn-primary"
+                disabled={importBusy || !importText.trim()}
+                onClick={async () => {
+                  const raw = importText.trim();
+                  const toNumber = (v) => {
+                    if (typeof v !== 'string') return Number(v) || 0;
+                    return Number(String(v).replace(/[^\d.,-]/g, '').replace(',', '.')) || 0;
+                  };
+                    const splitCsv = (line) => {
+                    const out = [];
+                    let cur = '';
+                    let inQ = false;
+                    for (let i = 0; i < line.length; i++) {
+                      const ch = line[i];
+                      if (ch === '"') {
+                        inQ = !inQ;
+                        continue;
+                      }
+                      if (ch === ',' && !inQ) {
+                        out.push(cur.trim());
+                        cur = '';
+                      } else {
+                        cur += ch;
+                      }
+                    }
+                    out.push(cur.trim());
+                    return out;
+                  };
+                  const lines = raw.split('\n').map(l => l.trim()).filter(Boolean);
+                  let section = null;
+                  const items = [];
+                  for (const line of lines) {
+                    const lower = line.toLowerCase();
+                    if (lower.includes('id receta')) {
+                      const idx = lower.indexOf('id receta');
+                      const before = line.slice(0, idx).replace(/[-–—]/g, '').trim();
+                      if (before) section = before;
+                      continue;
+                    }
+                    if (/^[-–—]/.test(line)) {
+                      const clean = line.replace(/[-–—]/g, '').trim();
+                      if (clean) section = clean;
+                      continue;
+                    }
+                    if (!/^[r]\d+/i.test(line)) continue;
+                    const cols = splitCsv(line);
+                    if (cols.length < 7) continue;
+                    const [codigo, nombre, ingStr, cal, prot, carb, gras] = cols;
+                    if (!nombre) continue;
+                    const ingList = (ingStr || '')
+                      .replace(/^"|"$|^'|'$/g, '')
+                      .split(',')
+                      .map(s => s.trim())
+                      .map(s => s.replace(/\s*\([^)]*\)\s*/g, '').trim())
+                      .filter(Boolean);
+                    items.push({
+                      codigo: codigo || null,
+                      nombre,
+                      ingredientes: ingList,
+                      macros: {
+                        calorias: toNumber(cal),
+                        proteina: toNumber(prot),
+                        carbohidratos: toNumber(carb),
+                        grasas: toNumber(gras),
+                      },
+                      tags: section ? [section] : []
+                    });
+                  }
+                  if (items.length === 0) {
+                    alert(t('recipes.import_parse_error', 'No se encontraron filas válidas.'));
+                    return;
+                  }
+                  try {
+                    setImportBusy(true);
+                    const resp = await api.post('/recipes/import', { items, mode: 'replace' });
+                    if (resp?.data?.success) {
+                      alert(t('recipes.import_done', '✅ Recetas reemplazadas'));
+                      setShowImport(false);
+                      setImportText('');
+                      await fetchRecipes();
+                    } else {
+                      alert(t('recipes.import_error', '❌ Error al importar recetas'));
+                    }
+                  } catch {
+                    alert(t('recipes.import_error', '❌ Error al importar recetas'));
+                  } finally {
+                    setImportBusy(false);
+                  }
+                }}
+              >
+                {importBusy ? t('common.loading', 'Cargando...') : t('recipes.import_replace', 'Reemplazar biblioteca')}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+        {loading ? (
+          <div className="text-stone-600">{t('recipes.loading', 'Cargando recetas...')}</div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+            {recipes.length > 0 ? recipes.map(recipe => (
+              <div key={recipe.id} className="bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:scale-[1.02] transition-transform duration-200 cursor-default">
+                <div className="flex items-center justify-between mb-3">
+                  <h3 className="text-lg font-semibold text-stone-900">{recipe.nombre}</h3>
+                  <span className="text-sm text-stone-600">⏱ {recipe.tiempo_preparacion}</span>
+                </div>
+                <p className="text-sm text-stone-600 mb-3">{recipe.descripcion}</p>
+                <div className="flex items-center gap-4 text-sm text-stone-700 mb-3">
                   <span>🔥 {recipe.macros?.calorias} kcal</span>
-                  <span>🥩 {recipe.macros?.proteina}g P</span>
+                  <span>🥩 {recipe.macros?.proteina}g</span>
+                  <span>🍚 {recipe.macros?.carbohidratos}g</span>
+                  <span>🧈 {recipe.macros?.grasas}g</span>
                 </div>
-                <div className="recipe-tags">
-                  {recipe.tags?.map((tag, i) => <span key={i} className="tag">{tag}</span>)}
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {recipe.tags?.map((tag, i) => <span key={i} className="px-2 py-1 rounded-xl bg-slate-100 text-stone-700 text-xs">{tag}</span>)}
                 </div>
-                <button className="btn-view-recipe">Ver Detalles</button>
+                <button
+                  className="inline-flex items-center justify-center px-4 py-2 rounded-2xl font-medium bg-white text-stone-700 border border-slate-300 hover:bg-slate-100 transition-colors"
+                  onClick={() => { setDetailRecipe(recipe); setDetailPortions(1); setDetailOpen(true); }}
+                >
+                  {t('recipes.view', 'Ver Detalles')}
+                </button>
+              </div>
+            )) : (
+              <p className="text-stone-500 italic">{t('recipes.none', 'No se encontraron recetas.')}</p>
+            )}
+          </div>
+        )}
+
+      {/* Modal Detalle */}
+      {detailOpen && detailRecipe && (
+        <div className="policy-modal-overlay" onClick={() => setDetailOpen(false)}>
+          <div className="policy-modal" onClick={(e) => e.stopPropagation()} style={{ maxWidth: 900 }}>
+            <button className="policy-close-btn" onClick={() => setDetailOpen(false)}>✕</button>
+            <div className="flex flex-col md:flex-row gap-6">
+              {detailRecipe.imagen && (
+                <img src={detailRecipe.imagen} alt={detailRecipe.nombre} style={{ maxWidth: 260, borderRadius: 16 }} />
+              )}
+              <div className="flex-1">
+                <div className="flex items-center justify-between">
+                  <h3 className="text-xl font-bold text-stone-900">{detailRecipe.nombre}</h3>
+                  <div className="text-sm text-stone-600">⏱ {detailRecipe.tiempo_preparacion} · {detailRecipe.dificultad || '—'}</div>
+                </div>
+                {detailRecipe.descripcion && <p className="text-stone-700 mt-1">{detailRecipe.descripcion}</p>}
+                <div className="flex flex-wrap gap-2 mt-2">
+                  {(detailRecipe.tags || []).map((tag, i) => (
+                    <span key={i} className="px-2 py-1 rounded-xl bg-slate-100 text-stone-700 text-xs">{tag}</span>
+                  ))}
+                </div>
+                <div className="mt-4 grid grid-cols-2 md:grid-cols-4 gap-3">
+                  {(() => {
+                    const m = detailRecipe.macros || {};
+                    const p = Math.max(1, Number(detailPortions) || 1);
+                    const fmt = (v) => v != null ? Math.round(v * p) : 0;
+                    return (
+                      <>
+                        <div className="p-3 bg-stone-50 rounded-2xl border border-slate-200 text-sm">
+                          <div className="text-stone-600 mb-1">Calorías</div>
+                          <div className="text-stone-900 font-semibold">🔥 {fmt(m.calorias)} kcal</div>
+                        </div>
+                        <div className="p-3 bg-stone-50 rounded-2xl border border-slate-200 text-sm">
+                          <div className="text-stone-600 mb-1">Proteína</div>
+                          <div className="text-stone-900 font-semibold">🥩 {fmt(m.proteina)} g</div>
+                        </div>
+                        <div className="p-3 bg-stone-50 rounded-2xl border border-slate-200 text-sm">
+                          <div className="text-stone-600 mb-1">Carbohidratos</div>
+                          <div className="text-stone-900 font-semibold">🍚 {fmt(m.carbohidratos)} g</div>
+                        </div>
+                        <div className="p-3 bg-stone-50 rounded-2xl border border-slate-200 text-sm">
+                          <div className="text-stone-600 mb-1">Grasas</div>
+                          <div className="text-stone-900 font-semibold">🧈 {fmt(m.grasas)} g</div>
+                        </div>
+                      </>
+                    );
+                  })()}
+                </div>
+                <div className="mt-4">
+                  <label className="block text-sm font-semibold text-stone-700 mb-1">{t('recipes.portions', 'Porciones')}</label>
+                  <input
+                    type="number"
+                    min={1}
+                    step={1}
+                    value={detailPortions}
+                    onChange={(e) => setDetailPortions(e.target.value)}
+                    className="w-32 px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
+                  />
+                </div>
               </div>
             </div>
-          )) : (
-            <p>No se encontraron recetas.</p>
-          )}
+
+            <div className="mt-6 grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div>
+                <h4 className="text-lg font-semibold text-stone-900 mb-2">{t('recipes.ingredients', 'Ingredientes')}</h4>
+                <ul className="list-disc pl-5 space-y-1">
+                  {(detailRecipe.ingredientes || []).map((ing, i) => {
+                    if (typeof ing === 'string') return <li key={i}>{ing}</li>;
+                    const p = Math.max(1, Number(detailPortions) || 1);
+                    const cant = (typeof ing.cantidad === 'number') ? (ing.cantidad * p) : ing.cantidad;
+                    return <li key={i}>{cant} {ing.unidad || ''} {ing.nombre || ''}</li>;
+                  })}
+                </ul>
+              </div>
+              <div>
+                <h4 className="text-lg font-semibold text-stone-900 mb-2">{t('recipes.steps', 'Preparación')}</h4>
+                {Array.isArray(detailRecipe.instrucciones) && detailRecipe.instrucciones.length > 0 ? (
+                  <ol className="list-decimal pl-5 space-y-1">
+                    {detailRecipe.instrucciones.map((st, i) => <li key={i}>{st}</li>)}
+                  </ol>
+                ) : (
+                  <p className="text-stone-600">{t('recipes.no_steps', 'Sin instrucciones detalladas')}</p>
+                )}
+              </div>
+            </div>
+            <div className="flex justify-end gap-2 mt-6">
+              <button className="btn-secondary" onClick={() => setDetailOpen(false)}>{t('common.close', 'Cerrar')}</button>
+            </div>
+          </div>
         </div>
       )}
 
       {/* Modal IA */}
       {showAiModal && (
-        <div className="modal-overlay">
-          <div className="modal-content">
-            <button className="close-modal" onClick={() => setShowAiModal(false)}>×</button>
-            <h3>👨‍🍳 Chef Inteligente</h3>
+        <div className="policy-modal-overlay">
+          <div className="policy-modal">
+            <button className="policy-close-btn" onClick={() => setShowAiModal(false)}>✕</button>
+            <h3>{t('recipes.ai_title', '👨‍🍳 Chef Inteligente')}</h3>
             
             {!aiResult ? (
               <form onSubmit={generateAiRecipe}>
                 <div className="form-group">
-                  <label>Tipo de Comida</label>
+                  <label>{t('recipes.ai_type', 'Tipo de Comida')}</label>
                   <select 
                     value={aiForm.mealType}
                     onChange={e => setAiForm({...aiForm, mealType: e.target.value})}
@@ -136,7 +456,7 @@ export default function Recipes() {
                   </select>
                 </div>
                 <div className="form-group">
-                  <label>Ingredientes disponibles (separados por coma)</label>
+                  <label>{t('recipes.ai_ingredients', 'Ingredientes disponibles (separados por coma)')}</label>
                   <input 
                     placeholder="Ej: Pollo, arroz, tomate"
                     value={aiForm.ingredients}
@@ -144,7 +464,7 @@ export default function Recipes() {
                   />
                 </div>
                 <div className="form-group">
-                  <label>Preferencias / Restricciones</label>
+                  <label>{t('recipes.ai_prefs', 'Preferencias / Restricciones')}</label>
                   <input 
                     placeholder="Ej: Sin gluten, Keto, Picante..."
                     value={aiForm.preferences}
@@ -152,7 +472,7 @@ export default function Recipes() {
                   />
                 </div>
                 <button type="submit" className="btn-primary" disabled={aiLoading}>
-                  {aiLoading ? '🍳 Cocinando idea...' : '✨ Generar Receta'}
+                  {aiLoading ? t('recipes.ai_cooking', '🍳 Cocinando idea...') : t('recipes.ai_generate', '✨ Generar Receta')}
                 </button>
               </form>
             ) : (
@@ -191,6 +511,34 @@ export default function Recipes() {
           </div>
         </div>
       )}
+
+      <div className="add-link">
+        <h3>{t('recipes.add_link_title', 'Agregar enlace de receta')}</h3>
+        <form onSubmit={async (e) => {
+          e.preventDefault();
+          const name = e.currentTarget.name.value.trim();
+          const url = e.currentTarget.url.value.trim();
+          const tags = e.currentTarget.tags.value.split(',').map(s => s.trim()).filter(Boolean);
+          if (!name || !url) return;
+          try {
+            const res = await api.post('/recipes', { nombre: name, url, tags });
+            if (res?.data?.success) {
+              setRecipes(prev => [res.data.recipe, ...prev]);
+              e.currentTarget.reset();
+            } else {
+              setRecipes(prev => prev);
+            }
+          } catch {
+            alert('No fue posible guardar el enlace');
+          }
+        }}>
+          <input name="name" placeholder={t('recipes.link_name', 'Nombre')} />
+          <input name="url" placeholder={t('recipes.link_url', 'URL')} />
+          <input name="tags" placeholder={t('recipes.link_tags', 'Etiquetas (coma separadas)')} />
+          <button type="submit" className="btn-primary">{t('recipes.add_link', 'Agregar')}</button>
+        </form>
+      </div>
+    </div>
     </div>
   );
 }

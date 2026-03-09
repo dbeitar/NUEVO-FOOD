@@ -109,6 +109,27 @@ const RecipeDatabase = {
     return newRecipe;
   },
   
+  replaceAll: (list) => {
+    recipeDatabase = [];
+    nextRecipeId = 1;
+    for (const data of list) {
+      const item = {
+        id: nextRecipeId++,
+        ...data,
+        createdAt: new Date()
+      };
+      recipeDatabase.push(item);
+    }
+    save();
+    return recipeDatabase.length;
+  },
+  
+  clearAll: () => {
+    recipeDatabase = [];
+    nextRecipeId = 1;
+    save();
+  },
+  
   update: (id, updates) => {
     const index = recipeDatabase.findIndex(r => r.id === id);
     if (index !== -1) {

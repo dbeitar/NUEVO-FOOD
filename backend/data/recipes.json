@@ -1,135 +1,1168 @@
 [
   {
     "id": 1,
-    "nombre": "Pollo a la Plancha con Verduras",
-    "descripcion": "Una comida ligera y alta en proteínas.",
+    "codigo": "R001",
+    "nombre": "Porridge de Avena y Chía",
+    "descripcion": "",
     "ingredientes": [
       {
-        "nombre": "Pechuga de Pollo",
-        "cantidad": "200g"
+        "nombre": "Avena",
+        "cantidad": "al gusto"
       },
       {
-        "nombre": "Brócoli",
-        "cantidad": "100g"
+        "nombre": "Chía",
+        "cantidad": "al gusto"
       },
       {
-        "nombre": "Zanahoria",
-        "cantidad": "50g"
-      },
-      {
-        "nombre": "Aceite de Oliva",
-        "cantidad": "1 cdita"
-      }
-    ],
-    "instrucciones": [
-      "Sazonar el pollo con sal y pimienta.",
-      "Cocinar a la plancha con un poco de aceite.",
-      "Cocer las verduras al vapor.",
-      "Servir todo junto."
-    ],
-    "macros": {
-      "calorias": 350,
-      "proteina": 45,
-      "carbohidratos": 10,
-      "grasas": 12
-    },
-    "tiempo_preparacion": "20 min",
-    "dificultad": "Fácil",
-    "tags": [
-      "Almuerzo",
-      "Cena",
-      "Alto en Proteína",
-      "Bajo en Carbohidratos"
-    ],
-    "imagen": "https://via.placeholder.com/300x200?text=Pollo+Verduras"
-  },
-  {
-    "id": 2,
-    "nombre": "Avena Proteica con Frutas",
-    "descripcion": "Desayuno energético para empezar el día.",
-    "ingredientes": [
-      {
-        "nombre": "Avena en hojuelas",
-        "cantidad": "50g"
-      },
-      {
-        "nombre": "Leche de almendras",
-        "cantidad": "200ml"
-      },
-      {
-        "nombre": "Proteína en polvo (Vainilla)",
-        "cantidad": "1 scoop"
-      },
-      {
-        "nombre": "Fresas",
-        "cantidad": "50g"
-      }
-    ],
-    "instrucciones": [
-      "Cocinar la avena con la leche.",
-      "Al retirar del fuego, mezclar la proteína.",
-      "Decorar con fresas picadas."
-    ],
-    "macros": {
-      "calorias": 380,
-      "proteina": 25,
-      "carbohidratos": 45,
-      "grasas": 8
-    },
-    "tiempo_preparacion": "10 min",
-    "dificultad": "Fácil",
-    "tags": [
-      "Desayuno",
-      "Vegetariano"
-    ],
-    "imagen": "https://via.placeholder.com/300x200?text=Avena+Proteica"
-  },
-  {
-    "id": 3,
-    "nombre": "Ensalada de Atún y Aguacate",
-    "descripcion": "Fresca y rápida, rica en grasas saludables.",
-    "ingredientes": [
-      {
-        "nombre": "Atún en agua",
-        "cantidad": "1 lata"
-      },
-      {
-        "nombre": "Aguacate",
-        "cantidad": "1/2 unidad"
-      },
-      {
-        "nombre": "Lechuga",
-        "cantidad": "1 taza"
-      },
-      {
-        "nombre": "Tomate",
-        "cantidad": "1 unidad"
-      },
-      {
-        "nombre": "Limón",
+        "nombre": "Leche",
         "cantidad": "al gusto"
       }
     ],
-    "instrucciones": [
-      "Escurrir el atún.",
-      "Picar las verduras y el aguacate.",
-      "Mezclar todo en un bowl.",
-      "Aderezar con limón, sal y pimienta."
-    ],
+    "instrucciones": [],
     "macros": {
-      "calorias": 320,
-      "proteina": 25,
-      "carbohidratos": 8,
+      "calorias": 380,
+      "proteina": 15,
+      "carbohidratos": 52,
+      "grasas": 12
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Desayunos Fitness (Energía y Saciedad)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 2,
+    "codigo": "R002",
+    "nombre": "Omelette de Claras y Pavo",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Claras",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Pavo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Espinaca",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 220,
+      "proteina": 35,
+      "carbohidratos": 4,
+      "grasas": 5
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Desayunos Fitness (Energía y Saciedad)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 3,
+    "codigo": "R003",
+    "nombre": "Yogur Griego con Arándanos",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Yogur",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Arándanos",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 210,
+      "proteina": 18,
+      "carbohidratos": 18,
+      "grasas": 7
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Desayunos Fitness (Energía y Saciedad)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 4,
+    "codigo": "R004",
+    "nombre": "Tostadas de Centeno y Aguacate",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Pan Centeno",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Aguacate",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 310,
+      "proteina": 8,
+      "carbohidratos": 35,
+      "grasas": 16
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Desayunos Fitness (Energía y Saciedad)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 5,
+    "codigo": "R005",
+    "nombre": "Smoothie Tropical Proteico",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Whey",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Mango",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Coco",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 340,
+      "proteina": 26,
+      "carbohidratos": 40,
+      "grasas": 8
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Desayunos Fitness (Energía y Saciedad)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 6,
+    "codigo": "R006",
+    "nombre": "Tortitas de Plátano y Huevo",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Huevo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Plátano",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 290,
+      "proteina": 14,
+      "carbohidratos": 28,
+      "grasas": 11
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Desayunos Fitness (Energía y Saciedad)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 7,
+    "codigo": "R007",
+    "nombre": "Bowl de Kéfir y Nueces",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Kéfir",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Nueces",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 260,
+      "proteina": 10,
+      "carbohidratos": 12,
       "grasas": 18
     },
-    "tiempo_preparacion": "10 min",
-    "dificultad": "Muy Fácil",
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
     "tags": [
-      "Almuerzo",
-      "Cena",
-      "Keto",
-      "Sin Cocción"
+      "Desayunos Fitness (Energía y Saciedad)"
     ],
-    "imagen": "https://via.placeholder.com/300x200?text=Ensalada+Atun"
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 8,
+    "codigo": "R015",
+    "nombre": "Pollo al Curry con Basmati",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Pollo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Arroz",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Leche Coco",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 520,
+      "proteina": 42,
+      "carbohidratos": 55,
+      "grasas": 14
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Almuerzos de Alto Rendimiento (Músculo y Recuperación)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 9,
+    "codigo": "R016",
+    "nombre": "Salmón a la Plancha con Quinoa",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Salmón",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Quinoa",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 480,
+      "proteina": 36,
+      "carbohidratos": 38,
+      "grasas": 22
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Almuerzos de Alto Rendimiento (Músculo y Recuperación)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 10,
+    "codigo": "R017",
+    "nombre": "Pasta Integral con Atún",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Pasta",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Atún",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Tomate",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 410,
+      "proteina": 32,
+      "carbohidratos": 58,
+      "grasas": 6
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Almuerzos de Alto Rendimiento (Músculo y Recuperación)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 11,
+    "codigo": "R018",
+    "nombre": "Ensalada de Lentejas y Feta",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Lentejas",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Queso",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 390,
+      "proteina": 22,
+      "carbohidratos": 45,
+      "grasas": 12
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Almuerzos de Alto Rendimiento (Músculo y Recuperación)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 12,
+    "codigo": "R019",
+    "nombre": "Poke Bowl de Atún Fresco",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Atún",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Arroz",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Edamame",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 450,
+      "proteina": 38,
+      "carbohidratos": 50,
+      "grasas": 9
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Almuerzos de Alto Rendimiento (Músculo y Recuperación)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 13,
+    "codigo": "R020",
+    "nombre": "Ternera Salteada con Brócoli",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Ternera",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Brócoli",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 380,
+      "proteina": 34,
+      "carbohidratos": 12,
+      "grasas": 18
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Almuerzos de Alto Rendimiento (Músculo y Recuperación)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 14,
+    "codigo": "R021",
+    "nombre": "Tacos de Pavo y Maíz",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Pavo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Tortilla",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 360,
+      "proteina": 28,
+      "carbohidratos": 38,
+      "grasas": 10
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Almuerzos de Alto Rendimiento (Músculo y Recuperación)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 15,
+    "codigo": "R030",
+    "nombre": "Merluza al Vapor con Espárragos",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Merluza",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Espárragos",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 240,
+      "proteina": 32,
+      "carbohidratos": 6,
+      "grasas": 4
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Cenas Ligeras (Control de Insulina / Definición)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 16,
+    "codigo": "R031",
+    "nombre": "Tofu Stir-fry con Champiñones",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Tofu",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Champiñones",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 210,
+      "proteina": 18,
+      "carbohidratos": 10,
+      "grasas": 12
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Cenas Ligeras (Control de Insulina / Definición)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 17,
+    "codigo": "R032",
+    "nombre": "Crema de Calabacín y Queso",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Calabacín",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Queso Fresco",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 180,
+      "proteina": 9,
+      "carbohidratos": 12,
+      "grasas": 10
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Cenas Ligeras (Control de Insulina / Definición)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 18,
+    "codigo": "R033",
+    "nombre": "Ensalada Griega con Pechuga",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Pollo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Pepino",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Tomate",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 320,
+      "proteina": 38,
+      "carbohidratos": 10,
+      "grasas": 14
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Cenas Ligeras (Control de Insulina / Definición)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 19,
+    "codigo": "R034",
+    "nombre": "Gambas al Ajillo con Gulas",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Gambas",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Ajo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Guindilla",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 280,
+      "proteina": 26,
+      "carbohidratos": 2,
+      "grasas": 18
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [
+      "Cenas Ligeras (Control de Insulina / Definición)"
+    ],
+    "imagen": null,
+    "createdAt": "2026-03-03T15:45:05.884Z"
+  },
+  {
+    "id": 20,
+    "codigo": "R001",
+    "nombre": "Porridge de Avena y Chía",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Avena",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Chía",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Leche",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 380,
+      "proteina": 15,
+      "carbohidratos": 52,
+      "grasas": 12
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:14.043Z"
+  },
+  {
+    "id": 21,
+    "codigo": "R002",
+    "nombre": "Omelette de Claras y Pavo",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Claras",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Pavo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Espinaca",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 220,
+      "proteina": 35,
+      "carbohidratos": 4,
+      "grasas": 5
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:14.044Z"
+  },
+  {
+    "id": 22,
+    "codigo": "R003",
+    "nombre": "Yogur Griego con Arándanos",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Yogur",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Arándanos",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 210,
+      "proteina": 18,
+      "carbohidratos": 18,
+      "grasas": 7
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:14.045Z"
+  },
+  {
+    "id": 23,
+    "codigo": "R004",
+    "nombre": "Tostadas de Centeno y Aguacate",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Pan Centeno",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Aguacate",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 310,
+      "proteina": 8,
+      "carbohidratos": 35,
+      "grasas": 16
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:14.045Z"
+  },
+  {
+    "id": 24,
+    "codigo": "R005",
+    "nombre": "Smoothie Tropical Proteico",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Whey",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Mango",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Coco",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 340,
+      "proteina": 26,
+      "carbohidratos": 40,
+      "grasas": 8
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:14.046Z"
+  },
+  {
+    "id": 25,
+    "codigo": "R006",
+    "nombre": "Tortitas de Plátano y Huevo",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Huevo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Plátano",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 290,
+      "proteina": 14,
+      "carbohidratos": 28,
+      "grasas": 11
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:14.046Z"
+  },
+  {
+    "id": 26,
+    "codigo": "R007",
+    "nombre": "Bowl de Kéfir y Nueces",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Kéfir",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Nueces",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 260,
+      "proteina": 10,
+      "carbohidratos": 12,
+      "grasas": 18
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:14.046Z"
+  },
+  {
+    "id": 27,
+    "codigo": "R015",
+    "nombre": "Pollo al Curry con Basmati",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Pollo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Arroz",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Leche Coco",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 520,
+      "proteina": 42,
+      "carbohidratos": 55,
+      "grasas": 14
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:49.497Z"
+  },
+  {
+    "id": 28,
+    "codigo": "R016",
+    "nombre": "Salmón a la Plancha con Quinoa",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Salmón",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Quinoa",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 480,
+      "proteina": 36,
+      "carbohidratos": 38,
+      "grasas": 22
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:49.498Z"
+  },
+  {
+    "id": 29,
+    "codigo": "R017",
+    "nombre": "Pasta Integral con Atún",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Pasta",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Atún",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Tomate",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 410,
+      "proteina": 32,
+      "carbohidratos": 58,
+      "grasas": 6
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:49.499Z"
+  },
+  {
+    "id": 30,
+    "codigo": "R018",
+    "nombre": "Ensalada de Lentejas y Feta",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Lentejas",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Queso",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 390,
+      "proteina": 22,
+      "carbohidratos": 45,
+      "grasas": 12
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:49.499Z"
+  },
+  {
+    "id": 31,
+    "codigo": "R019",
+    "nombre": "Poke Bowl de Atún Fresco",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Atún",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Arroz",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Edamame",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 450,
+      "proteina": 38,
+      "carbohidratos": 50,
+      "grasas": 9
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:49.499Z"
+  },
+  {
+    "id": 32,
+    "codigo": "R020",
+    "nombre": "Ternera Salteada con Brócoli",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Ternera",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Brócoli",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 380,
+      "proteina": 34,
+      "carbohidratos": 12,
+      "grasas": 18
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:49.499Z"
+  },
+  {
+    "id": 33,
+    "codigo": "R021",
+    "nombre": "Tacos de Pavo y Maíz",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Pavo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Tortilla",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 360,
+      "proteina": 28,
+      "carbohidratos": 38,
+      "grasas": 10
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:22:49.500Z"
+  },
+  {
+    "id": 34,
+    "codigo": "R030",
+    "nombre": "Merluza al Vapor con Espárragos",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Merluza",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Espárragos",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 240,
+      "proteina": 32,
+      "carbohidratos": 6,
+      "grasas": 4
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:23:11.805Z"
+  },
+  {
+    "id": 35,
+    "codigo": "R031",
+    "nombre": "Tofu Stir-fry con Champiñones",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Tofu",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Champiñones",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 210,
+      "proteina": 18,
+      "carbohidratos": 10,
+      "grasas": 12
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:23:11.805Z"
+  },
+  {
+    "id": 36,
+    "codigo": "R032",
+    "nombre": "Crema de Calabacín y Queso",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Calabacín",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Queso Fresco",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 180,
+      "proteina": 9,
+      "carbohidratos": 12,
+      "grasas": 10
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:23:11.806Z"
+  },
+  {
+    "id": 37,
+    "codigo": "R033",
+    "nombre": "Ensalada Griega con Pechuga",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Pollo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Pepino",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Tomate",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 320,
+      "proteina": 38,
+      "carbohidratos": 10,
+      "grasas": 14
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:23:11.806Z"
+  },
+  {
+    "id": 38,
+    "codigo": "R034",
+    "nombre": "Gambas al Ajillo con Gulas",
+    "descripcion": "",
+    "ingredientes": [
+      {
+        "nombre": "Gambas",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Ajo",
+        "cantidad": "al gusto"
+      },
+      {
+        "nombre": "Guindilla",
+        "cantidad": "al gusto"
+      }
+    ],
+    "instrucciones": [],
+    "macros": {
+      "calorias": 280,
+      "proteina": 26,
+      "carbohidratos": 2,
+      "grasas": 18
+    },
+    "tiempo_preparacion": "15 min",
+    "dificultad": "Fácil",
+    "tags": [],
+    "imagen": null,
+    "createdAt": "2026-03-03T18:23:11.806Z"
   }
 ]

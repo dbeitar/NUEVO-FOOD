@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { useAuth } from './context/AuthContext'
+import { useAuth } from './context/useAuth'
 import ModernLogin from './components/ModernLogin'
 import Register from './components/Register'
 import Dashboard from './components/Dashboard'
@@ -9,11 +9,7 @@ function App() {
   const [showRegister, setShowRegister] = useState(false)
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen bg-gray-50">
-        <div className="text-xl font-medium text-gray-600">Cargando aplicación...</div>
-      </div>
-    )
+    return <div className="loading">Cargando...</div>
   }
 
   if (!user) {

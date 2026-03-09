@@ -1,14 +1,20 @@
-import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useState, useEffect, useCallback } from 'react';
+import { useAuth } from '../context/useAuth';
 import api from '../services/api';
-import { useLocation, useNavigate } from 'react-router-dom';
-import { emitToast } from '../context/ToastContext.jsx';
+ 
+import { emitToast } from '../context/toast';
+import { useI18n } from '../context/useI18n';
 
 export default function MyAccount() {
   const { user, refreshProfile } = useAuth();
-  const location = useLocation();
-  const navigate = useNavigate();
-  const isPlanSelection = location.pathname === '/planes';
+  const { t } = useI18n();
+  const isPlanSelection = (() => {
+    try {
+      return (window.location && window.location.pathname) === '/planes';
+    } catch {
+      return false;
+    }
+  })();
   const [plans, setPlans] = useState([]);
   const [currentPlan, setCurrentPlan] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -41,12 +47,7 @@ export default function MyAccount() {
     return 'badge-slate';
   };
 
-  useEffect(() => {
-    fetchData();
-    fetchOptions();
-  }, []);
-
-  const fetchData = async () => {
+  const fetchData = useCallback(async () => {
     try {
       setLoading(true);
       const plansRes = await api.get('/accounts/plans');
@@ -70,9 +71,9 @@ export default function MyAccount() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [isPlanSelection]);
 
-  const fetchOptions = async () => {
+  const fetchOptions = useCallback(async () => {
     try {
       const [gymsRes, trainersRes] = await Promise.all([
         api.get('/gyms'),
@@ -83,7 +84,12 @@ export default function MyAccount() {
     } catch (err) {
       console.error('Error cargando opciones:', err);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchData();
+    fetchOptions();
+  }, [fetchData, fetchOptions]);
 
   // Auto-suscripción si viene con plan pendiente desde el registro
   useEffect(() => {
@@ -113,7 +119,7 @@ export default function MyAccount() {
         setCurrentPlan(res.data?.account || null);
         emitToast({ type: 'success', title: 'Suscripción activada', message: `Plan ${pending.plan.toUpperCase()} activo` });
         try { localStorage.removeItem('pendingSubscription'); } catch { console.warn('No se pudo limpiar pendingSubscription'); }
-        if (isPlanSelection) navigate('/my-account');
+        if (isPlanSelection) { window.location.assign('/my-account'); }
       } catch (e) {
         // Si falla, no bloqueamos la vista
         console.error('Auto-suscripción falló', e);
@@ -122,7 +128,7 @@ export default function MyAccount() {
       }
     };
     tryPending();
-  }, [handledPending, currentPlan, isPlanSelection, navigate]);
+  }, [handledPending, currentPlan, isPlanSelection]);
 
   const openSubscribeModal = (plan) => {
     setSelectedPlan(plan);
@@ -146,7 +152,7 @@ export default function MyAccount() {
       emitToast({ type: 'success', title: 'Suscripción exitosa', message: `Plan ${selectedPlan.nombre.toUpperCase()} activado` });
       setCurrentPlan(res.data?.account || null);
       setShowModal(false);
-      if (isPlanSelection) navigate('/my-account');
+      if (isPlanSelection) window.location.assign('/my-account');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al suscribirse');
     }
@@ -174,7 +180,7 @@ export default function MyAccount() {
     }
   };
 
-  if (loading) return <div className="flex items-center justify-center h-64 text-slate-400">Cargando perfil...</div>;
+  if (loading) return <div className="flex items-center justify-center h-64 text-slate-400">{t('loading', 'Cargando...')}</div>;
 
   return (
     <div className="space-y-8">
@@ -191,21 +197,21 @@ export default function MyAccount() {
 
       {!isPlanSelection && (
         <section className="space-y-4">
-          <h3 className="font-sans font-bold text-stone-900">Mi Suscripción Actual</h3>
+          <h3 className="font-sans font-bold text-stone-900">{t('myaccount.current_subscription', 'Mi Suscripción Actual')}</h3>
           {currentPlan ? (
             <div className="card">
               <h4 className="text-lg font-semibold text-stone-900 mb-2">Plan {currentPlan.plan.toUpperCase()}</h4>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3 text-stone-600">
-                <p>Estado: <span className={`badge ${getEstadoBadgeClass(currentPlan.estado)}`}>{currentPlan.estado}</span></p>
-                <p>Vence: {new Date(currentPlan.fecha_vencimiento).toLocaleDateString()}</p>
-                <p>Sede: {gyms.find(g => g.id === currentPlan.gym_id)?.nombre || 'N/A'}</p>
-                <p>Entrenador: {trainers.find(t => t.id === currentPlan.trainer_id)?.nombre || 'Ninguno'}</p>
-                <p>Sesiones Restantes: {currentPlan.sesiones_restantes}</p>
+                <p>{t('common.role', 'Rol')}: <span className={`badge ${getEstadoBadgeClass(currentPlan.estado)}`}>{currentPlan.estado}</span></p>
+                <p>{t('myaccount.expires', 'Vence')}: {new Date(currentPlan.fecha_vencimiento).toLocaleDateString()}</p>
+                <p>{t('myaccount.gym', 'Sede')}: {gyms.find(g => g.id === currentPlan.gym_id)?.nombre || 'N/A'}</p>
+                <p>{t('myaccount.trainer', 'Entrenador')}: {trainers.find(t => t.id === currentPlan.trainer_id)?.nombre || 'Ninguno'}</p>
+                <p>{t('myaccount.sessions_left', 'Sesiones Restantes')}: {currentPlan.sesiones_restantes}</p>
               </div>
             </div>
           ) : (
             <div className="card">
-              <p className="text-stone-600">No tienes una suscripción activa.</p>
+              <p className="text-stone-600">{t('myaccount.no_active', 'No tienes una suscripción activa.')}</p>
             </div>
           )}
         </section>
@@ -213,14 +219,14 @@ export default function MyAccount() {
 
       {!isPlanSelection && (
         <section className="space-y-4">
-          <h3 className="font-sans font-bold text-stone-900">Mis Datos</h3>
+          <h3 className="font-sans font-bold text-stone-900">{t('myaccount.mydata', 'Mis Datos')}</h3>
           <form onSubmit={handleSaveProfile} className="card grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <label className="label">Fecha de Nacimiento</label>
+              <label className="label">{t('myaccount.birthdate', 'Fecha de Nacimiento')}</label>
               <input type="date" name="fecha_nacimiento" value={profileData.fecha_nacimiento || ''} onChange={handleProfileChange} className="input" />
             </div>
             <div>
-              <label className="label">Objetivo</label>
+              <label className="label">{t('myaccount.objective', 'Objetivo')}</label>
               <select name="objetivo" value={profileData.objetivo || 'mantenimiento'} onChange={handleProfileChange} className="input">
                 <option value="mantenimiento">Mantenimiento</option>
                 <option value="perdida_grasa">Pérdida de Grasa</option>
@@ -236,14 +242,14 @@ export default function MyAccount() {
               <input type="number" step="0.1" name="altura" value={profileData.altura || ''} onChange={handleProfileChange} className="input" placeholder="175" />
             </div>
             <div className="md:col-span-2 flex justify-end">
-              <button type="submit" className="btn-primary">Guardar Cambios</button>
+              <button type="submit" className="btn-primary">{t('myaccount.save', 'Guardar Cambios')}</button>
             </div>
           </form>
         </section>
       )}
 
       <section className="space-y-4">
-        <h3 className="font-sans font-bold text-stone-900">{isPlanSelection ? 'Elige tu plan' : 'Planes Disponibles'}</h3>
+        <h3 className="font-sans font-bold text-stone-900">{isPlanSelection ? t('myaccount.choose_plan', 'Elige tu plan') : t('myaccount.available_plans', 'Planes Disponibles')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           {plans.map((plan) => (
             <div
@@ -262,13 +268,13 @@ export default function MyAccount() {
                 ))}
               </ul>
               {currentPlan?.plan === plan.nombre ? (
-                <button disabled className="btn-secondary w-full opacity-80">Tu Plan Actual</button>
+                <button disabled className="btn-secondary w-full opacity-80">{t('common.current', 'Tu Plan Actual')}</button>
               ) : (
                 <button 
                   onClick={() => openSubscribeModal(plan)} 
                   className="btn-primary w-full"
                 >
-                  Contratar
+                  {t('myaccount.subscribe', 'Contratar')}
                 </button>
               )}
             </div>
@@ -279,11 +285,11 @@ export default function MyAccount() {
       {showModal && selectedPlan && (
         <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
           <div className="card w-full max-w-lg">
-            <h3 className="text-xl font-bold mb-1">Contratar Plan {selectedPlan.nombre.toUpperCase()}</h3>
+            <h3 className="text-xl font-bold mb-1">{t('myaccount.subscribe_plan', 'Contratar Plan')} {selectedPlan.nombre.toUpperCase()}</h3>
             <p className="text-lime-400 text-2xl font-extrabold mb-4">${selectedPlan.precio_mensual.toLocaleString()}</p>
             
             <form onSubmit={handleSubscribe} className="space-y-4">
-              <p className="text-stone-600 text-sm">Puedes elegir gimnasio, entrenador, ambos o ninguno. Solo el plan es obligatorio.</p>
+              <p className="text-stone-600 text-sm">{t('myaccount.plan_hint', 'Puedes elegir gimnasio, entrenador, ambos o ninguno. Solo el plan es obligatorio.')}</p>
               <div>
                 <label className="label">Gimnasio (opcional)</label>
                 <select
@@ -313,7 +319,7 @@ export default function MyAccount() {
               </div>
 
               <div>
-                <label className="label">Método de Pago</label>
+                <label className="label">{t('myaccount.method', 'Método de Pago')}</label>
                 <select 
                   value={formData.metodoPago}
                   onChange={(e) => setFormData({...formData, metodoPago: e.target.value})}
@@ -326,9 +332,9 @@ export default function MyAccount() {
               </div>
 
               <div className="flex items-center justify-end gap-3">
-                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">Cancelar</button>
+                <button type="button" onClick={() => setShowModal(false)} className="btn-secondary">{t('common.cancel', 'Cancelar')}</button>
                 <button type="submit" className="btn-primary">
-                  {(!formData.gym_id && !formData.trainer_id) ? 'Confirmar y Pagar' : 'Confirmar'}
+                  {(!formData.gym_id && !formData.trainer_id) ? t('myaccount.confirm_and_pay', 'Confirmar y Pagar') : t('myaccount.confirm', 'Confirmar')}
                 </button>
               </div>
             </form>

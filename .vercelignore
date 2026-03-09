@@ -5,8 +5,3 @@ dist
 .trae
 .log
 .figma
-*.zip
-*.rar
-*.gz
-*.tar
-backup_*

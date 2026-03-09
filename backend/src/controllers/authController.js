@@ -1,7 +1,6 @@
-const pool = require('../config/database');
+const db = require('../config/dbClient');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
-require('dotenv').config();
 
 // Registrar nuevo usuario
 const registerUser = async (req, res) => {
@@ -14,9 +13,8 @@ const registerUser = async (req, res) => {
       peso,
       altura,
       objetivo,
+      password,
       rol = 'usuario_final',
-      gym_id,
-      trainer_id,
     } = req.body;
 
     // Validar datos requeridos
@@ -25,77 +23,39 @@ const registerUser = async (req, res) => {
     }
 
     // Verificar si el usuario ya existe
-    const userExists = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
-    );
+    const userExists = await db.query('SELECT * FROM users WHERE email = $1', [email]);
 
-    if (userExists.rows.length > 0) {
+    if (userExists.rows && userExists.rows.length > 0) {
       return res.status(409).json({ error: 'El email ya está registrado' });
     }
 
-    // Generar contraseña segura o usar la proporcionada
-    const passwordToHash = req.body.password || Math.random().toString(36).slice(-8);
-    const hashedPassword = await bcrypt.hash(passwordToHash, 10);
-
-    // Sanitize inputs (convert empty strings to null)
-    const sanitizedFecha = fecha_nacimiento === '' ? null : fecha_nacimiento;
-    const sanitizedPeso = peso === '' ? null : peso;
-    const sanitizedAltura = altura === '' ? null : altura;
-    const sanitizedGym = gym_id === '' || gym_id === 'null' ? null : gym_id;
-    const sanitizedTrainer = trainer_id === '' || trainer_id === 'null' ? null : trainer_id;
+    // Generar o usar contraseña proporcionada
+    const rawPassword = password && String(password).length >= 6 ? String(password) : Math.random().toString(36).slice(-8);
+    const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     // Insertar usuario en la base de datos
-    const result = await pool.query(
-      `INSERT INTO users (nombre, email, telefono, fecha_nacimiento, peso, altura, objetivo, clave_hash, rol, id_gimnasio, id_entrenador)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
-       RETURNING id, nombre, email, rol`,
-      [nombre, email, teléfono, sanitizedFecha, sanitizedPeso, sanitizedAltura, objetivo, hashedPassword, rol, sanitizedGym, sanitizedTrainer]
-    );
+    const insertSql =
+      `INSERT INTO users (nombre, email, telefono, fecha_nacimiento, peso, altura, objetivo, clave_hash, rol)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       RETURNING id, nombre, email, rol`;
+    const result = await db.query(insertSql, [nombre, email, teléfono, fecha_nacimiento, peso, altura, objetivo, hashedPassword, rol]);
 
-    const user = result.rows[0];
-
-    // AUTO-ASSIGN A DEFAULT PLAN (requested by user to ensure functionality)
-    try {
-      const defaultPlan = await pool.query('SELECT id FROM plans LIMIT 1');
-      if (defaultPlan.rows.length > 0) {
-        const planId = defaultPlan.rows[0].id;
-        const startDate = new Date();
-        const endDate = new Date();
-        endDate.setDate(endDate.getDate() + 30); // 30 days
-
-        await pool.query(
-          `INSERT INTO meal_plans (
-            id_plan, id_usuario, fecha_inicio, fecha_fin, 
-            calorias_diarias, proteinas, carbohidratos, grasas, 
-            configuracion_calculadora
-          ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
-          [
-            planId, 
-            user.id, 
-            startDate, 
-            endDate,
-            2000, // Default calories
-            150,  // Default protein
-            200,  // Default carbs
-            65,   // Default fat
-            JSON.stringify({ distribution: 'balanced', meals: 3 })
-          ]
-        );
-        console.log(`Auto-assigned plan ${planId} to user ${user.id}`);
-      }
-    } catch (assignError) {
-      console.warn('Error auto-assigning plan:', assignError);
-      // Don't fail registration if plan assignment fails
+    let user;
+    // Si es MySQL, no soporta RETURNING: consultar por insertId
+    if (result && typeof result.insertId !== 'undefined') {
+      const read = await db.query('SELECT id, nombre, email, rol FROM users WHERE id = $1', [result.insertId]);
+      user = read.rows[0];
+    } else {
+      user = result.rows[0];
     }
 
     // TODO: Enviar contraseña por email (SendGrid)
-    if (!req.body.password) {
-      console.log(`Contraseña temporal para ${email}: ${passwordToHash}`);
+    if (process.env.NODE_ENV !== 'production' && !password) {
+      console.log(`Contraseña temporal para ${email}: ${rawPassword}`);
     }
 
     res.status(201).json({
-      message: 'Usuario registrado exitosamente. Se envió una clave temporal al correo.',
+      message: password ? 'Usuario registrado exitosamente.' : 'Usuario registrado exitosamente. Se envió una clave temporal al correo.',
       user,
     });
   } catch (error) {
@@ -114,12 +74,9 @@ const loginUser = async (req, res) => {
     }
 
     // Búscar usuario por email
-    const result = await pool.query(
-      'SELECT * FROM users WHERE email = $1',
-      [email]
-    );
+    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
 
-    const user = result.rows[0];
+    const user = result.rows ? result.rows[0] : result[0];
 
     if (!user) {
       return res.status(401).json({ error: 'Email o contraseña incorrectos' });
@@ -133,11 +90,10 @@ const loginUser = async (req, res) => {
     }
 
     // Generar JWT
-    const secret = process.env.JWT_SECRET || 'secret_key_dev_fallback';
     const token = jwt.sign(
       { id: user.id, email: user.email, rol: user.rol },
-      secret,
-      { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      process.env.JWT_SECRET,
+      { expiresIn: process.env.JWT_EXPIRES_IN }
     );
 
     res.json({
@@ -159,12 +115,9 @@ const loginUser = async (req, res) => {
 // Obtener perfil del usuario autenticado
 const getProfile = async (req, res) => {
   try {
-    const result = await pool.query(
-      'SELECT id, nombre, email, telefono, fecha_nacimiento, peso, altura, objetivo, rol FROM users WHERE id = $1',
-      [req.user.id]
-    );
+    const result = await db.query('SELECT id, nombre, email, telefono, fecha_nacimiento, peso, altura, objetivo, rol FROM users WHERE id = $1', [req.user.id]);
 
-    if (result.rows.length === 0) {
+    if (!result.rows || result.rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
 
@@ -175,4 +128,28 @@ const getProfile = async (req, res) => {
   }
 };
 
-module.exports = { registerUser, loginUser, getProfile };
+// Admin: resetear contraseña de un usuario por email
+const adminResetPassword = async (req, res) => {
+  try {
+    if (!req.user || req.user.rol !== 'admin') {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+    const { email, password } = req.body;
+    if (!email || !password || password.length < 6) {
+      return res.status(400).json({ error: 'Email y nueva contraseña (≥6) son requeridos' });
+    }
+    const userQ = await db.query('SELECT id FROM users WHERE email = $1', [email]);
+    if (!userQ.rows || userQ.rows.length === 0) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    const hashed = await bcrypt.hash(password, 10);
+    const upd = await db.query('UPDATE users SET clave_hash = $1 WHERE email = $2', [hashed, email]);
+    // Para MySQL, rows.affectedRows; para PG, upd.rowCount
+    res.json({ success: true, message: 'Contraseña actualizada' });
+  } catch (error) {
+    console.error('Error reseteando contraseña:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+module.exports = { registerUser, loginUser, getProfile, adminResetPassword };

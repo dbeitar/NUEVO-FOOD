@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import api from '../services/api';
+import { useI18n } from '../context/useI18n';
 
 export default function Calculator() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [concepts, setConcepts] = useState([]);
   const [formData, setFormData] = useState({
     edad: '',
@@ -15,6 +17,7 @@ export default function Calculator() {
   });
   const [resultado, setResultado] = useState(null);
   const [loading, setLoading] = useState(false);
+
 
   // Función para calcular edad desde fecha de nacimiento
   const calcularEdad = (fechaNacimiento) => {
@@ -31,7 +34,12 @@ export default function Calculator() {
 
   useEffect(() => {
     loadConcepts();
-    
+    try {
+      const savedForm = localStorage.getItem('calcForm');
+      const savedRes = localStorage.getItem('calcResult');
+      if (savedForm) setFormData(JSON.parse(savedForm));
+      if (savedRes) setResultado(JSON.parse(savedRes));
+    } catch (e) { void e; }
     // Auto-rellenar datos del usuario si existen
     if (user) {
       const edad = calcularEdad(user.fecha_nacimiento);
@@ -120,7 +128,7 @@ export default function Calculator() {
       const carbsCalorías = caloriasAjustadas - proteinaCalorías - grasasCalorías;
       const carbsGramos = carbsCalorías / 4;
 
-      setResultado({
+      const result = {
         tmb: tmb.toFixed(0),
         tdee: tdee.toFixed(0),
         calorias: caloriasAjustadas.toFixed(0),
@@ -128,7 +136,12 @@ export default function Calculator() {
         carbohidratos: carbsGramos.toFixed(1),
         grasas: grasasGramos.toFixed(1),
         objetivo: objetivo,
-      });
+      };
+      setResultado(result);
+      try {
+        localStorage.setItem('calcForm', JSON.stringify(formData));
+        localStorage.setItem('calcResult', JSON.stringify(result));
+      } catch (e) { void e; }
     } catch (error) {
       console.error('Error en cálculo:', error);
       alert('Error en el cálculo. Verifica los datos.');
@@ -143,13 +156,13 @@ export default function Calculator() {
   return (
     <div className="calculator-container">
       <div className="calculator-box">
-        <h2>Calculadora Nutricional</h2>
-        <p className="subtitle">Calcula tu plan personalizado</p>
+        <h2>{t('calculator.title', 'Calculadora Nutricional')}</h2>
+        <p className="subtitle">{t('calculator.subtitle', 'Calcula tu plan personalizado')}</p>
 
         <form onSubmit={handleCalculate} className="calculator-form">
           <div className="form-row">
             <div className="form-group">
-              <label>Edad (años)</label>
+              <label>{t('calculator.age', 'Edad (años)')}</label>
               <input
                 type="number"
                 name="edad"
@@ -161,7 +174,7 @@ export default function Calculator() {
             </div>
 
             <div className="form-group">
-              <label>Peso (kg)</label>
+              <label>{t('calculator.weight', 'Peso (kg)')}</label>
               <input
                 type="number"
                 name="peso"
@@ -174,7 +187,7 @@ export default function Calculator() {
             </div>
 
             <div className="form-group">
-              <label>Altura (cm)</label>
+              <label>{t('calculator.height', 'Altura (cm)')}</label>
               <input
                 type="number"
                 name="altura"
@@ -189,15 +202,15 @@ export default function Calculator() {
 
           <div className="form-row">
             <div className="form-group">
-              <label>Género</label>
+              <label>{t('calculator.gender', 'Género')}</label>
               <select name="genero" value={formData.genero} onChange={handleChange}>
-                <option value="masculino">Masculino</option>
-                <option value="femenino">Femenino</option>
+                <option value="masculino">{t('calculator.male', 'Masculino')}</option>
+                <option value="femenino">{t('calculator.female', 'Femenino')}</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label>Nivel de Actividad</label>
+              <label>{t('calculator.activity', 'Nivel de Actividad')}</label>
               <select 
                 name="nivelActividad" 
                 value={formData.nivelActividad} 
@@ -214,7 +227,7 @@ export default function Calculator() {
             </div>
 
             <div className="form-group">
-              <label>Objetivo</label>
+              <label>{t('calculator.goal', 'Objetivo')}</label>
               <select 
                 name="objetivo" 
                 value={formData.objetivo} 
@@ -222,52 +235,52 @@ export default function Calculator() {
                 disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || (user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id))}
                 title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || (user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id)) ? 'Editable si no tienes Gimnasio/Entrenador asignado' : undefined}
               >
-                <option value="mantenimiento">Mantenimiento</option>
-                <option value="perdida_grasa">Pérdida de Grasa</option>
-                <option value="ganancia_muscular">Ganancia Muscular</option>
+                <option value="mantenimiento">{t('calculator.maintenance', 'Mantenimiento')}</option>
+                <option value="perdida_grasa">{t('calculator.fatloss', 'Pérdida de Grasa')}</option>
+                <option value="ganancia_muscular">{t('calculator.muscle', 'Ganancia Muscular')}</option>
               </select>
             </div>
           </div>
 
           <button type="submit" disabled={loading} className="btn-calculate">
-            {loading ? 'Calculando...' : 'Calcular Plan'}
+            {loading ? t('calculator.calculating', 'Calculando...') : t('calculator.calculate', 'Calcular Plan')}
           </button>
         </form>
 
         {resultado && (
           <div className="resultado">
-            <h3>Tu Plan Personalizado</h3>
-            <p className="objetivo-badge">Objetivo: {resultado.objetivo}</p>
+            <h3>{t('calculator.result_title', 'Tu Plan Personalizado')}</h3>
+            <p className="objetivo-badge">{t('calculator.goal', 'Objetivo')}: {resultado.objetivo}</p>
 
             <div className="macros-grid">
               <div className="macro-box calorias">
-                <label>Calorías Diarias</label>
+                <label>{t('calculator.daily_calories', 'Calorías Diarias')}</label>
                 <p className="macro-value">{resultado.calorias}</p>
                 <p className="macro-unit">kcal</p>
               </div>
 
               <div className="macro-box proteina">
-                <label>Proteína</label>
+                <label>{t('calculator.protein', 'Proteína')}</label>
                 <p className="macro-value">{resultado.proteina}</p>
                 <p className="macro-unit">g/día</p>
               </div>
 
               <div className="macro-box carbs">
-                <label>Carbohidratos</label>
+                <label>{t('calculator.carbs', 'Carbohidratos')}</label>
                 <p className="macro-value">{resultado.carbohidratos}</p>
                 <p className="macro-unit">g/día</p>
               </div>
 
               <div className="macro-box grasas">
-                <label>Grasas</label>
+                <label>{t('calculator.fats', 'Grasas')}</label>
                 <p className="macro-value">{resultado.grasas}</p>
                 <p className="macro-unit">g/día</p>
               </div>
             </div>
 
             <div className="info-box">
-              <p><strong>TMB:</strong> {resultado.tmb} kcal (metabolismo basal)</p>
-              <p><strong>TDEE:</strong> {resultado.tdee} kcal (gasto diario)</p>
+              <p><strong>{t('calculator.tmb', 'TMB')}:</strong> {resultado.tmb} kcal</p>
+              <p><strong>{t('calculator.tdee', 'TDEE')}:</strong> {resultado.tdee} kcal</p>
             </div>
           </div>
         )}

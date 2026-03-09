@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Pencil, Trash2, Plus } from 'lucide-react';
-import { useI18n } from '../context/I18nContext';
+import { useI18n } from '../context/useI18n';
 
 export default function AdminPlans() {
   const [plans, setPlans] = useState([]);

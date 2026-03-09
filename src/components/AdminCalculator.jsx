@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
+import { useI18n } from '../context/useI18n';
 
 export default function AdminCalculator() {
   const [concepts, setConcepts] = useState([]);
@@ -8,6 +9,7 @@ export default function AdminCalculator() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const { t } = useI18n();
 
   const [formData, setFormData] = useState({
     nombre: '',
@@ -47,15 +49,15 @@ export default function AdminCalculator() {
     try {
       if (editingId) {
         await api.put(`/calculator/concepts/${editingId}`, formData);
-        setSuccess('Concepto actualizado');
+        setSuccess(t('calculator.updated', 'Concepto actualizado'));
       } else {
         await api.post('/calculator/concepts', formData);
-        setSuccess('Concepto creado');
+        setSuccess(t('calculator.created', 'Concepto creado'));
       }
       resetForm();
       loadConcepts();
     } catch (err) {
-      setError(err.response?.data?.error || 'Error guardando concepto');
+      setError(err.response?.data?.error || t('calculator.save_error', 'Error guardando concepto'));
     } finally {
       setLoading(false);
     }
@@ -73,14 +75,14 @@ export default function AdminCalculator() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Eliminar este concepto?')) return;
+    if (!window.confirm(t('calculator.delete_confirm', '¿Eliminar este concepto?'))) return;
 
     try {
       await api.delete(`/calculator/concepts/${id}`);
-      setSuccess('Concepto eliminado');
+      setSuccess(t('calculator.deleted', 'Concepto eliminado'));
       loadConcepts();
     } catch (err) {
-      setError(err.response?.data?.error || 'Error eliminando');
+      setError(err.response?.data?.error || t('calculator.save_error', 'Error eliminando'));
     }
   };
 
@@ -94,11 +96,11 @@ export default function AdminCalculator() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-stone-900 font-['Playfair_Display']">Gestión de Conceptos de Calculadora</h2>
-          <p className="text-stone-600">Factores de actividad y reglas para el cálculo.</p>
+          <h2 className="text-2xl font-bold text-stone-900 font-['Playfair_Display']">{t('calculator.admin.title', 'Gestión de Conceptos de Calculadora')}</h2>
+          <p className="text-stone-600">{t('calculator.admin.subtitle', 'Factores de actividad y reglas para el cálculo.')}</p>
         </div>
         <button onClick={() => setShowForm(!showForm)} className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black shadow-sm transition-colors">
-          {showForm ? 'Cancelar' : '+ Agregar Concepto'}
+          {showForm ? t('calculator.toggle_cancel', 'Cancelar') : t('calculator.toggle_add', '+ Agregar Concepto')}
         </button>
       </div>
 
@@ -109,7 +111,7 @@ export default function AdminCalculator() {
         <form onSubmit={handleSubmit} className="concept-form bg-white rounded-3xl shadow-sm border border-slate-200 p-6">
           <div className="form-row">
             <div className="form-group">
-              <label>Nombre</label>
+              <label>{t('calculator.form.name', 'Nombre')}</label>
               <input
                 type="text"
                 name="nombre"
@@ -121,17 +123,17 @@ export default function AdminCalculator() {
             </div>
 
             <div className="form-group">
-              <label>Tipo</label>
+              <label>{t('calculator.form.type', 'Tipo')}</label>
               <select name="tipo" value={formData.tipo} onChange={handleChange} required className="w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors">
-                <option value="">Selecciona tipo</option>
-                <option value="factor_actividad">Factor Actividad</option>
-                <option value="distribucion_macro">Distribución Macros</option>
-                <option value="otro">Otro</option>
+                <option value="">{t('calculator.form.select_type', 'Selecciona tipo')}</option>
+                <option value="factor_actividad">{t('calculator.type.activity', 'Factor Actividad')}</option>
+                <option value="distribucion_macro">{t('calculator.type.macro', 'Distribución Macros')}</option>
+                <option value="otro">{t('calculator.type.other', 'Otro')}</option>
               </select>
             </div>
 
             <div className="form-group">
-              <label>Valor</label>
+              <label>{t('calculator.form.value', 'Valor')}</label>
               <input
                 type="number"
                 name="valor"
@@ -145,7 +147,7 @@ export default function AdminCalculator() {
           </div>
 
           <div className="form-group">
-            <label>Descripción</label>
+            <label>{t('calculator.form.description', 'Descripción')}</label>
             <textarea
               name="descripcion"
               value={formData.descripcion}
@@ -156,7 +158,7 @@ export default function AdminCalculator() {
           </div>
 
           <button type="submit" disabled={loading} className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black shadow-sm transition-colors">
-            {loading ? 'Guardando...' : editingId ? 'Actualizar' : 'Crear'}
+            {loading ? t('calculator.saving', 'Guardando...') : editingId ? t('calculator.update', 'Actualizar') : t('calculator.create', 'Crear')}
           </button>
         </form>
       )}
@@ -165,11 +167,11 @@ export default function AdminCalculator() {
         <table className="min-w-full">
           <thead>
             <tr>
-              <th>Nombre</th>
-              <th>Tipo</th>
-              <th>Valor</th>
-              <th>Descripción</th>
-              <th>Acciones</th>
+              <th>{t('calculator.table.name', 'Nombre')}</th>
+              <th>{t('calculator.table.type', 'Tipo')}</th>
+              <th>{t('calculator.table.value', 'Valor')}</th>
+              <th>{t('calculator.table.description', 'Descripción')}</th>
+              <th>{t('calculator.table.actions', 'Acciones')}</th>
             </tr>
           </thead>
           <tbody>
@@ -181,10 +183,10 @@ export default function AdminCalculator() {
                 <td>{concept.descripcion}</td>
                 <td>
                   <button onClick={() => handleEdit(concept)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-lime-300 text-lime-700 bg-white hover:bg-lime-100 transition-colors">
-                    Editar
+                    {t('calculator.edit', 'Editar')}
                   </button>
                   <button onClick={() => handleDelete(concept.id)} className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white transition-colors">
-                    Eliminar
+                    {t('calculator.delete', 'Eliminar')}
                   </button>
                 </td>
               </tr>

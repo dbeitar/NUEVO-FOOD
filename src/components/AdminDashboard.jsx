@@ -1,6 +1,5 @@
 import { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import { 
   Users, 
   ClipboardList, 
@@ -22,18 +21,17 @@ import AdminFoodsManager from './AdminFoodsManager';
 import AdminGyms from './AdminGyms';
 import AdminTrainers from './AdminTrainers';
 import AdminCompanies from './AdminCompanies';
-import { useI18n } from '../context/I18nContext';
+import { useI18n } from '../context/useI18n';
 
 export default function AdminDashboard() {
   const [activeTab, setActiveTab] = useState('users');
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const navigate = useNavigate();
   const { logout, user } = useAuth();
   const { t } = useI18n();
 
   const handleLogout = () => {
     logout();
-    navigate('/login');
+    window.location.assign('/');
   };
 
   const baseMenu = [
@@ -191,7 +189,7 @@ export default function AdminDashboard() {
           {/* Sidebar Footer */}
           <div className="p-4 border-t border-slate-200">
                 <button 
-              onClick={() => navigate('/')}
+              onClick={() => window.location.assign('/')}
               className="w-full flex items-center gap-3 px-4 py-3 text-sm font-medium text-stone-600 hover:bg-stone-100 hover:text-lime-600 rounded-xl transition-all duration-200 mb-2"
             >
               <ExternalLink className="w-5 h-5" />

@@ -1,15 +1,29 @@
 const FoodDatabase = require("../models/FoodDatabase");
 
 const foodController = {
-  // Obtener todos los alimentos
+  // Obtener todos los alimentos (con soporte de paginación opcional)
   getAllFoods: (req, res) => {
     try {
       const foods = FoodDatabase.getAll();
-      res.json({
-        success: true,
-        count: foods.length,
-        data: foods,
-      });
+      const page = Math.max(parseInt(req.query.page || '1', 10), 1);
+      const pageSize = Math.max(parseInt(req.query.pageSize || '0', 10), 0);
+      if (pageSize > 0) {
+        const total = foods.length;
+        const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+        const start = (page - 1) * pageSize;
+        const end = start + pageSize;
+        const items = foods.slice(start, end);
+        return res.json({
+          success: true,
+          count: items.length,
+          total,
+          page,
+          pageSize,
+          totalPages,
+          data: items,
+        });
+      }
+      res.json({ success: true, count: foods.length, data: foods });
     } catch (error) {
       res.status(500).json({
         success: false,
@@ -52,7 +66,7 @@ const foodController = {
     }
   },
 
-  // Buscar alimentos por nombre o marca
+  // Buscar alimentos por nombre o marca (con paginación opcional)
   searchFoods: (req, res) => {
     try {
       const { query, categoria } = req.query;
@@ -70,6 +84,25 @@ const foodController = {
           (food) =>
             food.categoria.toLowerCase() === categoria.toLowerCase()
         );
+      }
+
+      const page = Math.max(parseInt(req.query.page || '1', 10), 1);
+      const pageSize = Math.max(parseInt(req.query.pageSize || '0', 10), 0);
+      if (pageSize > 0) {
+        const total = results.length;
+        const totalPages = Math.max(Math.ceil(total / pageSize), 1);
+        const start = (page - 1) * pageSize;
+        const end = start + pageSize;
+        const items = results.slice(start, end);
+        return res.json({
+          success: true,
+          count: items.length,
+          total,
+          page,
+          pageSize,
+          totalPages,
+          data: items,
+        });
       }
 
       res.json({
@@ -97,6 +130,28 @@ const foodController = {
       res.status(500).json({
         success: false,
         error: "Error al obtener categorías",
+      });
+    }
+  },
+
+  // Estadísticas por categoría
+  getStats: (req, res) => {
+    try {
+      const foods = FoodDatabase.getAll();
+      const byCategory = foods.reduce((acc, f) => {
+        const key = f.categoria || 'Sin categoría';
+        acc[key] = (acc[key] || 0) + 1;
+        return acc;
+      }, {});
+      res.json({
+        success: true,
+        total: foods.length,
+        byCategory,
+      });
+    } catch (error) {
+      res.status(500).json({
+        success: false,
+        error: "Error al obtener estadísticas",
       });
     }
   },

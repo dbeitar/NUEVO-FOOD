@@ -1,7 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { authService } from '../services/api';
-
-const AuthContext = createContext(null);
+import { AuthContext } from './authCtx';
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -51,12 +50,4 @@ export const AuthProvider = ({ children }) => {
       {children}
     </AuthContext.Provider>
   );
-};
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth debe usarse dentro de AuthProvider');
-  }
-  return context;
 };

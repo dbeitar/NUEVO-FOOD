@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import api from '../services/api';
 import AISuggestions from './AISuggestions';
 import './FoodLog.css';
-import { useI18n } from '../context/I18nContext';
+import { useI18n } from '../context/useI18n';
 
 export default function Progress() {
-  const { user } = useAuth();
+  const { user, token } = useAuth();
   const today = new Date().toISOString().split('T')[0];
   const { t } = useI18n();
 
@@ -38,6 +38,8 @@ export default function Progress() {
 
   useEffect(() => {
     (async () => {
+      // Evitar llamadas protegidas si no hay token/sesión
+      if (!token) return;
       try {
         const r = await api.get('/plan/mine');
         if (r.data?.success && r.data.data) {
@@ -47,10 +49,11 @@ export default function Progress() {
         console.warn('Failed to load plan', err);
       }
     })();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     (async () => {
+      if (!token) return;
       try {
         const r = await api.get('/food-log/history', { params: { days: 30 } });
         setHistory(r.data?.data || {});
@@ -58,7 +61,7 @@ export default function Progress() {
         console.warn('Failed to load history', err);
       }
     })();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     (async () => {
@@ -77,6 +80,7 @@ export default function Progress() {
 
   useEffect(() => {
     (async () => {
+      if (!token) return;
       try {
         const q = { params: { start: startDate, end: endDate } };
         const [byGym, byTrainer] = await Promise.all([
@@ -91,7 +95,7 @@ export default function Progress() {
         setAggTrainers({});
       }
     })();
-  }, [startDate, endDate]);
+  }, [startDate, endDate, token]);
 
   const rangeList = useMemo(() => {
     try {

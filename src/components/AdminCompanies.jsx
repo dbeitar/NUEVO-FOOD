@@ -1,8 +1,8 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, useCallback } from 'react';
 import api from '../services/api';
 import { Building2, Dumbbell, Users, Search, Plus, Save } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useI18n } from '../context/I18nContext';
+import { useAuth } from '../context/useAuth';
+import { useI18n } from '../context/useI18n';
 
 export default function AdminCompanies() {
   const { user } = useAuth();
@@ -20,11 +20,7 @@ export default function AdminCompanies() {
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ nombre: '', email: '', password: '', planId: '' });
 
-  useEffect(() => {
-    fetchAll();
-  }, []); 
-
-  const fetchAll = async () => {
+  const fetchAll = useCallback(async () => {
     try {
       const [g, t, u, p] = await Promise.all([
         api.get('/gyms'),
@@ -39,7 +35,11 @@ export default function AdminCompanies() {
     } catch {
       setError(t('companies.error_loading', 'Error cargando datos'));
     }
-  };
+  }, [t]);
+
+  useEffect(() => {
+    fetchAll();
+  }, [fetchAll]); 
 
   const filteredGyms = useMemo(() => {
     const q = searchGym.toLowerCase();

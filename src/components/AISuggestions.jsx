@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
-import { useI18n } from '../context/I18nContext';
+import { useI18n } from '../context/useI18n';
 
 export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
   const [suggestions, setSuggestions] = useState([]);
@@ -61,14 +61,8 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
     checkAI();
   }, []);
 
-  // Cargar sugerencias cuando cambian los datos
-  useEffect(() => {
-    if (dayTotals && targetGoals) {
-      loadSuggestions();
-    }
-  }, [dayTotals, targetGoals]);
-
-  const loadSuggestions = async () => {
+  const loadSuggestions = useCallback(async () => {
+    if (!dayTotals || !targetGoals) return;
     try {
       setLoading(true);
 
@@ -167,7 +161,11 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
     } finally {
       setLoading(false);
     }
-  };
+  }, [dayTotals, targetGoals, objetivo, lang, useAI, t]);
+
+  useEffect(() => {
+    loadSuggestions();
+  }, [loadSuggestions]);
 
   if (!analysis) return null;
 

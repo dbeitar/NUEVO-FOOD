@@ -1,10 +1,18 @@
-const pool = require('../config/database');
+const GymDatabase = require('../models/GymDatabase');
+
+// Middleware para verificar si es admin
+const checkAdminRole = (req, res, next) => {
+  if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    return res.status(403).json({ error: 'No tienes permiso para esta acción' });
+  }
+  next();
+};
 
 // Obtener todos los gimnasios
-const getAllGyms = async (req, res) => {
+const getAllGyms = (req, res) => {
   try {
-    const result = await pool.query('SELECT * FROM gyms ORDER BY nombre ASC');
-    res.json(result.rows);
+    const gyms = GymDatabase.getAll();
+    res.json(gyms);
   } catch (error) {
     console.error('Error obteniendo gimnasios:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -12,16 +20,16 @@ const getAllGyms = async (req, res) => {
 };
 
 // Obtener gimnasio por ID
-const getGymById = async (req, res) => {
+const getGymById = (req, res) => {
   try {
     const { id } = req.params;
-    const result = await pool.query('SELECT * FROM gyms WHERE id = $1', [id]);
+    const gym = GymDatabase.getById(parseInt(id));
     
-    if (result.rows.length === 0) {
+    if (!gym) {
       return res.status(404).json({ error: 'Gimnasio no encontrado' });
     }
     
-    res.json(result.rows[0]);
+    res.json(gym);
   } catch (error) {
     console.error('Error obteniendo gimnasio:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -29,12 +37,11 @@ const getGymById = async (req, res) => {
 };
 
 // Obtener gimnasios por ciudad
-const getGymsByCity = async (req, res) => {
+const getGymsByCity = (req, res) => {
   try {
     const { ciudad } = req.params;
-    // Asumiendo que la dirección contiene la ciudad
-    const result = await pool.query('SELECT * FROM gyms WHERE direccion ILIKE $1', [`%${ciudad}%`]);
-    res.json(result.rows);
+    const gyms = GymDatabase.getByCiudad(ciudad);
+    res.json(gyms);
   } catch (error) {
     console.error('Error obteniendo gimnasios por ciudad:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
@@ -42,107 +49,101 @@ const getGymsByCity = async (req, res) => {
 };
 
 // Buscar gimnasios
-const searchGyms = async (req, res) => {
+const searchGyms = (req, res) => {
   try {
     const { q } = req.query;
-    if (!q) return res.json([]);
     
-    const result = await pool.query(
-      'SELECT * FROM gyms WHERE nombre ILIKE $1 OR direccion ILIKE $1 OR email ILIKE $1', 
-      [`%${q}%`]
-    );
-    res.json(result.rows);
+    if (!q) {
+      return res.status(400).json({ error: 'Parámetro de búsqueda requerido' });
+    }
+    
+    const gyms = GymDatabase.search(q);
+    res.json(gyms);
   } catch (error) {
     console.error('Error buscando gimnasios:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-// Crear gimnasio (Admin)
-const createGym = async (req, res) => {
+// Crear nuevo gimnasio (solo admin)
+const createGym = (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
-      return res.status(403).json({ error: 'No tienes permiso' });
-    }
-
-    const { nombre, direccion, telefono, email, plan_contratado } = req.body;
-    
-    if (!nombre) {
-      return res.status(400).json({ error: 'Nombre es requerido' });
-    }
-
-    const result = await pool.query(
-      'INSERT INTO gyms (nombre, direccion, telefono, email, plan_contratado) VALUES ($1, $2, $3, $4, $5) RETURNING *',
-      [nombre, direccion, telefono, email, plan_contratado]
-    );
-
-    res.status(201).json(result.rows[0]);
+    checkAdminRole(req, res, () => {
+      const { nombre, direccion, teléfono, email, ciudad, país, Basico, latitude, longitude, capacidad_usuarios } = req.body;
+      
+      // Validaciones
+      if (!nombre || !email || !ciudad) {
+        return res.status(400).json({ error: 'Nombre, email y ciudad son requeridos' });
+      }
+      
+      const newGym = GymDatabase.create({
+        nombre,
+        direccion,
+        teléfono,
+        email,
+        ciudad,
+        país,
+        capacidad_usuarios: capacidad_usuarios ?? 50,
+        latitude: latitude || null,
+        longitude: longitude || null,
+      });
+      
+      res.status(201).json({ message: 'Gimnasio creado exitosamente', gym: newGym });
+    });
   } catch (error) {
     console.error('Error creando gimnasio:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-// Actualizar gimnasio (Admin)
-const updateGym = async (req, res) => {
+// Actualizar gimnasio (solo admin)
+const updateGym = (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
-      return res.status(403).json({ error: 'No tienes permiso' });
-    }
-
-    const { id } = req.params;
-    const { nombre, direccion, telefono, email, plan_contratado } = req.body;
-
-    const result = await pool.query(
-      'UPDATE gyms SET nombre = $1, direccion = $2, telefono = $3, email = $4, plan_contratado = $5 WHERE id = $6 RETURNING *',
-      [nombre, direccion, telefono, email, plan_contratado, id]
-    );
-
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Gimnasio no encontrado' });
-    }
-
-    res.json(result.rows[0]);
+    checkAdminRole(req, res, () => {
+      const { id } = req.params;
+      const updates = req.body;
+      
+      const updatedGym = GymDatabase.update(parseInt(id), updates);
+      
+      if (!updatedGym) {
+        return res.status(404).json({ error: 'Gimnasio no encontrado' });
+      }
+      
+      res.json({ message: 'Gimnasio actualizado exitosamente', gym: updatedGym });
+    });
   } catch (error) {
     console.error('Error actualizando gimnasio:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
-// Eliminar gimnasio (Admin)
-const deleteGym = async (req, res) => {
+// Eliminar gimnasio (solo admin)
+const deleteGym = (req, res) => {
   try {
-    if (!req.user || !['super_admin'].includes(req.user.rol)) {
-      return res.status(403).json({ error: 'No tienes permiso' });
-    }
-
-    const { id } = req.params;
-    
-    // Verificar si tiene entrenadores asociados? O usuarios?
-    // Por simplicidad, intentamos borrar. Si hay FK, fallará.
-    
-    const result = await pool.query('DELETE FROM gyms WHERE id = $1 RETURNING id', [id]);
-    
-    if (result.rows.length === 0) {
-      return res.status(404).json({ error: 'Gimnasio no encontrado' });
-    }
-
-    res.json({ message: 'Gimnasio eliminado' });
+    checkAdminRole(req, res, () => {
+      const { id } = req.params;
+      
+      const deleted = GymDatabase.delete(parseInt(id));
+      
+      if (!deleted) {
+        return res.status(404).json({ error: 'Gimnasio no encontrado' });
+      }
+      
+      res.json({ message: 'Gimnasio eliminado exitosamente' });
+    });
   } catch (error) {
     console.error('Error eliminando gimnasio:', error);
-    if (error.code === '23503') { // Foreign key violation
-      return res.status(400).json({ error: 'No se puede eliminar el gimnasio porque tiene registros asociados (entrenadores o usuarios)' });
-    }
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
 
 module.exports = {
+  checkAdminRole,
   getAllGyms,
   getGymById,
   getGymsByCity,
   searchGyms,
   createGym,
   updateGym,
-  deleteGym
+  deleteGym,
 };

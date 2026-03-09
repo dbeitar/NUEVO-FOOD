@@ -1,8 +1,7 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import es from '../i18n/es';
 import en from '../i18n/en';
-
-const I18nContext = createContext(null);
+import { I18nContext } from './i18nCtx';
 
 export function I18nProvider({ children }) {
   const [lang, setLang] = useState(localStorage.getItem('lang') || 'es');
@@ -30,10 +29,4 @@ export function I18nProvider({ children }) {
       {children}
     </I18nContext.Provider>
   );
-}
-
-export function useI18n() {
-  const ctx = useContext(I18nContext);
-  if (!ctx) throw new Error('useI18n must be used within I18nProvider');
-  return ctx;
 }

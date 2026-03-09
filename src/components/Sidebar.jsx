@@ -1,14 +1,19 @@
  
-import { Link, useLocation } from 'react-router-dom';
-import { useAuth } from '../context/AuthContext';
-import { useI18n } from '../context/I18nContext';
+ 
+import { useAuth } from '../context/useAuth';
+import { useI18n } from '../context/useI18n';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
-  const location = useLocation();
   const { t } = useI18n();
 
-  const isActive = (path) => location.pathname === path;
+  const isActive = (path) => {
+    try {
+      return (window.location && window.location.pathname) === path;
+    } catch {
+      return false;
+    }
+  };
 
   const navItems = [
     { path: '/', label: t('nav.home', 'Inicio'), icon: (
@@ -56,9 +61,9 @@ export default function Sidebar() {
       
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {navItems.map((item) => (
-          <Link
+          <a
             key={item.path}
-            to={item.path}
+            href={item.path}
             className={`group flex items-center gap-3 px-3 py-2.5 rounded-xl transition-colors ${
               isActive(item.path)
                 ? 'bg-stone-100 text-stone-900 font-medium ring-1 ring-lime-200'
@@ -67,7 +72,7 @@ export default function Sidebar() {
           >
             {item.icon}
             <span>{item.label}</span>
-          </Link>
+          </a>
         ))}
       </nav>
 

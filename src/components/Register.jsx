@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { useAuth } from '../context/AuthContext';
+import { useAuth } from '../context/useAuth';
 import api from '../services/api';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
 import TermsOfServiceModal from './TermsOfServiceModal';
 import AuthLayout from './AuthLayout';
-import { useNavigate } from 'react-router-dom';
+ 
 
 export default function Register({ onSwitchToLogin }) {
   const [step, setStep] = useState(1);
@@ -38,7 +38,6 @@ export default function Register({ onSwitchToLogin }) {
   const [gyms, setGyms] = useState([]);
   const [trainers, setTrainers] = useState([]);
   const { register, login } = useAuth();
-  const navigate = useNavigate();
 
   useEffect(() => {
     const fetchOptions = async () => {
@@ -99,26 +98,19 @@ export default function Register({ onSwitchToLogin }) {
         fecha_nacimiento: formData.fecha_nacimiento,
         peso: formData.peso,
         altura: formData.altura,
-        genero: formData.genero,
+         genero: formData.genero,
         objetivo: formData.objetivo,
         tiene_restricciones: formData.tiene_restricciones,
         restricciones_detalles: formData.restricciones_detalles,
-        gym_id: formData.gym_id,
-        trainer_id: formData.trainer_id,
       });
       await login(formData.email, formData.password);
       if (selectedPlan) {
-        try {
-          await api.post('/accounts', {
-            plan: selectedPlan.nombre,
-            gym_id: formData.gym_id ? parseInt(formData.gym_id, 10) : null,
-            trainer_id: formData.trainer_id ? parseInt(formData.trainer_id, 10) : null,
-            metodoPago: formData.metodoPago,
-          });
-        } catch (planError) {
-          console.warn('Error creating subscription:', planError);
-          // Continue even if subscription fails, user is created
-        }
+        await api.post('/accounts', {
+          plan: selectedPlan.nombre,
+          gym_id: formData.gym_id ? parseInt(formData.gym_id, 10) : null,
+          trainer_id: formData.trainer_id ? parseInt(formData.trainer_id, 10) : null,
+          metodoPago: formData.metodoPago,
+        });
       }
       if (rememberEmail && formData.email) {
         try {
@@ -133,10 +125,9 @@ export default function Register({ onSwitchToLogin }) {
       } catch (err) {
         console.warn('Failed to set afterRegisterHome flag', err);
       }
-      navigate('/');
+      window.location.assign('/');
     } catch (err) {
-      const errorMessage = err.response?.data?.error || err.message || 'Error al completar el registro';
-      setError(typeof errorMessage === 'string' ? errorMessage : JSON.stringify(errorMessage));
+      setError(err.response?.data?.error || 'Error al completar el registro');
     } finally {
       setLoading(false);
     }

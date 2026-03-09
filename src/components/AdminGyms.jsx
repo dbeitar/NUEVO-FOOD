@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Building2, MapPin, Phone, Mail, Plus, Edit2, Trash2, X, Save, Search, AlertCircle, CheckCircle } from 'lucide-react';
-import { useI18n } from '../context/I18nContext';
+import { useI18n } from '../context/useI18n';
 
 export default function AdminGyms() {
   const [gyms, setGyms] = useState([]);

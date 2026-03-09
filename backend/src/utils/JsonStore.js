@@ -1,7 +1,10 @@
 const fs = require('fs');
 const path = require('path');
 
-const DATA_DIR = path.join(__dirname, '../../data');
+const BASE_DIR = process.env.JSON_DATA_DIR
+  ? path.resolve(process.env.JSON_DATA_DIR)
+  : path.join(__dirname, '../../data');
+const DATA_DIR = BASE_DIR;
 
 class JsonStore {
   constructor(filename, defaultData = []) {

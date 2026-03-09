@@ -1,6 +1,10 @@
-// Almacenamiento en memoria de registros diarios de alimentos
-let dailyFoodLogs = [];
-let logIdCounter = 1;
+const JsonStore = require('../utils/JsonStore');
+// Persistencia en JSON para registros diarios de alimentos
+const store = new JsonStore('daily_food_logs.json', []);
+let dailyFoodLogs = store.getAll();
+let logIdCounter = Array.isArray(dailyFoodLogs) && dailyFoodLogs.length > 0
+  ? Math.max(...dailyFoodLogs.map(l => l.id || 0)) + 1
+  : 1;
 
 const DailyFoodLog = {
   // Agregar un alimento consumido al log del día
@@ -24,6 +28,7 @@ const DailyFoodLog = {
       grasas: (foodItem.grasas * cantidadConsumida) / foodItem.cantidad,
     };
     dailyFoodLogs.push(entrada);
+    store.setAll(dailyFoodLogs);
     return entrada;
   },
 
@@ -59,6 +64,7 @@ const DailyFoodLog = {
     );
     if (index > -1) {
       const removed = dailyFoodLogs.splice(index, 1);
+      store.setAll(dailyFoodLogs);
       return removed[0];
     }
     return null;
@@ -120,6 +126,7 @@ const DailyFoodLog = {
     );
     if (entry) {
       Object.assign(entry, updates, { updatedAt: new Date() });
+      store.setAll(dailyFoodLogs);
       return entry;
     }
     return null;

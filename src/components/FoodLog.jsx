@@ -1,10 +1,21 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
+import { useAuth } from '../context/useAuth';
 import api from '../services/api';
 import AISuggestions from './AISuggestions';
 import './FoodLog.css';
+import { useI18n } from '../context/useI18n';
 
 export default function FoodLog() {
+  const { token } = useAuth();
   const today = new Date().toISOString().split('T')[0];
+  const { t } = useI18n();
+  const mealLabel = (meal) => {
+    if (meal === 'Desayuno') return t('meals.breakfast', 'Desayuno');
+    if (meal === 'Almuerzo') return t('meals.lunch', 'Almuerzo');
+    if (meal === 'Cena') return t('meals.dinner', 'Cena');
+    if (meal === 'Snack') return t('meals.snack', 'Snack');
+    return meal;
+  };
 
   const defaultPlan = { calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 };
   const [selectedDate, setSelectedDate] = useState(today);
@@ -66,6 +77,7 @@ export default function FoodLog() {
     // Cargar plan real del usuario
     (async () => {
       try {
+        if (!token) return;
         const resp = await api.get('/plan/mine');
         if (resp.data?.success && resp.data.data) {
           setPlan(resp.data.data);
@@ -74,15 +86,32 @@ export default function FoodLog() {
         console.warn('Usando plan por defecto');
       }
     })();
-  }, []);
+  }, [token]);
 
-  // Cargar registros del día cuando cambia la fecha
+  const loadDayLogs = useCallback(async () => {
+    if (!token) return;
+    try {
+      setLoading(true);
+      const [logsResponse, totalsResponse] = await Promise.all([
+        api.get('/food-log/day', { params: { fecha: selectedDate } }),
+        api.get('/food-log/totals', { params: { fecha: selectedDate } }),
+      ]);
+      setDayLogs(logsResponse.data.data);
+      setDayTotals(totalsResponse.data.data);
+    } catch (error) {
+      console.error('Error cargando registros del día:', error);
+    } finally {
+      setLoading(false);
+    }
+  }, [selectedDate, token]);
+
   useEffect(() => {
     loadDayLogs();
-  }, [selectedDate]);
+  }, [loadDayLogs]);
 
   useEffect(() => {
     (async () => {
+      if (!token) return;
       try {
         const r = await api.get('/food-log/history', { params: { days: 30 } });
         setHistory(r.data?.data || {});
@@ -90,7 +119,7 @@ export default function FoodLog() {
         console.warn('Historial no disponible');
       }
     })();
-  }, []);
+  }, [token]);
 
   useEffect(() => {
     try {
@@ -145,7 +174,7 @@ export default function FoodLog() {
     if (!foodModalFood) return;
     const pors = parseInt(foodModalPortions, 10);
     if (!Number.isInteger(pors) || pors <= 0) {
-      setMessage('La porción debe ser un entero mayor a 0');
+      setMessage(t('foodlog.portion_integer_error', 'La porción debe ser un entero mayor a 0'));
       setTimeout(() => setMessage(''), 2500);
       return;
     }
@@ -157,12 +186,12 @@ export default function FoodLog() {
         comida: foodModalMeal,
         fecha: selectedDate,
       });
-      setMessage('✅ Alimento agregado');
+      setMessage(t('foodlog.added_ok', '✅ Alimento agregado'));
       setTimeout(() => setMessage(''), 2000);
       closeFoodModal();
       loadDayLogs();
     } catch {
-      setMessage('❌ Error al guardar');
+      setMessage(t('foodlog.save_error', '❌ Error al guardar'));
       setTimeout(() => setMessage(''), 3000);
     }
   };
@@ -178,21 +207,7 @@ export default function FoodLog() {
     }
   };
 
-  const loadDayLogs = async () => {
-    try {
-      setLoading(true);
-      const [logsResponse, totalsResponse] = await Promise.all([
-        api.get('/food-log/day', { params: { fecha: selectedDate } }),
-        api.get('/food-log/totals', { params: { fecha: selectedDate } }),
-      ]);
-      setDayLogs(logsResponse.data.data);
-      setDayTotals(totalsResponse.data.data);
-    } catch (error) {
-      console.error('Error cargando registros del día:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+  
 
   // función de agregado directo eliminada; se usa submitFoodModal
   
@@ -201,10 +216,10 @@ export default function FoodLog() {
     try {
       const resp = await api.get(`/foods/barcode/${barcode.trim()}`);
       setSelectedFood(resp.data.data);
-      setMessage('✅ Producto encontrado por código de barras');
+      setMessage(t('foodlog.barcode_found', '✅ Producto encontrado por código de barras'));
       setTimeout(() => setMessage(''), 2500);
     } catch {
-      setMessage('❌ No se encontró el producto. Puedes crearlo rápidamente aquí.');
+      setMessage(t('foodlog.barcode_not_found', '❌ No se encontró el producto. Puedes crearlo rápidamente aquí.'));
       setShowQuickCreate(true);
       setQuickForm((prev) => ({ ...prev, barcode: barcode.trim() }));
       setTimeout(() => setMessage(''), 3500);
@@ -226,7 +241,7 @@ export default function FoodLog() {
     try {
       setScanError('');
       if (!('BarcodeDetector' in window)) {
-        setScanError('El lector no es compatible en este navegador. Usa la caja de código.');
+        setScanError(t('foods.scan_unsupported', 'El lector no es compatible en este navegador. Usa la caja de código.'));
         return;
       }
       const media = await navigator.mediaDevices.getUserMedia({
@@ -256,13 +271,13 @@ export default function FoodLog() {
             }
           }
         } catch {
-          setScanError('Error leyendo el código. Intenta de nuevo.');
+          setScanError(t('foods.scan_error', 'Error leyendo el código. Intenta de nuevo.'));
         }
         rafRef.current = requestAnimationFrame(loop);
       };
       rafRef.current = requestAnimationFrame(loop);
     } catch {
-      setScanError('No se pudo acceder a la cámara. Revisa permisos.');
+      setScanError(t('foods.camera_denied', 'No se pudo acceder a la cámara. Revisa permisos.'));
     }
   };
 
@@ -278,7 +293,7 @@ export default function FoodLog() {
       };
       const resp = await api.post('/foods', payload);
       const item = resp.data?.data;
-      setMessage('✅ Alimento creado');
+      setMessage(t('foods.created_ok', '✅ Alimento creado'));
       await loadFoods();
       if (item) {
         setSelectedFood(item);
@@ -286,20 +301,20 @@ export default function FoodLog() {
       setShowQuickCreate(false);
       setTimeout(() => setMessage(''), 2500);
     } catch {
-      setMessage('❌ No tienes permisos o datos incompletos');
+      setMessage(t('foods.create_error', '❌ No tienes permisos o datos incompletos'));
       setTimeout(() => setMessage(''), 3500);
     }
   };
 
   const handleRemoveFood = async (entryId) => {
-    if (window.confirm('¿Estás seguro que deseas eliminar este registro?')) {
+    if (window.confirm(t('foodlog.delete_confirm', '¿Estás seguro que deseas eliminar este registro?'))) {
       try {
         await api.delete(`/food-log/${entryId}`);
-        setMessage('✅ Registro eliminado');
+        setMessage(t('foodlog.deleted_ok', '✅ Registro eliminado'));
         setTimeout(() => setMessage(''), 2000);
         loadDayLogs();
       } catch (error) {
-        setMessage('❌ Error al eliminar registro');
+        setMessage(t('foodlog.delete_error', '❌ Error al eliminar registro'));
         console.error('Error:', error);
       }
     }
@@ -335,19 +350,19 @@ export default function FoodLog() {
     <div className="food-log-container">
       <div className="page-header">
         <div>
-          <h1>Registro de Alimentos</h1>
-          <p className="subtitle">Añade tus comidas del día y controla tus metas</p>
+          <h1>{t('foodlog.title', 'Registro de Alimentos')}</h1>
+          <p className="subtitle">{t('foodlog.subtitle', 'Añade tus comidas del día y controla tus metas')}</p>
         </div>
       </div>
-      {loading && <div className="message">Cargando...</div>}
+      {loading && <div className="message">{t('common.loading', 'Cargando...')}</div>}
 
       <div className="two-col-grid">
         <div className="left-col">
           <div className="plan-summary">
-            <h2>Plan Nutricional</h2>
+            <h2>{t('foodlog.nutrition_plan', 'Plan Nutricional')}</h2>
             <div className="totals-card">
               <div className="progress-item">
-                <label>Calorías</label>
+                <label>{t('ai.calories', 'Calorías')}</label>
                 <div className="progress-bar">
                   <div
                     className="progress-fill"
@@ -357,7 +372,7 @@ export default function FoodLog() {
                 <span>{dayTotals ? Math.round(dayTotals.totalCalorias) : 0} / {plan.calorias} cal</span>
               </div>
               <div className="progress-item">
-                <label>Proteína</label>
+                <label>{t('ai.protein', 'Proteína')}</label>
                 <div className="progress-bar">
                   <div
                     className="progress-fill"
@@ -367,7 +382,7 @@ export default function FoodLog() {
                 <span>{dayTotals ? Math.round(dayTotals.totalProteina) : 0}g / {plan.proteina}g</span>
               </div>
               <div className="progress-item">
-                <label>Carbohidratos</label>
+                <label>{t('ai.carbs', 'Carbohidratos')}</label>
                 <div className="progress-bar">
                   <div
                     className="progress-fill"
@@ -377,7 +392,7 @@ export default function FoodLog() {
                 <span>{dayTotals ? Math.round(dayTotals.totalCarbohidratos) : 0}g / {plan.carbohidratos}g</span>
               </div>
               <div className="progress-item">
-                <label>Grasas</label>
+                <label>{t('ai.fats', 'Grasas')}</label>
                 <div className="progress-bar">
                   <div
                     className="progress-fill"
@@ -390,24 +405,24 @@ export default function FoodLog() {
           </div>
 
           <div className="range-card">
-            <h2>Rango de Fechas</h2>
+            <h2>{t('foodlog.range_title', 'Rango de Fechas')}</h2>
             <div className="range-grid">
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Inicio</label>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foodlog.start', 'Inicio')}</label>
                 <input type="date" value={startDate} max={endDate} onChange={(e) => setStartDate(e.target.value)} className="w-full px-4 py-2 rounded-2xl border border-slate-300" />
               </div>
               <div>
-                <label className="block text-sm font-semibold text-stone-700 mb-1">Fin</label>
+                <label className="block text-sm font-semibold text-stone-700 mb-1">{t('foodlog.end', 'Fin')}</label>
                 <input type="date" value={endDate} min={startDate} max={today} onChange={(e) => setEndDate(e.target.value)} className="w-full px-4 py-2 rounded-2xl border border-slate-300" />
               </div>
             </div>
           </div>
 
           <div className="weekly-card">
-            <h2>Avance Semanal</h2>
+            <h2>{t('foodlog.weekly_progress', 'Avance Semanal')}</h2>
             <div className="space-y-2">
               {weekly.length === 0 ? (
-                <p className="text-sm text-stone-600">Sin datos para el rango.</p>
+                <p className="text-sm text-stone-600">{t('foodlog.no_range', 'Sin datos para el rango.')}</p>
               ) : (
                 weekly.map(({ date, totals }) => (
                   <div key={date} className="weekly-row">
@@ -440,7 +455,7 @@ export default function FoodLog() {
 
         <div className="right-col">
           <div className="date-selector">
-            <label>Fecha</label>
+            <label>{t('foodlog.date', 'Fecha')}</label>
             <input
               type="date"
               value={selectedDate}
@@ -449,17 +464,17 @@ export default function FoodLog() {
             />
           </div>
           <div style={{marginBottom:12}}>
-            <button className="btn-secondary" onClick={() => setSummaryOpen(true)}>Resumen de alimentos</button>
+            <button className="btn-secondary" onClick={() => setSummaryOpen(true)}>{t('foodlog.summary_btn', 'Resumen de alimentos')}</button>
           </div>
 
           <div className="search-section" style={{ marginBottom: 16 }}>
-            <h2>Selecciona la comida</h2>
+            <h2>{t('foodlog.select_meal', 'Selecciona la comida')}</h2>
             <div className="search-filters">
               <select value={selectedMeal} onChange={(e) => setSelectedMeal(e.target.value)}>
-                <option value="Desayuno">🌅 Desayuno</option>
-                <option value="Almuerzo">🌞 Almuerzo</option>
-                <option value="Cena">🌙 Cena</option>
-                <option value="Snack">🍿 Snack</option>
+                <option value="Desayuno">🌅 {t('meals.breakfast', 'Desayuno')}</option>
+                <option value="Almuerzo">🌞 {t('meals.lunch', 'Almuerzo')}</option>
+                <option value="Cena">🌙 {t('meals.dinner', 'Cena')}</option>
+                <option value="Snack">🍿 {t('meals.snack', 'Snack')}</option>
               </select>
             </div>
             <div className="foods-grid">
@@ -480,12 +495,12 @@ export default function FoodLog() {
 
       {/* Búsqueda de alimentos */}
       <div className="search-section">
-        <h2>Buscar y Agregar Alimentos</h2>
+        <h2>{t('foods.search_add_title', 'Buscar y Agregar Alimentos')}</h2>
 
         <div className="search-filters">
           <input
             type="text"
-            placeholder="Buscar alimento..."
+            placeholder={t('foods.search_ph', 'Buscar alimento...')}
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
           />
@@ -493,7 +508,7 @@ export default function FoodLog() {
             value={selectedCategory}
             onChange={(e) => setSelectedCategory(e.target.value)}
           >
-            <option value="">Todas las categorías</option>
+            <option value="">{t('foods.all_categories', 'Todas las categorías')}</option>
             {categories.map((cat) => (
               <option key={cat} value={cat}>
                 {cat}
@@ -503,15 +518,15 @@ export default function FoodLog() {
           <div className="barcode-box">
             <input
               type="text"
-              placeholder="Escanear/ingresar código de barras"
+              placeholder={t('foods.barcode_ph', 'Escanear o escribir código...')}
               value={barcode}
               onChange={(e) => setBarcode(e.target.value)}
             />
-            <button className="btn-primary" onClick={handleFindByBarcode}>Buscar</button>
+            <button className="btn-primary" onClick={handleFindByBarcode}>{t('common.search', 'Buscar')}</button>
             {!scanning ? (
-              <button className="btn-secondary" onClick={startScan}>Escanear</button>
+              <button className="btn-secondary" onClick={startScan}>{t('foods.scan', 'Escanear')}</button>
             ) : (
-              <button className="btn-secondary" onClick={stopScan}>Detener</button>
+              <button className="btn-secondary" onClick={stopScan}>{t('foods.stop_scan', 'Detener')}</button>
             )}
           </div>
         </div>
@@ -524,17 +539,17 @@ export default function FoodLog() {
         {showQuickCreate && (
           <div className="selected-food-detail" style={{marginTop:12}}>
             <div className="detail-info">
-              <h3>Crear alimento</h3>
+              <h3>{t('foods.quick_create', 'Crear alimento')}</h3>
               <div className="form-row">
                 <input
                   type="text"
-                  placeholder="Nombre"
+                  placeholder={t('common.name', 'Nombre')}
                   value={quickForm.nombre}
                   onChange={(e) => setQuickForm({ ...quickForm, nombre: e.target.value })}
                 />
                 <input
                   type="text"
-                  placeholder="Categoría (Proteínas/Carbohidratos/Grasas)"
+                  placeholder={t('foods.category', 'Categoría')}
                   value={quickForm.categoria}
                   onChange={(e) => setQuickForm({ ...quickForm, categoria: e.target.value })}
                 />
@@ -542,13 +557,13 @@ export default function FoodLog() {
               <div className="form-row" style={{marginTop:10}}>
                 <input
                   type="text"
-                  placeholder="Código de barras"
+                  placeholder={t('foods.barcode', 'Código de Barras')}
                   value={quickForm.barcode}
                   onChange={(e) => setQuickForm({ ...quickForm, barcode: e.target.value })}
                 />
                 <input
                   type="text"
-                  placeholder="Marca"
+                  placeholder={t('foods.brand', 'Marca')}
                   value={quickForm.marca}
                   onChange={(e) => setQuickForm({ ...quickForm, marca: e.target.value })}
                 />
@@ -556,7 +571,7 @@ export default function FoodLog() {
               <div className="form-row" style={{marginTop:10}}>
                 <input
                   type="number"
-                  placeholder="Porción (ej. 100)"
+                  placeholder={t('foods.serving_ph', 'Porción (ej. 100)')}
                   value={quickForm.cantidad}
                   onChange={(e) => setQuickForm({ ...quickForm, cantidad: e.target.value })}
                 />
@@ -572,32 +587,32 @@ export default function FoodLog() {
               <div className="form-row" style={{marginTop:10}}>
                 <input
                   type="number"
-                  placeholder="Calorías"
+                  placeholder={t('foods.calories', 'Calorías')}
                   value={quickForm.calorias}
                   onChange={(e) => setQuickForm({ ...quickForm, calorias: e.target.value })}
                 />
                 <input
                   type="number"
-                  placeholder="Proteína (g)"
+                  placeholder={t('foods.protein', 'Proteína (g)')}
                   value={quickForm.proteina}
                   onChange={(e) => setQuickForm({ ...quickForm, proteina: e.target.value })}
                 />
                 <input
                   type="number"
-                  placeholder="Carbohidratos (g)"
+                  placeholder={t('foods.carbs', 'Carbohidratos (g)')}
                   value={quickForm.carbohidratos}
                   onChange={(e) => setQuickForm({ ...quickForm, carbohidratos: e.target.value })}
                 />
                 <input
                   type="number"
-                  placeholder="Grasas (g)"
+                  placeholder={t('foods.fats', 'Grasas (g)')}
                   value={quickForm.grasas}
                   onChange={(e) => setQuickForm({ ...quickForm, grasas: e.target.value })}
                 />
               </div>
               <div className="form-row" style={{marginTop:10}}>
-                <button className="btn-primary" onClick={handleQuickCreate}>Crear alimento</button>
-                <button className="btn-secondary" onClick={() => setShowQuickCreate(false)}>Cancelar</button>
+                <button className="btn-primary" onClick={handleQuickCreate}>{t('foods.create_food', 'Crear alimento')}</button>
+                <button className="btn-secondary" onClick={() => setShowQuickCreate(false)}>{t('common.cancel', 'Cancelar')}</button>
               </div>
             </div>
           </div>
@@ -610,7 +625,10 @@ export default function FoodLog() {
               className={`tab ${selectedGroupTab === tab ? 'active' : ''}`}
               onClick={() => setSelectedGroupTab(tab)}
             >
-              {tab}
+              {tab === 'Todas' ? t('groups.all', 'Todas') :
+               tab === 'Proteínas' ? t('groups.protein', 'Proteínas') :
+               tab === 'Carbohidratos' ? t('groups.carbs', 'Carbohidratos') :
+               t('groups.fats', 'Grasas')}
             </button>
           ))}
         </div>
@@ -635,7 +653,7 @@ export default function FoodLog() {
         {filteredFoods.length > showCount && (
           <div style={{ textAlign: 'center', marginTop: 12 }}>
             <button className="btn-primary" onClick={() => setShowCount(showCount + 24)}>
-              Ver más alimentos
+              {t('foods.view_more', 'Ver más alimentos')}
             </button>
           </div>
         )}
@@ -645,17 +663,17 @@ export default function FoodLog() {
           <div className="policy-modal-overlay" onClick={closeFoodModal}>
             <div className="policy-modal" onClick={(e) => e.stopPropagation()}>
               <div className="policy-modal-header">
-                <h2>Asignar alimento</h2>
+            <h2>{t('foodlog.assign_food', 'Asignar alimento')}</h2>
                 <button className="policy-close-btn" onClick={closeFoodModal}>✕</button>
               </div>
               <div className="policy-modal-content">
                 <div className="selected-food-detail" style={{ marginTop: 0 }}>
                   <div className="detail-info">
                     <h3>{foodModalFood.nombre}</h3>
-                    <p className="portion">Porción base: {foodModalFood.cantidad} {foodModalFood.unidad} · {foodModalFood.categoria}</p>
+                    <p className="portion">{t('foodlog.base_portion', 'Porción base')}: {foodModalFood.cantidad} {foodModalFood.unidad} · {foodModalFood.categoria}</p>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                       <div className="form-group">
-                        <label>Porciones (enteros)</label>
+                        <label>{t('foodlog.portions', 'Porciones (enteros)')}</label>
                         <input
                           type="number"
                           min="1"
@@ -665,16 +683,16 @@ export default function FoodLog() {
                         />
                       </div>
                       <div className="form-group">
-                        <label>Comida</label>
+                        <label>{t('foodlog.meal', 'Comida')}</label>
                         <select value={foodModalMeal} onChange={(e) => setFoodModalMeal(e.target.value)}>
-                          <option value="Desayuno">Desayuno</option>
-                          <option value="Almuerzo">Almuerzo</option>
-                          <option value="Cena">Cena</option>
-                          <option value="Snack">Snack</option>
+                          <option value="Desayuno">{t('meals.breakfast', 'Desayuno')}</option>
+                          <option value="Almuerzo">{t('meals.lunch', 'Almuerzo')}</option>
+                          <option value="Cena">{t('meals.dinner', 'Cena')}</option>
+                          <option value="Snack">{t('meals.snack', 'Snack')}</option>
                         </select>
                       </div>
                       <div className="form-group">
-                        <label>Equivale a</label>
+                        <label>{t('foodlog.equals', 'Equivale a')}</label>
                         <input
                           type="text"
                           readOnly
@@ -686,27 +704,27 @@ export default function FoodLog() {
 
                   <div className="detail-macros">
                     <div className="macro-box">
-                      <span>Calorías</span>
+                      <span>{t('ai.calories', 'Calorías')}</span>
                       <strong>{Math.round(foodModalFood.calorias * foodModalPortions)}</strong>
                     </div>
                     <div className="macro-box">
-                      <span>Proteína</span>
+                      <span>{t('ai.protein', 'Proteína')}</span>
                       <strong>{(foodModalFood.proteina * foodModalPortions).toFixed(1)}g</strong>
                     </div>
                     <div className="macro-box">
-                      <span>Carbohidratos</span>
+                      <span>{t('ai.carbs', 'Carbohidratos')}</span>
                       <strong>{(foodModalFood.carbohidratos * foodModalPortions).toFixed(1)}g</strong>
                     </div>
                     <div className="macro-box">
-                      <span>Grasas</span>
+                      <span>{t('ai.fats', 'Grasas')}</span>
                       <strong>{(foodModalFood.grasas * foodModalPortions).toFixed(1)}g</strong>
                     </div>
                   </div>
                 </div>
               </div>
               <div className="policy-modal-footer">
-                <button className="btn-secondary" onClick={closeFoodModal}>Cancelar</button>
-                <button className="btn-primary" onClick={submitFoodModal}>Agregar al registro</button>
+                <button className="btn-secondary" onClick={closeFoodModal}>{t('common.cancel', 'Cancelar')}</button>
+                <button className="btn-primary" onClick={submitFoodModal}>{t('foodlog.add_to_log', 'Agregar al registro')}</button>
               </div>
             </div>
           </div>
@@ -725,11 +743,11 @@ export default function FoodLog() {
               {meal === 'Almuerzo' && '🌞'}
               {meal === 'Cena' && '🌙'}
               {meal === 'Snack' && '🍿'}
-              {' '}{meal}
+              {' '}{mealLabel(meal)}
             </h3>
 
             {logs.length === 0 ? (
-              <p className="no-foods">No hay registros para esta comida</p>
+              <p className="no-foods">{t('foodlog.no_records_meal', 'No hay registros para esta comida')}</p>
             ) : (
               <div className="logs-list">
                 {logs.map((log) => (
@@ -760,12 +778,11 @@ export default function FoodLog() {
         ))}
         </div>
         </div>
-        {/* Modal de Resumen de Alimentos por Comida */}
         {summaryOpen && (
           <div className="policy-modal-overlay" onClick={() => setSummaryOpen(false)}>
             <div className="policy-modal" onClick={(e) => e.stopPropagation()}>
               <div className="policy-modal-header">
-                <h2>Resumen de alimentos - {selectedDate}</h2>
+                <h2>{t('foodlog.summary_title', 'Resumen de alimentos')} - {selectedDate}</h2>
                 <button className="policy-close-btn" onClick={() => setSummaryOpen(false)}>✕</button>
               </div>
               <div className="policy-modal-content" style={{maxHeight:'60vh', overflow:'auto'}}>
@@ -780,24 +797,24 @@ export default function FoodLog() {
                   }, {calorias:0, proteina:0, carbohidratos:0, grasas:0});
                   return (
                     <div key={meal} className="plan-summary" style={{marginBottom:16}}>
-                      <h2 style={{marginBottom:8}}>{meal}</h2>
+                      <h2 style={{marginBottom:8}}>{mealLabel(meal)}</h2>
                       <div className="totals-card">
                         <div className="progress-item">
-                          <label>Calorías</label>
+                          <label>{t('ai.calories', 'Calorías')}</label>
                           <div className="progress-bar">
                             <div className="progress-fill" style={{ width: `${Math.min((totals.calorias / plan.calorias) * 100, 100)}%` }} />
                           </div>
                           <span>{Math.round(totals.calorias)} kcal</span>
                         </div>
                         <div className="progress-item">
-                          <label>Proteína</label>
+                          <label>{t('ai.protein', 'Proteína')}</label>
                           <div className="progress-bar">
                             <div className="progress-fill" style={{ width: `${Math.min(((totals.proteina) / plan.proteina) * 100, 100)}%` }} />
                           </div>
                           <span>{totals.proteina.toFixed(1)} g</span>
                         </div>
                         <div className="progress-item">
-                          <label>Carbohidratos</label>
+                          <label>{t('ai.carbs', 'Carbohidratos')}</label>
                           <div className="progress-bar">
                             <div className="progress-fill" style={{ width: `${Math.min(((totals.carbohidratos) / plan.carbohidratos) * 100, 100)}%` }} />
                           </div>
@@ -829,14 +846,14 @@ export default function FoodLog() {
                           ))}
                         </div>
                       ) : (
-                        <p className="no-foods">Sin registros en {meal}</p>
+                        <p className="no-foods">{t('foodlog.no_records_in', 'Sin registros en')} {meal}</p>
                       )}
                     </div>
                   );
                 })}
               </div>
               <div className="policy-modal-footer">
-                <button className="btn-primary" onClick={() => setSummaryOpen(false)}>Cerrar</button>
+                <button className="btn-primary" onClick={() => setSummaryOpen(false)}>{t('common.close', 'Cerrar')}</button>
               </div>
             </div>
           </div>

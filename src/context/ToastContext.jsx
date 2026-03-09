@@ -1,16 +1,15 @@
-import { createContext, useContext, useEffect, useMemo, useState } from 'react';
-
-const ToastContext = createContext({ addToast: () => {} });
+import { useEffect, useMemo, useState, useCallback } from 'react';
+import { ToastContext } from './toastCtx';
 
 export const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
 
-  const remove = (id) => setToasts((t) => t.filter((x) => x.id !== id));
-  const addToast = ({ type = 'info', title = '', message = '' }) => {
+  const remove = useCallback((id) => setToasts((t) => t.filter((x) => x.id !== id)), []);
+  const addToast = useCallback(({ type = 'info', title = '', message = '' }) => {
     const id = Math.random().toString(36).slice(2);
     setToasts((t) => [...t, { id, type, title, message }]);
     setTimeout(() => remove(id), 3500);
-  };
+  }, [remove]);
 
   useEffect(() => {
     const handler = (e) => {
@@ -18,9 +17,9 @@ export const ToastProvider = ({ children }) => {
     };
     window.addEventListener('app:toast', handler);
     return () => window.removeEventListener('app:toast', handler);
-  }, []);
+  }, [addToast]);
 
-  const value = useMemo(() => ({ addToast }), []);
+  const value = useMemo(() => ({ addToast }), [addToast]);
 
   return (
     <ToastContext.Provider value={value}>
@@ -47,10 +46,4 @@ export const ToastProvider = ({ children }) => {
       </div>
     </ToastContext.Provider>
   );
-};
-
-export const useToast = () => useContext(ToastContext);
-
-export const emitToast = (payload) => {
-  window.dispatchEvent(new CustomEvent('app:toast', { detail: payload }));
 };

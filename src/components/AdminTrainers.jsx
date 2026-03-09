@@ -13,7 +13,7 @@ import {
   Save,
   Loader
 } from 'lucide-react';
-import { useI18n } from '../context/I18nContext';
+import { useI18n } from '../context/useI18n';
 
 export default function AdminTrainers() {
   const [trainers, setTrainers] = useState([]);

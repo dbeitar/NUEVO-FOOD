@@ -1,8 +1,8 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Pencil, UserPlus, Trash2 } from 'lucide-react';
-import { useAuth } from '../context/AuthContext';
-import { useI18n } from '../context/I18nContext';
+import { useAuth } from '../context/useAuth';
+import { useI18n } from '../context/useI18n';
 
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
@@ -31,12 +31,7 @@ export default function AdminUsers() {
     planId: ''
   });
 
-  useEffect(() => {
-    fetchUsers();
-    fetchResources();
-  }, []);
-
-  const fetchUsers = async () => {
+  const fetchUsers = useCallback(async () => {
     try {
       const res = await api.get('/admin/users');
       setUsers(res.data.data || []);
@@ -45,9 +40,9 @@ export default function AdminUsers() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [t]);
 
-  const fetchResources = async () => {
+  const fetchResources = useCallback(async () => {
     try {
       const [gymRes, trainerRes, plansRes] = await Promise.all([
         api.get('/gyms'),
@@ -61,7 +56,12 @@ export default function AdminUsers() {
     } catch {
       console.error('Error loading resources');
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+    fetchResources();
+  }, [fetchUsers, fetchResources]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -81,17 +81,17 @@ export default function AdminUsers() {
       } else {
         // Validaciones obligatorias para nuevo usuario
         if (!formData.planId) {
-          setError('Plan de Suscripción es obligatorio');
+          setError(t('plans.subscription', 'Plan de Suscripción') + ' ' + t('common.name_required', 'Nombre *').replace('Nombre *','es obligatorio'));
           return;
         }
         if (formData.rol === 'usuario_final' && !formData.gym_id) {
-          setError('Gimnasio es obligatorio para Usuario Final');
+          setError(t('common.gym', 'Gimnasio') + ' ' + t('common.name_required', 'Nombre *').replace('Nombre *','es obligatorio') + ' ' + '(Usuario Final)');
           return;
         }
         // Validar email duplicado en cliente
         const exists = users.some(u => String(u.email).toLowerCase() === String(formData.email).toLowerCase());
         if (exists) {
-          setError('El email ya está registrado');
+          setError(t('users.email_exists', 'Este email ya está registrado'));
           return;
         }
         // Create logic
@@ -106,7 +106,7 @@ export default function AdminUsers() {
       setFormData({ nombre: '', email: '', password: '', rol: 'usuario_final', gym_id: '', trainer_id: '', planId: '' });
       fetchUsers();
     } catch {
-      setError('Error al guardar');
+      setError(t('trainers.save_error', 'Error al guardar'));
     }
   };
 
@@ -124,12 +124,12 @@ export default function AdminUsers() {
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm('¿Estás seguro de eliminar este usuario?')) return;
+    if (!window.confirm(t('users.delete_confirm', '¿Estás seguro de eliminar este usuario?'))) return;
     try {
       await api.delete(`/admin/users/${id}`);
       fetchUsers();
     } catch {
-      setError('Error al eliminar usuario');
+      setError(t('users.delete_error', 'Error al eliminar usuario'));
     }
   };
 
@@ -201,7 +201,7 @@ export default function AdminUsers() {
         </div>
         <form onSubmit={handleSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
-            <label className="label">Nombre</label>
+            <label className="label">{t('common.name', 'Nombre')}</label>
             <input 
               name="nombre" 
               value={formData.nombre} 
@@ -212,7 +212,7 @@ export default function AdminUsers() {
             />
           </div>
           <div>
-            <label className="label">Email</label>
+            <label className="label">{t('common.email', 'Email')}</label>
             <input 
               name="email" 
               value={formData.email} 
@@ -222,12 +222,12 @@ export default function AdminUsers() {
               className="input disabled:bg-stone-100 disabled:text-stone-500"
             />
             {!editingUser && users.some(u => String(u.email).toLowerCase() === String(formData.email).toLowerCase()) && (
-              <p className="mt-1 text-sm text-red-600">Este email ya está registrado</p>
+              <p className="mt-1 text-sm text-red-600">{t('users.email_exists', 'Este email ya está registrado')}</p>
             )}
           </div>
           {!editingUser && (
             <div>
-              <label className="label">Contraseña</label>
+              <label className="label">{t('auth.password', 'Contraseña')}</label>
               <input 
                 name="password" 
                 type="password" 
@@ -239,7 +239,7 @@ export default function AdminUsers() {
             </div>
           )}
           <div>
-            <label className="label">Plan de Suscripción</label>
+            <label className="label">{t('plans.subscription', 'Plan de Suscripción')}</label>
             <select 
               name="planId" 
               value={formData.planId} 
@@ -247,28 +247,28 @@ export default function AdminUsers() {
               required={!editingUser}
               className="input"
             >
-              <option value="">Ninguno</option>
+              <option value="">{t('common.none', 'Ninguno')}</option>
               {plans.map(p => <option key={p.nombre} value={p.nombre}>{p.nombre.toUpperCase()}</option>)}
             </select>
           </div>
           <div>
-            <label className="label">Rol</label>
+            <label className="label">{t('common.role', 'Rol')}</label>
             <select 
               name="rol" 
               value={formData.rol} 
               onChange={handleInputChange}
               className="input"
             >
-              <option value="usuario_final">Usuario Final</option>
-              <option value="entrenador">Entrenador</option>
-              <option value="admin_gimnasio">Admin Gimnasio</option>
+              <option value="usuario_final">{t('common.user', 'Usuario')} Final</option>
+              <option value="entrenador">{t('common.trainer', 'Entrenador')}</option>
+              <option value="admin_gimnasio">Admin {t('common.gym', 'Gimnasio')}</option>
               <option value="super_admin">Super Admin</option>
             </select>
           </div>
           {formData.rol === 'usuario_final' && (
             <>
               <div>
-                <label className="label">Gimnasio</label>
+                <label className="label">{t('common.gym', 'Gimnasio')}</label>
                 <select 
                   name="gym_id" 
                   value={formData.gym_id} 
@@ -276,19 +276,19 @@ export default function AdminUsers() {
                   required={!editingUser}
                   className="input"
                 >
-                  <option value="">Ninguno</option>
+                  <option value="">{t('common.none', 'Ninguno')}</option>
                   {gyms.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
                 </select>
               </div>
               <div>
-                <label className="label">Entrenador</label>
+                <label className="label">{t('common.trainer', 'Entrenador')}</label>
                 <select 
                   name="trainer_id" 
                   value={formData.trainer_id} 
                   onChange={handleInputChange}
                   className="input"
                 >
-                  <option value="">Ninguno</option>
+                  <option value="">{t('common.none', 'Ninguno')}</option>
                   {trainers.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
                 </select>
               </div>
@@ -309,7 +309,7 @@ export default function AdminUsers() {
                 )
               }
             >
-              Guardar
+              {t('common.save', 'Guardar')}
             </button>
           </div>
         </form>
@@ -320,17 +320,17 @@ export default function AdminUsers() {
       {viewTab === 'gyms' && (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 border-b border-slate-200">
-            <h4 className="text-md font-semibold text-stone-900">Resumen de Gimnasios</h4>
+            <h4 className="text-md font-semibold text-stone-900">{t('users.gyms_summary', 'Resumen de Gimnasios')}</h4>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-stone-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Nombre</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Ciudad</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Capacidad</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Acciones</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.id', 'ID')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.name', 'Nombre')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.city', 'Ciudad')}</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('plans.capacity', 'Cupo Máx')}</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -345,12 +345,12 @@ export default function AdminUsers() {
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-stone-300 text-stone-700 bg-white hover:bg-stone-100 transition-colors"
                         onClick={() => {
                           const list = users.filter(u => (u.gym_id || u.gymId) === g.id);
-                          setAssignedTitle(`Usuarios del Gimnasio: ${g.nombre}`);
+                          setAssignedTitle(t('companies.users_of_gym', 'Usuarios del Gimnasio: {name}').replace('{name}', g.nombre));
                           setAssignedList(list);
                           setShowAssignedModal(true);
                         }}
                       >
-                        Ver usuarios
+                        {t('users.view_users', 'Ver usuarios')}
                       </button>
                     </td>
                   </tr>
@@ -365,17 +365,17 @@ export default function AdminUsers() {
       {viewTab === 'trainers' && (
         <div className="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
           <div className="p-4 border-b border-slate-200">
-            <h4 className="text-md font-semibold text-stone-900">Resumen de Entrenadores</h4>
+            <h4 className="text-md font-semibold text-stone-900">{t('users.trainers_summary', 'Resumen de Entrenadores')}</h4>
           </div>
           <div className="overflow-x-auto">
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-stone-50">
                 <tr>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">ID</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Nombre</th>
-                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Especialidad</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Capacidad</th>
-                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Acciones</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.id', 'ID')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.name', 'Nombre')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('trainers.specialty', 'Especialidad')}</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('plans.capacity', 'Cupo Máx')}</th>
+                  <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
@@ -390,12 +390,12 @@ export default function AdminUsers() {
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-stone-300 text-stone-700 bg-white hover:bg-stone-100 transition-colors"
                         onClick={() => {
                           const list = users.filter(u => u.trainer_id === t.id);
-                          setAssignedTitle(`Usuarios del Entrenador: ${t.nombre}`);
+                          setAssignedTitle(t('companies.users_of_trainer', 'Usuarios del Entrenador: {name}').replace('{name}', t.nombre));
                           setAssignedList(list);
                           setShowAssignedModal(true);
                         }}
                       >
-                        Ver usuarios
+                        {t('users.view_users', 'Ver usuarios')}
                       </button>
                     </td>
                   </tr>
@@ -413,12 +413,12 @@ export default function AdminUsers() {
           <table className="min-w-full divide-y divide-slate-200">
             <thead className="bg-stone-50">
               <tr>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">ID</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Nombre</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Email</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Rol</th>
-                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Gimnasio</th>
-                <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">Acciones</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.id', 'ID')}</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.name', 'Nombre')}</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.email', 'Email')}</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.role', 'Rol')}</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.gym', 'Gimnasio')}</th>
+                <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
@@ -445,39 +445,39 @@ export default function AdminUsers() {
                         <button 
                           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-lime-300 text-lime-700 bg-white hover:bg-lime-100 transition-colors"
                           onClick={() => startEdit(user)}
-                          title="Editar usuario"
+                          title={t('common.edit', 'Editar')}
                         >
                           <Pencil className="w-4 h-4" />
-                          <span className="hidden sm:inline">Editar</span>
+                          <span className="hidden sm:inline">{t('common.edit', 'Editar')}</span>
                         </button>
                         <button 
                           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-amber-300 text-amber-700 bg-white hover:bg-amber-100 transition-colors"
                           onClick={async () => {
-                            const pwd = window.prompt('Nueva contraseña (mín. 6 caracteres):');
+                            const pwd = window.prompt(t('users.new_password_prompt', 'Nueva contraseña (mín. 6 caracteres):'));
                             if (!pwd) return;
                             if (pwd.length < 6) {
-                              setError('La contraseña debe tener al menos 6 caracteres');
+                              setError(t('users.password_min', 'La contraseña debe tener al menos 6 caracteres'));
                               return;
                             }
                             try {
                               await api.put(`/admin/users/${user.id}/password`, { password: pwd });
-                              alert('Contraseña actualizada');
+                              alert(t('users.password_updated', 'Contraseña actualizada'));
                             } catch {
-                              setError('Error actualizando contraseña');
+                              setError(t('users.password_update_error', 'Error actualizando contraseña'));
                             }
                           }}
-                          title="Resetear contraseña"
+                          title={t('users.reset_password', 'Resetear contraseña')}
                         >
-                          <span className="hidden sm:inline">Reset Clave</span>
+                          <span className="hidden sm:inline">{t('users.reset_password_short', 'Reset Clave')}</span>
                         </button>
                         <button 
                           className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl bg-red-600 hover:bg-red-700 text-white disabled:bg-slate-200 disabled:text-slate-400 transition-colors"
                           onClick={() => handleDelete(user.id)}
                           disabled={currentUser && currentUser.id === user.id}
-                          title="Eliminar usuario"
+                          title={t('common.delete', 'Eliminar')}
                         >
                           <Trash2 className="w-4 h-4" />
-                          <span className="hidden sm:inline">Eliminar</span>
+                          <span className="hidden sm:inline">{t('common.delete', 'Eliminar')}</span>
                         </button>
                       </div>
                     </td>
@@ -500,15 +500,15 @@ export default function AdminUsers() {
             </div>
             <div className="p-5 max-h-[70vh] overflow-y-auto">
               {assignedList.length === 0 ? (
-                <p className="text-sm text-stone-600">No hay usuarios asociados.</p>
+                <p className="text-sm text-stone-600">{t('users.no_assigned', 'No hay usuarios asociados.')}</p>
               ) : (
                 <table className="min-w-full divide-y divide-slate-200">
                   <thead className="bg-stone-50">
                     <tr>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">ID</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">Nombre</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">Email</th>
-                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">Plan</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">{t('common.id', 'ID')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">{t('common.name', 'Nombre')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">{t('common.email', 'Email')}</th>
+                      <th className="px-4 py-2 text-left text-xs font-semibold text-stone-600 uppercase">{t('common.plan', 'Plan')}</th>
                     </tr>
                   </thead>
                   <tbody className="bg-white divide-y divide-slate-200">

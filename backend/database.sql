@@ -70,13 +70,29 @@ CREATE TABLE IF NOT EXISTS food_items (
   id SERIAL PRIMARY KEY,
   nombre VARCHAR(255) NOT NULL,
   porcion VARCHAR(100),
+  categoria VARCHAR(50),
   calorias DECIMAL(7, 2),
   proteinas DECIMAL(7, 2),
   carbohidratos DECIMAL(7, 2),
   grasas DECIMAL(7, 2),
-  codigo_barras VARCHAR(20),
+  codigo_barras VARCHAR(50),
+  marca VARCHAR(100),
+  cantidad DECIMAL(7, 2),
+  unidad VARCHAR(30),
+  activo BOOLEAN DEFAULT TRUE,
   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Asegurar columnas nuevas si la tabla ya existe
+ALTER TABLE food_items ADD COLUMN IF NOT EXISTS marca VARCHAR(100);
+ALTER TABLE food_items ADD COLUMN IF NOT EXISTS cantidad DECIMAL(7, 2);
+ALTER TABLE food_items ADD COLUMN IF NOT EXISTS unidad VARCHAR(30);
+ALTER TABLE food_items ADD COLUMN IF NOT EXISTS activo BOOLEAN DEFAULT TRUE;
+ALTER TABLE food_items ADD COLUMN IF NOT EXISTS categoria VARCHAR(50);
+ALTER TABLE food_items ALTER COLUMN codigo_barras TYPE VARCHAR(50);
+CREATE INDEX IF NOT EXISTS idx_food_items_barcode ON food_items(codigo_barras);
+CREATE INDEX IF NOT EXISTS idx_food_items_nombre ON food_items(nombre);
+CREATE INDEX IF NOT EXISTS idx_food_items_categoria ON food_items(categoria);
 
 -- Tabla de Registro Diario de Comidas
 CREATE TABLE IF NOT EXISTS daily_logs (
@@ -96,12 +112,28 @@ CREATE TABLE IF NOT EXISTS daily_logs (
 CREATE TABLE IF NOT EXISTS recipes (
   id SERIAL PRIMARY KEY,
   titulo VARCHAR(255) NOT NULL,
+  codigo VARCHAR(50),
+  descripcion TEXT,
   instrucciones TEXT,
   url_video VARCHAR(500),
   ingredientes_json JSONB,
   nutricion_json JSONB,
+  tiempo_preparacion VARCHAR(50),
+  dificultad VARCHAR(50),
+  tags JSONB,
+  imagen VARCHAR(500),
   creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Asegurar columnas nuevas si la tabla ya existe
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS codigo VARCHAR(50);
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS descripcion TEXT;
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS tiempo_preparacion VARCHAR(50);
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS dificultad VARCHAR(50);
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS tags JSONB;
+ALTER TABLE recipes ADD COLUMN IF NOT EXISTS imagen VARCHAR(500);
+CREATE INDEX IF NOT EXISTS idx_recipes_titulo ON recipes(titulo);
+CREATE INDEX IF NOT EXISTS idx_recipes_codigo ON recipes(codigo);
 
 -- Tabla de Notificaciones
 CREATE TABLE IF NOT EXISTS notifications (

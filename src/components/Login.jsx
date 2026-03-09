@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
-import { useAuth } from '../context/AuthContext';
-import { useI18n } from '../context/I18nContext';
+import { useAuth } from '../context/useAuth';
+import { useI18n } from '../context/useI18n';
 
 export default function Login({ onSwitchToRegister }) {
   const [email, setEmail] = useState('');
