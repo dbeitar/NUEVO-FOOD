@@ -11,11 +11,11 @@ const PrivacyPolicyModal = ({ onClose, onAccept }) => {
 En Food Plan ("nosotros", "nuestro", "nos"), respetamos su privacidad y estamos comprometidos con proteger sus datos personales. Esta Política de Privacidad explica cómo recopilamos, usamos, compartimos y protegemos su información.
 
 **Responsable del Tratamiento de Datos:**
-[JHON NICOLAS DEL RIO CASALLAS
-[Cédula de Ciudadanía 1153465988]
-[KM 1 VIA MANCILLA ALTOS DEL BOSQUE CASA 6B]
-[nicolasdelrio718@gmail.com]
-[3192635819]
+JHON NICOLAS DEL RIO CASALLAS
+Cédula de Ciudadanía 1153465988
+KM 1 VIA MANCILLA ALTOS DEL BOSQUE CASA 6B
+nicolasdelrio718@gmail.com
+3192635819
 
 ## 2. INFORMACIÓN QUE RECOPILAMOS
 
