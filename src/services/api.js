@@ -4,6 +4,14 @@ const prodBase = 'https://reluctant-blair-foodplan-8ceace9e.koyeb.app';
 const envBase = import.meta.env.VITE_API_BASE_URL;
 const host = typeof window !== 'undefined' ? window.location.hostname : '';
 const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+const qsUseProd = (() => {
+  try {
+    if (typeof window === 'undefined') return false;
+    return new URLSearchParams(window.location.search).get('useProd') === '1';
+  } catch {
+    return false;
+  }
+})();
 
 let overrideBase = null;
 try { overrideBase = localStorage.getItem('apiBaseOverride') || null; } catch (e) { void e; }
@@ -13,7 +21,7 @@ let resolvedBase;
 // - Si estamos en localhost: SIEMPRE usar backend local http://localhost:3001/api
 //   ignorando override y variables, para evitar CORS con dominios remotos.
 // - Si NO estamos en localhost: usar env o prodBase.
-if (isLocalHost) {
+if (isLocalHost && !qsUseProd) {
   try { localStorage.removeItem('apiBaseOverride'); } catch (e) { void e; }
   resolvedBase = 'http://localhost:3001/api';
 } else {

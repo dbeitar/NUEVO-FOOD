@@ -11,8 +11,10 @@ import MyAccount from './MyAccount';
 import Progress from './Progress';
 import Equivalentes from './Equivalentes';
 import Recipes from './Recipes';
+import TrainingModule from './TrainingModule';
 import { useI18n } from '../context/useI18n';
 import NutritionChat from './NutritionChat';
+import api from '../services/api';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -21,6 +23,7 @@ export default function Dashboard() {
     return 'home';
   });
   const [dayTotals, setDayTotals] = useState(null);
+  const [adminOverview, setAdminOverview] = useState(null);
   const plan = { calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 };
   const today = new Date().toISOString().split('T')[0];
   const { t, lang, setLang } = useI18n();
@@ -36,7 +39,7 @@ export default function Dashboard() {
     }
     const fetchTotals = async () => {
       try {
-        const resp = await (await import('../services/api')).default.get('/food-log/totals', { params: { fecha: today } });
+        const resp = await api.get('/food-log/totals', { params: { fecha: today } });
         setDayTotals(resp.data.data);
       } catch (err) {
         console.warn('Failed to fetch day totals', err);
@@ -44,6 +47,24 @@ export default function Dashboard() {
     };
     fetchTotals();
   }, [today]);
+
+  useEffect(() => {
+    const isAdmin = user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio';
+    if (!isAdmin) {
+      setAdminOverview(null);
+      return;
+    }
+    const fetchAdminOverview = async () => {
+      try {
+        const resp = await api.get('/admin/overview');
+        setAdminOverview(resp?.data?.data || null);
+      } catch (err) {
+        console.warn('Failed to fetch admin overview', err);
+        setAdminOverview(null);
+      }
+    };
+    fetchAdminOverview();
+  }, [user?.rol]);
 
   const renderContent = () => {
     switch (currentView) {
@@ -69,6 +90,8 @@ export default function Dashboard() {
         return <Progress />;
       case 'equivalentes':
         return <Equivalentes />;
+      case 'training':
+        return <TrainingModule />;
       default:
         return (
           <>
@@ -76,6 +99,20 @@ export default function Dashboard() {
               <h2>{t('welcome.title', 'Bienvenido, {name}!').replace('{name}', user?.nombre || '')}</h2>
               <p>{t('welcome.role', 'Rol')}: <strong>{user?.rol}</strong></p>
             </header>
+
+            {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && adminOverview?.counts && (
+              <section className="quick-stats">
+                <h3>Resumen Administrativo</h3>
+                <div className="stats-grid">
+                  <div className="stat-box"><label>Usuarios</label><p>{adminOverview.counts.users}</p></div>
+                  <div className="stat-box"><label>Gimnasios</label><p>{adminOverview.counts.gyms}</p></div>
+                  <div className="stat-box"><label>Entrenadores</label><p>{adminOverview.counts.trainers}</p></div>
+                  <div className="stat-box"><label>Alimentos</label><p>{adminOverview.counts.foods}</p></div>
+                  <div className="stat-box"><label>Planes</label><p>{adminOverview.counts.plans}</p></div>
+                  <div className="stat-box"><label>Suscripciones Activas</label><p>{adminOverview.counts.activeSubscriptions}</p></div>
+                </div>
+              </section>
+            )}
 
             <div className="dashboard-grid">
               {user?.rol === 'super_admin' && (
@@ -142,6 +179,12 @@ export default function Dashboard() {
                 <h3>{t('card.recipes.title', '📚 Recetas')}</h3>
                 <p>{t('card.recipes.desc', 'Explora recetas saludables')}</p>
                 <button className="btn-card" onClick={() => setCurrentView('recipes')}>{t('card.recipes.button', 'Ver Recetas')}</button>
+              </div>
+
+              <div className="card" onClick={() => setCurrentView('training')}>
+                <h3>🏋️ Módulo Entrenamiento IA</h3>
+                <p>Genera rutinas con lógica biomecánica y configuración CV en JSON.</p>
+                <button className="btn-card">Abrir Entrenamiento</button>
               </div>
             </div>
 
@@ -225,6 +268,12 @@ export default function Dashboard() {
             className={currentView === 'recipes' ? 'nav-link active' : 'nav-link'}
           >
             {t('nav.recipes', 'Recetas')}
+          </button>
+          <button
+            onClick={() => setCurrentView('training')}
+            className={currentView === 'training' ? 'nav-link active' : 'nav-link'}
+          >
+            Entrenamiento
           </button>
           {user?.rol === 'super_admin' && (
             <button 

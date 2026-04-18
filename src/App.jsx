@@ -5,7 +5,7 @@ import Register from './components/Register'
 import Dashboard from './components/Dashboard'
 
 function App() {
-  const { user, setUser } = useContext(AuthContext);
+  const { user, loading } = useAuth()
   const [showRegister, setShowRegister] = useState(false)
 
   if (loading) {

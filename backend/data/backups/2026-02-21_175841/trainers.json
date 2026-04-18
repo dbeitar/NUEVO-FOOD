@@ -1,0 +1,54 @@
+[
+  {
+    "id": 1,
+    "nombre": "Carlos Rodríguez",
+    "email": "carlos@trainers.com",
+    "teléfono": "+57 300-1234567",
+    "especialidad": "Pérdida de Grasa",
+    "certificaciones": [
+      "NASM Personal Trainer",
+      "Nutrición Deportiva"
+    ],
+    "experiencia_años": 8,
+    "gym_id": 1,
+    "horario_disponible": "Lunes-Viernes 6AM-6PM",
+    "tarifa_sesion": 150000,
+    "activo": true,
+    "creado": "2026-01-10T00:00:00.000Z",
+    "plan_id": "premium"
+  },
+  {
+    "id": 2,
+    "nombre": "María González",
+    "email": "maria@trainers.com",
+    "teléfono": "+57 300-7654321",
+    "especialidad": "Ganancia Muscular",
+    "certificaciones": [
+      "ISSA CPT",
+      "Powerlifting Intermediate"
+    ],
+    "experiencia_años": 6,
+    "gym_id": 1,
+    "horario_disponible": "Martes-Sábado 5AM-4PM",
+    "tarifa_sesion": 180000,
+    "activo": true,
+    "creado": "2026-01-12T00:00:00.000Z"
+  },
+  {
+    "id": 3,
+    "nombre": "Juan Méndez",
+    "email": "juan@trainers.com",
+    "teléfono": "+57 300-1111111",
+    "especialidad": "Entrenamiento Funcional",
+    "certificaciones": [
+      "ACE Fitness Professional",
+      "Nutrición Integral"
+    ],
+    "experiencia_años": 5,
+    "gym_id": 2,
+    "horario_disponible": "Lunes-Viernes 7AM-7PM",
+    "tarifa_sesion": 160000,
+    "activo": true,
+    "creado": "2026-01-14T00:00:00.000Z"
+  }
+]
