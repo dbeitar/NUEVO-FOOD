@@ -12,6 +12,8 @@ import Progress from './Progress';
 import Equivalentes from './Equivalentes';
 import Recipes from './Recipes';
 import TrainingModule from './TrainingModule';
+import AdminTrainingGallery from './AdminTrainingGallery';
+import AdminTrainingManager from './AdminTrainingManager';
 import { useI18n } from '../context/useI18n';
 import NutritionChat from './NutritionChat';
 import api from '../services/api';
@@ -27,7 +29,7 @@ export default function Dashboard() {
   const plan = { calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 };
   const today = new Date().toISOString().split('T')[0];
   const { t, lang, setLang } = useI18n();
-  
+
   useEffect(() => {
     // Limpiar flag de arranque en Home tras registro
     try {
@@ -92,6 +94,10 @@ export default function Dashboard() {
         return <Equivalentes />;
       case 'training':
         return <TrainingModule />;
+      case 'admintraining':
+        return <AdminTrainingManager />;
+      case 'admingallery':
+        return <AdminTrainingGallery />;
       default:
         return (
           <>
@@ -186,6 +192,22 @@ export default function Dashboard() {
                 <p>Genera rutinas con lógica biomecánica y configuración CV en JSON.</p>
                 <button className="btn-card">Abrir Entrenamiento</button>
               </div>
+
+              {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+                <div className="card" onClick={() => setCurrentView('admintraining')}>
+                  <h3>📋 Maestro Entrenamiento</h3>
+                  <p>Asigna y edita rutinas, gestiona RPE/RIR, y revisa el diario de cada cliente.</p>
+                  <button className="btn-card">Abrir Maestro</button>
+                </div>
+              )}
+
+              {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+                <div className="card" onClick={() => setCurrentView('admingallery')}>
+                  <h3>🎬 Galería Entrenamiento</h3>
+                  <p>Administra videos de YouTube por ejercicio para el Coach Virtual.</p>
+                  <button className="btn-card">Abrir Galería</button>
+                </div>
+              )}
             </div>
 
             <section className="quick-stats">
@@ -233,37 +255,37 @@ export default function Dashboard() {
           <h1>🍽️ Food Plan</h1>
         </div>
         <div className="navbar-menu">
-          <button 
+          <button
             onClick={() => setCurrentView('home')}
             className={currentView === 'home' ? 'nav-link active' : 'nav-link'}
           >
             {t('nav.home', 'Inicio')}
           </button>
-          <button 
+          <button
             onClick={() => setCurrentView('progress')}
             className={currentView === 'progress' ? 'nav-link active' : 'nav-link'}
           >
             {t('nav.progress', 'Progreso')}
           </button>
-          <button 
+          <button
             onClick={() => setCurrentView('calculator')}
             className={currentView === 'calculator' ? 'nav-link active' : 'nav-link'}
           >
             {t('nav.calculator', 'Calculadora')}
           </button>
-          <button 
+          <button
             onClick={() => setCurrentView('foodlog')}
             className={currentView === 'foodlog' ? 'nav-link active' : 'nav-link'}
           >
             {t('nav.foods', 'Alimentos')}
           </button>
-          <button 
+          <button
             onClick={() => setCurrentView('equivalentes')}
             className={currentView === 'equivalentes' ? 'nav-link active' : 'nav-link'}
           >
             {t('nav.equivalentes', 'Equivalentes')}
           </button>
-          <button 
+          <button
             onClick={() => setCurrentView('recipes')}
             className={currentView === 'recipes' ? 'nav-link active' : 'nav-link'}
           >
@@ -276,7 +298,7 @@ export default function Dashboard() {
             Entrenamiento
           </button>
           {user?.rol === 'super_admin' && (
-            <button 
+            <button
               onClick={() => setCurrentView('admincompanies')}
               className={currentView === 'admincompanies' ? 'nav-link active' : 'nav-link'}
             >
@@ -284,7 +306,7 @@ export default function Dashboard() {
             </button>
           )}
           {user?.rol !== 'super_admin' && (
-            <button 
+            <button
               onClick={() => setCurrentView('myaccount')}
               className={currentView === 'myaccount' ? 'nav-link active' : 'nav-link'}
             >
@@ -293,29 +315,41 @@ export default function Dashboard() {
           )}
           {user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' ? (
             <>
-              <button 
+              <button
                 onClick={() => setCurrentView('foodsmanager')}
                 className={currentView === 'foodsmanager' ? 'nav-link active' : 'nav-link'}
               >
                 {t('nav.foodsmanager', 'Maestro de Alimentos')}
               </button>
-              <button 
+              <button
                 onClick={() => setCurrentView('adminplans')}
                 className={currentView === 'adminplans' ? 'nav-link active' : 'nav-link'}
               >
                 {t('nav.plans', 'Planes')}
               </button>
-              <button 
+              <button
                 onClick={() => setCurrentView('adminusers')}
                 className={currentView === 'adminusers' ? 'nav-link active' : 'nav-link'}
               >
                 {t('nav.users', 'Usuarios')}
               </button>
-              <button 
+              <button
                 onClick={() => setCurrentView('admin')}
                 className={currentView === 'admin' ? 'nav-link active' : 'nav-link'}
               >
                 {t('nav.admin', 'Admin')}
+              </button>
+              <button
+                onClick={() => setCurrentView('admintraining')}
+                className={currentView === 'admintraining' ? 'nav-link active' : 'nav-link'}
+              >
+                Maestro Training
+              </button>
+              <button
+                onClick={() => setCurrentView('admingallery')}
+                className={currentView === 'admingallery' ? 'nav-link active' : 'nav-link'}
+              >
+                Galería Training
               </button>
             </>
           ) : null}

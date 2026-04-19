@@ -41,7 +41,7 @@ async function syncDemoAndCoreAccounts() {
       for (const email of coreEmails) {
         try {
           await db.query('UPDATE users SET clave_hash = $1 WHERE email = $2', [coreHash, email]);
-        } catch {}
+        } catch { }
       }
       try {
         const r = await db.query('SELECT id FROM users WHERE email = $1', [demoEmail]);
@@ -51,7 +51,7 @@ async function syncDemoAndCoreAccounts() {
         } else {
           await db.query('INSERT INTO users (nombre, email, clave_hash, rol) VALUES ($1, $2, $3, $4)', ['Demo Público', demoEmail, demoHash, 'usuario_final']);
         }
-      } catch {}
+      } catch { }
     } else {
       for (const email of coreEmails) {
         const u = userDB.getByEmail(email);
@@ -61,7 +61,7 @@ async function syncDemoAndCoreAccounts() {
       if (du) userDB.update(du.id, { clave_hash: demoHash });
       else userDB.create({ nombre: 'Demo Público', email: demoEmail, clave_hash: demoHash, rol: 'usuario_final' });
     }
-  } catch {}
+  } catch { }
 }
 
 // En modo DEV usamos almacenamiento JSON persistente (UserDatabase)
@@ -155,7 +155,7 @@ if (USE_DB_AUTH) {
 } else {
   app.post('/api/auth/register', async (req, res) => {
     try {
-      const { nombre, email, password, teléfono, telefono, fecha_nacimiento, peso, altura, objetivo, genero = null, rol = 'usuario_final', tiene_restricciones = false, restricciones_detalles = '' } = req.body;
+      const { nombre, email, password, teléfono, telefono, fecha_nacimiento, peso, altura, objetivo, genero = null, rol = 'usuario_final', tiene_restricciones = false, restricciones_detalles = '', medidas_biomecanicas, experiencia, metodo_entrenamiento } = req.body;
 
       if (!nombre || !email || !password) {
         // Alineado con cambios de la tarde: permitir contraseña temporal si no llega password
@@ -195,6 +195,9 @@ if (USE_DB_AUTH) {
         restricciones_detalles: restricciones_detalles || '',
         clave_hash: hashedPassword,
         rol,
+        medidas_biomecanicas,
+        experiencia,
+        metodo_entrenamiento
       });
 
       // Si la contraseña fue temporal, informamos en el mensaje (el front no depende de este texto)
@@ -210,7 +213,7 @@ if (USE_DB_AUTH) {
   });
   app.post('/auth/register', async (req, res) => {
     try {
-      const { nombre, email, password, teléfono, telefono, fecha_nacimiento, peso, altura, objetivo, genero = null, rol = 'usuario_final', tiene_restricciones = false, restricciones_detalles = '' } = req.body;
+      const { nombre, email, password, teléfono, telefono, fecha_nacimiento, peso, altura, objetivo, genero = null, rol = 'usuario_final', tiene_restricciones = false, restricciones_detalles = '', medidas_biomecanicas, experiencia, metodo_entrenamiento } = req.body;
       if (!nombre || !email || !password) {
         if (!nombre || !email) {
           return res.status(400).json({ error: 'Nombre y email son requeridos' });
@@ -242,6 +245,9 @@ if (USE_DB_AUTH) {
         restricciones_detalles: restricciones_detalles || '',
         clave_hash: hashedPassword,
         rol,
+        medidas_biomecanicas,
+        experiencia,
+        metodo_entrenamiento
       });
       const usedTemp = !password || String(password).length < 6;
       const message = usedTemp ? 'Usuario registrado exitosamente. Se generó una clave temporal.' : 'Usuario registrado exitosamente';
@@ -424,7 +430,7 @@ app.post('/api/auth/admin/reset-password', authMiddleware, async (req, res) => {
 });
 app.post('/auth/admin/reset-password', authMiddleware, async (req, res) => {
   // Alias sin prefijo /api
-  return app._router.handle({ ...req, url: '/api/auth/admin/reset-password', method: 'POST' }, res, () => {});
+  return app._router.handle({ ...req, url: '/api/auth/admin/reset-password', method: 'POST' }, res, () => { });
 });
 
 // Admin: Usuarios y Roles (modo memoria)

@@ -15,6 +15,9 @@ const registerUser = async (req, res) => {
       objetivo,
       password,
       rol = 'usuario_final',
+      medidas_biomecanicas,
+      experiencia,
+      metodo_entrenamiento
     } = req.body;
 
     // Validar datos requeridos
@@ -35,10 +38,10 @@ const registerUser = async (req, res) => {
 
     // Insertar usuario en la base de datos
     const insertSql =
-      `INSERT INTO users (nombre, email, telefono, fecha_nacimiento, peso, altura, objetivo, clave_hash, rol)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+      `INSERT INTO users (nombre, email, telefono, fecha_nacimiento, peso, altura, objetivo, clave_hash, rol, medidas_biomecanicas, experiencia, metodo_entrenamiento)
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
        RETURNING id, nombre, email, rol`;
-    const result = await db.query(insertSql, [nombre, email, teléfono, fecha_nacimiento, peso, altura, objetivo, hashedPassword, rol]);
+    const result = await db.query(insertSql, [nombre, email, teléfono, fecha_nacimiento, peso, altura, objetivo, hashedPassword, rol, medidas_biomecanicas ? JSON.stringify(medidas_biomecanicas) : null, experiencia || 'principiante', metodo_entrenamiento || null]);
 
     let user;
     // Si es MySQL, no soporta RETURNING: consultar por insertId

@@ -43,3 +43,13 @@ temp_design_preview.html
 
 # Otros
 package-lock.json
+
+# Bases de datos JSON en memoria
+backend/data/*.json
+backend/data/*.bak
+
+# Temp files
+temp_token.json
+*.docx
+*.xlsx
+

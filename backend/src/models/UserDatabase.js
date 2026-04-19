@@ -22,7 +22,7 @@ class UserDatabase {
 
     this.store = new JsonStore('users.json', initialUsers);
     this.users = this.store.getAll();
-    
+
     this.nextId = this.users.length > 0 ? Math.max(...this.users.map(u => u.id)) + 1 : 1;
   }
 
@@ -57,6 +57,9 @@ class UserDatabase {
       tiene_restricciones: userData.tiene_restricciones ?? false,
       restricciones_detalles: userData.restricciones_detalles || '',
       genero: userData.genero || null,
+      medidas_biomecanicas: userData.medidas_biomecanicas || null,
+      experiencia: userData.experiencia || 'principiante',
+      metodo_entrenamiento: userData.metodo_entrenamiento || null,
       gym_id: userData.gym_id || null,
       trainer_id: userData.trainer_id || null,
       gymId: userData.gymId || (userData.gym_id ?? null),

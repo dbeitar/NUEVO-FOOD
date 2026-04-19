@@ -1,10 +1,12 @@
 const path = require('path');
 const fs = require('fs');
 const { randomUUID } = require('crypto');
+const ExercisesGalleryStore = require('../models/ExercisesGalleryStore');
 
 const libraryPath = path.join(__dirname, '..', '..', 'data', 'training_library.json');
 const rawLibrary = JSON.parse(fs.readFileSync(libraryPath, 'utf8'));
 const EXERCISE_LIBRARY = Array.isArray(rawLibrary?.exercises) ? rawLibrary.exercises : [];
+const CURRENT_PLANS = new Map();
 
 // Reglas base derivadas del documento "PARTE 2"
 const LEVEL_CONFIG = {
@@ -402,32 +404,207 @@ function buildPrescription(level, objective) {
   };
 }
 
+function buildRoutine(level, objective, daysAvailable) {
+  const cfg = LEVEL_CONFIG[level];
+  const splitType = resolveSplitType(daysAvailable);
+  const splitMultiplier = splitType === 'full_body' ? 1 : splitType === 'upper_lower' ? 1.15 : 1.3;
+  const selectedExercises = selectExercises(level, Math.max(5, Math.round(cfg.exerciseCount * splitMultiplier)));
+
+  const exercise_sequence = selectedExercises.map((exercise) => ({
+    exercise_name: exercise.exercise_name,
+    prescription: buildPrescription(level, objective),
+    cv_tracking_logic: buildCvTrackingLogic(exercise, level),
+  }));
+
+  return {
+    routine_id: randomUUID(),
+    split_type: splitType,
+    exercise_sequence,
+  };
+}
+
+function splitDayNames(splitType, days) {
+  if (splitType === 'full_body') {
+    return Array.from({ length: days }, (_, i) => `Full Body ${i + 1}`);
+  }
+  if (splitType === 'upper_lower') {
+    const order = ['Upper A', 'Lower A', 'Upper B', 'Lower B'];
+    return Array.from({ length: days }, (_, i) => order[i % order.length]);
+  }
+  const order = ['Push', 'Pull', 'Legs', 'Push 2', 'Pull 2', 'Legs 2'];
+  return Array.from({ length: days }, (_, i) => order[i % order.length]);
+}
+
+function attachGalleryData(exerciseObj) {
+  const item = ExercisesGalleryStore.getByExerciseName(exerciseObj.exercise_name);
+  return {
+    ...exerciseObj,
+    youtube_url: item?.youtube_url || null,
+    muscle_group: item?.muscle_group || null,
+  };
+}
+
 const generatePlanJson = (req, res) => {
   try {
     const level = normalizeLevel(req.body?.level);
     const objective = req.body?.objective || 'hipertrofia';
     const daysAvailable = req.body?.days_available || 4;
-    const cfg = LEVEL_CONFIG[level];
-    const splitType = resolveSplitType(daysAvailable);
-    const splitMultiplier = splitType === 'full_body' ? 1 : splitType === 'upper_lower' ? 1.15 : 1.3;
-    const selectedExercises = selectExercises(level, Math.max(5, Math.round(cfg.exerciseCount * splitMultiplier)));
-
-    const exercise_sequence = selectedExercises.map((exercise) => ({
-      exercise_name: exercise.exercise_name,
-      prescription: buildPrescription(level, objective),
-      cv_tracking_logic: buildCvTrackingLogic(exercise, level),
-    }));
-
-    return res.json({
-      routine_id: randomUUID(),
-      exercise_sequence,
-    });
+    const routine = buildRoutine(level, objective, daysAvailable);
+    return res.json(routine);
   } catch (error) {
     console.error('Error generating training JSON:', error);
     return res.status(500).json({ error: 'Error generando plan de entrenamiento' });
   }
 };
 
+const generateDailyPlan = async (req, res) => {
+  try {
+    const method = req.user?.metodo_entrenamiento || req.body.method || req.body.objective || 'hipertrofia';
+    const level = normalizeLevel(req.body.level || req.user?.experiencia || 'intermedio');
+    const days = Math.min(6, Math.max(2, Number(req.body.days_available || 4)));
+    const routine = buildRoutine(level, method, days);
+    const names = splitDayNames(routine.split_type, days);
+    const chunkSize = Math.ceil(routine.exercise_sequence.length / days);
+    const dias = [];
+    for (let i = 0; i < days; i++) {
+      const start = i * chunkSize;
+      const end = start + chunkSize;
+      dias.push({
+        dia: i + 1,
+        nombre: names[i],
+        completado: false,
+        ejercicios: routine.exercise_sequence.slice(start, end).map(attachGalleryData),
+      });
+    }
+
+    const payload = {
+      success: true,
+      message: 'Plan de entrenamiento día a día generado.',
+      data: {
+        metodo: method,
+        level,
+        split_type: routine.split_type,
+        routine_id: routine.routine_id,
+        dias,
+      },
+    };
+    if (req.user?.id) {
+      CURRENT_PLANS.set(req.user.id, payload.data);
+    }
+    return res.json({
+      ...payload,
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error generando plan.' });
+  }
+};
+
+const getMyCurrentPlan = async (req, res) => {
+  try {
+    const current = CURRENT_PLANS.get(req.user?.id);
+    if (!current) {
+      return res.json({ success: true, plan: null, message: 'Aún no tienes un plan generado en esta sesión.' });
+    }
+    return res.json({ success: true, plan: current });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error obteniendo el plan actual.' });
+  }
+};
+
+const substituteExercise = async (req, res) => {
+  try {
+    const { exercise, cause } = req.body;
+    // Integración con OpenAI
+    // const completion = await openai.chat.completions.create({...})
+
+    // Simulación inteligente para pruebas:
+    const substitutions = {
+      'SENTADILLA LIBRE': 'PRENSA 45 DOBLE',
+      'PRESS BANCA': 'EMPUJE PLANO MANCUERNA',
+      'PESO MUERTO CONVENCIONAL': 'PESO MUERTO RUMANO MANCUERNA',
+    };
+    const normalized = normalize(exercise || '');
+    const substituteName = substitutions[normalized] || 'EMPUJE PLANO EN MÁQUINA';
+    const gallery = ExercisesGalleryStore.getByExerciseName(substituteName);
+
+    return res.json({
+      success: true,
+      substitution: {
+        exercise_name: substituteName,
+        sets: 3,
+        reps: '10-12',
+        youtube_url: gallery?.youtube_url || null,
+        reason: cause ? `Adaptado debido a: ${cause}` : 'Adaptación biomecánica ideal.'
+      }
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error al consultar el asistente IA.' });
+  }
+};
+
+const getAdminGallery = async (req, res) => {
+  try {
+    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+      return res.status(403).json({ error: 'No tienes permisos para ver la galería' });
+    }
+    return res.json({ success: true, data: ExercisesGalleryStore.getAll() });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error obteniendo galería' });
+  }
+};
+
+const createAdminGallery = async (req, res) => {
+  try {
+    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+      return res.status(403).json({ error: 'No tienes permisos para crear en la galería' });
+    }
+    const { name, muscle_group = '', youtube_url } = req.body || {};
+    if (!name || !youtube_url) {
+      return res.status(400).json({ error: 'name y youtube_url son requeridos' });
+    }
+    const created = ExercisesGalleryStore.create({
+      name,
+      muscle_group,
+      youtube_url,
+      created_by: req.user.id,
+    });
+    if (created?.error) {
+      return res.status(409).json({ error: created.error });
+    }
+    return res.status(201).json({ success: true, data: created });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error creando registro en la galería' });
+  }
+};
+
+const deleteAdminGallery = async (req, res) => {
+  try {
+    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+      return res.status(403).json({ error: 'No tienes permisos para eliminar en la galería' });
+    }
+    const ok = ExercisesGalleryStore.delete(req.params.id);
+    if (!ok) return res.status(404).json({ error: 'Registro no encontrado' });
+    return res.json({ success: true });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error eliminando registro de galería' });
+  }
+};
+
+const getPublicGallery = async (req, res) => {
+  try {
+    return res.json({ success: true, data: ExercisesGalleryStore.getAll() });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error obteniendo galería' });
+  }
+};
+
 module.exports = {
   generatePlanJson,
+  generateDailyPlan,
+  getMyCurrentPlan,
+  substituteExercise,
+  getAdminGallery,
+  createAdminGallery,
+  deleteAdminGallery,
+  getPublicGallery,
 };

@@ -163,7 +163,63 @@ CREATE TABLE IF NOT EXISTS group_members (
 );
 
 -- Índices
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_rol ON users(rol);
-CREATE INDEX idx_daily_logs_usuario_fecha ON daily_logs(id_usuario, fecha);
-CREATE INDEX idx_notifications_usuario ON notifications(id_usuario);
+CREATE INDEX IF NOT EXISTS idx_users_email ON users(email);
+CREATE INDEX IF NOT EXISTS idx_users_rol ON users(rol);
+CREATE INDEX IF NOT EXISTS idx_daily_logs_usuario_fecha ON daily_logs(id_usuario, fecha);
+CREATE INDEX IF NOT EXISTS idx_notifications_usuario ON notifications(id_usuario);
+
+-- ==== MÓDULO DE ENTRENAMIENTO ====
+ALTER TABLE users ADD COLUMN IF NOT EXISTS medidas_biomecanicas JSONB;
+ALTER TABLE users ADD COLUMN IF NOT EXISTS experiencia VARCHAR(50) DEFAULT 'principiante';
+ALTER TABLE users ADD COLUMN IF NOT EXISTS metodo_entrenamiento VARCHAR(100);
+
+-- Planes de Rutinas de Entrenamiento
+CREATE TABLE IF NOT EXISTS training_routines (
+  id SERIAL PRIMARY KEY,
+  id_usuario INTEGER REFERENCES users(id),
+  id_entrenador INTEGER REFERENCES users(id),
+  metodo VARCHAR(100),
+  objetivo VARCHAR(100),
+  fecha_inicio DATE DEFAULT CURRENT_DATE,
+  fecha_fin DATE,
+  dias_entrenamiento INTEGER,
+  notas_entrenador TEXT,
+  creado_en TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);
+
+-- Días individuales dentro de un plan (ej: Día 1 - Pecho y Triceps)
+CREATE TABLE IF NOT EXISTS routine_days (
+  id SERIAL PRIMARY KEY,
+  id_rutina INTEGER REFERENCES training_routines(id) ON DELETE CASCADE,
+  dia_numero INTEGER,
+  nombre_dia VARCHAR(100),
+  grupo_muscular_principal VARCHAR(100),
+  completado BOOLEAN DEFAULT FALSE,
+  fecha_completado DATE,
+  feedback_usuario TEXT
+);
+
+-- Ejercicios específicos para un día
+CREATE TABLE IF NOT EXISTS routine_exercises (
+  id SERIAL PRIMARY KEY,
+  id_routine_day INTEGER REFERENCES routine_days(id) ON DELETE CASCADE,
+  orden INTEGER,
+  nombre_ejercicio VARCHAR(255),
+  series INTEGER,
+  repeticiones VARCHAR(50),
+  tiempo_descanso VARCHAR(50),
+  peso_sugerido VARCHAR(50),
+  peso_usado VARCHAR(50),
+  modificado_por_ia BOOLEAN DEFAULT FALSE,
+  sustitucion_id_original INTEGER,
+  notas TEXT
+);
+
+-- Galería de Videos de Entrenamiento (YouTube)
+CREATE TABLE IF NOT EXISTS exercises_gallery (
+  id SERIAL PRIMARY KEY,
+  name VARCHAR(255) NOT NULL,
+  muscle_group VARCHAR(100),
+  youtube_url VARCHAR(500) NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+);

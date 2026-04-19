@@ -1,9 +1,15 @@
 const axios = require('axios');
 const FoodDatabase = require('../models/FoodDatabase');
 
-// Configurar clientes IA
-const openaiApiKey = process.env.OPENAI_API_KEY;
-const googleApiKey = process.env.GOOGLE_API_KEY;
+// Configurar clientes IA – sanitizar claves para evitar falsos positivos
+const INVALID_KEYS = ['disabled', 'none', 'off', 'false', 'null', 'undefined', ''];
+const sanitizeKey = (raw) => {
+  const val = (raw || '').trim();
+  if (val.length < 10 || INVALID_KEYS.includes(val.toLowerCase())) return '';
+  return val;
+};
+const openaiApiKey = sanitizeKey(process.env.OPENAI_API_KEY);
+const googleApiKey = sanitizeKey(process.env.GOOGLE_API_KEY);
 
 // Sistema de Sustitutos (categorías equivalentes)
 const EQUIVALENTES = {
@@ -177,7 +183,7 @@ const aiController = {
         return res.json(resp);
       }
 
-      const { 
+      const {
         currentIntake, // {calorias, proteina, carbohidratos, grasas}
         targetGoals,   // {calorias, proteina, carbohidratos, grasas}
         objetivo,      // "Ganancia Muscular", "Pérdida Grasa", "Mantenimiento"
@@ -444,7 +450,7 @@ Devuelve SIEMPRE un JSON con esta estructura mínima:
   // Obtener recomendación rápida sin OpenAI (alternativa)
   getQuickSuggestions: (req, res) => {
     try {
-      const { 
+      const {
         currentIntake,
         targetGoals,
         objetivo
