@@ -2,6 +2,7 @@ const path = require('path');
 const fs = require('fs');
 const { randomUUID } = require('crypto');
 const ExercisesGalleryStore = require('../models/ExercisesGalleryStore');
+const TrainingLogStore = require('../models/TrainingLogStore');
 
 const libraryPath = path.join(__dirname, '..', '..', 'data', 'training_library.json');
 const rawLibrary = JSON.parse(fs.readFileSync(libraryPath, 'utf8'));
@@ -598,6 +599,28 @@ const getPublicGallery = async (req, res) => {
   }
 };
 
+const createUserLog = (req, res) => {
+  try {
+    const user_id = req.user.id;
+    const { plan_id, dia, ejercicios, completado, duration_minutes } = req.body;
+
+    const log = TrainingLogStore.create({
+      user_id,
+      plan_id,
+      dia,
+      ejercicios,
+      completado,
+      duration_minutes,
+      trainer_notes: ''
+    });
+
+    res.status(201).json({ success: true, data: log });
+  } catch (error) {
+    console.error('Error createUserLog:', error);
+    res.status(500).json({ error: 'Error guardando bitácora de entrenamiento.' });
+  }
+};
+
 module.exports = {
   generatePlanJson,
   generateDailyPlan,
@@ -607,4 +630,5 @@ module.exports = {
   createAdminGallery,
   deleteAdminGallery,
   getPublicGallery,
+  createUserLog
 };

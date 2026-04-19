@@ -35,5 +35,6 @@ router.get('/admin/log/summary/:userId', adminTrainingController.getLogSummary);
 router.post('/generate-daily-plan', trainingController.generateDailyPlan);
 router.get('/my-current-plan', trainingController.getMyCurrentPlan);
 router.post('/ai-assistant/substitute', trainingController.substituteExercise);
+router.post('/log', trainingController.createUserLog);
 
 module.exports = router;

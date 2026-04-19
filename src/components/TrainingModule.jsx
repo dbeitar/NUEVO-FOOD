@@ -47,6 +47,10 @@ export default function TrainingModule() {
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [assistantResult, setAssistantResult] = useState(null);
 
+  // === WORKOUT LOGGING STATE ===
+  const [workoutLog, setWorkoutLog] = useState({ cardioBpm: '', cardioLimit: '', exercises: {} });
+  const [savingLog, setSavingLog] = useState(false);
+
   useEffect(() => {
     const fetchCurrentPlan = async () => {
       try {
@@ -163,6 +167,52 @@ export default function TrainingModule() {
     });
   };
 
+  const updateLogField = (exIndex, field, value) => {
+    setWorkoutLog(prev => ({
+      ...prev,
+      exercises: {
+        ...prev.exercises,
+        [exIndex]: {
+          ...(prev.exercises[exIdx] || {}),
+          [field]: value
+        }
+      }
+    }));
+  };
+
+  const saveLog = async () => {
+    if (!plan || !day) return;
+    try {
+      setSavingLog(true);
+      const payload = {
+        plan_id: plan.id,
+        dia: day.dia,
+        completado: day.completado,
+        duration_minutes: Number(workoutLog.cardioLimit) || 0,
+        ejercicios: (day.ejercicios || []).map((ex, i) => {
+          const logData = workoutLog.exercises[i] || {};
+          return {
+            exercise_name: ex.exercise_name,
+            sets_done: logData.sets ? Number(logData.sets) : 0,
+            reps_done: logData.reps || '',
+            weight_kg: logData.weight ? Number(logData.weight) : 0,
+            intensity_actual: logData.intensity || '',
+            notes: ''
+          };
+        }),
+      };
+      const resp = await api.post('/training/log', payload);
+      if (resp.data.success) {
+        alert('Entrenamiento guardado correctamente');
+      }
+    } catch (e) {
+      console.error(e);
+      alert('Error al guardar el entrenamiento');
+    } finally {
+      setSavingLog(false);
+    }
+  };
+
   return (
     <div className="card max-w-7xl mx-auto relative min-h-[80vh]">
       <h2 className="text-3xl font-bold text-stone-900 mb-2">Mi Dashboard de Entrenamiento</h2>
@@ -220,8 +270,8 @@ export default function TrainingModule() {
                   setSelectedExerciseIndex(0);
                 }}
                 className={`px-4 py-2 rounded-full border text-sm font-semibold ${selectedDayIndex === idx
-                    ? 'bg-lime-500 text-black border-lime-500'
-                    : 'bg-white text-stone-700 border-stone-200'
+                  ? 'bg-lime-500 text-black border-lime-500'
+                  : 'bg-white text-stone-700 border-stone-200'
                   }`}
               >
                 Día {d.dia}: {d.nombre}
@@ -234,15 +284,24 @@ export default function TrainingModule() {
               <h4 className="text-xl font-bold text-stone-900">
                 {day?.nombre || 'Día'}
               </h4>
-              <label className="flex items-center gap-2 text-sm text-stone-700 font-semibold cursor-pointer p-2 bg-stone-100 rounded-lg hover:bg-stone-200 transition-colors">
-                <input
-                  type="checkbox"
-                  className="w-5 h-5 rounded border-stone-300 text-lime-500 focus:ring-lime-500"
-                  checked={Boolean(day?.completado)}
-                  onChange={() => toggleDayDone(selectedDayIndex)}
-                />
-                Marcar como completado
-              </label>
+              <div className="flex gap-4">
+                <button
+                  onClick={saveLog}
+                  disabled={savingLog}
+                  className="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-stone-800 transition-colors"
+                >
+                  {savingLog ? 'Guardando...' : '💾 Guardar Diario Oficial'}
+                </button>
+                <label className="flex items-center gap-2 text-sm text-stone-700 font-semibold cursor-pointer p-2 bg-stone-100 rounded-lg hover:bg-stone-200 transition-colors">
+                  <input
+                    type="checkbox"
+                    className="w-5 h-5 rounded border-stone-300 text-lime-500 focus:ring-lime-500"
+                    checked={Boolean(day?.completado)}
+                    onChange={() => toggleDayDone(selectedDayIndex)}
+                  />
+                  Marcar como completado
+                </label>
+              </div>
             </div>
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6 relative">
@@ -258,13 +317,31 @@ export default function TrainingModule() {
               <div className="card border !border-stone-300 !bg-stone-50 p-4">
                 <h5 className="font-bold text-stone-900 text-sm mb-2 flex items-center gap-2">❤️ Cardio ({day?.cardio?.goal || 'oxidación'})</h5>
                 <div className="grid grid-cols-2 gap-2 text-xs mb-2">
-                  <div className="bg-white p-2 rounded-lg border border-stone-200">
-                    <span className="block text-stone-400">Pulsaciones</span>
-                    <strong className="text-base text-red-500">{day?.cardio?.bpm || 130} PPM</strong>
+                  <div className="bg-white p-2 rounded-lg border border-stone-200 group">
+                    <span className="block text-stone-400 mb-1">Pulsaciones (PPM)</span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        className="w-full text-base font-bold text-red-500 bg-transparent outline-none ring-1 ring-transparent focus:ring-stone-200 rounded px-1 transition-all"
+                        placeholder={day?.cardio?.bpm || 130}
+                        value={workoutLog.cardioBpm}
+                        onChange={e => setWorkoutLog(p => ({ ...p, cardioBpm: e.target.value }))}
+                      />
+                    </div>
                   </div>
                   <div className="bg-white p-2 rounded-lg border border-stone-200">
-                    <span className="block text-stone-400">Objetivo</span>
-                    <strong className="text-base text-stone-800">{day?.cardio?.limit_value || 20} {day?.cardio?.limit_type === 'distance' ? 'km' : 'min'}</strong>
+                    <span className="block text-stone-400 mb-1">
+                      {day?.cardio?.limit_type === 'distance' ? 'Distancia (km)' : 'Tiempo (min)'}
+                    </span>
+                    <div className="flex items-center gap-1">
+                      <input
+                        type="number"
+                        className="w-full text-base font-bold text-stone-800 bg-transparent outline-none ring-1 ring-transparent focus:ring-stone-200 rounded px-1 transition-all"
+                        placeholder={day?.cardio?.limit_value || 20}
+                        value={workoutLog.cardioLimit}
+                        onChange={e => setWorkoutLog(p => ({ ...p, cardioLimit: e.target.value }))}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
@@ -314,6 +391,51 @@ export default function TrainingModule() {
                     >
                       Sustituir
                     </button>
+                  </div>
+                  <div className="mt-4 p-3 bg-white border border-stone-200 rounded-lg shadow-sm">
+                    <p className="text-[10px] font-bold text-stone-500 mb-2 uppercase tracking-wide">Registro de Ejecución</p>
+                    <div className="grid grid-cols-2 gap-2">
+                      <div>
+                        <label className="block text-[10px] text-stone-400 uppercase tracking-wide">Series hechas</label>
+                        <input
+                          type="number"
+                          className="w-full bg-stone-50 border border-stone-200 rounded px-2 py-1 text-sm outline-none focus:border-lime-400"
+                          placeholder={`Ej: ${ex.prescription?.sets || ex.sets || 3}`}
+                          value={workoutLog.exercises[i]?.sets || ''}
+                          onChange={(e) => updateLogField(i, 'sets', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-stone-400 uppercase tracking-wide">Reps logradas</label>
+                        <input
+                          type="text"
+                          className="w-full bg-stone-50 border border-stone-200 rounded px-2 py-1 text-sm outline-none focus:border-lime-400"
+                          placeholder={`Ej: ${ex.prescription?.reps || ex.reps || 10}`}
+                          value={workoutLog.exercises[i]?.reps || ''}
+                          onChange={(e) => updateLogField(i, 'reps', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-stone-400 uppercase tracking-wide">Carga (kg)</label>
+                        <input
+                          type="number" step="0.5"
+                          className="w-full bg-stone-50 border border-stone-200 rounded px-2 py-1 text-sm outline-none focus:border-lime-400"
+                          placeholder="Ej: 50"
+                          value={workoutLog.exercises[i]?.weight || ''}
+                          onChange={(e) => updateLogField(i, 'weight', e.target.value)}
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] text-stone-400 uppercase tracking-wide">{ex.intensity_type || 'RPE'} Sentido</label>
+                        <input
+                          type="text"
+                          className="w-full bg-stone-50 border border-stone-200 rounded px-2 py-1 text-sm outline-none focus:border-lime-400"
+                          placeholder={`Meta: ${ex.prescription?.target_rpe || ex.intensity_value || 8}`}
+                          value={workoutLog.exercises[i]?.intensity || ''}
+                          onChange={(e) => updateLogField(i, 'intensity', e.target.value)}
+                        />
+                      </div>
+                    </div>
                   </div>
                 </div>
               ))}
