@@ -22,6 +22,9 @@ yarn-debug.log*
 yarn-error.log*
 *.log
 
+# Evidencias de pruebas (queremos versionarlas)
+!docs/test-runs/*.log
+
 # Archivos temporales y de sistema
 .DS_Store
 *.swp
