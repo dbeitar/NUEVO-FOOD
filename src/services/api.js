@@ -139,34 +139,66 @@ try {
 export const authService = {
   register: (userData) => api.post('/auth/register', userData),
   login: async (email, password) => {
-    // Temporal: simular login exitoso para debugging
     console.log('Login attempt:', { email, password });
-    if (email === 'admin@foodplan.local' && password === 'Admin!234') {
-      const token = 'fake-jwt-token-' + Date.now();
-      localStorage.setItem('token', token);
-      return {
-        data: {
-          token,
-          user: {
-            id: 1,
-            nombre: 'Admin',
-            email: 'admin@foodplan.local',
-            rol: 'super_admin',
-          },
+    // Credenciales de prueba en modo local
+    const testUsers = {
+      'admin@foodplan.local': {
+        password: 'Admin!234',
+        user: {
+          id: 1,
+          nombre: 'Super Admin',
+          email: 'admin@foodplan.local',
+          rol: 'super_admin',
         },
-      };
-    } else if (email === 'cliente@foodplan.local' && password === 'Admin!234') {
+      },
+      'cliente@foodplan.local': {
+        password: 'Admin!234',
+        user: {
+          id: 2,
+          nombre: 'Cliente Ejemplo',
+          email: 'cliente@foodplan.local',
+          rol: 'usuario_final',
+        },
+      },
+      'admin.gym@test.foodplan.local': {
+        password: 'Admin!234',
+        user: {
+          id: 10,
+          nombre: 'Admin Gimnasio',
+          email: 'admin.gym@test.foodplan.local',
+          rol: 'admin_gimnasio',
+          gym_id: 1,
+        },
+      },
+      'trainer@test.foodplan.local': {
+        password: 'Admin!234',
+        user: {
+          id: 11,
+          nombre: 'Entrenador',
+          email: 'trainer@test.foodplan.local',
+          rol: 'entrenador',
+          gym_id: 1,
+        },
+      },
+      'admin.d28d@foodplan.local': {
+        password: 'Admin!234',
+        user: {
+          id: 12,
+          nombre: 'D28D Admin',
+          email: 'admin.d28d@foodplan.local',
+          rol: 'super_admin',
+        },
+      },
+    };
+
+    const testUser = testUsers[email];
+    if (testUser && testUser.password === password) {
       const token = 'fake-jwt-token-' + Date.now();
       localStorage.setItem('token', token);
       return {
         data: {
           token,
-          user: {
-            id: 2,
-            nombre: 'Cliente',
-            email: 'cliente@foodplan.local',
-            rol: 'usuario_final',
-          },
+          user: testUser.user,
         },
       };
     } else {
