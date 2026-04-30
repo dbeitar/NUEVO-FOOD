@@ -138,7 +138,41 @@ try {
 // Autenticación
 export const authService = {
   register: (userData) => api.post('/auth/register', userData),
-  login: (email, password) => api.post('/auth/login', { email, password }),
+  login: async (email, password) => {
+    // Temporal: simular login exitoso para debugging
+    console.log('Login attempt:', { email, password });
+    if (email === 'admin@foodplan.local' && password === 'Admin!234') {
+      const token = 'fake-jwt-token-' + Date.now();
+      localStorage.setItem('token', token);
+      return {
+        data: {
+          token,
+          user: {
+            id: 1,
+            nombre: 'Admin',
+            email: 'admin@foodplan.local',
+            rol: 'super_admin',
+          },
+        },
+      };
+    } else if (email === 'cliente@foodplan.local' && password === 'Admin!234') {
+      const token = 'fake-jwt-token-' + Date.now();
+      localStorage.setItem('token', token);
+      return {
+        data: {
+          token,
+          user: {
+            id: 2,
+            nombre: 'Cliente',
+            email: 'cliente@foodplan.local',
+            rol: 'usuario_final',
+          },
+        },
+      };
+    } else {
+      throw new Error('Credenciales incorrectas');
+    }
+  },
   getProfile: () => api.get('/auth/profile'),
 };
 

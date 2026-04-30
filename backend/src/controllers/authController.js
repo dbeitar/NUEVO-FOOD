@@ -1,6 +1,9 @@
 const db = require('../config/dbClient');
+const userDB = require('../models/UserDatabase');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+
+const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true';
 
 // Registrar nuevo usuario
 const registerUser = async (req, res) => {
@@ -70,23 +73,35 @@ const registerUser = async (req, res) => {
 // Login de usuario
 const loginUser = async (req, res) => {
   try {
+    console.log('Login attempt:', { email: req.body.email, hasPassword: !!req.body.password });
     const { email, password } = req.body;
 
     if (!email || !password) {
+      console.log('Missing email or password');
       return res.status(400).json({ error: 'Email y contraseña son requeridos' });
     }
 
-    // Búscar usuario por email
-    const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+    let user;
 
-    const user = result.rows ? result.rows[0] : result[0];
+    if (USE_DB_AUTH) {
+      // Usar base de datos
+      console.log('Using database auth');
+      const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
+      user = result.rows ? result.rows[0] : result[0];
+    } else {
+      // Usar archivos JSON
+      console.log('Using JSON auth');
+      user = userDB.getByEmail(email);
+    }
 
+    console.log('User found:', !!user);
     if (!user) {
       return res.status(401).json({ error: 'Email o contraseña incorrectos' });
     }
 
     // Verificar contraseña
     const validPassword = await bcrypt.compare(password, user.clave_hash);
+    console.log('Password valid:', validPassword);
 
     if (!validPassword) {
       return res.status(401).json({ error: 'Email o contraseña incorrectos' });
@@ -118,13 +133,34 @@ const loginUser = async (req, res) => {
 // Obtener perfil del usuario autenticado
 const getProfile = async (req, res) => {
   try {
-    const result = await db.query('SELECT id, nombre, email, telefono, fecha_nacimiento, peso, altura, objetivo, rol FROM users WHERE id = $1', [req.user.id]);
+    let user;
 
-    if (!result.rows || result.rows.length === 0) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
+    if (USE_DB_AUTH) {
+      const result = await db.query('SELECT id, nombre, email, telefono, fecha_nacimiento, peso, altura, objetivo, rol FROM users WHERE id = $1', [req.user.id]);
+      if (!result.rows || result.rows.length === 0) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      user = result.rows[0];
+    } else {
+      user = userDB.getById(req.user.id);
+      if (!user) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      // Seleccionar solo los campos necesarios
+      user = {
+        id: user.id,
+        nombre: user.nombre,
+        email: user.email,
+        telefono: user.telefono,
+        fecha_nacimiento: user.fecha_nacimiento,
+        peso: user.peso,
+        altura: user.altura,
+        objetivo: user.objetivo,
+        rol: user.rol
+      };
     }
 
-    res.json(result.rows[0]);
+    res.json(user);
   } catch (error) {
     console.error('Error obteniendo perfil:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
