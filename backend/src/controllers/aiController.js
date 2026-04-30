@@ -8,8 +8,9 @@ const sanitizeKey = (raw) => {
   if (val.length < 10 || INVALID_KEYS.includes(val.toLowerCase())) return '';
   return val;
 };
-const openaiApiKey = sanitizeKey(process.env.OPENAI_API_KEY);
-const googleApiKey = sanitizeKey(process.env.GOOGLE_API_KEY);
+// IA gratuita/local (recomendado): Ollama en la máquina del usuario
+const ollamaBaseUrl = (process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/+$/, '');
+const ollamaModel = (process.env.OLLAMA_MODEL || 'llama3.1:8b').trim();
 
 // Sistema de Sustitutos (categorías equivalentes)
 const EQUIVALENTES = {
@@ -115,13 +116,10 @@ const aiController = {
     }
     return razon;
   },
-  // Indicar si la IA (OpenAI o Google) está habilitada
+  // Indicar si la IA (local) está habilitada
   isEnabled: (req, res) => {
     try {
-      const enabled = Boolean(
-        (openaiApiKey && openaiApiKey.trim().length > 0) ||
-        (googleApiKey && googleApiKey.trim().length > 0)
-      );
+      const enabled = Boolean(ollamaBaseUrl);
       res.json({ success: true, enabled });
     } catch (error) {
       res.status(500).json({ success: false, error: 'Error verificando estado de IA' });
@@ -130,9 +128,7 @@ const aiController = {
   // Generar sugerencias de alimentos basadas en ingesta actual
   getSuggestedFoods: async (req, res) => {
     try {
-      const hasOpenAI = Boolean(openaiApiKey && openaiApiKey.trim().length > 0);
-      const hasGoogle = Boolean(googleApiKey && googleApiKey.trim().length > 0);
-      // Si no hay IA configurada, hacer fallback a sugerencias rápidas en lugar de error
+      // Si no hay IA local disponible, hacer fallback a sugerencias rápidas en lugar de error
       const fallbackQuick = () => {
         const { currentIntake, targetGoals, objetivo, lang } = req.body || {};
         const alimentos = FoodDatabase.getAll();
@@ -178,10 +174,6 @@ const aiController = {
           },
         };
       };
-      if (!hasOpenAI && !hasGoogle) {
-        const resp = fallbackQuick();
-        return res.json(resp);
-      }
 
       const {
         currentIntake, // {calorias, proteina, carbohidratos, grasas}
@@ -266,91 +258,35 @@ Devuelve SIEMPRE un JSON con esta estructura mínima:
 `;
 
       let sugerencias = {};
-      if (hasOpenAI) {
+      try {
+        // Ollama local (gratis): requiere que el usuario tenga Ollama corriendo
+        // Endpoint: POST {base}/api/chat
+        const response = await axios.post(
+          `${ollamaBaseUrl}/api/chat`,
+          {
+            model: ollamaModel,
+            stream: false,
+            messages: [{ role: 'user', content: prompt }],
+            options: { temperature: 0.7 },
+          },
+          { headers: { 'Content-Type': 'application/json' }, timeout: 20000 }
+        );
+        const text = response.data?.message?.content || '';
         try {
-          const response = await axios.post(
-            'https://api.openai.com/v1/chat/completions',
-            {
-              model: 'gpt-3.5-turbo',
-              messages: [
-                {
-                  role: 'user',
-                  content: prompt,
-                },
-              ],
-              temperature: 0.7,
-              max_tokens: 1000,
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-                Authorization: `Bearer ${openaiApiKey}`,
-              },
-            }
-          );
-          const aiContent = response.data.choices[0].message.content;
-          try {
-            const jsonMatch = aiContent.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              sugerencias = JSON.parse(jsonMatch[0]);
-            }
-          } catch (parseError) {
-            console.error('Error parsing AI response:', parseError);
-            sugerencias = { sugerencias: [], resumen: aiContent };
-          }
-        } catch (e) {
-          console.warn('OpenAI falló, usando sugerencias rápidas:', e.message);
-          const resp = fallbackQuick();
-          return res.json(resp);
-        }
-      } else if (hasGoogle) {
-        try {
-          const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${googleApiKey}`;
-          const response = await axios.post(
-            url,
-            {
-              contents: [
-                {
-                  role: 'user',
-                  parts: [{ text: prompt }],
-                },
-              ],
-              generationConfig: {
-                temperature: 0.7,
-                maxOutputTokens: 1000,
-              },
-            },
-            {
-              headers: {
-                'Content-Type': 'application/json',
-              },
-            }
-          );
-          // Parsear respuesta de Gemini
-          let text = '';
-          try {
-            text =
-              response.data?.candidates?.[0]?.content?.parts?.[0]?.text ||
-              response.data?.candidates?.[0]?.output || '';
-          } catch {
-            text = '';
-          }
-          try {
-            const jsonMatch = text.match(/\{[\s\S]*\}/);
-            if (jsonMatch) {
-              sugerencias = JSON.parse(jsonMatch[0]);
-            } else {
-              sugerencias = { sugerencias: [], resumen: text };
-            }
-          } catch (parseError) {
-            console.error('Error parsing Gemini response:', parseError);
+          const jsonMatch = String(text).match(/\{[\s\S]*\}/);
+          if (jsonMatch) {
+            sugerencias = JSON.parse(jsonMatch[0]);
+          } else {
             sugerencias = { sugerencias: [], resumen: text };
           }
-        } catch (e) {
-          console.warn('Gemini falló, usando sugerencias rápidas:', e.message);
-          const resp = fallbackQuick();
-          return res.json(resp);
+        } catch (parseError) {
+          console.error('Error parsing Ollama response:', parseError);
+          sugerencias = { sugerencias: [], resumen: String(text) };
         }
+      } catch (e) {
+        console.warn('Ollama no disponible, usando sugerencias rápidas:', e.message);
+        const resp = fallbackQuick();
+        return res.json(resp);
       }
 
       // Localizar nombres/porciones si lang=en
@@ -447,7 +383,7 @@ Devuelve SIEMPRE un JSON con esta estructura mínima:
     }
   },
 
-  // Obtener recomendación rápida sin OpenAI (alternativa)
+  // Obtener recomendación rápida (fallback determinístico)
   getQuickSuggestions: (req, res) => {
     try {
       const {
@@ -520,13 +456,7 @@ Devuelve SIEMPRE un JSON con esta estructura mínima:
       },
     });
     try {
-      const hasOpenAI = Boolean(openaiApiKey && openaiApiKey.trim().length > 0);
-      const hasGoogle = Boolean(googleApiKey && googleApiKey.trim().length > 0);
-      if (!hasOpenAI && !hasGoogle) {
-        return res.json(buildMock());
-      }
-      // Aquí podríamos integrar OpenAI/Gemini similar a getSuggestedFoods.
-      // Para mantener uniformidad y evitar costos en dev, respondemos con fallback controlado.
+      // Por ahora la receta se mantiene en mock/fallback para evitar dependencias externas.
       return res.json(buildMock());
     } catch {
       return res.json(buildMock());

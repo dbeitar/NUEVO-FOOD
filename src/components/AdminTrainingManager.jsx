@@ -1,9 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
-import { useAuth } from '../context/useAuth';
 
 export default function AdminTrainingManager() {
-    const { user } = useAuth();
     const [activeTab, setActiveTab] = useState('plans'); // plans, editor, log
     const [plans, setPlans] = useState([]);
     const [logs, setLogs] = useState([]);
@@ -12,30 +10,12 @@ export default function AdminTrainingManager() {
 
     // Editor states
     const [editingPlan, setEditingPlan] = useState(null);
-
-    // Generators state
     const [showGenerator, setShowGenerator] = useState(false);
-    const [genUserId, setGenUserId] = useState('');
-    const [genLevel, setGenLevel] = useState('intermedio');
-    const [genMethod, setGenMethod] = useState('hipertrofia');
-    const [genDays, setGenDays] = useState(4);
-
-    // Users for dropdown
-    const [users, setUsers] = useState([]);
 
     useEffect(() => {
-        fetchUsers();
         if (activeTab === 'plans') fetchPlans();
         if (activeTab === 'log') fetchLogs();
     }, [activeTab]);
-
-    const fetchUsers = async () => {
-        try {
-            // Usa el endpoint admin genérico temporal; se asume que existe uno en el futuro, o simulamos
-            // usando los logs y plans para obtener usuarios si no hay endpoint directo fácil.
-            // Para efectos de este MVP, lo dejamos manual o extraemos de los planes en caso de no tener API lista
-        } catch { }
-    };
 
     const fetchPlans = async () => {
         setLoading(true);
@@ -44,7 +24,7 @@ export default function AdminTrainingManager() {
             if (resp.data.success) {
                 setPlans(resp.data.data || []);
             }
-        } catch (e) {
+        } catch {
             setError('Error al cargar planes');
         } finally {
             setLoading(false);
@@ -58,7 +38,7 @@ export default function AdminTrainingManager() {
             if (resp.data.success) {
                 setLogs(resp.data.data || []);
             }
-        } catch (e) {
+        } catch {
             setError('Error al cargar diario');
         } finally {
             setLoading(false);
@@ -70,7 +50,7 @@ export default function AdminTrainingManager() {
         try {
             await api.delete(`/training/admin/plans/${id}`);
             fetchPlans();
-        } catch (e) {
+        } catch {
             alert('Error al eliminar');
         }
     };
@@ -82,7 +62,7 @@ export default function AdminTrainingManager() {
                 setEditingPlan(resp.data.data);
                 setActiveTab('editor');
             }
-        } catch (e) {
+        } catch {
             alert('Error cargando el plan para editar');
         }
     };
@@ -107,8 +87,8 @@ export default function AdminTrainingManager() {
 
         try {
             await api.patch(`/training/admin/plans/${planId}/day/${dayIdx}`, bodyData);
-        } catch (e) {
-            console.error(e);
+        } catch (err) {
+            console.error(err);
             alert('Error guardando cambios del día');
         }
     };
@@ -141,7 +121,7 @@ export default function AdminTrainingManager() {
             });
             // reload
             startEditing(planId);
-        } catch (e) {
+        } catch {
             alert('Error reordenando');
         }
     };
@@ -236,7 +216,7 @@ export default function AdminTrainingManager() {
                 <div>
                     {!editingPlan ? (
                         <div className="text-center p-8 text-stone-500 border border-dashed rounded-xl">
-                            Selecciona "Editar Rutina" desde la pestaña de Planes Activos.
+                            Selecciona &quot;Editar Rutina&quot; desde la pestaña de Planes Activos.
                         </div>
                     ) : (
                         <div>
@@ -426,7 +406,11 @@ export default function AdminTrainingManager() {
                                                 <p className="text-stone-600">Reps: <span className="font-bold">{ex.reps_done}</span></p>
                                                 <p className="text-stone-600">Carga: <span className="font-bold">{ex.weight_kg} kg</span></p>
                                                 <p className="text-stone-600">Intensidad real: <span className="font-bold">{ex.intensity_actual}</span></p>
-                                                {ex.notes && <p className="text-amber-700 mt-1 italic text-xs">" {ex.notes} "</p>}
+                                                {ex.notes && (
+                                                    <p className="text-amber-700 mt-1 italic text-xs">
+                                                        &quot; {ex.notes} &quot;
+                                                    </p>
+                                                )}
                                             </div>
                                         ))}
                                     </div>

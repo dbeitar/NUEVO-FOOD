@@ -27,7 +27,7 @@ export default function AdminVideoGallery() {
             await api.post('/admin/gallery', form);
             fetchGallery();
             setForm({ name: '', muscle_group: '', youtube_url: '' });
-        } catch (e) {
+        } catch {
             alert('Error agregando video a la galería');
         } finally {
             setLoading(false);

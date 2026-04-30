@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
-import TrainingRealtimeCoach from './TrainingRealtimeCoach';
+
+// Feature flag: el seguimiento biomecánico en tiempo real queda suspendido por ahora.
+const ENABLE_REALTIME_COACH = false;
 
 function toEmbedUrl(url) {
   if (!url) return '';
@@ -18,18 +20,6 @@ function toEmbedUrl(url) {
     return '';
   }
   return '';
-}
-
-function buildRoutineFromDay(day) {
-  const exerciseSequence = (day?.ejercicios || []).map((ex) => ({
-    exercise_name: ex.exercise_name,
-    prescription: ex.prescription,
-    cv_tracking_logic: ex.cv_tracking_logic,
-  }));
-  return {
-    routine_id: `day-${day?.dia || 1}`,
-    exercise_sequence: exerciseSequence,
-  };
 }
 
 export default function TrainingModule() {
@@ -100,7 +90,6 @@ export default function TrainingModule() {
   }, [day, selectedExerciseIndex]);
 
   const currentVideoEmbed = useMemo(() => toEmbedUrl(currentExercise?.youtube_url), [currentExercise]);
-  const coachRoutine = useMemo(() => buildRoutineFromDay(day), [day]);
 
   const askAssistant = (exerciseName) => {
     setAssistantExercise(exerciseName);
@@ -168,15 +157,15 @@ export default function TrainingModule() {
   };
 
   const updateLogField = (exIndex, field, value) => {
-    setWorkoutLog(prev => ({
+    setWorkoutLog((prev) => ({
       ...prev,
       exercises: {
         ...prev.exercises,
         [exIndex]: {
-          ...(prev.exercises[exIdx] || {}),
-          [field]: value
-        }
-      }
+          ...(prev.exercises[exIndex] || {}),
+          [field]: value,
+        },
+      },
     }));
   };
 
@@ -470,7 +459,16 @@ export default function TrainingModule() {
               <p className="text-sm text-stone-600 mb-4">
                 Seguimiento de biomecánica en tiempo real para el día seleccionado.
               </p>
-              <TrainingRealtimeCoach routine={coachRoutine} />
+              {ENABLE_REALTIME_COACH ? (
+                <div className="text-sm text-stone-600">
+                  {/* Se habilitará cuando retomemos el CV en vivo. */}
+                  Coach en vivo habilitado.
+                </div>
+              ) : (
+                <div className="rounded-xl border border-dashed border-stone-300 p-6 text-stone-600 text-sm">
+                  El seguimiento en tiempo real está <strong>suspendido</strong> por ahora.
+                </div>
+              )}
             </div>
           </div>
         </>

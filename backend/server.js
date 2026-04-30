@@ -71,6 +71,7 @@ app.use(express.json());
 const defaultOrigins = [
   'http://localhost:5173',
   'http://localhost:5174',
+  'http://localhost:5175',
   'http://localhost:5178',
   'http://localhost:5180',
   'https://plan-de-alimentacion-acero.vercel.app',
@@ -108,6 +109,9 @@ app.get('/health', (req, res) => {
 });
 app.get('/api/health', (req, res) => {
   res.json({ status: 'ok' });
+});
+app.post('/api/test', (req, res) => {
+  res.json({ received: req.body, method: req.method, url: req.url });
 });
 
 // Herramientas de desarrollo (solo fuera de producción)
@@ -147,6 +151,44 @@ if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') {
     }
   });
 }
+
+// Middleware para validar códigos de empleado (temporal)
+app.use('/api/auth', (req, res, next) => {
+  if (req.method === 'POST' && (req.path === '/login' || req.path === '/register')) {
+    console.log('Auth middleware - path:', req.path, 'body:', req.body);
+    // Validar que tenga código de empleado
+    if (!req.body.codigo_empleado) {
+      console.log('No codigo_empleado provided');
+      return res.status(400).json({ error: 'Código de empleado requerido' });
+    }
+    // Por ahora, aceptar cualquier código de empleado
+    if (req.body.codigo_empleado) {
+      console.log('codigo_empleado valid, continuing');
+      // Código válido, continuar
+      next();
+    } else {
+      console.log('codigo_empleado invalid');
+      return res.status(400).json({ error: 'Código de empleado no encontrado' });
+    }
+  } else {
+    next();
+  }
+});
+
+app.use('/auth', (req, res, next) => {
+  if (req.method === 'POST' && (req.path === '/login' || req.path === '/register')) {
+    if (!req.body.codigo_empleado) {
+      return res.status(400).json({ error: 'Código de empleado requerido' });
+    }
+    if (req.body.codigo_empleado) {
+      next();
+    } else {
+      return res.status(400).json({ error: 'Código de empleado no encontrado' });
+    }
+  } else {
+    next();
+  }
+});
 
 // Rutas de Autenticación
 if (USE_DB_AUTH) {

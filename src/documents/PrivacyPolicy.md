@@ -42,7 +42,7 @@ Utilizamos su información para:
 ### 4.1 Con proveedores de servicios:
 - Plataformas de análisis (Google Analytics)
 - Servidores de hosting
-- Proveedores de IA (OpenAI para sugerencias)
+- Proveedores de IA (IA local en el dispositivo del usuario para sugerencias, si está habilitada)
 
 ### 4.2 Requerimientos legales:
 - Cuando sea requerido por ley o autoridades competentes

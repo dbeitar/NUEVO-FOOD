@@ -26,7 +26,7 @@ proyectofood-plan/
 │   │   │   ├── foodController.js    # CRUD alimentos + búsqueda + stats + backup
 │   │   │   ├── recipeController.js  # CRUD/Import recetas
 │   │   │   ├── foodLogController.js # Totales diarios, etc.
-│   │   │   ├── aiController.js      # Sugerencias/recetas IA (OpenAI/Gemini o fallback)
+│   │   │   ├── aiController.js      # Sugerencias/recetas IA (Ollama local o fallback)
 │   │   │   ├── gymController.js, trainersController.js, accountsController.js, planController.js, paymentsController.js
 │   │   ├── middleware/
 │   │   │   └── auth.js              # Verificación JWT (Authorization: Bearer ...)
@@ -91,7 +91,7 @@ Backend
 - Express 5.2.1, CORS, Morgan, JSON Web Token (jsonwebtoken 9.x), bcryptjs 3.x.
 - Persistencia en dev: archivos JSON mediante JsonStore.
 - Modo DB opcional: PostgreSQL (pg 8.x) o MySQL (mysql2 3.x) según variables; cliente abstraído en [dbClient.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/config/dbClient.js).
-- Integraciones IA opcionales: OpenAI/Gemini por HTTP (axios 1.x).
+- Integraciones IA opcionales: IA local (Ollama) por HTTP (axios 1.x).
 
 Frontend
 - React 19, React Router 7.
@@ -127,7 +127,7 @@ Registro Diario (Food Log) y Totales
 
 Sugerencias con IA y Equivalentes
 - Endpoints `/api/ai/*` autenticados: [aiRoutes.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/routes/aiRoutes.js#L6-L20).
-- Generación de sugerencias usando OpenAI/Gemini o fallback determinístico con equivalentes: [aiController.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/aiController.js#L112-L176, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/aiController.js#L350-L369).
+- Generación de sugerencias usando IA local (Ollama) o fallback determinístico con equivalentes: ver `backend/src/controllers/aiController.js`.
 
 Módulos de Administración
 - Usuarios/Roles, Planes, Gimnasios, Entrenadores, Cuentas: rutas en `/api/*` (ver carpeta routes) y vistas en `src/components/*` (AdminUsers, AdminPlans, AdminGyms, AdminTrainers, AdminCompanies).
@@ -164,7 +164,7 @@ Variables de Entorno (backend)
   - `DB_CLIENT` (`pg`|`mysql`), `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`.
   - `DB_SSL` (`true|false`), `DB_CA_PATH` (ruta del CA si se usa SSL).
 - IA (opcional):
-  - `OPENAI_API_KEY`, `GOOGLE_API_KEY`.
+  - `OLLAMA_BASE_URL`, `OLLAMA_MODEL` (IA local).
 - DEMO/Seed:
   - `DEMO_USER_EMAIL`, `DEMO_PASSWORD`, `CORE_ACCOUNT_EMAILS` (CSV), `CORE_PASSWORD`.
 - Persistencia JSON:
@@ -248,7 +248,7 @@ URLs locales:
 - `DB_CLIENT`, `DB_HOST`, `DB_PORT`, `DB_NAME`, `DB_USER`, `DB_PASSWORD`, `DB_SSL`, `DB_CA_PATH`: Conexión a BD.
 - `CORS_ORIGIN`: Lista de orígenes permitidos (CSV).
 - `VITE_API_BASE_URL`: Base de API en frontend (prod).
-- `OPENAI_API_KEY`, `GOOGLE_API_KEY`: Claves IA (opcional).
+- `OLLAMA_BASE_URL`, `OLLAMA_MODEL`: Configuración de IA local (opcional).
 
 ---
 
