@@ -1,7 +1,8 @@
-// Base de datos en memoria para entrenadores
+const JsonStore = require('../utils/JsonStore');
+
 class TrainersDatabase {
   constructor() {
-    this.trainers = [
+    const initial = [
       {
         id: 1,
         nombre: 'Carlos Rodríguez',
@@ -15,7 +16,7 @@ class TrainersDatabase {
         tarifa_sesion: 150000,
         capacidad_usuarios: 50,
         activo: true,
-        creado: new Date('2026-01-10'),
+        creado: new Date('2026-01-10').toISOString(),
       },
       {
         id: 2,
@@ -30,7 +31,7 @@ class TrainersDatabase {
         tarifa_sesion: 180000,
         capacidad_usuarios: 50,
         activo: true,
-        creado: new Date('2026-01-12'),
+        creado: new Date('2026-01-12').toISOString(),
       },
       {
         id: 3,
@@ -45,10 +46,25 @@ class TrainersDatabase {
         tarifa_sesion: 160000,
         capacidad_usuarios: 50,
         activo: true,
-        creado: new Date('2026-01-14'),
+        creado: new Date('2026-01-14').toISOString(),
       },
     ];
-    this.nextId = 4;
+
+    this.store = new JsonStore('trainers.json', initial);
+    this.trainers = this._normalizeDates(this.store.getAll() || []);
+    this.nextId = this.trainers.length > 0 ? Math.max(...this.trainers.map((t) => t.id)) + 1 : 1;
+  }
+
+  _normalizeDates(list) {
+    return (Array.isArray(list) ? list : []).map((t) => ({
+      ...t,
+      creado: t?.creado ? String(t.creado) : new Date().toISOString(),
+      activo: t?.activo !== false,
+    }));
+  }
+
+  save() {
+    this.store.setAll(this.trainers);
   }
 
   getAll() {
@@ -69,9 +85,10 @@ class TrainersDatabase {
       ...trainerData,
       capacidad_usuarios: trainerData.capacidad_usuarios ?? 50,
       activo: true,
-      creado: new Date(),
+      creado: new Date().toISOString(),
     };
     this.trainers.push(newTrainer);
+    this.save();
     return newTrainer;
   }
 
@@ -80,6 +97,7 @@ class TrainersDatabase {
     if (!trainer) return null;
     
     Object.assign(trainer, trainerData, { activo: trainer.activo });
+    this.save();
     return trainer;
   }
 
@@ -88,6 +106,7 @@ class TrainersDatabase {
     if (!trainer) return false;
     
     trainer.activo = false;
+    this.save();
     return true;
   }
 

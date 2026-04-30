@@ -1,7 +1,8 @@
-// Base de datos en memoria para gimnasios
+const JsonStore = require('../utils/JsonStore');
+
 class GymDatabase {
   constructor() {
-    this.gyms = [
+    const initial = [
       {
         id: 1,
         nombre: 'Gym Pro Fitness',
@@ -14,7 +15,7 @@ class GymDatabase {
         longitude: -74.0055,
         capacidad_usuarios: 50,
         activo: true,
-        creado: new Date('2026-01-15'),
+        creado: new Date('2026-01-15').toISOString(),
       },
       {
         id: 2,
@@ -28,10 +29,25 @@ class GymDatabase {
         longitude: -75.5812,
         capacidad_usuarios: 50,
         activo: true,
-        creado: new Date('2026-01-20'),
+        creado: new Date('2026-01-20').toISOString(),
       },
     ];
-    this.nextId = 3;
+
+    this.store = new JsonStore('gyms.json', initial);
+    this.gyms = this._normalizeDates(this.store.getAll() || []);
+    this.nextId = this.gyms.length > 0 ? Math.max(...this.gyms.map((g) => g.id)) + 1 : 1;
+  }
+
+  _normalizeDates(list) {
+    return (Array.isArray(list) ? list : []).map((g) => ({
+      ...g,
+      creado: g?.creado ? String(g.creado) : new Date().toISOString(),
+      activo: g?.activo !== false,
+    }));
+  }
+
+  save() {
+    this.store.setAll(this.gyms);
   }
 
   getAll() {
@@ -48,9 +64,10 @@ class GymDatabase {
       ...gymData,
       capacidad_usuarios: gymData.capacidad_usuarios ?? 50,
       activo: true,
-      creado: new Date(),
+      creado: new Date().toISOString(),
     };
     this.gyms.push(newGym);
+    this.save();
     return newGym;
   }
 
@@ -59,6 +76,7 @@ class GymDatabase {
     if (!gym) return null;
     
     Object.assign(gym, gymData, { activo: gym.activo });
+    this.save();
     return gym;
   }
 
@@ -67,6 +85,7 @@ class GymDatabase {
     if (!gym) return false;
     
     gym.activo = false;
+    this.save();
     return true;
   }
 

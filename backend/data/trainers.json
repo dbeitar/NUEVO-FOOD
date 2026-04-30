@@ -50,5 +50,21 @@
     "tarifa_sesion": 160000,
     "activo": true,
     "creado": "2026-01-14T00:00:00.000Z"
+  },
+  {
+    "id": 4,
+    "nombre": "Entrenador Persistente 143614",
+    "email": "entrenador.persistente.143614@d28d.local",
+    "especialidad": "Persistencia",
+    "certificaciones": [
+      "Test"
+    ],
+    "experiencia_años": 2,
+    "gym_id": 1,
+    "horario_disponible": "Sáb 8AM",
+    "tarifa_sesion": 60000,
+    "capacidad_usuarios": 10,
+    "activo": true,
+    "creado": "2026-04-30T19:36:14.291Z"
   }
 ]
