@@ -3,7 +3,7 @@ const prodBase = 'https://reluctant-blair-foodplan-8ceace9e.koyeb.app';
 
 const envBase = import.meta.env.VITE_API_BASE_URL;
 const host = typeof window !== 'undefined' ? window.location.hostname : '';
-const isLocalHost = host === 'localhost' || host === '127.0.0.1';
+const isLocalHost = ['localhost', '127.0.0.1', '::1', '[::1]'].includes(host);
 const qsUseProd = (() => {
   try {
     if (typeof window === 'undefined') return false;
@@ -40,7 +40,9 @@ try {
 try {
   if (typeof window !== 'undefined' && !window.__API_BASE_LOGGED__) {
     window.__API_BASE_LOGGED__ = true;
-    console.info('API base:', resolvedBase);
+    const isDev = import.meta.env.DEV;
+    const env = isDev ? '🔧 DEV' : '🚀 PROD';
+    console.debug(`%c${env} API Base: ${resolvedBase}`, 'color: #0ea5e9; font-weight: bold;');
   }
 } catch (e) { void e; }
 
@@ -138,73 +140,7 @@ try {
 // Autenticación
 export const authService = {
   register: (userData) => api.post('/auth/register', userData),
-  login: async (email, password) => {
-    console.log('Login attempt:', { email, password });
-    // Credenciales de prueba en modo local
-    const testUsers = {
-      'admin@foodplan.local': {
-        password: 'Admin!234',
-        user: {
-          id: 1,
-          nombre: 'Super Admin',
-          email: 'admin@foodplan.local',
-          rol: 'super_admin',
-        },
-      },
-      'cliente@foodplan.local': {
-        password: 'Admin!234',
-        user: {
-          id: 2,
-          nombre: 'Cliente Ejemplo',
-          email: 'cliente@foodplan.local',
-          rol: 'usuario_final',
-        },
-      },
-      'admin.gym@test.foodplan.local': {
-        password: 'Admin!234',
-        user: {
-          id: 10,
-          nombre: 'Admin Gimnasio',
-          email: 'admin.gym@test.foodplan.local',
-          rol: 'admin_gimnasio',
-          gym_id: 1,
-        },
-      },
-      'trainer@test.foodplan.local': {
-        password: 'Admin!234',
-        user: {
-          id: 11,
-          nombre: 'Entrenador',
-          email: 'trainer@test.foodplan.local',
-          rol: 'entrenador',
-          gym_id: 1,
-        },
-      },
-      'admin.d28d@foodplan.local': {
-        password: 'Admin!234',
-        user: {
-          id: 12,
-          nombre: 'D28D Admin',
-          email: 'admin.d28d@foodplan.local',
-          rol: 'super_admin',
-        },
-      },
-    };
-
-    const testUser = testUsers[email];
-    if (testUser && testUser.password === password) {
-      const token = 'fake-jwt-token-' + Date.now();
-      localStorage.setItem('token', token);
-      return {
-        data: {
-          token,
-          user: testUser.user,
-        },
-      };
-    } else {
-      throw new Error('Credenciales incorrectas');
-    }
-  },
+  login: (email, password) => api.post('/auth/login', { email, password }),
   getProfile: () => api.get('/auth/profile'),
 };
 

@@ -10,6 +10,11 @@ class LiveClassDatabase {
         zoom_link: 'https://zoom.us/j/1234567890',
         gym_id: null,
         is_global: true,
+        day_label: 'Lunes',
+        class_type: 'FUERZA',
+        coach: 'Alejo',
+        capacity: 40,
+        enrolled_user_ids: [],
         start_time: new Date(Date.now() + 1000 * 60 * 30).toISOString(),
         end_time: new Date(Date.now() + 1000 * 60 * 95).toISOString(),
         active: true,
@@ -38,6 +43,11 @@ class LiveClassDatabase {
       zoom_link: String(data.zoom_link).trim(),
       gym_id: data.gym_id || null,
       is_global: data.is_global !== false,
+      day_label: String(data.day_label || '').trim(),
+      class_type: String(data.class_type || 'METODO D28D').trim(),
+      coach: String(data.coach || '').trim(),
+      capacity: Number(data.capacity || 40),
+      enrolled_user_ids: Array.isArray(data.enrolled_user_ids) ? data.enrolled_user_ids : [],
       start_time: new Date(data.start_time).toISOString(),
       end_time: new Date(data.end_time).toISOString(),
       active: data.active !== false,
@@ -56,11 +66,85 @@ class LiveClassDatabase {
     if (updates.zoom_link !== undefined) item.zoom_link = String(updates.zoom_link).trim();
     if (updates.gym_id !== undefined) item.gym_id = updates.gym_id || null;
     if (updates.is_global !== undefined) item.is_global = updates.is_global;
+    if (updates.day_label !== undefined) item.day_label = String(updates.day_label || '').trim();
+    if (updates.class_type !== undefined) item.class_type = String(updates.class_type || '').trim();
+    if (updates.coach !== undefined) item.coach = String(updates.coach || '').trim();
+    if (updates.capacity !== undefined) item.capacity = Number(updates.capacity || 40);
     if (updates.start_time !== undefined) item.start_time = new Date(updates.start_time).toISOString();
     if (updates.end_time !== undefined) item.end_time = new Date(updates.end_time).toISOString();
     if (updates.active !== undefined) item.active = !!updates.active;
     this.store.setAll(this.rows);
     return item;
+  }
+
+  enroll(classId, userId) {
+    const item = this.getById(classId);
+    if (!item || !item.active) return null;
+    const current = Array.isArray(item.enrolled_user_ids) ? item.enrolled_user_ids : [];
+    if (current.includes(userId)) return item;
+    if (current.length >= Number(item.capacity || 40)) {
+      const error = new Error('Clase llena');
+      error.code = 'CLASS_FULL';
+      throw error;
+    }
+    item.enrolled_user_ids = [...current, userId];
+    this.store.setAll(this.rows);
+    return item;
+  }
+
+  unenroll(classId, userId) {
+    const item = this.getById(classId);
+    if (!item) return null;
+    const current = Array.isArray(item.enrolled_user_ids) ? item.enrolled_user_ids : [];
+    item.enrolled_user_ids = current.filter((id) => id !== userId);
+    this.store.setAll(this.rows);
+    return item;
+  }
+
+  seedD28DWeek(baseDate = new Date()) {
+    const start = new Date(baseDate);
+    const day = start.getDay();
+    const diffToMonday = (day === 0 ? -6 : 1) - day;
+    start.setDate(start.getDate() + diffToMonday);
+    start.setHours(0, 0, 0, 0);
+    const days = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
+    const slots = [
+      ['07:00', '08:00', 'METODO D28D'],
+      ['08:00', '09:00', 'FUERZA'],
+      ['18:00', '19:00', 'METODO D28D'],
+      ['19:00', '20:00', 'FUERZA'],
+    ];
+    const created = [];
+    days.forEach((dayLabel, dayIndex) => {
+      slots.forEach(([from, to, type]) => {
+        const [fromHour, fromMin] = from.split(':').map(Number);
+        const [toHour, toMin] = to.split(':').map(Number);
+        const classStart = new Date(start);
+        classStart.setDate(start.getDate() + dayIndex);
+        classStart.setHours(fromHour, fromMin, 0, 0);
+        const classEnd = new Date(start);
+        classEnd.setDate(start.getDate() + dayIndex);
+        classEnd.setHours(toHour, toMin, 0, 0);
+        const exists = this.rows.some((item) => item.day_label === dayLabel && item.class_type === type && item.start_time === classStart.toISOString());
+        if (!exists) {
+          created.push(this.create({
+            title: `${type} D28D - ${dayLabel} ${from}`,
+            description: type === 'FUERZA' ? 'Bloque de fuerza guiado para el ciclo D28D.' : 'Clase principal del Metodo D28D.',
+            zoom_link: 'https://zoom.us/j/d28d-demo',
+            gym_id: null,
+            is_global: true,
+            day_label: dayLabel,
+            class_type: type,
+            coach: dayLabel === 'Lunes' || dayLabel === 'Martes' ? 'Alejo' : 'Coach D28D',
+            capacity: 40,
+            start_time: classStart,
+            end_time: classEnd,
+            active: true,
+          }));
+        }
+      });
+    });
+    return created;
   }
 
   delete(id) {

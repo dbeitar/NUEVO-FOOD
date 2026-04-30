@@ -66,5 +66,100 @@
     "capacidad_usuarios": 10,
     "activo": true,
     "creado": "2026-04-30T19:36:14.291Z"
+  },
+  {
+    "id": 5,
+    "nombre": "Alejo D28D",
+    "email": "alejo@d28d.fit",
+    "teléfono": "+57 300 280 2800",
+    "especialidad": "Metodo D28D y bienvenida de ciclos",
+    "certificaciones": [
+      "D28D Coach",
+      "Entrenamiento funcional",
+      "Nutricion deportiva"
+    ],
+    "experiencia_años": 4,
+    "gym_id": 4,
+    "horario_disponible": "Lunes a viernes 6AM-12PM",
+    "tarifa_sesion": 0,
+    "capacidad_usuarios": 80,
+    "activo": true,
+    "creado": "2026-04-30T22:43:55.997Z"
+  },
+  {
+    "id": 6,
+    "nombre": "Laura Fuerza",
+    "email": "laura.fuerza@d28d.fit",
+    "teléfono": "+57 300 280 2801",
+    "especialidad": "Fuerza tren inferior",
+    "certificaciones": [
+      "D28D Coach",
+      "Entrenamiento funcional",
+      "Fuerza aplicada"
+    ],
+    "experiencia_años": 5,
+    "gym_id": 4,
+    "horario_disponible": "Lunes a viernes 7AM-2PM",
+    "tarifa_sesion": 0,
+    "capacidad_usuarios": 80,
+    "activo": true,
+    "creado": "2026-04-30T22:43:55.997Z"
+  },
+  {
+    "id": 7,
+    "nombre": "Nico Metabolico",
+    "email": "nico.metabolico@d28d.fit",
+    "teléfono": "+57 300 280 2802",
+    "especialidad": "HIIT y acondicionamiento",
+    "certificaciones": [
+      "D28D Coach",
+      "Entrenamiento funcional",
+      "Nutricion deportiva"
+    ],
+    "experiencia_años": 6,
+    "gym_id": 4,
+    "horario_disponible": "Lunes a sabado 5PM-9PM",
+    "tarifa_sesion": 0,
+    "capacidad_usuarios": 80,
+    "activo": true,
+    "creado": "2026-04-30T22:43:55.998Z"
+  },
+  {
+    "id": 8,
+    "nombre": "Sofia Mobility",
+    "email": "sofia.mobility@d28d.fit",
+    "teléfono": "+57 300 280 2803",
+    "especialidad": "Movilidad y recuperacion",
+    "certificaciones": [
+      "D28D Coach",
+      "Entrenamiento funcional",
+      "Fuerza aplicada"
+    ],
+    "experiencia_años": 7,
+    "gym_id": 4,
+    "horario_disponible": "Martes a sabado 6AM-11AM",
+    "tarifa_sesion": 0,
+    "capacidad_usuarios": 80,
+    "activo": true,
+    "creado": "2026-04-30T22:43:55.998Z"
+  },
+  {
+    "id": 9,
+    "nombre": "Mateo Performance",
+    "email": "mateo.performance@d28d.fit",
+    "teléfono": "+57 300 280 2804",
+    "especialidad": "Hipertrofia y rendimiento",
+    "certificaciones": [
+      "D28D Coach",
+      "Entrenamiento funcional",
+      "Nutricion deportiva"
+    ],
+    "experiencia_años": 8,
+    "gym_id": 4,
+    "horario_disponible": "Lunes a viernes 12PM-8PM",
+    "tarifa_sesion": 0,
+    "capacidad_usuarios": 80,
+    "activo": true,
+    "creado": "2026-04-30T22:43:55.998Z"
   }
 ]

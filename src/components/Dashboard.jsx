@@ -7,6 +7,7 @@ import AdminFoodsManager from './AdminFoodsManager';
 import AdminUsers from './AdminUsers';
 import AdminPlans from './AdminPlans';
 import AdminCompanies from './AdminCompanies';
+import AdminGyms from './AdminGyms';
 import MyAccount from './MyAccount';
 import Progress from './Progress';
 import Equivalentes from './Equivalentes';
@@ -88,6 +89,8 @@ export default function Dashboard() {
         return <AdminPlans />;
       case 'admincompanies':
         return <AdminCompanies />;
+      case 'admingyms':
+        return <AdminGyms />;
       case 'myaccount':
         return <MyAccount />;
       case 'progress':
@@ -132,6 +135,13 @@ export default function Dashboard() {
                   <h3>{t('card.companies.title', '🏢 Empresas')}</h3>
                   <p>{t('card.companies.desc', 'Consulta gimnasios, entrenadores y usuarios asociados')}</p>
                   <button className="btn-card">{t('card.companies.button', 'Abrir Empresas')}</button>
+                </div>
+              )}
+              {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+                <div className="card" onClick={() => setCurrentView('admingyms')}>
+                  <h3>🏷️ Maestro Gym / Marca Blanca</h3>
+                  <p>Crea gimnasios, colores, logo, slug, WhatsApp y mensaje de marca.</p>
+                  <button className="btn-card">Abrir Maestro Gym</button>
                 </div>
               )}
               <div className="card" onClick={() => setCurrentView('calculator')}>
@@ -319,6 +329,14 @@ export default function Dashboard() {
               {t('nav.companies', 'Empresas')}
             </button>
           )}
+          {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+            <button
+              onClick={() => setCurrentView('admingyms')}
+              className={currentView === 'admingyms' ? 'nav-link active' : 'nav-link'}
+            >
+              Maestro Gym
+            </button>
+          )}
           {user?.rol !== 'super_admin' && (
             <button
               onClick={() => setCurrentView('myaccount')}
@@ -357,7 +375,7 @@ export default function Dashboard() {
                 onClick={() => setCurrentView('admintraining')}
                 className={currentView === 'admintraining' ? 'nav-link active' : 'nav-link'}
               >
-                Maestro Training
+                Plantillas Training
               </button>
               <button
                 onClick={() => setCurrentView('admingallery')}

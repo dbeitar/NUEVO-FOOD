@@ -24,6 +24,7 @@ export default function AdminLiveClasses() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [attendance, setAttendance] = useState([]);
 
   const fetchItems = async () => {
     try {
@@ -37,8 +38,18 @@ export default function AdminLiveClasses() {
     }
   };
 
+  const fetchAttendance = async () => {
+    try {
+      const resp = await api.get('/live-classes/admin/attendance');
+      setAttendance(resp.data?.data || []);
+    } catch (err) {
+      console.warn('No se pudo cargar reporte de asistencia', err);
+    }
+  };
+
   useEffect(() => {
     fetchItems();
+    fetchAttendance();
   }, []);
 
   const selectedItem = useMemo(() => items.find((item) => item.id === form.id), [items, form.id]);
@@ -69,6 +80,7 @@ export default function AdminLiveClasses() {
         }
         setForm(defaultForm);
         await fetchItems();
+        await fetchAttendance();
       } catch (err) {
         setError('Error guardando la clase.');
       } finally {
@@ -96,6 +108,7 @@ export default function AdminLiveClasses() {
       setSaving(true);
       await api.delete(`/live-classes/admin/${item.id}`);
       await fetchItems();
+      await fetchAttendance();
     } catch (err) {
       setError('Error eliminando la clase.');
     } finally {
@@ -250,6 +263,57 @@ export default function AdminLiveClasses() {
           </tbody>
         </table>
       </div>
+
+      <section className="mt-8 rounded-3xl border border-slate-200 bg-white overflow-hidden">
+        <div className="px-5 py-4 border-b border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+          <div>
+            <h3 className="text-xl font-bold text-stone-900">Reporte de asistentes por gym</h3>
+            <p className="text-sm text-stone-600">Agrupa los usuarios inscritos a cada clase según el gimnasio asignado en su cuenta.</p>
+          </div>
+          <button type="button" className="btn-secondary" onClick={fetchAttendance}>Actualizar reporte</button>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="min-w-full text-sm">
+            <thead className="bg-stone-50 text-left text-stone-500 text-xs uppercase tracking-[0.18em]">
+              <tr>
+                <th className="px-4 py-3">Clase</th>
+                <th className="px-4 py-3">Fecha</th>
+                <th className="px-4 py-3">Asistentes</th>
+                <th className="px-4 py-3">Gimnasios</th>
+              </tr>
+            </thead>
+            <tbody>
+              {attendance.length === 0 ? (
+                <tr>
+                  <td colSpan="4" className="px-4 py-6 text-center text-stone-500">Sin asistencia registrada todavía.</td>
+                </tr>
+              ) : attendance.map((row) => (
+                <tr key={row.class_id} className="border-t border-slate-200 align-top">
+                  <td className="px-4 py-4 font-semibold text-stone-900">{row.title}</td>
+                  <td className="px-4 py-4 text-stone-600">{row.start_time}</td>
+                  <td className="px-4 py-4 text-stone-900 font-semibold">{row.total_attendees}</td>
+                  <td className="px-4 py-4">
+                    {row.by_gym?.length ? (
+                      <div className="space-y-2">
+                        {row.by_gym.map((gym) => (
+                          <div key={`${row.class_id}-${gym.gym_name}`} className="rounded-2xl bg-stone-50 border border-slate-200 p-3">
+                            <div className="font-semibold text-stone-900">{gym.gym_name} · {gym.count}</div>
+                            <div className="text-xs text-stone-600 mt-1">
+                              {gym.attendees.map((attendee) => attendee.nombre || attendee.email).join(', ')}
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-stone-500">Sin inscritos</span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </section>
     </div>
   );
 }

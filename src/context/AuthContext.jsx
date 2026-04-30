@@ -9,20 +9,27 @@ export const AuthProvider = ({ children }) => {
 
   // Verificar si hay una sesión activa
   useEffect(() => {
-    if (token) {
-      authService
-        .getProfile()
-        .then((response) => {
+    const validateToken = async () => {
+      try {
+        if (token) {
+          const response = await authService.getProfile();
           setUser(response.data);
-        })
-        .catch(() => {
+        } else {
+          setUser(null);
+        }
+      } catch (error) {
+        // Si el token es inválido/expirado, limpiar
+        if (error.response?.status === 401 || error.response?.status === 403) {
           localStorage.removeItem('token');
           setToken(null);
-        })
-        .finally(() => setLoading(false));
-    } else {
-      setLoading(false);
-    }
+          setUser(null);
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    validateToken();
   }, [token]);
 
   const login = async (email, password) => {

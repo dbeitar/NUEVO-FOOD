@@ -3,6 +3,23 @@ import api from '../services/api';
 import { Building2, MapPin, Phone, Mail, Plus, Edit2, Trash2, X, Save, Search, AlertCircle, CheckCircle } from 'lucide-react';
 import { useI18n } from '../context/useI18n';
 
+const emptyGymForm = {
+  nombre: '',
+  ciudad: '',
+  direccion: '',
+  telefono: '',
+  email: '',
+  logo_url: '',
+  brand_name: '',
+  brand_slug: '',
+  white_label_enabled: true,
+  welcome_message: '',
+  support_whatsapp: '',
+  primary_color: '#2563eb',
+  secondary_color: '#10b981',
+  status: 'active',
+};
+
 export default function AdminGyms() {
   const [gyms, setGyms] = useState([]);
   const [filteredGyms, setFilteredGyms] = useState([]);
@@ -17,17 +34,7 @@ export default function AdminGyms() {
   const { t } = useI18n();
 
   // Form state
-  const [formData, setFormData] = useState({
-    nombre: '',
-    ciudad: '',
-    direccion: '',
-    telefono: '',
-    email: '',
-    logo_url: '',
-    primary_color: '#2563eb',
-    secondary_color: '#10b981',
-    status: 'active',
-  });
+  const [formData, setFormData] = useState(emptyGymForm);
 
   const fetchGyms = useCallback(async () => {
     try {
@@ -89,7 +96,7 @@ export default function AdminGyms() {
         setSuccess(t('gyms.created', 'Gimnasio creado exitosamente'));
       }
       setEditingGym(null);
-      setFormData({ nombre: '', ciudad: '', direccion: '', telefono: '', email_contacto: '' });
+      setFormData(emptyGymForm);
       setShowForm(false);
       fetchGyms();
       setTimeout(() => setSuccess(''), 3000);
@@ -108,6 +115,11 @@ export default function AdminGyms() {
       telefono: gym.telefono || gym.teléfono || '',
       email: gym.email || '',
       logo_url: gym.logo_url || '',
+      brand_name: gym.brand_name || gym.nombre || '',
+      brand_slug: gym.brand_slug || '',
+      white_label_enabled: gym.white_label_enabled !== false,
+      welcome_message: gym.welcome_message || '',
+      support_whatsapp: gym.support_whatsapp || '',
       primary_color: gym.primary_color || '#2563eb',
       secondary_color: gym.secondary_color || '#10b981',
       status: gym.status || 'active',
@@ -146,7 +158,7 @@ export default function AdminGyms() {
 
   const handleCancel = () => {
     setEditingGym(null);
-    setFormData({ nombre: '', ciudad: '', direccion: '', telefono: '', email_contacto: '' });
+    setFormData(emptyGymForm);
     setShowForm(false);
     setError('');
     setSuccess('');
@@ -168,7 +180,7 @@ export default function AdminGyms() {
             className="btn-primary inline-flex items-center gap-2"
             onClick={() => {
               setEditingGym(null);
-              setFormData({ nombre: '', ciudad: '', direccion: '', telefono: '', email_contacto: '' });
+              setFormData(emptyGymForm);
               setShowForm(true);
             }}
           >
@@ -317,6 +329,36 @@ export default function AdminGyms() {
                 />
               </div>
               <div>
+                <label className="label">Nombre marca blanca</label>
+                <input
+                  className="input"
+                  name="brand_name"
+                  value={formData.brand_name}
+                  onChange={handleInputChange}
+                  placeholder="Ej: D28D Chapinero"
+                />
+              </div>
+              <div>
+                <label className="label">Slug / URL marca</label>
+                <input
+                  className="input"
+                  name="brand_slug"
+                  value={formData.brand_slug}
+                  onChange={handleInputChange}
+                  placeholder="d28d-chapinero"
+                />
+              </div>
+              <div>
+                <label className="label">WhatsApp soporte</label>
+                <input
+                  className="input"
+                  name="support_whatsapp"
+                  value={formData.support_whatsapp}
+                  onChange={handleInputChange}
+                  placeholder="+573001234567"
+                />
+              </div>
+              <div>
                 <label className="label">{t('gyms.primary_color', 'Color Primario')}</label>
                 <input
                   className="input"
@@ -347,6 +389,39 @@ export default function AdminGyms() {
                   <option value="active">Activo</option>
                   <option value="inactive">Inactivo</option>
                 </select>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-[1fr_auto] gap-4 mt-4">
+              <label className="block">
+                <span className="label">Mensaje de bienvenida</span>
+                <textarea
+                  className="input min-h-[88px]"
+                  name="welcome_message"
+                  value={formData.welcome_message}
+                  onChange={handleInputChange}
+                  placeholder="Mensaje visible para usuarios inscritos a esta marca."
+                />
+              </label>
+              <label className="flex items-center gap-3 rounded-lg border border-slate-200 bg-stone-50 px-4 py-3 self-end">
+                <input
+                  type="checkbox"
+                  checked={!!formData.white_label_enabled}
+                  onChange={(e) => setFormData((prev) => ({ ...prev, white_label_enabled: e.target.checked }))}
+                />
+                <span className="text-sm font-semibold text-stone-700">Marca blanca activa</span>
+              </label>
+            </div>
+            <div className="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-4">
+              <div className="text-xs uppercase text-stone-500 font-semibold mb-2">Vista previa marca blanca</div>
+              <div className="flex items-center gap-3">
+                <div className="h-12 w-12 rounded-lg grid place-items-center text-white font-bold overflow-hidden" style={{ backgroundColor: formData.primary_color }}>
+                  {formData.logo_url ? <img src={formData.logo_url} alt="" className="h-full w-full object-cover" /> : (formData.brand_name || formData.nombre || 'G').slice(0, 1)}
+                </div>
+                <div>
+                  <div className="font-semibold text-stone-900">{formData.brand_name || formData.nombre || 'Nueva marca'}</div>
+                  <div className="text-sm text-stone-600">{formData.welcome_message || 'Mensaje de bienvenida para la comunidad.'}</div>
+                  <div className="text-xs text-stone-500">/{formData.brand_slug || 'slug-de-marca'}</div>
+                </div>
               </div>
             </div>
 
@@ -410,8 +485,9 @@ export default function AdminGyms() {
                           <div>
                             <div className="text-sm font-medium text-stone-900">{gym.nombre}</div>
                             <div className="text-xs text-stone-500 flex gap-1">
-                              <span style={{ color: gym.secondary_color || '#64748b' }}>{gym.secondary_color || ''}</span>
+                              <span style={{ color: gym.secondary_color || '#64748b' }}>{gym.brand_name || gym.secondary_color || ''}</span>
                             </div>
+                            {gym.white_label_enabled && <div className="text-[11px] text-emerald-700 font-semibold">Marca blanca activa</div>}
                           </div>
                         </div>
                       </td>

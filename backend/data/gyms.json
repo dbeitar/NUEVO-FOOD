@@ -36,5 +36,27 @@
     "longitude": null,
     "activo": true,
     "creado": "2026-02-21T18:43:43.414Z"
+  },
+  {
+    "id": 4,
+    "nombre": "D28D Marca Blanca",
+    "ciudad": "Bogota",
+    "direccion": "Operacion digital D28D",
+    "email": "operaciones@d28d.fit",
+    "teléfono": "+57 300 280 2800",
+    "país": "Colombia",
+    "capacidad_usuarios": 500,
+    "logo_url": "https://dummyimage.com/280x90/111827/a3e635&text=D28D",
+    "brand_name": "D28D",
+    "brand_slug": "d28d-marca-blanca",
+    "white_label_enabled": true,
+    "welcome_message": "Bienvenido al ciclo D28D: entrenamiento, pruebas y clases en vivo bajo tu marca.",
+    "support_whatsapp": "+573002802800",
+    "primary_color": "#111827",
+    "secondary_color": "#a3e635",
+    "status": "active",
+    "plan_id": "d28d-pro",
+    "activo": true,
+    "creado": "2026-04-30T22:43:55.997Z"
   }
 ]

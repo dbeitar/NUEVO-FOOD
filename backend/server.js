@@ -21,6 +21,8 @@ const recipeRoutes = require('./src/routes/recipeRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const trainingRoutes = require('./src/routes/trainingRoutes');
 const liveClassRoutes = require('./src/routes/liveClassRoutes');
+const fitnessTestRoutes = require('./src/routes/fitnessTestRoutes');
+const seedD28DData = require('./src/seedD28DData');
 const authMiddleware = require('./src/middleware/auth');
 
 const app = express();
@@ -75,6 +77,11 @@ const defaultOrigins = [
   'http://localhost:5175',
   'http://localhost:5178',
   'http://localhost:5180',
+  'http://[::1]:5173',
+  'http://[::1]:5174',
+  'http://[::1]:5175',
+  'http://[::1]:5178',
+  'http://[::1]:5180',
   'https://plan-de-alimentacion-acero.vercel.app',
   'https://food-plan-steel.vercel.app'
 ];
@@ -155,7 +162,7 @@ if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') {
 
 // Middleware para validar códigos de empleado (temporal)
 app.use('/api/auth', (req, res, next) => {
-  if (req.method === 'POST' && (req.path === '/login' || req.path === '/register')) {
+  if (req.method === 'POST' && req.path === '/register') {
     console.log('Auth middleware - path:', req.path, 'body:', req.body);
     // Validar que tenga código de empleado
     if (!req.body.codigo_empleado) {
@@ -177,7 +184,7 @@ app.use('/api/auth', (req, res, next) => {
 });
 
 app.use('/auth', (req, res, next) => {
-  if (req.method === 'POST' && (req.path === '/login' || req.path === '/register')) {
+  if (req.method === 'POST' && req.path === '/register') {
     if (!req.body.codigo_empleado) {
       return res.status(400).json({ error: 'Código de empleado requerido' });
     }
@@ -648,6 +655,7 @@ app.use('/api/accounts', accountsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/training', trainingRoutes);
 app.use('/api/live-classes', liveClassRoutes);
+app.use('/api/fitness-tests', fitnessTestRoutes);
 
 app.use('/calculator', calculatorRoutes);
 app.use('/foods', foodRoutes);
@@ -660,6 +668,8 @@ app.use('/trainers', trainersRoutes);
 app.use('/accounts', accountsRoutes);
 app.use('/admin', adminRoutes);
 app.use('/training', trainingRoutes);
+app.use('/live-classes', liveClassRoutes);
+app.use('/fitness-tests', fitnessTestRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {
@@ -668,6 +678,12 @@ app.use((err, req, res, next) => {
 });
 
 syncDemoAndCoreAccounts();
+try {
+  const seeded = seedD28DData();
+  console.log(`🏷️  Datos demo D28D listos (gym ${seeded.gym_id})`);
+} catch (error) {
+  console.error('Error preparando datos demo D28D:', error);
+}
 app.listen(PORT, () => {
   console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
   console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
