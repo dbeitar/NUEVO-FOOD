@@ -11,11 +11,16 @@ class GymDatabase {
         email: 'info@gympro.com',
         ciudad: 'Bogotá',
         país: 'Colombia',
+        logo_url: 'https://via.placeholder.com/140x40.png?text=Gym+Pro',
+        primary_color: '#2563eb',
+        secondary_color: '#10b981',
+        status: 'active',
         latitude: 4.7110,
         longitude: -74.0055,
         capacidad_usuarios: 50,
         activo: true,
         creado: new Date('2026-01-15').toISOString(),
+        plan_id: 'basico',
       },
       {
         id: 2,
@@ -25,11 +30,16 @@ class GymDatabase {
         email: 'contact@fitnesshub.com',
         ciudad: 'Medellín',
         país: 'Colombia',
+        logo_url: 'https://via.placeholder.com/140x40.png?text=Fitness+Hub',
+        primary_color: '#047857',
+        secondary_color: '#d97706',
+        status: 'active',
         latitude: 6.2442,
         longitude: -75.5812,
         capacidad_usuarios: 50,
         activo: true,
         creado: new Date('2026-01-20').toISOString(),
+        plan_id: 'vip',
       },
     ];
 
@@ -51,11 +61,11 @@ class GymDatabase {
   }
 
   getAll() {
-    return this.gyms.filter(g => g.activo);
+    return this.gyms.filter(g => g.activo && g.status !== 'inactive');
   }
 
   getById(id) {
-    return this.gyms.find(g => g.id === id && g.activo);
+    return this.gyms.find(g => g.id === id && g.activo && g.status !== 'inactive');
   }
 
   create(gymData) {
@@ -63,7 +73,11 @@ class GymDatabase {
       id: this.nextId++,
       ...gymData,
       capacidad_usuarios: gymData.capacidad_usuarios ?? 50,
-      activo: true,
+      logo_url: gymData.logo_url || '',
+      primary_color: gymData.primary_color || '#2563eb',
+      secondary_color: gymData.secondary_color || '#10b981',
+      status: gymData.status || 'active',
+      activo: gymData.activo !== false,
       creado: new Date().toISOString(),
     };
     this.gyms.push(newGym);
@@ -74,8 +88,13 @@ class GymDatabase {
   update(id, gymData) {
     const gym = this.gyms.find(g => g.id === id);
     if (!gym) return null;
-    
-    Object.assign(gym, gymData, { activo: gym.activo });
+    Object.assign(gym, gymData);
+    if (gymData.status !== undefined) {
+      gym.status = gymData.status;
+      if (gymData.status === 'inactive') {
+        gym.activo = false;
+      }
+    }
     this.save();
     return gym;
   }

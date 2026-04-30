@@ -22,7 +22,11 @@ export default function AdminGyms() {
     ciudad: '',
     direccion: '',
     telefono: '',
-    email_contacto: ''
+    email: '',
+    logo_url: '',
+    primary_color: '#2563eb',
+    secondary_color: '#10b981',
+    status: 'active',
   });
 
   const fetchGyms = useCallback(async () => {
@@ -101,8 +105,12 @@ export default function AdminGyms() {
       nombre: gym.nombre,
       ciudad: gym.ciudad,
       direccion: gym.direccion,
-      telefono: gym.telefono,
-      email_contacto: gym.email_contacto
+      telefono: gym.telefono || gym.teléfono || '',
+      email: gym.email || '',
+      logo_url: gym.logo_url || '',
+      primary_color: gym.primary_color || '#2563eb',
+      secondary_color: gym.secondary_color || '#10b981',
+      status: gym.status || 'active',
     });
     setShowForm(true);
     setError('');
@@ -288,13 +296,57 @@ export default function AdminGyms() {
                     <Mail className="h-4 w-4 text-slate-400" />
                   </div>
                   <input 
-                    name="email_contacto" 
-                    value={formData.email_contacto} 
+                    name="email" 
+                    value={formData.email} 
                     onChange={handleInputChange} 
                     placeholder={t('gyms.email_ph', 'Ej: contacto@gimnasio.com')}
                     className="input pl-10"
                   />
                 </div>
+              </div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-4">
+              <div>
+                <label className="label">{t('gyms.logo_url', 'Logo URL')}</label>
+                <input
+                  className="input"
+                  name="logo_url"
+                  value={formData.logo_url}
+                  onChange={handleInputChange}
+                  placeholder={t('gyms.logo_url_ph', 'https://...')}
+                />
+              </div>
+              <div>
+                <label className="label">{t('gyms.primary_color', 'Color Primario')}</label>
+                <input
+                  className="input"
+                  name="primary_color"
+                  value={formData.primary_color}
+                  onChange={handleInputChange}
+                  type="color"
+                />
+              </div>
+              <div>
+                <label className="label">{t('gyms.secondary_color', 'Color Secundario')}</label>
+                <input
+                  className="input h-10 p-0"
+                  name="secondary_color"
+                  value={formData.secondary_color}
+                  onChange={handleInputChange}
+                  type="color"
+                />
+              </div>
+              <div>
+                <label className="label">{t('gyms.status', 'Estado')}</label>
+                <select
+                  className="input"
+                  name="status"
+                  value={formData.status}
+                  onChange={handleInputChange}
+                >
+                  <option value="active">Activo</option>
+                  <option value="inactive">Inactivo</option>
+                </select>
               </div>
             </div>
 
@@ -326,6 +378,7 @@ export default function AdminGyms() {
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('gyms.location', 'Ubicación')}</th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.contact', 'Contacto')}</th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.plan', 'Plan')}</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Estado</th>
                   <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
                 </tr>
               </thead>
@@ -346,12 +399,19 @@ export default function AdminGyms() {
                   filteredGyms.map(gym => (
                     <tr key={gym.id} className="hover:bg-stone-100 transition-colors group">
                       <td className="px-6 py-4 whitespace-nowrap">
-                        <div className="flex items-center">
-                          <div className="flex-shrink-0 h-10 w-10 bg-stone-100 border border-slate-300 rounded-full flex items-center justify-center text-lime-600 transition-colors">
-                            <Building2 size={20} />
+                        <div className="flex items-center gap-3">
+                          <div className="flex items-center justify-center rounded-xl overflow-hidden border border-slate-200" style={{ width: 44, height: 44, backgroundColor: gym.primary_color || '#f8fafc' }}>
+                            {gym.logo_url ? (
+                              <img src={gym.logo_url} alt={gym.nombre} className="h-full w-full object-cover" />
+                            ) : (
+                              <Building2 size={20} className="text-white" />
+                            )}
                           </div>
-                          <div className="ml-4">
+                          <div>
                             <div className="text-sm font-medium text-stone-900">{gym.nombre}</div>
+                            <div className="text-xs text-stone-500 flex gap-1">
+                              <span style={{ color: gym.secondary_color || '#64748b' }}>{gym.secondary_color || ''}</span>
+                            </div>
                           </div>
                         </div>
                       </td>
@@ -402,6 +462,11 @@ export default function AdminGyms() {
                             </button>
                           </div>
                         )}
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${gym.status === 'active' ? 'bg-emerald-100 text-emerald-700' : 'bg-rose-100 text-rose-700'}`}>
+                          {gym.status === 'active' ? 'Activo' : 'Inactivo'}
+                        </span>
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                         <div className="flex justify-end gap-2">

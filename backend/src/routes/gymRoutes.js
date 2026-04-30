@@ -13,6 +13,7 @@ router.get('/search', gymController.searchGyms);
 // Rutas protegidas (admin)
 router.post('/', authenticateToken, gymController.createGym);
 router.put('/:id', authenticateToken, gymController.updateGym);
+router.put('/:id/assign-plan', authenticateToken, gymController.assignPlanToGym);
 router.delete('/:id', authenticateToken, gymController.deleteGym);
 
 module.exports = router;

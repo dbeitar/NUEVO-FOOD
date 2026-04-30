@@ -20,6 +20,7 @@ const planRoutes = require('./src/routes/planRoutes');
 const recipeRoutes = require('./src/routes/recipeRoutes');
 const adminRoutes = require('./src/routes/adminRoutes');
 const trainingRoutes = require('./src/routes/trainingRoutes');
+const liveClassRoutes = require('./src/routes/liveClassRoutes');
 const authMiddleware = require('./src/middleware/auth');
 
 const app = express();
@@ -646,6 +647,7 @@ app.use('/api/trainers', trainersRoutes);
 app.use('/api/accounts', accountsRoutes);
 app.use('/api/admin', adminRoutes);
 app.use('/api/training', trainingRoutes);
+app.use('/api/live-classes', liveClassRoutes);
 
 app.use('/calculator', calculatorRoutes);
 app.use('/foods', foodRoutes);

@@ -14,6 +14,8 @@ import Recipes from './Recipes';
 import TrainingModule from './TrainingModule';
 import AdminTrainingGallery from './AdminTrainingGallery';
 import AdminTrainingManager from './AdminTrainingManager';
+import AdminLiveClasses from './AdminLiveClasses';
+import LiveClasses from './LiveClasses';
 import { useI18n } from '../context/useI18n';
 import NutritionChat from './NutritionChat';
 import api from '../services/api';
@@ -98,6 +100,10 @@ export default function Dashboard() {
         return <AdminTrainingManager />;
       case 'admingallery':
         return <AdminTrainingGallery />;
+      case 'adminliveclasses':
+        return <AdminLiveClasses />;
+      case 'liveclasses':
+        return <LiveClasses />;
       default:
         return (
           <>
@@ -206,6 +212,14 @@ export default function Dashboard() {
                   <h3>🎬 Galería Entrenamiento</h3>
                   <p>Administra videos de YouTube por ejercicio para el Coach Virtual.</p>
                   <button className="btn-card">Abrir Galería</button>
+                </div>
+              )}
+
+              {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+                <div className="card" onClick={() => setCurrentView('adminliveclasses')}>
+                  <h3>🟢 Clases en Vivo</h3>
+                  <p>Crea y gestiona las sesiones de Zoom en el calendario D28D.</p>
+                  <button className="btn-card">Abrir Clases Vivo</button>
                 </div>
               )}
             </div>
@@ -351,8 +365,20 @@ export default function Dashboard() {
               >
                 Galería Training
               </button>
+              <button
+                onClick={() => setCurrentView('adminliveclasses')}
+                className={currentView === 'adminliveclasses' ? 'nav-link active' : 'nav-link'}
+              >
+                Clases Vivo
+              </button>
             </>
           ) : null}
+          <button
+            onClick={() => setCurrentView('liveclasses')}
+            className={currentView === 'liveclasses' ? 'nav-link active' : 'nav-link'}
+          >
+            Clases Públicas
+          </button>
         </div>
         <div className="navbar-user">
           <div className="mr-3">

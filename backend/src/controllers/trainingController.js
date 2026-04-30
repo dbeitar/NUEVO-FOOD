@@ -559,7 +559,7 @@ const createAdminGallery = async (req, res) => {
     if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
       return res.status(403).json({ error: 'No tienes permisos para crear en la galería' });
     }
-    const { name, muscle_group = '', youtube_url } = req.body || {};
+    const { name, muscle_group = '', youtube_url, is_global = true } = req.body || {};
     if (!name || !youtube_url) {
       return res.status(400).json({ error: 'name y youtube_url son requeridos' });
     }
@@ -567,6 +567,7 @@ const createAdminGallery = async (req, res) => {
       name,
       muscle_group,
       youtube_url,
+      is_global,
       created_by: req.user.id,
     });
     if (created?.error) {
@@ -593,7 +594,7 @@ const deleteAdminGallery = async (req, res) => {
 
 const getPublicGallery = async (req, res) => {
   try {
-    return res.json({ success: true, data: ExercisesGalleryStore.getAll() });
+    return res.json({ success: true, data: ExercisesGalleryStore.getPublic() });
   } catch (error) {
     return res.status(500).json({ error: 'Error obteniendo galería' });
   }

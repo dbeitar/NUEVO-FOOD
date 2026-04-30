@@ -4,7 +4,7 @@ import api from '../services/api';
 export default function AdminTrainingGallery() {
   const [exercises, setExercises] = useState([]);
   const [loading, setLoading] = useState(false);
-  const [form, setForm] = useState({ name: '', muscle_group: '', youtube_url: '' });
+  const [form, setForm] = useState({ name: '', muscle_group: '', youtube_url: '', is_global: true });
 
   useEffect(() => {
     fetchGallery();
@@ -87,6 +87,16 @@ export default function AdminTrainingGallery() {
             onChange={(e) => setForm({ ...form, youtube_url: e.target.value })}
           />
         </div>
+        <div className="flex items-center gap-3">
+          <input
+            id="is_global"
+            type="checkbox"
+            checked={form.is_global}
+            onChange={(e) => setForm({ ...form, is_global: e.target.checked })}
+            className="h-4 w-4 text-lime-600 border-slate-300 rounded"
+          />
+          <label htmlFor="is_global" className="text-sm text-stone-700">Global para todos los gimnasios</label>
+        </div>
         <button type="submit" className="btn-primary whitespace-nowrap" disabled={loading}>
           + Guardar Base
         </button>
@@ -99,6 +109,7 @@ export default function AdminTrainingGallery() {
               <th className="px-4 py-3 text-xs font-semibold text-stone-500">EJERCICIO</th>
               <th className="px-4 py-3 text-xs font-semibold text-stone-500">MÚSCULO</th>
               <th className="px-4 py-3 text-xs font-semibold text-stone-500">ENLACE VIDEO</th>
+              <th className="px-4 py-3 text-xs font-semibold text-stone-500">VISIBILIDAD</th>
               <th className="px-4 py-3 text-xs font-semibold text-stone-500">ACCIÓN</th>
             </tr>
           </thead>
@@ -111,6 +122,9 @@ export default function AdminTrainingGallery() {
                   <a href={ex.youtube_url} target="_blank" rel="noreferrer" className="hover:underline">
                     Ver Video
                   </a>
+                </td>
+                <td className="px-4 py-3 text-sm">
+                  {ex.is_global ? 'Global' : 'Privado'}
                 </td>
                 <td className="px-4 py-3">
                   <button

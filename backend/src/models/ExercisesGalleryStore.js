@@ -19,12 +19,16 @@ const ExercisesGalleryStore = {
     return [...rows].sort((a, b) => a.name.localeCompare(b.name, 'es'));
   },
 
+  getPublic() {
+    return [...rows].filter((item) => item.is_global !== false).sort((a, b) => a.name.localeCompare(b.name, 'es'));
+  },
+
   getByExerciseName(name) {
     const key = normalize(name);
     return rows.find((r) => normalize(r.name) === key) || null;
   },
 
-  create({ name, muscle_group = '', youtube_url, created_by = null }) {
+  create({ name, muscle_group = '', youtube_url, created_by = null, is_global = true }) {
     const exists = this.getByExerciseName(name);
     if (exists) {
       return { error: 'Ya existe un video para ese ejercicio' };
@@ -34,6 +38,7 @@ const ExercisesGalleryStore = {
       name: String(name).trim(),
       muscle_group: String(muscle_group || '').trim(),
       youtube_url: String(youtube_url).trim(),
+      is_global: is_global !== false,
       created_by,
       created_at: new Date().toISOString(),
     };

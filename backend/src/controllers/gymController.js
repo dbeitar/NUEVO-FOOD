@@ -69,9 +69,23 @@ const searchGyms = (req, res) => {
 const createGym = (req, res) => {
   try {
     checkAdminRole(req, res, () => {
-      const { nombre, direccion, teléfono, email, ciudad, país, Basico, latitude, longitude, capacidad_usuarios } = req.body;
+      const {
+        nombre,
+        direccion,
+        teléfono,
+        email,
+        ciudad,
+        país,
+        latitude,
+        longitude,
+        capacidad_usuarios,
+        plan_id,
+        logo_url,
+        primary_color,
+        secondary_color,
+        status,
+      } = req.body;
       
-      // Validaciones
       if (!nombre || !email || !ciudad) {
         return res.status(400).json({ error: 'Nombre, email y ciudad son requeridos' });
       }
@@ -86,6 +100,11 @@ const createGym = (req, res) => {
         capacidad_usuarios: capacidad_usuarios ?? 50,
         latitude: latitude || null,
         longitude: longitude || null,
+        plan_id: plan_id || null,
+        logo_url: logo_url || '',
+        primary_color: primary_color || '#2563eb',
+        secondary_color: secondary_color || '#10b981',
+        status: status || 'active',
       });
       
       res.status(201).json({ message: 'Gimnasio creado exitosamente', gym: newGym });
@@ -113,6 +132,26 @@ const updateGym = (req, res) => {
     });
   } catch (error) {
     console.error('Error actualizando gimnasio:', error);
+    res.status(500).json({ error: 'Error interno del servidor' });
+  }
+};
+
+const assignPlanToGym = (req, res) => {
+  try {
+    checkAdminRole(req, res, () => {
+      const { id } = req.params;
+      const { plan_id } = req.body || {};
+      if (!plan_id) {
+        return res.status(400).json({ error: 'plan_id es requerido' });
+      }
+      const updatedGym = GymDatabase.update(parseInt(id), { plan_id });
+      if (!updatedGym) {
+        return res.status(404).json({ error: 'Gimnasio no encontrado' });
+      }
+      return res.json({ message: 'Plan asignado al gimnasio', gym: updatedGym });
+    });
+  } catch (error) {
+    console.error('Error asignando plan al gimnasio:', error);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };
