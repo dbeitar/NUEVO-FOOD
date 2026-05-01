@@ -515,10 +515,7 @@ const getMyCurrentPlan = async (req, res) => {
 const substituteExercise = async (req, res) => {
   try {
     const { exercise, cause } = req.body;
-    // Integración con OpenAI
-    // const completion = await openai.chat.completions.create({...})
-
-    // Simulación inteligente para pruebas:
+    // Fallback deterministico gratuito/local: no usa proveedores pagos ni claves externas.
     const substitutions = {
       'SENTADILLA LIBRE': 'PRENSA 45 DOBLE',
       'PRESS BANCA': 'EMPUJE PLANO MANCUERNA',

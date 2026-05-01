@@ -9,6 +9,9 @@ const emptyGymForm = {
   direccion: '',
   telefono: '',
   email: '',
+  pais: 'Colombia',
+  capacidad_usuarios: 50,
+  plan_id: '',
   logo_url: '',
   brand_name: '',
   brand_slug: '',
@@ -114,6 +117,9 @@ export default function AdminGyms() {
       direccion: gym.direccion,
       telefono: gym.telefono || gym.teléfono || '',
       email: gym.email || '',
+      pais: gym.pais || gym.país || 'Colombia',
+      capacidad_usuarios: gym.capacidad_usuarios || 50,
+      plan_id: gym.plan_id || '',
       logo_url: gym.logo_url || '',
       brand_name: gym.brand_name || gym.nombre || '',
       brand_slug: gym.brand_slug || '',
@@ -316,6 +322,41 @@ export default function AdminGyms() {
                   />
                 </div>
               </div>
+              <div>
+                <label className="label">País</label>
+                <input
+                  name="pais"
+                  value={formData.pais}
+                  onChange={handleInputChange}
+                  placeholder="Colombia"
+                  className="input"
+                />
+              </div>
+              <div>
+                <label className="label">Capacidad usuarios</label>
+                <input
+                  name="capacidad_usuarios"
+                  value={formData.capacidad_usuarios}
+                  onChange={handleInputChange}
+                  type="number"
+                  min="1"
+                  className="input"
+                />
+              </div>
+              <div>
+                <label className="label">{t('common.plan', 'Plan')}</label>
+                <select
+                  className="input"
+                  name="plan_id"
+                  value={formData.plan_id}
+                  onChange={handleInputChange}
+                >
+                  <option value="">Sin plan</option>
+                  {plans.map((plan) => (
+                    <option key={plan.nombre} value={plan.nombre}>{plan.nombre}</option>
+                  ))}
+                </select>
+              </div>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mt-4">
               <div>
@@ -501,7 +542,7 @@ export default function AdminGyms() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="text-sm text-stone-800 flex items-center gap-1">
                           <Mail size={14} className="text-stone-500" />
-                          {gym.email_contacto || '-'}
+                          {gym.email || '-'}
                         </div>
                         <div className="text-xs text-stone-600 ml-5 flex items-center gap-1 mt-0.5">
                           <Phone size={12} className="text-stone-500" />

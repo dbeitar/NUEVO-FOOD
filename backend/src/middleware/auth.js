@@ -1,4 +1,5 @@
 const jwt = require('jsonwebtoken');
+const { hydrateAccess } = require('../utils/accessControl');
 
 const authenticateToken = (req, res, next) => {
   const token = req.headers['authorization']?.split(' ')[1];
@@ -12,7 +13,10 @@ const authenticateToken = (req, res, next) => {
     if (err) {
       return res.status(403).json({ error: 'Token inválido o expirado' });
     }
-    req.user = user;
+    req.user = {
+      ...user,
+      ...hydrateAccess(user),
+    };
     next();
   });
 };

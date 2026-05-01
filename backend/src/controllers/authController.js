@@ -2,6 +2,7 @@ const db = require('../config/dbClient');
 const userDB = require('../models/UserDatabase');
 const bcrypt = require('bcryptjs');
 const jwt = require('jsonwebtoken');
+const { hydrateAccess } = require('../utils/accessControl');
 
 const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true';
 
@@ -108,8 +109,9 @@ const loginUser = async (req, res) => {
     }
 
     // Generar JWT
+    const access = hydrateAccess(user);
     const token = jwt.sign(
-      { id: user.id, email: user.email, rol: user.rol },
+      { id: user.id, email: user.email, rol: user.rol, roles: access.roles, permissions: access.permissions, module_access: access.module_access, gym_id: user.gym_id || user.gymId || null, trainer_id: user.trainer_id || null },
       process.env.JWT_SECRET,
       { expiresIn: process.env.JWT_EXPIRES_IN }
     );
@@ -122,6 +124,9 @@ const loginUser = async (req, res) => {
         nombre: user.nombre,
         email: user.email,
         rol: user.rol,
+        roles: access.roles,
+        permissions: access.permissions,
+        module_access: access.module_access,
       },
     });
   } catch (error) {
@@ -147,6 +152,7 @@ const getProfile = async (req, res) => {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
       // Seleccionar solo los campos necesarios
+      const access = hydrateAccess(user);
       user = {
         id: user.id,
         nombre: user.nombre,
@@ -156,7 +162,10 @@ const getProfile = async (req, res) => {
         peso: user.peso,
         altura: user.altura,
         objetivo: user.objetivo,
-        rol: user.rol
+        rol: user.rol,
+        roles: access.roles,
+        permissions: access.permissions,
+        module_access: access.module_access,
       };
     }
 

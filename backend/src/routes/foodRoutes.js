@@ -1,6 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
+const requireRole = require("../middleware/requireRole");
 const foodController = require("../controllers/foodController");
 
 // Rutas públicas (requieren autenticación)
@@ -22,18 +23,18 @@ router.get("/search", foodController.searchFoods);
 router.get("/barcode/:barcode", foodController.getByBarcode);
 
 // ADMIN ONLY: Importar alimentos masivos
-router.post("/import", foodController.importFoods);
+router.post("/import", requireRole(["super_admin"]), foodController.importFoods);
 
 // ADMIN ONLY: Crear respaldo manual
-router.post("/backup", foodController.backupFoods);
+router.post("/backup", requireRole(["super_admin"]), foodController.backupFoods);
 
 // ADMIN ONLY: Crear alimento
-router.post("/", foodController.createFood);
+router.post("/", requireRole(["super_admin"]), foodController.createFood);
 
 // ADMIN ONLY: Actualizar alimento
-router.put("/:foodId", foodController.updateFood);
+router.put("/:foodId", requireRole(["super_admin"]), foodController.updateFood);
 
 // ADMIN ONLY: Eliminar alimento
-router.delete("/:foodId", foodController.deleteFood);
+router.delete("/:foodId", requireRole(["super_admin"]), foodController.deleteFood);
 
 module.exports = router;

@@ -3,7 +3,7 @@
     "id": 1,
     "nombre": "Super Admin",
     "email": "admin@foodplan.local",
-    "clave_hash": "$2b$10$rX3ajAtl7n.Z1knK4FNjheEXSmmGhjHyTWdDg1s.rwDeX9msJn5qS",
+    "clave_hash": "$2b$10$.xsbaWFGmH7jwCguCvEg/eTcJbCMqbCsuGRr44sHlHjSpMrCL1yEK",
     "rol": "super_admin",
     "telefono": "1234567890",
     "fecha_nacimiento": "1990-01-01",
@@ -11,13 +11,34 @@
     "altura": 180,
     "objetivo": "mantener",
     "gym_id": null,
-    "trainer_id": null
+    "trainer_id": null,
+    "roles": [
+      "super_admin"
+    ],
+    "permissions": [
+      "ecosystem.manage",
+      "brands.manage",
+      "gyms.manage",
+      "d28d.manage",
+      "d28d.view",
+      "trainers.manage",
+      "trainers.manage_own",
+      "training.manage",
+      "training.manage_own",
+      "nutrition.manage",
+      "nutrition.manage_assigned",
+      "live_classes.manage",
+      "live_classes.view",
+      "users.manage",
+      "users.manage_assigned"
+    ],
+    "module_access": {}
   },
   {
     "id": 2,
     "nombre": "Cliente Ejemplo",
     "email": "cliente@foodplan.local",
-    "clave_hash": "$2b$10$rX3ajAtl7n.Z1knK4FNjheEXSmmGhjHyTWdDg1s.rwDeX9msJn5qS",
+    "clave_hash": "$2b$10$.xsbaWFGmH7jwCguCvEg/eTcJbCMqbCsuGRr44sHlHjSpMrCL1yEK",
     "rol": "usuario_final",
     "telefono": "0987654321",
     "fecha_nacimiento": "1995-05-05",
@@ -27,13 +48,23 @@
     "gym_id": 1,
     "trainer_id": 1,
     "gymId": 1,
-    "planId": "d28d-month-template"
+    "planId": "d28d-month-template",
+    "roles": [
+      "usuario_final"
+    ],
+    "permissions": [
+      "training.view",
+      "nutrition.view",
+      "live_classes.view",
+      "d28d.view"
+    ],
+    "module_access": {}
   },
   {
     "id": 3,
     "nombre": "cesar gomez",
     "email": "cesar.gomez@cloudfarmers.app",
-    "clave_hash": "$2b$10$rX3ajAtl7n.Z1knK4FNjheEXSmmGhjHyTWdDg1s.rwDeX9msJn5qS",
+    "clave_hash": "$2b$10$.xsbaWFGmH7jwCguCvEg/eTcJbCMqbCsuGRr44sHlHjSpMrCL1yEK",
     "rol": "usuario_final",
     "telefono": "3152521581",
     "fecha_nacimiento": "1978-12-10",
@@ -45,7 +76,17 @@
     "gymId": null,
     "planId": null,
     "fecha_registro": "2026-02-22T19:46:54.864Z",
-    "nivel_actividad": "1.725"
+    "nivel_actividad": "1.725",
+    "roles": [
+      "usuario_final"
+    ],
+    "permissions": [
+      "training.view",
+      "nutrition.view",
+      "live_classes.view",
+      "d28d.view"
+    ],
+    "module_access": {}
   },
   {
     "id": 4,
@@ -65,7 +106,17 @@
     "trainer_id": null,
     "gymId": null,
     "planId": null,
-    "fecha_registro": "2026-03-01T20:32:45.385Z"
+    "fecha_registro": "2026-03-01T20:32:45.385Z",
+    "roles": [
+      "usuario_final"
+    ],
+    "permissions": [
+      "training.view",
+      "nutrition.view",
+      "live_classes.view",
+      "d28d.view"
+    ],
+    "module_access": {}
   },
   {
     "id": 5,
@@ -85,7 +136,17 @@
     "trainer_id": null,
     "gymId": null,
     "planId": null,
-    "fecha_registro": "2026-03-02T16:14:52.808Z"
+    "fecha_registro": "2026-03-02T16:14:52.808Z",
+    "roles": [
+      "usuario_final"
+    ],
+    "permissions": [
+      "training.view",
+      "nutrition.view",
+      "live_classes.view",
+      "d28d.view"
+    ],
+    "module_access": {}
   },
   {
     "id": 6,
@@ -105,7 +166,17 @@
     "trainer_id": null,
     "gymId": null,
     "planId": null,
-    "fecha_registro": "2026-03-02T23:54:24.699Z"
+    "fecha_registro": "2026-03-02T23:54:24.699Z",
+    "roles": [
+      "usuario_final"
+    ],
+    "permissions": [
+      "training.view",
+      "nutrition.view",
+      "live_classes.view",
+      "d28d.view"
+    ],
+    "module_access": {}
   },
   {
     "id": 7,
@@ -125,13 +196,23 @@
     "trainer_id": null,
     "gymId": null,
     "planId": null,
-    "fecha_registro": "2026-03-03T00:38:29.797Z"
+    "fecha_registro": "2026-03-03T00:38:29.797Z",
+    "roles": [
+      "usuario_final"
+    ],
+    "permissions": [
+      "training.view",
+      "nutrition.view",
+      "live_classes.view",
+      "d28d.view"
+    ],
+    "module_access": {}
   },
   {
     "id": 8,
     "nombre": "Demo Público",
     "email": "demo+20260302@foodplan.local",
-    "clave_hash": "$2b$10$zlXZA2hwycfj9Z9NXzyrweMEyVo1dzRatGlJN.p7BQlGN2CvTYrEO",
+    "clave_hash": "$2b$10$SUhcyWtHisJ9kX76fd3rJO17tqZ.kqtXFRZBetOWUhe.uQe/dyM02",
     "rol": "usuario_final",
     "telefono": null,
     "fecha_nacimiento": null,
@@ -145,7 +226,17 @@
     "trainer_id": null,
     "gymId": null,
     "planId": null,
-    "fecha_registro": "2026-03-03T02:24:06.187Z"
+    "fecha_registro": "2026-03-03T02:24:06.187Z",
+    "roles": [
+      "usuario_final"
+    ],
+    "permissions": [
+      "training.view",
+      "nutrition.view",
+      "live_classes.view",
+      "d28d.view"
+    ],
+    "module_access": {}
   },
   {
     "id": 9,
@@ -165,7 +256,17 @@
     "trainer_id": null,
     "gymId": null,
     "planId": null,
-    "fecha_registro": "2026-03-03T11:39:45.510Z"
+    "fecha_registro": "2026-03-03T11:39:45.510Z",
+    "roles": [
+      "usuario_final"
+    ],
+    "permissions": [
+      "training.view",
+      "nutrition.view",
+      "live_classes.view",
+      "d28d.view"
+    ],
+    "module_access": {}
   },
   {
     "id": 10,
@@ -183,7 +284,21 @@
     "trainer_id": null,
     "gymId": 1,
     "planId": null,
-    "fecha_registro": "2026-04-30T00:00:00.000Z"
+    "fecha_registro": "2026-04-30T00:00:00.000Z",
+    "roles": [
+      "admin_gimnasio"
+    ],
+    "permissions": [
+      "gyms.manage",
+      "trainers.manage",
+      "training.manage",
+      "nutrition.manage",
+      "live_classes.manage",
+      "live_classes.view",
+      "users.manage_assigned",
+      "d28d.view"
+    ],
+    "module_access": {}
   },
   {
     "id": 11,
@@ -201,7 +316,19 @@
     "trainer_id": null,
     "gymId": 1,
     "planId": null,
-    "fecha_registro": "2026-04-30T00:00:00.000Z"
+    "fecha_registro": "2026-04-30T00:00:00.000Z",
+    "roles": [
+      "entrenador"
+    ],
+    "permissions": [
+      "trainers.manage_own",
+      "training.manage_own",
+      "nutrition.manage_assigned",
+      "live_classes.view",
+      "users.manage_assigned",
+      "d28d.view"
+    ],
+    "module_access": {}
   },
   {
     "id": 12,
@@ -219,6 +346,27 @@
     "trainer_id": null,
     "gymId": null,
     "planId": null,
-    "fecha_registro": "2026-04-30T00:00:00.000Z"
+    "fecha_registro": "2026-04-30T00:00:00.000Z",
+    "roles": [
+      "super_admin"
+    ],
+    "permissions": [
+      "ecosystem.manage",
+      "brands.manage",
+      "gyms.manage",
+      "d28d.manage",
+      "d28d.view",
+      "trainers.manage",
+      "trainers.manage_own",
+      "training.manage",
+      "training.manage_own",
+      "nutrition.manage",
+      "nutrition.manage_assigned",
+      "live_classes.manage",
+      "live_classes.view",
+      "users.manage",
+      "users.manage_assigned"
+    ],
+    "module_access": {}
   }
 ]

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import api from '../services/api';
 
 const defaultForm = {
@@ -31,7 +31,7 @@ export default function AdminLiveClasses() {
       setLoading(true);
       const resp = await api.get('/live-classes/admin');
       setItems(resp.data?.data || []);
-    } catch (err) {
+    } catch {
       setError('No se pudo cargar la lista de clases.');
     } finally {
       setLoading(false);
@@ -51,8 +51,6 @@ export default function AdminLiveClasses() {
     fetchItems();
     fetchAttendance();
   }, []);
-
-  const selectedItem = useMemo(() => items.find((item) => item.id === form.id), [items, form.id]);
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -81,7 +79,7 @@ export default function AdminLiveClasses() {
         setForm(defaultForm);
         await fetchItems();
         await fetchAttendance();
-      } catch (err) {
+      } catch {
         setError('Error guardando la clase.');
       } finally {
         setSaving(false);
@@ -109,7 +107,7 @@ export default function AdminLiveClasses() {
       await api.delete(`/live-classes/admin/${item.id}`);
       await fetchItems();
       await fetchAttendance();
-    } catch (err) {
+    } catch {
       setError('Error eliminando la clase.');
     } finally {
       setSaving(false);

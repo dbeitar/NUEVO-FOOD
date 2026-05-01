@@ -1,8 +1,17 @@
 const LiveClassDatabase = require('../models/LiveClassDatabase');
 const userDB = require('../models/UserDatabase');
 const GymDatabase = require('../models/GymDatabase');
+const { hasRole } = require('../utils/accessControl');
 
-const isAdmin = (req) => req.user && ['super_admin', 'admin_gimnasio'].includes(req.user.rol);
+const isAdmin = (req) => req.user && hasRole(req.user, ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']);
+const canEditClass = (req, classItem = null) => {
+  if (!req.user) return false;
+  if (hasRole(req.user, ['super_admin'])) return true;
+  if (classItem?.locked || classItem?.source_module === 'd28d') {
+    return hasRole(req.user, ['admin_d28d']);
+  }
+  return hasRole(req.user, ['admin_marca', 'admin_gimnasio', 'entrenador']);
+};
 const canAccessClass = (classItem, user) => {
   if (!classItem || !classItem.active) return false;
   if (classItem.gym_id === null) return true;
@@ -38,8 +47,8 @@ const getAttendanceReport = (req, res) => {
     }
     const gyms = GymDatabase.getAll();
     const rows = LiveClassDatabase.getAll().map((classItem) => {
-      const enrolledIds = Array.isArray(classItem.enrolled_user_ids) ? classItem.enrolled_user_ids : [];
-      const attendees = enrolledIds
+      const attendedIds = Array.isArray(classItem.attendance_user_ids) ? classItem.attendance_user_ids : [];
+      const attendees = attendedIds
         .map((id) => userDB.getById(id))
         .filter(Boolean)
         .map((user) => {
@@ -67,6 +76,8 @@ const getAttendanceReport = (req, res) => {
         start_time: classItem.start_time,
         end_time: classItem.end_time,
         scope: classItem.is_global ? 'Global D28D' : classItem.gym_id ? `Gym ${classItem.gym_id}` : 'Privado',
+        source_module: classItem.source_module || 'gym',
+        locked: !!classItem.locked,
         total_attendees: attendees.length,
         by_gym: Object.values(byGym).sort((a, b) => b.count - a.count),
       };
@@ -83,9 +94,12 @@ const createClass = (req, res) => {
     if (!isAdmin(req)) {
       return res.status(403).json({ error: 'No tienes permiso para crear clases' });
     }
-    const { title, description = '', zoom_link, start_time, end_time, gym_id = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40 } = req.body || {};
+    const { title, description = '', zoom_link, start_time, end_time, gym_id = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40, source_module = 'gym' } = req.body || {};
     if (!title || !zoom_link || !start_time || !end_time) {
       return res.status(400).json({ error: 'title, zoom_link, start_time y end_time son requeridos' });
+    }
+    if (source_module === 'd28d' && !hasRole(req.user, ['super_admin', 'admin_d28d'])) {
+      return res.status(403).json({ error: 'Solo D28D puede crear clases D28D bloqueadas' });
     }
     const created = LiveClassDatabase.create({
       title,
@@ -100,6 +114,8 @@ const createClass = (req, res) => {
       class_type,
       coach,
       capacity,
+      source_module,
+      locked: source_module === 'd28d',
     });
     return res.status(201).json({ success: true, data: created });
   } catch (error) {
@@ -152,6 +168,10 @@ const updateClass = (req, res) => {
       return res.status(403).json({ error: 'No tienes permiso para actualizar clases' });
     }
     const id = parseInt(req.params.id, 10);
+    const current = LiveClassDatabase.getById(id);
+    if (!canEditClass(req, current)) {
+      return res.status(403).json({ error: 'No puedes editar clases D28D bloqueadas' });
+    }
     const updated = LiveClassDatabase.update(id, req.body || {});
     if (!updated) {
       return res.status(404).json({ error: 'Clase no encontrada' });
@@ -169,6 +189,10 @@ const deleteClass = (req, res) => {
       return res.status(403).json({ error: 'No tienes permiso para eliminar clases' });
     }
     const id = parseInt(req.params.id, 10);
+    const current = LiveClassDatabase.getById(id);
+    if (!canEditClass(req, current)) {
+      return res.status(403).json({ error: 'No puedes eliminar clases D28D bloqueadas' });
+    }
     const deleted = LiveClassDatabase.delete(id);
     if (!deleted) {
       return res.status(404).json({ error: 'Clase no encontrada' });
@@ -177,6 +201,22 @@ const deleteClass = (req, res) => {
   } catch (error) {
     console.error('Error eliminando clase en vivo:', error);
     return res.status(500).json({ error: 'Error eliminando clase en vivo' });
+  }
+};
+
+const joinClass = (req, res) => {
+  try {
+    const id = parseInt(req.params.id, 10);
+    const classItem = LiveClassDatabase.getById(id);
+    if (!canAccessClass(classItem, req.user)) {
+      return res.status(404).json({ error: 'Clase no encontrada' });
+    }
+    const updated = LiveClassDatabase.attend(id, req.user);
+    if (!updated) return res.status(404).json({ error: 'Clase no encontrada' });
+    return res.json({ success: true, data: { zoom_link: updated.zoom_link, class: updated } });
+  } catch (error) {
+    console.error('Error registrando asistencia:', error);
+    return res.status(500).json({ error: 'Error registrando asistencia' });
   }
 };
 
@@ -190,4 +230,5 @@ module.exports = {
   seedD28DWeek,
   enrollClass,
   unenrollClass,
+  joinClass,
 };

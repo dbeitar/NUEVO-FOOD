@@ -1,8 +1,10 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
 import { useI18n } from '../context/useI18n';
+import { useAuth } from '../context/useAuth';
 
 export default function Recipes() {
+  const { user } = useAuth();
   const [recipes, setRecipes] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -25,6 +27,7 @@ export default function Recipes() {
   const [detailOpen, setDetailOpen] = useState(false);
   const [detailRecipe, setDetailRecipe] = useState(null);
   const [detailPortions, setDetailPortions] = useState(1);
+  const canManageRecipeBase = user?.rol === 'super_admin' || user?.roles?.includes('super_admin');
 
   useEffect(() => {
     fetchRecipes();
@@ -84,9 +87,11 @@ export default function Recipes() {
             <button className="inline-flex items-center justify-center px-4 py-2 rounded-2xl font-medium bg-white text-stone-700 border border-slate-300 hover:bg-slate-100 transition-colors" onClick={() => setShowAiModal(true)}>
               {t('recipes.ai_button', '🤖 Chef IA')}
             </button>
-            <button className="inline-flex items-center justify-center px-4 py-2 rounded-2xl font-medium bg-white text-stone-700 border border-slate-300 hover:bg-slate-100 transition-colors" onClick={() => setShowImport(true)}>
-              {t('recipes.import_add', 'Agregar')}
-            </button>
+            {canManageRecipeBase && (
+              <button className="inline-flex items-center justify-center px-4 py-2 rounded-2xl font-medium bg-white text-stone-700 border border-slate-300 hover:bg-slate-100 transition-colors" onClick={() => setShowImport(true)}>
+                {t('recipes.import_add', 'Agregar')}
+              </button>
+            )}
           </div>
         </div>
 
@@ -512,6 +517,7 @@ export default function Recipes() {
         </div>
       )}
 
+      {canManageRecipeBase && (
       <div className="add-link">
         <h3>{t('recipes.add_link_title', 'Agregar enlace de receta')}</h3>
         <form onSubmit={async (e) => {
@@ -538,6 +544,7 @@ export default function Recipes() {
           <button type="submit" className="btn-primary">{t('recipes.add_link', 'Agregar')}</button>
         </form>
       </div>
+      )}
     </div>
     </div>
   );

@@ -17,6 +17,14 @@ export default function Calculator() {
   });
   const [resultado, setResultado] = useState(null);
   const [loading, setLoading] = useState(false);
+  const canAdjustAssignedNutrition = [
+    'super_admin',
+    'admin_marca',
+    'admin_gimnasio',
+    'entrenador',
+    'nutricionista',
+  ].includes(user?.rol);
+  const canAdjustOwnNutrition = user?.rol === 'usuario_final';
 
 
   // Función para calcular edad desde fecha de nacimiento
@@ -215,8 +223,8 @@ export default function Calculator() {
                 name="nivelActividad" 
                 value={formData.nivelActividad} 
                 onChange={handleChange}
-                disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || (user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id))}
-                title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || (user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id)) ? 'Editable si no tienes Gimnasio/Entrenador asignado' : undefined}
+                disabled={!(canAdjustAssignedNutrition || canAdjustOwnNutrition)}
+                title={!(canAdjustAssignedNutrition || canAdjustOwnNutrition) ? 'Editable por usuario final o entrenador asignado' : undefined}
               >
                 {nivelActividades.map(n => (
                   <option key={n.id} value={n.valor}>
@@ -232,8 +240,8 @@ export default function Calculator() {
                 name="objetivo" 
                 value={formData.objetivo} 
                 onChange={handleChange}
-                disabled={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || (user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id))}
-                title={!(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || (user?.rol === 'usuario_final' && !user?.gym_id && !user?.trainer_id)) ? 'Editable si no tienes Gimnasio/Entrenador asignado' : undefined}
+                disabled={!(canAdjustAssignedNutrition || canAdjustOwnNutrition)}
+                title={!(canAdjustAssignedNutrition || canAdjustOwnNutrition) ? 'Editable por usuario final o entrenador asignado' : undefined}
               >
                 <option value="mantenimiento">{t('calculator.maintenance', 'Mantenimiento')}</option>
                 <option value="perdida_grasa">{t('calculator.fatloss', 'Pérdida de Grasa')}</option>

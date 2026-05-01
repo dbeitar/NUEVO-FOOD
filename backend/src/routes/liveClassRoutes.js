@@ -14,5 +14,6 @@ router.put('/admin/:id', liveClassController.updateClass);
 router.delete('/admin/:id', liveClassController.deleteClass);
 router.post('/:id/enroll', liveClassController.enrollClass);
 router.delete('/:id/enroll', liveClassController.unenrollClass);
+router.post('/:id/join', liveClassController.joinClass);
 
 module.exports = router;

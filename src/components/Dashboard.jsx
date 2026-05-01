@@ -17,6 +17,7 @@ import AdminTrainingGallery from './AdminTrainingGallery';
 import AdminTrainingManager from './AdminTrainingManager';
 import AdminLiveClasses from './AdminLiveClasses';
 import LiveClasses from './LiveClasses';
+import EcosystemOverview from './EcosystemOverview';
 import { useI18n } from '../context/useI18n';
 import NutritionChat from './NutritionChat';
 import api from '../services/api';
@@ -32,6 +33,10 @@ export default function Dashboard() {
   const plan = { calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 };
   const today = new Date().toISOString().split('T')[0];
   const { t, lang, setLang } = useI18n();
+  const hasAnyRole = (roles) => {
+    const userRoles = Array.isArray(user?.roles) ? user.roles : [user?.rol].filter(Boolean);
+    return roles.some((role) => userRoles.includes(role));
+  };
 
   useEffect(() => {
     // Limpiar flag de arranque en Home tras registro
@@ -54,7 +59,7 @@ export default function Dashboard() {
   }, [today]);
 
   useEffect(() => {
-    const isAdmin = user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio';
+    const isAdmin = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']);
     if (!isAdmin) {
       setAdminOverview(null);
       return;
@@ -69,7 +74,7 @@ export default function Dashboard() {
       }
     };
     fetchAdminOverview();
-  }, [user?.rol]);
+  }, [user?.rol, user?.roles]);
 
   const renderContent = () => {
     switch (currentView) {
@@ -82,11 +87,11 @@ export default function Dashboard() {
       case 'recipes':
         return <Recipes />;
       case 'foodsmanager':
-        return <AdminFoodsManager />;
+        return hasAnyRole(['super_admin']) ? <AdminFoodsManager /> : null;
       case 'adminusers':
         return <AdminUsers />;
       case 'adminplans':
-        return <AdminPlans />;
+        return hasAnyRole(['super_admin']) ? <AdminPlans /> : null;
       case 'admincompanies':
         return <AdminCompanies />;
       case 'admingyms':
@@ -107,6 +112,8 @@ export default function Dashboard() {
         return <AdminLiveClasses />;
       case 'liveclasses':
         return <LiveClasses />;
+      case 'ecosystem':
+        return <EcosystemOverview />;
       default:
         return (
           <>
@@ -115,7 +122,7 @@ export default function Dashboard() {
               <p>{t('welcome.role', 'Rol')}: <strong>{user?.rol}</strong></p>
             </header>
 
-            {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && adminOverview?.counts && (
+            {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && adminOverview?.counts && (
               <section className="quick-stats">
                 <h3>Resumen Administrativo</h3>
                 <div className="stats-grid">
@@ -130,14 +137,21 @@ export default function Dashboard() {
             )}
 
             <div className="dashboard-grid">
-              {user?.rol === 'super_admin' && (
+              {hasAnyRole(['super_admin']) && (
+                <div className="card" onClick={() => setCurrentView('ecosystem')}>
+                  <h3>🧩 Ecosistema Modular</h3>
+                  <p>Controla modulos, marcas blancas, permisos y reglas D28D bloqueadas.</p>
+                  <button className="btn-card">Abrir Ecosistema</button>
+                </div>
+              )}
+              {hasAnyRole(['super_admin']) && (
                 <div className="card" onClick={() => setCurrentView('admincompanies')}>
                   <h3>{t('card.companies.title', '🏢 Empresas')}</h3>
                   <p>{t('card.companies.desc', 'Consulta gimnasios, entrenadores y usuarios asociados')}</p>
                   <button className="btn-card">{t('card.companies.button', 'Abrir Empresas')}</button>
                 </div>
               )}
-              {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
                 <div className="card" onClick={() => setCurrentView('admingyms')}>
                   <h3>🏷️ Maestro Gym / Marca Blanca</h3>
                   <p>Crea gimnasios, colores, logo, slug, WhatsApp y mensaje de marca.</p>
@@ -150,7 +164,7 @@ export default function Dashboard() {
                 <button className="btn-card">{t('card.calculator.button', 'Ir a Calculadora')}</button>
               </div>
 
-              {user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' ? (
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista']) ? (
                 <div className="card" onClick={() => setCurrentView('admin')}>
                   <h3>{t('card.admin.title', '⚙️ Administración')}</h3>
                   <p>{t('card.admin.desc', 'Gestiona los conceptos de la calculadora')}</p>
@@ -158,14 +172,14 @@ export default function Dashboard() {
                 </div>
               ) : null}
 
-              {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
                 <div className="card" onClick={() => setCurrentView('adminusers')}>
                   <h3>{t('card.users.title', '👥 Usuarios y Roles')}</h3>
                   <p>{t('card.users.desc', 'Consulta y ajusta los roles de usuarios')}</p>
                   <button className="btn-card">{t('card.users.button', 'Abrir Usuarios')}</button>
                 </div>
               )}
-              {user?.rol === 'super_admin' && (
+              {hasAnyRole(['super_admin']) && (
                 <div className="card" onClick={() => setCurrentView('adminplans')}>
                   <h3>{t('card.plans.title', '🧾 Planes de Suscripción')}</h3>
                   <p>{t('card.plans.desc', 'Crea, edita y elimina planes')}</p>
@@ -209,7 +223,7 @@ export default function Dashboard() {
                 <button className="btn-card">Abrir Entrenamiento</button>
               </div>
 
-              {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador']) && (
                 <div className="card" onClick={() => setCurrentView('admintraining')}>
                   <h3>📋 Maestro Entrenamiento</h3>
                   <p>Asigna y edita rutinas, gestiona RPE/RIR, y revisa el diario de cada cliente.</p>
@@ -217,7 +231,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) && (
                 <div className="card" onClick={() => setCurrentView('admingallery')}>
                   <h3>🎬 Galería Entrenamiento</h3>
                   <p>Administra videos de YouTube por ejercicio para el Coach Virtual.</p>
@@ -225,7 +239,7 @@ export default function Dashboard() {
                 </div>
               )}
 
-              {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
                 <div className="card" onClick={() => setCurrentView('adminliveclasses')}>
                   <h3>🟢 Clases en Vivo</h3>
                   <p>Crea y gestiona las sesiones de Zoom en el calendario D28D.</p>
@@ -321,7 +335,15 @@ export default function Dashboard() {
           >
             Entrenamiento
           </button>
-          {user?.rol === 'super_admin' && (
+          {hasAnyRole(['super_admin']) && (
+            <button
+              onClick={() => setCurrentView('ecosystem')}
+              className={currentView === 'ecosystem' ? 'nav-link active' : 'nav-link'}
+            >
+              Ecosistema
+            </button>
+          )}
+          {hasAnyRole(['super_admin']) && (
             <button
               onClick={() => setCurrentView('admincompanies')}
               className={currentView === 'admincompanies' ? 'nav-link active' : 'nav-link'}
@@ -329,7 +351,7 @@ export default function Dashboard() {
               {t('nav.companies', 'Empresas')}
             </button>
           )}
-          {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio') && (
+          {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
             <button
               onClick={() => setCurrentView('admingyms')}
               className={currentView === 'admingyms' ? 'nav-link active' : 'nav-link'}
@@ -337,7 +359,7 @@ export default function Dashboard() {
               Maestro Gym
             </button>
           )}
-          {user?.rol !== 'super_admin' && (
+          {!hasAnyRole(['super_admin']) && (
             <button
               onClick={() => setCurrentView('myaccount')}
               className={currentView === 'myaccount' ? 'nav-link active' : 'nav-link'}
@@ -345,20 +367,24 @@ export default function Dashboard() {
               {t('nav.myaccount', 'Mi Cuenta')}
             </button>
           )}
-          {user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' ? (
+          {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) ? (
             <>
-              <button
-                onClick={() => setCurrentView('foodsmanager')}
-                className={currentView === 'foodsmanager' ? 'nav-link active' : 'nav-link'}
-              >
-                {t('nav.foodsmanager', 'Maestro de Alimentos')}
-              </button>
-              <button
-                onClick={() => setCurrentView('adminplans')}
-                className={currentView === 'adminplans' ? 'nav-link active' : 'nav-link'}
-              >
-                {t('nav.plans', 'Planes')}
-              </button>
+              {hasAnyRole(['super_admin']) && (
+                <>
+                  <button
+                    onClick={() => setCurrentView('foodsmanager')}
+                    className={currentView === 'foodsmanager' ? 'nav-link active' : 'nav-link'}
+                  >
+                    {t('nav.foodsmanager', 'Maestro de Alimentos')}
+                  </button>
+                  <button
+                    onClick={() => setCurrentView('adminplans')}
+                    className={currentView === 'adminplans' ? 'nav-link active' : 'nav-link'}
+                  >
+                    {t('nav.plans', 'Planes')}
+                  </button>
+                </>
+              )}
               <button
                 onClick={() => setCurrentView('adminusers')}
                 className={currentView === 'adminusers' ? 'nav-link active' : 'nav-link'}

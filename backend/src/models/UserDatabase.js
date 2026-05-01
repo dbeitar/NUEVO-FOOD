@@ -1,5 +1,6 @@
 const JsonStore = require('../utils/JsonStore');
 const bcryptjs = require('bcryptjs');
+const { hydrateAccess, normalizeRoles } = require('../utils/accessControl');
 
 class UserDatabase {
   constructor() {
@@ -21,13 +22,25 @@ class UserDatabase {
     ];
 
     this.store = new JsonStore('users.json', initialUsers);
-    this.users = this.store.getAll();
+    this.users = (this.store.getAll() || []).map((user) => this.normalizeUser(user));
 
     this.nextId = this.users.length > 0 ? Math.max(...this.users.map(u => u.id)) + 1 : 1;
   }
 
   save() {
     this.store.setAll(this.users);
+  }
+
+  normalizeUser(user) {
+    const roles = normalizeRoles(user);
+    const access = hydrateAccess({ ...user, roles });
+    return {
+      ...user,
+      rol: user.rol || roles[0] || 'usuario_final',
+      roles,
+      permissions: access.permissions,
+      module_access: user.module_access || {},
+    };
   }
 
   getAll() {
@@ -49,6 +62,9 @@ class UserDatabase {
       email: userData.email,
       clave_hash: userData.clave_hash, // Already hashed
       rol: userData.rol || 'usuario_final',
+      roles: normalizeRoles(userData),
+      permissions: hydrateAccess(userData).permissions,
+      module_access: userData.module_access || {},
       telefono: userData.telefono || null,
       fecha_nacimiento: userData.fecha_nacimiento || null,
       peso: userData.peso ?? null,
@@ -75,6 +91,7 @@ class UserDatabase {
     const user = this.users.find(u => u.id === id);
     if (!user) return null;
     Object.assign(user, updates);
+    Object.assign(user, this.normalizeUser(user));
     this.save();
     return user;
   }

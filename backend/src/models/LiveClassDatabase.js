@@ -15,6 +15,10 @@ class LiveClassDatabase {
         coach: 'Alejo',
         capacity: 40,
         enrolled_user_ids: [],
+        attendance_user_ids: [],
+        attendance_events: [],
+        source_module: 'd28d',
+        locked: true,
         start_time: new Date(Date.now() + 1000 * 60 * 30).toISOString(),
         end_time: new Date(Date.now() + 1000 * 60 * 95).toISOString(),
         active: true,
@@ -23,8 +27,22 @@ class LiveClassDatabase {
     ];
 
     this.store = new JsonStore('live_classes.json', initial);
-    this.rows = Array.isArray(this.store.getAll()) ? this.store.getAll() : [];
+    this.rows = this.normalizeRows(Array.isArray(this.store.getAll()) ? this.store.getAll() : []);
     this.nextId = this.rows.length > 0 ? Math.max(...this.rows.map((item) => item.id || 0)) + 1 : 1;
+    this.store.setAll(this.rows);
+  }
+
+  normalizeRows(rows) {
+    return rows.map((item) => {
+      const sourceModule = item.source_module || (item.is_global || item.gym_id === null ? 'd28d' : 'gym');
+      return {
+        ...item,
+        attendance_user_ids: Array.isArray(item.attendance_user_ids) ? item.attendance_user_ids : [],
+        attendance_events: Array.isArray(item.attendance_events) ? item.attendance_events : [],
+        source_module: sourceModule,
+        locked: item.locked === true || sourceModule === 'd28d',
+      };
+    });
   }
 
   getAll() {
@@ -48,6 +66,10 @@ class LiveClassDatabase {
       coach: String(data.coach || '').trim(),
       capacity: Number(data.capacity || 40),
       enrolled_user_ids: Array.isArray(data.enrolled_user_ids) ? data.enrolled_user_ids : [],
+      attendance_user_ids: Array.isArray(data.attendance_user_ids) ? data.attendance_user_ids : [],
+      attendance_events: Array.isArray(data.attendance_events) ? data.attendance_events : [],
+      source_module: data.source_module || (data.is_global !== false ? 'd28d' : 'gym'),
+      locked: data.locked === true || data.source_module === 'd28d',
       start_time: new Date(data.start_time).toISOString(),
       end_time: new Date(data.end_time).toISOString(),
       active: data.active !== false,
@@ -73,6 +95,32 @@ class LiveClassDatabase {
     if (updates.start_time !== undefined) item.start_time = new Date(updates.start_time).toISOString();
     if (updates.end_time !== undefined) item.end_time = new Date(updates.end_time).toISOString();
     if (updates.active !== undefined) item.active = !!updates.active;
+    if (updates.source_module !== undefined) item.source_module = String(updates.source_module || 'gym');
+    if (updates.locked !== undefined) item.locked = !!updates.locked;
+    this.store.setAll(this.rows);
+    return item;
+  }
+
+  attend(classId, user) {
+    const item = this.getById(classId);
+    if (!item || !item.active) return null;
+    const userId = user?.id;
+    if (!userId) return null;
+    const current = Array.isArray(item.attendance_user_ids) ? item.attendance_user_ids : [];
+    if (!current.includes(userId)) {
+      item.attendance_user_ids = [...current, userId];
+    }
+    const events = Array.isArray(item.attendance_events) ? item.attendance_events : [];
+    item.attendance_events = [
+      ...events,
+      {
+        user_id: userId,
+        email: user.email || '',
+        gym_id: user.gym_id || user.gymId || null,
+        joined_at: new Date().toISOString(),
+        trigger: 'join_zoom_click',
+      },
+    ];
     this.store.setAll(this.rows);
     return item;
   }
@@ -133,6 +181,8 @@ class LiveClassDatabase {
             zoom_link: 'https://zoom.us/j/d28d-demo',
             gym_id: null,
             is_global: true,
+            source_module: 'd28d',
+            locked: true,
             day_label: dayLabel,
             class_type: type,
             coach: dayLabel === 'Lunes' || dayLabel === 'Martes' ? 'Alejo' : 'Coach D28D',

@@ -22,8 +22,11 @@ const adminRoutes = require('./src/routes/adminRoutes');
 const trainingRoutes = require('./src/routes/trainingRoutes');
 const liveClassRoutes = require('./src/routes/liveClassRoutes');
 const fitnessTestRoutes = require('./src/routes/fitnessTestRoutes');
+const ecosystemRoutes = require('./src/routes/ecosystemRoutes');
+const trainerMastersRoutes = require('./src/routes/trainerMastersRoutes');
 const seedD28DData = require('./src/seedD28DData');
 const authMiddleware = require('./src/middleware/auth');
+const { hydrateAccess } = require('./src/utils/accessControl');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
@@ -328,8 +331,9 @@ if (USE_DB_AUTH) {
         return res.status(401).json({ error: 'Email o contraseña incorrectos' });
       }
 
+      const access = hydrateAccess(user);
       const token = jwt.sign(
-        { id: user.id, email: user.email, rol: user.rol },
+        { id: user.id, email: user.email, rol: user.rol, roles: access.roles, permissions: access.permissions, module_access: access.module_access, gym_id: user.gym_id || user.gymId || null, trainer_id: user.trainer_id || null },
         process.env.JWT_SECRET || 'secret_key_dev',
         { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
       );
@@ -342,6 +346,9 @@ if (USE_DB_AUTH) {
           nombre: user.nombre,
           email: user.email,
           rol: user.rol,
+          roles: access.roles,
+          permissions: access.permissions,
+          module_access: access.module_access,
         },
       });
     } catch (error) {
@@ -363,8 +370,9 @@ if (USE_DB_AUTH) {
       if (!validPassword) {
         return res.status(401).json({ error: 'Email o contraseña incorrectos' });
       }
+      const access = hydrateAccess(user);
       const token = jwt.sign(
-        { id: user.id, email: user.email, rol: user.rol },
+        { id: user.id, email: user.email, rol: user.rol, roles: access.roles, permissions: access.permissions, module_access: access.module_access, gym_id: user.gym_id || user.gymId || null, trainer_id: user.trainer_id || null },
         process.env.JWT_SECRET || 'secret_key_dev',
         { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
       );
@@ -376,6 +384,9 @@ if (USE_DB_AUTH) {
           nombre: user.nombre,
           email: user.email,
           rol: user.rol,
+          roles: access.roles,
+          permissions: access.permissions,
+          module_access: access.module_access,
         },
       });
     } catch (error) {
@@ -399,6 +410,7 @@ if (USE_DB_AUTH) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
 
+      const access = hydrateAccess(user);
       res.json({
         id: user.id,
         nombre: user.nombre,
@@ -412,6 +424,9 @@ if (USE_DB_AUTH) {
         tiene_restricciones: user.tiene_restricciones ?? false,
         restricciones_detalles: user.restricciones_detalles || '',
         rol: user.rol,
+        roles: access.roles,
+        permissions: access.permissions,
+        module_access: access.module_access,
         gym_id: user.gym_id || user.gymId || null,
         trainer_id: user.trainer_id || null,
       });
@@ -430,6 +445,7 @@ if (USE_DB_AUTH) {
       if (!user) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
+      const access = hydrateAccess(user);
       res.json({
         id: user.id,
         nombre: user.nombre,
@@ -443,6 +459,9 @@ if (USE_DB_AUTH) {
         tiene_restricciones: user.tiene_restricciones ?? false,
         restricciones_detalles: user.restricciones_detalles || '',
         rol: user.rol,
+        roles: access.roles,
+        permissions: access.permissions,
+        module_access: access.module_access,
         gym_id: user.gym_id || user.gymId || null,
         trainer_id: user.trainer_id || null,
       });
@@ -494,6 +513,9 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
       nombre: u.nombre,
       email: u.email,
       rol: u.rol,
+      roles: u.roles || [u.rol].filter(Boolean),
+      permissions: u.permissions || [],
+      module_access: u.module_access || {},
       gym_id: u.gym_id || u.gymId || null,
       trainer_id: u.trainer_id || null,
       planId: u.planId || null,
@@ -509,7 +531,7 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
     if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
       return res.status(403).json({ error: 'No tienes permiso para crear usuarios' });
     }
-    const { nombre, email, password, rol = 'usuario_final', gym_id, trainer_id, planId, telefono, fecha_nacimiento, peso, altura, objetivo } = req.body || {};
+    const { nombre, email, password, rol = 'usuario_final', roles, permissions, module_access, gym_id, trainer_id, planId, telefono, fecha_nacimiento, peso, altura, objetivo } = req.body || {};
     if (!nombre || !email) {
       return res.status(400).json({ error: 'Nombre y email son requeridos' });
     }
@@ -523,6 +545,9 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
       email,
       clave_hash: hashedPassword,
       rol,
+      roles: Array.isArray(roles) && roles.length ? roles : [rol],
+      permissions: Array.isArray(permissions) ? permissions : [],
+      module_access: module_access || {},
       telefono: telefono || null,
       fecha_nacimiento: fecha_nacimiento || null,
       peso: peso ?? null,
@@ -542,13 +567,14 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
 app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
-    const { rol } = req.body || {};
-    const allowedRoles = ['super_admin', 'admin_gimnasio', 'entrenador', 'usuario_final'];
-    if (!allowedRoles.includes(rol)) {
+    const { rol, roles, permissions, module_access } = req.body || {};
+    const allowedRoles = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'nutricionista', 'usuario_final'];
+    const nextRoles = Array.isArray(roles) && roles.length ? roles : [rol];
+    if (!nextRoles.every((role) => allowedRoles.includes(role))) {
       return res.status(400).json({ error: 'Rol no válido' });
     }
     // Permisos: solo super_admin puede asignar roles admin
-    if (['super_admin', 'admin_gimnasio'].includes(rol) && req.user.rol !== 'super_admin') {
+    if (nextRoles.some((role) => ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d'].includes(role)) && req.user.rol !== 'super_admin') {
       return res.status(403).json({ error: 'Solo super_admin puede asignar roles administrativos' });
     }
     // Buscar usuario
@@ -556,9 +582,9 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
     if (!target) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    userDB.update(target.id, { rol });
+    userDB.update(target.id, { rol: rol || nextRoles[0], roles: nextRoles, permissions: Array.isArray(permissions) ? permissions : target.permissions, module_access: module_access || target.module_access || {} });
     const updated = userDB.getById(target.id);
-    res.json({ success: true, data: { id: updated.id, nombre: updated.nombre, email: updated.email, rol: updated.rol } });
+    res.json({ success: true, data: { id: updated.id, nombre: updated.nombre, email: updated.email, rol: updated.rol, roles: updated.roles, permissions: updated.permissions, module_access: updated.module_access } });
   } catch (e) {
     res.status(500).json({ error: 'Error actualizando rol' });
   }
@@ -656,6 +682,8 @@ app.use('/api/admin', adminRoutes);
 app.use('/api/training', trainingRoutes);
 app.use('/api/live-classes', liveClassRoutes);
 app.use('/api/fitness-tests', fitnessTestRoutes);
+app.use('/api/ecosystem', ecosystemRoutes);
+app.use('/api/trainer-masters', trainerMastersRoutes);
 
 app.use('/calculator', calculatorRoutes);
 app.use('/foods', foodRoutes);
@@ -670,6 +698,8 @@ app.use('/admin', adminRoutes);
 app.use('/training', trainingRoutes);
 app.use('/live-classes', liveClassRoutes);
 app.use('/fitness-tests', fitnessTestRoutes);
+app.use('/ecosystem', ecosystemRoutes);
+app.use('/trainer-masters', trainerMastersRoutes);
 
 // Error handler
 app.use((err, req, res, next) => {

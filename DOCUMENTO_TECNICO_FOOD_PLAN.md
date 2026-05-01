@@ -78,11 +78,11 @@ proyectofood-plan/
 ```
 
 Referencias de código útiles:
-- Arranque backend: [server.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/server.js#L64-L92)
-- Rutas de alimentos: [foodRoutes.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/routes/foodRoutes.js#L9-L20)
-- Controlador alimentos (paginación/stats): [foodController.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/foodController.js#L4-L27), [stats](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/foodController.js#L137-L151)
-- Persistencia JSON: [JsonStore.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/utils/JsonStore.js#L16-L31)
-- Axios baseURL dinámico: [api.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/services/api.js#L11-L22)
+- Arranque backend: `backend/server.js`
+- Rutas de alimentos: `backend/src/routes/foodRoutes.js`
+- Controlador alimentos: `backend/src/controllers/foodController.js`
+- Persistencia JSON: `backend/src/utils/JsonStore.js`
+- Axios baseURL dinámico: `src/services/api.js`
 
 ## 2. Herramientas y Tecnologías
 
@@ -90,7 +90,7 @@ Backend
 - Node.js 20 (Docker base: node:20-alpine).
 - Express 5.2.1, CORS, Morgan, JSON Web Token (jsonwebtoken 9.x), bcryptjs 3.x.
 - Persistencia en dev: archivos JSON mediante JsonStore.
-- Modo DB opcional: PostgreSQL (pg 8.x) o MySQL (mysql2 3.x) según variables; cliente abstraído en [dbClient.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/config/dbClient.js).
+- Modo DB opcional: PostgreSQL (pg 8.x) o MySQL (mysql2 3.x) según variables; cliente abstraído en `backend/src/config/dbClient.js`.
 - Integraciones IA opcionales: IA local (Ollama) por HTTP (axios 1.x).
 
 Frontend
@@ -99,58 +99,78 @@ Frontend
 - Axios 1.x para API.
 
 Dev/Build
-- Concurrency dev: `concurrently` para correr front+back: ver [package.json raíz](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/package.json#L9-L16).
+- Concurrency dev: `concurrently` para correr front+back: ver `package.json`.
 - Lint con ESLint 9; Vitest presente (sin tests aún).
 
 Despliegue
-- Frontend: configuración SPA con [vercel.json](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/vercel.json#L1).
-- Backend: [Dockerfile](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/Dockerfile#L1-L9). En producción pública se ha apuntado a Koyeb (ver `prodBase` en [api.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/services/api.js#L2)).
+- Frontend: configuración SPA con `vercel.json`.
+- Backend: `backend/Dockerfile`. En producción pública se ha apuntado a Koyeb mediante `prodBase` en `src/services/api.js`.
 
-## 3. Funcionalidades Implementadas
+## 3. Mapa de Funciones, Código y Descripción
+
+Tabla principal para programadores. Resume los módulos críticos, el archivo donde vive cada responsabilidad y la descripción técnica que conviene revisar antes de tocar producción.
+
+| Módulo | Archivo principal | Descripción técnica |
+| --- | --- | --- |
+| Arranque API | `backend/server.js` | Configura Express, CORS, JSON parsing, healthcheck, sincronización de cuentas demo/core y montaje de rutas `/api/*`. En modo desarrollo también mantiene endpoints de auth sobre JSON. |
+| Autenticación | `backend/src/controllers/authController.js` | Registro, login, perfil y reseteo admin cuando se usa modo DB. Hashea contraseñas con bcrypt, emite JWT y normaliza datos de usuario. |
+| Middleware JWT | `backend/src/middleware/auth.js` | Lee `Authorization: Bearer <token>`, valida el token y adjunta `req.user` para rutas protegidas. |
+| Cliente API frontend | `src/services/api.js` | Configura Axios, resuelve la URL base local/producción, agrega token JWT y maneja errores de red/CORS en desarrollo. |
+| Catálogo alimentos | `backend/src/controllers/foodController.js` | Expone búsqueda, paginación, estadísticas, CRUD admin, importación masiva y backup manual del catálogo. |
+| Persistencia JSON | `backend/src/utils/JsonStore.js` | Abstracción de lectura/escritura de archivos JSON con creación de directorios y backups timestamp. |
+| Recetas | `backend/src/controllers/recipeController.js` | Gestiona biblioteca de recetas, búsqueda, CRUD e importación desde texto/tablas. |
+| Registro diario | `backend/src/controllers/foodLogController.js` | Calcula ingestas por fecha, totales nutricionales y operaciones sobre el diario alimentario del usuario. |
+| Health-Bot nutricional | `src/components/NutritionChat.jsx` | Genera recomendaciones, planes diarios/semanales, lista de compras y exportaciones PDF desde el plan nutricional del usuario. |
+| Cálculos nutricionales | `src/utils/nutrition.js` | Contiene TMB/TDEE, macros objetivo, sustituciones por restricciones, armado de comidas y planes semanales. |
+| Administración usuarios | `src/components/AdminUsers.jsx` | UI para crear, editar, asignar roles/gimnasios/entrenadores y resetear contraseñas desde administración. |
+| Gimnasios y ecosistema | `src/components/AdminGyms.jsx` | Gestión de gimnasios y visibilidad del modelo multi-gimnasio/marca blanca. |
+| Documento técnico Word | `scripts/md-to-docx.mjs` | Convierte este Markdown a `.docx`, preservando encabezados, listas, bloques de código y tablas con columnas Word reales. |
+
+## 4. Funcionalidades Implementadas
 
 Autenticación (dos modos)
-- Modo DEV (por defecto): usuarios persistidos en `backend/data/users.json` vía [UserDatabase.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/models/UserDatabase.js). Rutas implementadas directamente en [server.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/server.js#L144-L199, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/server.js#L243-L317, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/server.js#L319-L354).
-- Modo DB (si `USE_DB_AUTH=true`): rutas de [authRoutes.js] montadas en `/api/auth` llaman a [authController.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/authController.js). JWT firmado con `JWT_SECRET`.
+- Modo DEV (por defecto): usuarios persistidos en `backend/data/users.json` vía `backend/src/models/UserDatabase.js`. Rutas implementadas directamente en `backend/server.js`.
+- Modo DB (si `USE_DB_AUTH=true`): rutas de `backend/src/routes/authRoutes.js` montadas en `/api/auth` llaman a `backend/src/controllers/authController.js`. JWT firmado con `JWT_SECRET`.
 
 Catálogo de Alimentos
-- Listado con paginación opcional `?page=1&pageSize=25` y búsqueda por nombre/categoría: [getAllFoods/searchFoods](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/foodController.js#L4-L27) y [L69-L113].
-- Estadísticas por categoría: [getStats](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/foodController.js#L137-L151).
-- CRUD admin (crear/actualizar/eliminar) + import masivo + respaldo manual: [foodController](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/foodController.js#L239-L376, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/foodController.js#L384-L404).
-- Frontend de gestión con paginador y resumen: [AdminFoodsManager.jsx](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/components/AdminFoodsManager.jsx#L35-L66, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/components/AdminFoodsManager.jsx#L75-L83).
+- Listado con paginación opcional `?page=1&pageSize=25` y búsqueda por nombre/categoría en `backend/src/controllers/foodController.js`.
+- Estadísticas por categoría en `getStats`.
+- CRUD admin (crear/actualizar/eliminar) + import masivo + respaldo manual en `foodController`.
+- Frontend de gestión con paginador y resumen en `src/components/AdminFoodsManager.jsx`.
 
 Recetas
-- API pública de consulta y búsqueda + rutas protegidas para crear/editar/eliminar/importar: [recipeRoutes.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/routes/recipeRoutes.js#L6-L16), [recipeController.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/recipeController.js#L4-L16).
-- UI de biblioteca, búsqueda, modal de detalle con escalado por porciones, e importación por texto: [Recipes.jsx](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/components/Recipes.jsx#L333-L339, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/components/Recipes.jsx#L346-L435).
+- API pública de consulta y búsqueda + rutas protegidas para crear/editar/eliminar/importar: `backend/src/routes/recipeRoutes.js` y `backend/src/controllers/recipeController.js`.
+- UI de biblioteca, búsqueda, modal de detalle con escalado por porciones, e importación por texto en `src/components/Recipes.jsx`.
 
 Registro Diario (Food Log) y Totales
-- Cálculo de totales por fecha expuesto en `/api/food-log/totals?fecha=YYYY-MM-DD` (ver rutas/controlador en backend). Panel de resumen del día en [Dashboard.jsx](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/components/Dashboard.jsx#L148-L179).
+- Cálculo de totales por fecha expuesto en `/api/food-log/totals?fecha=YYYY-MM-DD`. Panel de resumen del día en `src/components/Dashboard.jsx`.
 
 Sugerencias con IA y Equivalentes
-- Endpoints `/api/ai/*` autenticados: [aiRoutes.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/routes/aiRoutes.js#L6-L20).
+- Endpoints `/api/ai/*` autenticados en `backend/src/routes/aiRoutes.js`.
 - Generación de sugerencias usando IA local (Ollama) o fallback determinístico con equivalentes: ver `backend/src/controllers/aiController.js`.
 
 Módulos de Administración
 - Usuarios/Roles, Planes, Gimnasios, Entrenadores, Cuentas: rutas en `/api/*` (ver carpeta routes) y vistas en `src/components/*` (AdminUsers, AdminPlans, AdminGyms, AdminTrainers, AdminCompanies).
 
-## 4. Características Específicas y Decisiones
+## 5. Características Específicas y Decisiones
 
 - Modo dual de autenticación:
   - DEV: JSON persistente para rapidez y menor fricción.
   - DB: PostgreSQL/MySQL vía `dbClient` configurable por variables. La lógica de auth cambia a `authController` y rutas `/api/auth` (JWT emitido con expiración configurable).
 - CORS estricto por lista blanca:
-  - Orígenes permitidos por defecto + `CORS_ORIGIN` (CSV). Ver [server.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/server.js#L68-L89).
+  - Orígenes permitidos por defecto + `CORS_ORIGIN` (CSV). Ver `backend/server.js`.
 - Sincronización de cuentas demo/core en arranque (dev/DB):
-  - Creación/actualización de usuarios demo y cuentas núcleo. Ver `syncDemoAndCoreAccounts()` en [server.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/server.js#L26-L63).
+  - Creación/actualización de usuarios demo y cuentas núcleo. Ver `syncDemoAndCoreAccounts()` en `backend/server.js`.
 - Persistencia JSON con backups timestamp:
-  - `JsonStore.backup()` crea archivos `*.backup.YYYY...json`. Ver [JsonStore.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/utils/JsonStore.js#L16-L31).
+  - `JsonStore.backup()` crea archivos `*.backup.YYYY...json`. Ver `backend/src/utils/JsonStore.js`.
 - Frontend selecciona base de API automáticamente:
-  - Si está en `localhost`, fuerza `http://localhost:3001/api`; en producción, usa `VITE_API_BASE_URL` o `prodBase`. Ver [api.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/services/api.js#L11-L22).
+  - Si está en `localhost`, fuerza `http://localhost:3001/api`; en producción, usa `VITE_API_BASE_URL` o `prodBase`. Ver `src/services/api.js`.
 - Interceptores Axios:
-  - Inyecta `Authorization: Bearer <token>` y repara base ante CORS/red en dev. Ver [api.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/services/api.js#L46-L55, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/services/api.js#L55-L92).
+  - Inyecta `Authorization: Bearer <token>` y repara base ante CORS/red en dev. Ver `src/services/api.js`.
 - UI y estilos:
-  - Tailwind CSS 4 con utilidades componibles (botones, modales). Clases de modal global: [index.css](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/index.css#L85-L99).
+  - Tailwind CSS 4 con utilidades componibles (botones, modales). Clases globales en `src/index.css`.
 
-## 5. Configuración y Despliegue
+## 6. Configuración y Despliegue
 
 Variables de Entorno (backend)
 - Puerto y CORS:
@@ -189,39 +209,39 @@ Despliegue
   - Construcción con `backend/Dockerfile` (Node 20-alpine). Exponer `PORT=3001` y definir variables anteriores.
   - Asegurar `JWT_SECRET` robusto, CORS, y red privada hacia la base de datos si aplica.
 
-## 6. Flujos Principales (Código y Datos)
+## 7. Flujos Principales (Código y Datos)
 
 Registro y Login
 1) Frontend
-   - `AuthContext.jsx` expone `register` y `login` vía `authService`: [AuthContext.jsx](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/context/AuthContext.jsx#L28-L40).
-   - `authService` en [api.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/services/api.js#L130-L135).
+   - `AuthContext.jsx` expone `register` y `login` vía `authService`.
+   - `authService` vive en `src/services/api.js`.
 2) Backend
-   - Modo DEV (JSON): rutas en [server.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/server.js#L144-L199, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/server.js#L243-L317) con hashing bcrypt y emisión JWT.
-   - Modo DB: [authController.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/authController.js#L5-L23, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/authController.js#L68-L99).
+   - Modo DEV (JSON): rutas en `backend/server.js` con hashing bcrypt y emisión JWT.
+   - Modo DB: `backend/src/controllers/authController.js`.
 3) Perfil
    - Front: `getProfile` en montaje de `AuthContext` si existe token (localStorage).
    - Back: `/api/auth/profile` valida JWT y devuelve datos del usuario (DEV y DB).
 
 Gestión de Alimentos (Admin)
-1) Listado con filtros y paginación desde [AdminFoodsManager.jsx](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/components/AdminFoodsManager.jsx#L42-L66).
+1) Listado con filtros y paginación desde `src/components/AdminFoodsManager.jsx`.
 2) API:
-   - GET `/api/foods` y `/api/foods/search` con `page`/`pageSize`. Ver [foodController](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/foodController.js#L4-L27, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/foodController.js#L69-L113).
+   - GET `/api/foods` y `/api/foods/search` con `page`/`pageSize`. Ver `backend/src/controllers/foodController.js`.
    - GET `/api/foods/stats` para resumen por categoría.
-3) Altas/Bajas/Cambios requieren rol admin. Verificación por middleware JWT: [auth.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/middleware/auth.js#L3-L18).
+3) Altas/Bajas/Cambios requieren rol admin. Verificación por middleware JWT en `backend/src/middleware/auth.js`.
 
 Recetas
-1) Front: listado/búsqueda y modal “Ver Detalles” con escalado por porciones: [Recipes.jsx](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/components/Recipes.jsx#L346-L435).
-2) Back: CRUD y `import` (admin) en [recipeController.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/recipeController.js#L43-L79, file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/recipeController.js#L81-L142).
+1) Front: listado/búsqueda y modal “Ver Detalles” con escalado por porciones en `src/components/Recipes.jsx`.
+2) Back: CRUD y `import` admin en `backend/src/controllers/recipeController.js`.
 
 Food Log y Resumen Diario
 1) API totales día: `/api/food-log/totals?fecha=YYYY-MM-DD` (ver rutas/controlador).
-2) Front: panel resumen en `Dashboard.jsx`, sección “Resumen del Día”: [Dashboard.jsx](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/src/components/Dashboard.jsx#L148-L179).
+2) Front: panel resumen en `src/components/Dashboard.jsx`, sección “Resumen del Día”.
 
 IA: Sugerencias y Equivalentes
-1) Endpoints autenticados (ver [aiRoutes.js](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/routes/aiRoutes.js)).
-2) Fallback sin IA: cálculos determinísticos en [aiController.getSuggestedFoods](file:///Users/cesargomez/Desktop/PROYECTOFOOD%20PLAN/backend/src/controllers/aiController.js#L124-L176) y `getQuickSuggestions`.
+1) Endpoints autenticados en `backend/src/routes/aiRoutes.js`.
+2) Fallback sin IA: cálculos determinísticos en `backend/src/controllers/aiController.js` y `src/utils/nutrition.js`.
 
-## 7. Consideraciones de Seguridad y Buenas Prácticas
+## 8. Consideraciones de Seguridad y Buenas Prácticas
 
 - Mantener `JWT_SECRET` fuera del repositorio (variables de entorno/secret manager).
 - En producción, habilitar CORS solo para el dominio del frontend; revisar `CORS_ORIGIN`.
@@ -229,7 +249,7 @@ IA: Sugerencias y Equivalentes
 - No loguear secretos; revisar mensajes de consola en dev antes de producción.
 - Rate limiting y cabeceras seguras (pendiente de refuerzo si se despliega públicamente).
 
-## 8. Arranque Rápido (Desarrollo)
+## 9. Arranque Rápido (Desarrollo)
 
 Frontend + Backend (desde raíz):
 
@@ -238,10 +258,10 @@ npm run dev:all
 ```
 
 URLs locales:
-- Frontend: http://localhost:5173
+- Frontend: http://localhost:5175
 - Backend: http://localhost:3001/api/health
 
-## 9. Glosario de Variables Clave
+## 10. Glosario de Variables Clave
 
 - `USE_DB_AUTH`: Activa modo autenticación con Base de Datos.
 - `JWT_SECRET`, `JWT_EXPIRES_IN`: Firma/expiración de tokens.
@@ -253,4 +273,3 @@ URLs locales:
 ---
 
 Esta documentación refleja el estado actual del repositorio y enlaza a las secciones de código relevantes para facilitar la incorporación de nuevos desarrolladores.
-

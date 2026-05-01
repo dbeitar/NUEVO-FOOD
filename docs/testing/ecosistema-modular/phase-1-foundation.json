@@ -1,0 +1,1229 @@
+{
+  "timestamp": "2026-05-01T15:35:32.413Z",
+  "checks": [
+    {
+      "name": "login super_admin",
+      "status": 200,
+      "ok": true,
+      "body": {
+        "message": "Login exitoso",
+        "token": "[redacted]",
+        "user": {
+          "id": 1,
+          "nombre": "Super Admin",
+          "email": "admin@foodplan.local",
+          "rol": "super_admin",
+          "roles": [
+            "super_admin"
+          ],
+          "permissions": [
+            "ecosystem.manage",
+            "brands.manage",
+            "gyms.manage",
+            "d28d.manage",
+            "d28d.view",
+            "trainers.manage",
+            "trainers.manage_own",
+            "training.manage",
+            "training.manage_own",
+            "nutrition.manage",
+            "nutrition.manage_assigned",
+            "live_classes.manage",
+            "live_classes.view",
+            "users.manage",
+            "users.manage_assigned"
+          ],
+          "module_access": {}
+        }
+      }
+    },
+    {
+      "name": "ecosystem overview",
+      "status": 200,
+      "ok": true,
+      "body": {
+        "success": true,
+        "data": {
+          "modules": [
+            {
+              "id": "gym",
+              "name": "Gym / Marca Blanca",
+              "description": "Gestiona sedes, marca, entrenadores, usuarios y acceso a modulos.",
+              "white_label_enabled": true,
+              "locked": false,
+              "compatible_modules": [
+                "training",
+                "nutrition",
+                "live_classes",
+                "d28d"
+              ]
+            },
+            {
+              "id": "d28d",
+              "name": "D28D",
+              "description": "Modulo especial con marca blanca, galeria, calendario y clases bloqueadas para consumo de gyms.",
+              "white_label_enabled": true,
+              "locked": true,
+              "compatible_modules": [
+                "gym",
+                "training",
+                "nutrition",
+                "live_classes"
+              ]
+            },
+            {
+              "id": "training",
+              "name": "Entrenamiento",
+              "description": "Rutinas, galerias, maestros y seguimiento por entrenador.",
+              "white_label_enabled": true,
+              "locked": false,
+              "compatible_modules": [
+                "gym",
+                "d28d",
+                "nutrition"
+              ]
+            },
+            {
+              "id": "nutrition",
+              "name": "Alimentacion",
+              "description": "Planes nutricionales asignados a usuarios y administrados por entrenadores.",
+              "white_label_enabled": true,
+              "locked": false,
+              "compatible_modules": [
+                "gym",
+                "d28d",
+                "training"
+              ]
+            },
+            {
+              "id": "live_classes",
+              "name": "Clases en Vivo",
+              "description": "Calendarios mensuales, semanales, diarios, cupos, Zoom y asistencia.",
+              "white_label_enabled": true,
+              "locked": false,
+              "compatible_modules": [
+                "gym",
+                "d28d",
+                "training"
+              ]
+            }
+          ],
+          "brands": [
+            {
+              "id": 1,
+              "nombre": "Gym Pro Fitness",
+              "brand_name": "Gym Pro Fitness",
+              "is_d28d": false,
+              "module_access": {
+                "gym": true,
+                "d28d": true,
+                "training": true,
+                "nutrition": true,
+                "live_classes": true
+              },
+              "plan_id": "basico",
+              "white_label_enabled": true
+            },
+            {
+              "id": 2,
+              "nombre": "Fitness Hub Medellín",
+              "brand_name": "Fitness Hub Medellín",
+              "is_d28d": false,
+              "module_access": {
+                "gym": true,
+                "d28d": true,
+                "training": true,
+                "nutrition": true,
+                "live_classes": true
+              },
+              "plan_id": "vip",
+              "white_label_enabled": true
+            },
+            {
+              "id": 3,
+              "nombre": "Gym QA",
+              "brand_name": "Gym QA",
+              "is_d28d": false,
+              "module_access": {
+                "gym": true,
+                "d28d": true,
+                "training": true,
+                "nutrition": true,
+                "live_classes": true
+              },
+              "plan_id": null,
+              "white_label_enabled": true
+            },
+            {
+              "id": 4,
+              "nombre": "D28D Marca Blanca",
+              "brand_name": "D28D",
+              "brand_slug": "d28d-marca-blanca",
+              "is_d28d": true,
+              "module_access": {
+                "gym": true,
+                "d28d": true,
+                "training": true,
+                "nutrition": true,
+                "live_classes": true
+              },
+              "plan_id": "d28d-pro",
+              "white_label_enabled": true
+            },
+            {
+              "id": 5,
+              "nombre": "JABEL",
+              "brand_name": "JABEL Coach Virtual",
+              "brand_slug": "jabel",
+              "is_d28d": false,
+              "module_access": {
+                "gym": true,
+                "d28d": true,
+                "training": true,
+                "nutrition": true,
+                "live_classes": true
+              },
+              "plan_id": "premium",
+              "white_label_enabled": true
+            }
+          ],
+          "trainer_defaults": [
+            {
+              "trainer_id": 1,
+              "gym_id": 1,
+              "owns_gallery": true,
+              "owns_training_templates": true,
+              "owns_nutrition_parameters": true,
+              "can_use_d28d_locked_templates": true
+            },
+            {
+              "trainer_id": 2,
+              "gym_id": 1,
+              "owns_gallery": true,
+              "owns_training_templates": true,
+              "owns_nutrition_parameters": true,
+              "can_use_d28d_locked_templates": true
+            },
+            {
+              "trainer_id": 3,
+              "gym_id": 2,
+              "owns_gallery": true,
+              "owns_training_templates": true,
+              "owns_nutrition_parameters": true,
+              "can_use_d28d_locked_templates": true
+            },
+            {
+              "trainer_id": 4,
+              "gym_id": 1,
+              "owns_gallery": true,
+              "owns_training_templates": true,
+              "owns_nutrition_parameters": true,
+              "can_use_d28d_locked_templates": true
+            },
+            {
+              "trainer_id": 5,
+              "gym_id": 4,
+              "owns_gallery": true,
+              "owns_training_templates": true,
+              "owns_nutrition_parameters": true,
+              "can_use_d28d_locked_templates": true
+            },
+            {
+              "trainer_id": 6,
+              "gym_id": 4,
+              "owns_gallery": true,
+              "owns_training_templates": true,
+              "owns_nutrition_parameters": true,
+              "can_use_d28d_locked_templates": true
+            },
+            {
+              "trainer_id": 7,
+              "gym_id": 4,
+              "owns_gallery": true,
+              "owns_training_templates": true,
+              "owns_nutrition_parameters": true,
+              "can_use_d28d_locked_templates": true
+            },
+            {
+              "trainer_id": 8,
+              "gym_id": 4,
+              "owns_gallery": true,
+              "owns_training_templates": true,
+              "owns_nutrition_parameters": true,
+              "can_use_d28d_locked_templates": true
+            },
+            {
+              "trainer_id": 9,
+              "gym_id": 4,
+              "owns_gallery": true,
+              "owns_training_templates": true,
+              "owns_nutrition_parameters": true,
+              "can_use_d28d_locked_templates": true
+            }
+          ],
+          "access": {
+            "roles": [
+              "super_admin"
+            ],
+            "permissions": [
+              "ecosystem.manage",
+              "brands.manage",
+              "gyms.manage",
+              "d28d.manage",
+              "d28d.view",
+              "trainers.manage",
+              "trainers.manage_own",
+              "training.manage",
+              "training.manage_own",
+              "nutrition.manage",
+              "nutrition.manage_assigned",
+              "live_classes.manage",
+              "live_classes.view",
+              "users.manage",
+              "users.manage_assigned"
+            ],
+            "module_access": {}
+          },
+          "rules": {
+            "d28d_locked_for_gyms": true,
+            "attendance_trigger": "join_zoom_click",
+            "nutrition_owner": "trainer",
+            "users_can_have_multiple_roles": true
+          }
+        }
+      }
+    },
+    {
+      "name": "trainer master nico",
+      "status": 200,
+      "ok": true,
+      "body": {
+        "success": true,
+        "data": {
+          "trainer_id": 7,
+          "gym_id": 4,
+          "owner_scope": "trainer:7",
+          "gallery_scope": "trainer:7:gallery",
+          "training_scope": "trainer:7:training",
+          "nutrition_scope": "trainer:7:nutrition",
+          "assigned_user_ids": [],
+          "modules": {
+            "training": {
+              "can_create_routines": true,
+              "can_edit_own_routines": true,
+              "can_manage_own_gallery": true,
+              "default_method": "HIIT y acondicionamiento"
+            },
+            "nutrition": {
+              "can_create_full_plans": true,
+              "can_adjust_assigned_user_parameters": true,
+              "default_strategy": "personalized_macros"
+            },
+            "d28d": {
+              "can_view_locked_templates": true,
+              "can_edit_d28d": false,
+              "can_copy_templates": false
+            },
+            "live_classes": {
+              "can_schedule_for_assigned_users": true,
+              "can_view_d28d_calendar": true,
+              "attendance_trigger": "join_zoom_click"
+            }
+          },
+          "created_at": "2026-05-01T15:32:06.086Z",
+          "updated_at": "2026-05-01T15:32:06.086Z"
+        }
+      }
+    },
+    {
+      "name": "live classes calendar data",
+      "status": 200,
+      "ok": true,
+      "body": {
+        "success": true,
+        "data": [
+          {
+            "id": 2,
+            "title": "METODO D28D D28D - Lunes 07:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Lunes",
+            "class_type": "METODO D28D",
+            "coach": "Alejo",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-27T12:00:00.000Z",
+            "end_time": "2026-04-27T13:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.001Z",
+            "attendance_user_ids": [
+              1
+            ],
+            "attendance_events": [
+              {
+                "user_id": 1,
+                "email": "admin@foodplan.local",
+                "gym_id": null,
+                "joined_at": "2026-05-01T15:33:13.615Z",
+                "trigger": "join_zoom_click"
+              }
+            ],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 3,
+            "title": "FUERZA D28D - Lunes 08:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Lunes",
+            "class_type": "FUERZA",
+            "coach": "Alejo",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-27T13:00:00.000Z",
+            "end_time": "2026-04-27T14:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.001Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 4,
+            "title": "METODO D28D D28D - Lunes 18:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Lunes",
+            "class_type": "METODO D28D",
+            "coach": "Alejo",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-27T23:00:00.000Z",
+            "end_time": "2026-04-28T00:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.001Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 5,
+            "title": "FUERZA D28D - Lunes 19:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Lunes",
+            "class_type": "FUERZA",
+            "coach": "Alejo",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-28T00:00:00.000Z",
+            "end_time": "2026-04-28T01:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.001Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 6,
+            "title": "METODO D28D D28D - Martes 07:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Martes",
+            "class_type": "METODO D28D",
+            "coach": "Alejo",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-28T12:00:00.000Z",
+            "end_time": "2026-04-28T13:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.001Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 7,
+            "title": "FUERZA D28D - Martes 08:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Martes",
+            "class_type": "FUERZA",
+            "coach": "Alejo",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-28T13:00:00.000Z",
+            "end_time": "2026-04-28T14:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.001Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 8,
+            "title": "METODO D28D D28D - Martes 18:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Martes",
+            "class_type": "METODO D28D",
+            "coach": "Alejo",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-28T23:00:00.000Z",
+            "end_time": "2026-04-29T00:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.001Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 9,
+            "title": "FUERZA D28D - Martes 19:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Martes",
+            "class_type": "FUERZA",
+            "coach": "Alejo",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-29T00:00:00.000Z",
+            "end_time": "2026-04-29T01:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.001Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 10,
+            "title": "METODO D28D D28D - Miercoles 07:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Miercoles",
+            "class_type": "METODO D28D",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-29T12:00:00.000Z",
+            "end_time": "2026-04-29T13:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 11,
+            "title": "FUERZA D28D - Miercoles 08:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Miercoles",
+            "class_type": "FUERZA",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-29T13:00:00.000Z",
+            "end_time": "2026-04-29T14:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 12,
+            "title": "METODO D28D D28D - Miercoles 18:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Miercoles",
+            "class_type": "METODO D28D",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-29T23:00:00.000Z",
+            "end_time": "2026-04-30T00:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 13,
+            "title": "FUERZA D28D - Miercoles 19:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Miercoles",
+            "class_type": "FUERZA",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-30T00:00:00.000Z",
+            "end_time": "2026-04-30T01:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 14,
+            "title": "METODO D28D D28D - Jueves 07:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Jueves",
+            "class_type": "METODO D28D",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-30T12:00:00.000Z",
+            "end_time": "2026-04-30T13:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 15,
+            "title": "FUERZA D28D - Jueves 08:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Jueves",
+            "class_type": "FUERZA",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-30T13:00:00.000Z",
+            "end_time": "2026-04-30T14:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 1,
+            "title": "Clase en Vivo D28D - Fuerza Total",
+            "description": "Sesión en vivo para todos los gimnasios afiliados, con coach centralizado.",
+            "zoom_link": "https://zoom.us/j/1234567890",
+            "gym_id": null,
+            "is_global": true,
+            "start_time": "2026-04-30T20:58:32.788Z",
+            "end_time": "2026-04-30T22:03:32.788Z",
+            "active": true,
+            "created_at": "2026-04-30T20:28:32.788Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 16,
+            "title": "METODO D28D D28D - Jueves 18:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Jueves",
+            "class_type": "METODO D28D",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-30T23:00:00.000Z",
+            "end_time": "2026-05-01T00:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 17,
+            "title": "FUERZA D28D - Jueves 19:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Jueves",
+            "class_type": "FUERZA",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-05-01T00:00:00.000Z",
+            "end_time": "2026-05-01T01:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 18,
+            "title": "METODO D28D D28D - Viernes 07:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Viernes",
+            "class_type": "METODO D28D",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-05-01T12:00:00.000Z",
+            "end_time": "2026-05-01T13:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 19,
+            "title": "FUERZA D28D - Viernes 08:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Viernes",
+            "class_type": "FUERZA",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-05-01T13:00:00.000Z",
+            "end_time": "2026-05-01T14:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 20,
+            "title": "METODO D28D D28D - Viernes 18:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Viernes",
+            "class_type": "METODO D28D",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-05-01T23:00:00.000Z",
+            "end_time": "2026-05-02T00:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 21,
+            "title": "FUERZA D28D - Viernes 19:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Viernes",
+            "class_type": "FUERZA",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-05-02T00:00:00.000Z",
+            "end_time": "2026-05-02T01:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 22,
+            "title": "METODO D28D D28D - Sabado 07:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Sabado",
+            "class_type": "METODO D28D",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-05-02T12:00:00.000Z",
+            "end_time": "2026-05-02T13:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 23,
+            "title": "FUERZA D28D - Sabado 08:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Sabado",
+            "class_type": "FUERZA",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-05-02T13:00:00.000Z",
+            "end_time": "2026-05-02T14:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.002Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 24,
+            "title": "METODO D28D D28D - Sabado 18:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Sabado",
+            "class_type": "METODO D28D",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-05-02T23:00:00.000Z",
+            "end_time": "2026-05-03T00:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.003Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          },
+          {
+            "id": 25,
+            "title": "FUERZA D28D - Sabado 19:00",
+            "description": "Bloque de fuerza guiado para el ciclo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Sabado",
+            "class_type": "FUERZA",
+            "coach": "Coach D28D",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-05-03T00:00:00.000Z",
+            "end_time": "2026-05-03T01:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.003Z",
+            "attendance_user_ids": [],
+            "attendance_events": [],
+            "source_module": "d28d",
+            "locked": true
+          }
+        ]
+      }
+    },
+    {
+      "name": "join class attendance click",
+      "status": 200,
+      "ok": true,
+      "body": {
+        "success": true,
+        "data": {
+          "zoom_link": "https://zoom.us/j/d28d-demo",
+          "class": {
+            "id": 2,
+            "title": "METODO D28D D28D - Lunes 07:00",
+            "description": "Clase principal del Metodo D28D.",
+            "zoom_link": "https://zoom.us/j/d28d-demo",
+            "gym_id": null,
+            "is_global": true,
+            "day_label": "Lunes",
+            "class_type": "METODO D28D",
+            "coach": "Alejo",
+            "capacity": 40,
+            "enrolled_user_ids": [],
+            "start_time": "2026-04-27T12:00:00.000Z",
+            "end_time": "2026-04-27T13:00:00.000Z",
+            "active": true,
+            "created_at": "2026-04-30T22:43:56.001Z",
+            "attendance_user_ids": [
+              1
+            ],
+            "attendance_events": [
+              {
+                "user_id": 1,
+                "email": "admin@foodplan.local",
+                "gym_id": null,
+                "joined_at": "2026-05-01T15:33:13.615Z",
+                "trigger": "join_zoom_click"
+              },
+              {
+                "user_id": 1,
+                "email": "admin@foodplan.local",
+                "gym_id": null,
+                "joined_at": "2026-05-01T15:35:32.587Z",
+                "trigger": "join_zoom_click"
+              }
+            ],
+            "source_module": "d28d",
+            "locked": true
+          }
+        }
+      }
+    },
+    {
+      "name": "attendance report",
+      "status": 200,
+      "ok": true,
+      "body": {
+        "success": true,
+        "data": [
+          {
+            "class_id": 2,
+            "title": "METODO D28D D28D - Lunes 07:00",
+            "start_time": "2026-04-27T12:00:00.000Z",
+            "end_time": "2026-04-27T13:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 1,
+            "by_gym": [
+              {
+                "gym_id": null,
+                "gym_name": "Sin gym",
+                "count": 1,
+                "attendees": [
+                  {
+                    "user_id": 1,
+                    "nombre": "Super Admin",
+                    "email": "admin@foodplan.local",
+                    "rol": "super_admin",
+                    "gym_id": null,
+                    "gym_name": "Sin gym"
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "class_id": 3,
+            "title": "FUERZA D28D - Lunes 08:00",
+            "start_time": "2026-04-27T13:00:00.000Z",
+            "end_time": "2026-04-27T14:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 4,
+            "title": "METODO D28D D28D - Lunes 18:00",
+            "start_time": "2026-04-27T23:00:00.000Z",
+            "end_time": "2026-04-28T00:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 5,
+            "title": "FUERZA D28D - Lunes 19:00",
+            "start_time": "2026-04-28T00:00:00.000Z",
+            "end_time": "2026-04-28T01:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 6,
+            "title": "METODO D28D D28D - Martes 07:00",
+            "start_time": "2026-04-28T12:00:00.000Z",
+            "end_time": "2026-04-28T13:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 7,
+            "title": "FUERZA D28D - Martes 08:00",
+            "start_time": "2026-04-28T13:00:00.000Z",
+            "end_time": "2026-04-28T14:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 8,
+            "title": "METODO D28D D28D - Martes 18:00",
+            "start_time": "2026-04-28T23:00:00.000Z",
+            "end_time": "2026-04-29T00:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 9,
+            "title": "FUERZA D28D - Martes 19:00",
+            "start_time": "2026-04-29T00:00:00.000Z",
+            "end_time": "2026-04-29T01:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 10,
+            "title": "METODO D28D D28D - Miercoles 07:00",
+            "start_time": "2026-04-29T12:00:00.000Z",
+            "end_time": "2026-04-29T13:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 11,
+            "title": "FUERZA D28D - Miercoles 08:00",
+            "start_time": "2026-04-29T13:00:00.000Z",
+            "end_time": "2026-04-29T14:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 12,
+            "title": "METODO D28D D28D - Miercoles 18:00",
+            "start_time": "2026-04-29T23:00:00.000Z",
+            "end_time": "2026-04-30T00:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 13,
+            "title": "FUERZA D28D - Miercoles 19:00",
+            "start_time": "2026-04-30T00:00:00.000Z",
+            "end_time": "2026-04-30T01:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 14,
+            "title": "METODO D28D D28D - Jueves 07:00",
+            "start_time": "2026-04-30T12:00:00.000Z",
+            "end_time": "2026-04-30T13:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 15,
+            "title": "FUERZA D28D - Jueves 08:00",
+            "start_time": "2026-04-30T13:00:00.000Z",
+            "end_time": "2026-04-30T14:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 1,
+            "title": "Clase en Vivo D28D - Fuerza Total",
+            "start_time": "2026-04-30T20:58:32.788Z",
+            "end_time": "2026-04-30T22:03:32.788Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 16,
+            "title": "METODO D28D D28D - Jueves 18:00",
+            "start_time": "2026-04-30T23:00:00.000Z",
+            "end_time": "2026-05-01T00:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 17,
+            "title": "FUERZA D28D - Jueves 19:00",
+            "start_time": "2026-05-01T00:00:00.000Z",
+            "end_time": "2026-05-01T01:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 18,
+            "title": "METODO D28D D28D - Viernes 07:00",
+            "start_time": "2026-05-01T12:00:00.000Z",
+            "end_time": "2026-05-01T13:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 19,
+            "title": "FUERZA D28D - Viernes 08:00",
+            "start_time": "2026-05-01T13:00:00.000Z",
+            "end_time": "2026-05-01T14:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 20,
+            "title": "METODO D28D D28D - Viernes 18:00",
+            "start_time": "2026-05-01T23:00:00.000Z",
+            "end_time": "2026-05-02T00:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 21,
+            "title": "FUERZA D28D - Viernes 19:00",
+            "start_time": "2026-05-02T00:00:00.000Z",
+            "end_time": "2026-05-02T01:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 22,
+            "title": "METODO D28D D28D - Sabado 07:00",
+            "start_time": "2026-05-02T12:00:00.000Z",
+            "end_time": "2026-05-02T13:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 23,
+            "title": "FUERZA D28D - Sabado 08:00",
+            "start_time": "2026-05-02T13:00:00.000Z",
+            "end_time": "2026-05-02T14:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 24,
+            "title": "METODO D28D D28D - Sabado 18:00",
+            "start_time": "2026-05-02T23:00:00.000Z",
+            "end_time": "2026-05-03T00:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          },
+          {
+            "class_id": 25,
+            "title": "FUERZA D28D - Sabado 19:00",
+            "start_time": "2026-05-03T00:00:00.000Z",
+            "end_time": "2026-05-03T01:00:00.000Z",
+            "scope": "Global D28D",
+            "source_module": "d28d",
+            "locked": true,
+            "total_attendees": 0,
+            "by_gym": []
+          }
+        ]
+      }
+    }
+  ]
+}
