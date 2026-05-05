@@ -107,12 +107,17 @@ app.use(cors({
 app.use(morgan('dev'));
 
 // Configuración de Rate Limiting
-const apiLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutos
-  max: 100, // Limita cada IP a 100 solicitudes por windowMs
-  message: 'Demasiadas solicitudes desde esta IP, por favor intenta de nuevo después de 15 minutos.'
-});
-app.use(apiLimiter);
+if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') {
+  const apiLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutos
+    max: 100, // Limita cada IP a 100 solicitudes por windowMs
+    message: 'Demasiadas solicitudes desde esta IP, por favor intenta de nuevo después de 15 minutos.'
+  });
+  app.use(apiLimiter);
+} else {
+  // En desarrollo, no limitar
+  console.log('⚠️  Rate limit desactivado en desarrollo');
+}
 
 // Health checks
 app.get('/health', (req, res) => {

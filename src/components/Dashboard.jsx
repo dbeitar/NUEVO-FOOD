@@ -28,6 +28,7 @@ export default function Dashboard() {
   const [currentView, setCurrentView] = useState(() => {
     return 'home';
   });
+  const [selectedModule, setSelectedModule] = useState(null);
   const [dayTotals, setDayTotals] = useState(null);
   const [adminOverview, setAdminOverview] = useState(null);
   const plan = { calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 };
@@ -136,117 +137,187 @@ export default function Dashboard() {
               </section>
             )}
 
-            <div className="dashboard-grid">
-              {hasAnyRole(['super_admin']) && (
-                <div className="card" onClick={() => setCurrentView('ecosystem')}>
-                  <h3>🧩 Ecosistema Modular</h3>
-                  <p>Controla modulos, marcas blancas, permisos y reglas D28D bloqueadas.</p>
-                  <button className="btn-card">Abrir Ecosistema</button>
+            {!selectedModule ? (
+              <div className="services-hero">
+                <h2 className="services-hero-title">NUESTROS <span>SERVICIOS</span></h2>
+                <p className="services-hero-subtitle">Todo lo que necesitas para alcanzar tu mejor versión, en un solo lugar.</p>
+                
+                <div className="services-hero-grid">
+                  <div className="service-card-hero" onClick={() => setSelectedModule('food-plan')}>
+                    <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=800&q=80" alt="Food Plan" className="service-card-hero-img" />
+                    <div className="service-card-hero-content">
+                      <h3 className="service-card-hero-title">FOOD PLAN</h3>
+                      <p className="service-card-hero-desc">Alimentación inteligente guiada por expertos para maximizar tus resultados.</p>
+                    </div>
+                  </div>
+
+                  <div className="service-card-hero" onClick={() => setSelectedModule('d28d')}>
+                    <img src="https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80" alt="D28D" className="service-card-hero-img" />
+                    <div className="service-card-hero-content">
+                      <h3 className="service-card-hero-title">D28D</h3>
+                      <p className="service-card-hero-desc">Galería de plantillas, agendamiento y sesiones en vivo. Transforma tu cuerpo en 28 días.</p>
+                    </div>
+                  </div>
+
+                  <div className="service-card-hero" onClick={() => setSelectedModule('training')}>
+                    <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80" alt="Training" className="service-card-hero-img" />
+                    <div className="service-card-hero-content">
+                      <h3 className="service-card-hero-title">TRAINING</h3>
+                      <p className="service-card-hero-desc">Módulo funcional para entrenadores. Asigna y edita rutinas de tus clientes.</p>
+                    </div>
+                  </div>
+
+                  <div className="service-card-hero" onClick={() => setSelectedModule('gym')}>
+                    <img src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80" alt="Maestro Gym" className="service-card-hero-img" />
+                    <div className="service-card-hero-content">
+                      <h3 className="service-card-hero-title">MAESTRO GYM</h3>
+                      <p className="service-card-hero-desc">Gestión de modelo marca blanca. Los gimnasios consumen los videos y clases de D28D.</p>
+                    </div>
+                  </div>
                 </div>
-              )}
-              {hasAnyRole(['super_admin']) && (
-                <div className="card" onClick={() => setCurrentView('admincompanies')}>
-                  <h3>{t('card.companies.title', '🏢 Empresas')}</h3>
-                  <p>{t('card.companies.desc', 'Consulta gimnasios, entrenadores y usuarios asociados')}</p>
-                  <button className="btn-card">{t('card.companies.button', 'Abrir Empresas')}</button>
-                </div>
-              )}
-              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
-                <div className="card" onClick={() => setCurrentView('admingyms')}>
-                  <h3>🏷️ Maestro Gym / Marca Blanca</h3>
-                  <p>Crea gimnasios, colores, logo, slug, WhatsApp y mensaje de marca.</p>
-                  <button className="btn-card">Abrir Maestro Gym</button>
-                </div>
-              )}
-              <div className="card" onClick={() => setCurrentView('calculator')}>
-                <h3>{t('card.calculator.title', '🧮 Calculadora Nutricional')}</h3>
-                <p>{t('card.calculator.desc', 'Calcula tu plan personalizado basado en tus datos')}</p>
-                <button className="btn-card">{t('card.calculator.button', 'Ir a Calculadora')}</button>
               </div>
-
-              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista']) ? (
-                <div className="card" onClick={() => setCurrentView('admin')}>
-                  <h3>{t('card.admin.title', '⚙️ Administración')}</h3>
-                  <p>{t('card.admin.desc', 'Gestiona los conceptos de la calculadora')}</p>
-                  <button className="btn-card">{t('card.admin.button', 'Panel Admin')}</button>
-                </div>
-              ) : null}
-
-              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
-                <div className="card" onClick={() => setCurrentView('adminusers')}>
-                  <h3>{t('card.users.title', '👥 Usuarios y Roles')}</h3>
-                  <p>{t('card.users.desc', 'Consulta y ajusta los roles de usuarios')}</p>
-                  <button className="btn-card">{t('card.users.button', 'Abrir Usuarios')}</button>
-                </div>
-              )}
-              {hasAnyRole(['super_admin']) && (
-                <div className="card" onClick={() => setCurrentView('adminplans')}>
-                  <h3>{t('card.plans.title', '🧾 Planes de Suscripción')}</h3>
-                  <p>{t('card.plans.desc', 'Crea, edita y elimina planes')}</p>
-                  <button className="btn-card">{t('card.plans.button', 'Gestionar Planes')}</button>
-                </div>
-              )}
-
-              <div className="card">
-                <h3>{t('card.myplan.title', '📊 Mi Plan')}</h3>
-                <p>{t('card.myplan.desc', 'Consulta tu plan de alimentación personalizado')}</p>
-                <button className="btn-card" onClick={() => setCurrentView('myaccount')}>{t('card.myplan.button', 'Ver Plan')}</button>
+            ) : (
+              <div className="mb-4">
+                <button className="btn-secondary" onClick={() => setSelectedModule(null)}>
+                  &larr; Volver a Servicios
+                </button>
               </div>
+            )}
 
-              <div className="card" onClick={() => setCurrentView('foodlog')}>
-                <h3>{t('card.foodlog.title', '🍔 Registro de Comidas')}</h3>
-                <p>{t('card.foodlog.desc', 'Registra lo que comiste hoy')}</p>
-                <button className="btn-card">{t('card.foodlog.button', 'Registrar Comida')}</button>
+            {selectedModule && (
+              <div className="dashboard-grid">
+                
+                {/* --- MODULE: GYM --- */}
+                {selectedModule === 'gym' && (
+                  <>
+                    {hasAnyRole(['super_admin']) && (
+                      <div className="card" onClick={() => setCurrentView('ecosystem')}>
+                        <h3>🧩 Ecosistema Modular</h3>
+                        <p>Controla modulos, marcas blancas, permisos y reglas D28D bloqueadas.</p>
+                        <button className="btn-card">Abrir Ecosistema</button>
+                      </div>
+                    )}
+                    {hasAnyRole(['super_admin']) && (
+                      <div className="card" onClick={() => setCurrentView('admincompanies')}>
+                        <h3>{t('card.companies.title', '🏢 Empresas')}</h3>
+                        <p>{t('card.companies.desc', 'Consulta gimnasios, entrenadores y usuarios asociados')}</p>
+                        <button className="btn-card">{t('card.companies.button', 'Abrir Empresas')}</button>
+                      </div>
+                    )}
+                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
+                      <div className="card" onClick={() => setCurrentView('admingyms')}>
+                        <h3>🏷️ Maestro Gym / Marca Blanca</h3>
+                        <p>Crea gimnasios, colores, logo, slug, WhatsApp y mensaje de marca.</p>
+                        <button className="btn-card">Abrir Maestro Gym</button>
+                      </div>
+                    )}
+                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
+                      <div className="card" onClick={() => setCurrentView('adminusers')}>
+                        <h3>{t('card.users.title', '👥 Usuarios y Roles')}</h3>
+                        <p>{t('card.users.desc', 'Consulta y ajusta los roles de usuarios')}</p>
+                        <button className="btn-card">{t('card.users.button', 'Abrir Usuarios')}</button>
+                      </div>
+                    )}
+                    {hasAnyRole(['super_admin']) && (
+                      <div className="card" onClick={() => setCurrentView('adminplans')}>
+                        <h3>{t('card.plans.title', '🧾 Planes de Suscripción')}</h3>
+                        <p>{t('card.plans.desc', 'Crea, edita y elimina planes')}</p>
+                        <button className="btn-card">{t('card.plans.button', 'Gestionar Planes')}</button>
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {/* --- MODULE: FOOD PLAN --- */}
+                {selectedModule === 'food-plan' && (
+                  <>
+                    <div className="card" onClick={() => setCurrentView('calculator')}>
+                      <h3>{t('card.calculator.title', '🧮 Calculadora Nutricional')}</h3>
+                      <p>{t('card.calculator.desc', 'Calcula tu plan personalizado basado en tus datos')}</p>
+                      <button className="btn-card">{t('card.calculator.button', 'Ir a Calculadora')}</button>
+                    </div>
+
+                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista']) ? (
+                      <div className="card" onClick={() => setCurrentView('admin')}>
+                        <h3>{t('card.admin.title', '⚙️ Administración')}</h3>
+                        <p>{t('card.admin.desc', 'Gestiona los conceptos de la calculadora')}</p>
+                        <button className="btn-card">{t('card.admin.button', 'Panel Admin')}</button>
+                      </div>
+                    ) : null}
+
+                    <div className="card">
+                      <h3>{t('card.myplan.title', '📊 Mi Plan')}</h3>
+                      <p>{t('card.myplan.desc', 'Consulta tu plan de alimentación personalizado')}</p>
+                      <button className="btn-card" onClick={() => setCurrentView('myaccount')}>{t('card.myplan.button', 'Ver Plan')}</button>
+                    </div>
+
+                    <div className="card" onClick={() => setCurrentView('foodlog')}>
+                      <h3>{t('card.foodlog.title', '🍔 Registro de Comidas')}</h3>
+                      <p>{t('card.foodlog.desc', 'Registra lo que comiste hoy')}</p>
+                      <button className="btn-card">{t('card.foodlog.button', 'Registrar Comida')}</button>
+                    </div>
+
+                    <div className="card" onClick={() => setCurrentView('progress')}>
+                      <h3>{t('card.progress.title', '📈 Progreso')}</h3>
+                      <p>{t('card.progress.desc', 'Visualiza tu evolución')}</p>
+                      <button className="btn-card">{t('card.progress.button', 'Ver Estadísticas')}</button>
+                    </div>
+
+                    <div className="card" onClick={() => setCurrentView('equivalentes')}>
+                      <h3>{t('card.equivalentes.title', '🔄 Equivalentes por Grupo')}</h3>
+                      <p>{t('card.equivalentes.desc', 'Intercambia alimentos manteniendo macros')}</p>
+                      <button className="btn-card">{t('card.equivalentes.button', 'Ver Equivalentes')}</button>
+                    </div>
+
+                    <div className="card">
+                      <h3>{t('card.recipes.title', '📚 Recetas')}</h3>
+                      <p>{t('card.recipes.desc', 'Explora recetas saludables')}</p>
+                      <button className="btn-card" onClick={() => setCurrentView('recipes')}>{t('card.recipes.button', 'Ver Recetas')}</button>
+                    </div>
+                  </>
+                )}
+
+                {/* --- MODULE: TRAINING --- */}
+                {selectedModule === 'training' && (
+                  <>
+                    <div className="card" onClick={() => setCurrentView('training')}>
+                      <h3>🏋️ Módulo Entrenamiento IA</h3>
+                      <p>Genera rutinas con lógica biomecánica y configuración CV en JSON.</p>
+                      <button className="btn-card">Abrir Entrenamiento</button>
+                    </div>
+                  </>
+                )}
+
+                {/* --- MODULE: D28D --- */}
+                {selectedModule === 'd28d' && (
+                  <>
+                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador']) && (
+                      <div className="card" onClick={() => setCurrentView('admintraining')}>
+                        <h3>📋 Maestro Entrenamiento</h3>
+                        <p>Asigna y edita rutinas, gestiona RPE/RIR, y revisa el diario de cada cliente.</p>
+                        <button className="btn-card">Abrir Maestro</button>
+                      </div>
+                    )}
+
+                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) && (
+                      <div className="card" onClick={() => setCurrentView('admingallery')}>
+                        <h3>🎬 Galería Entrenamiento</h3>
+                        <p>Administra videos de YouTube por ejercicio para el Coach Virtual.</p>
+                        <button className="btn-card">Abrir Galería</button>
+                      </div>
+                    )}
+
+                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
+                      <div className="card" onClick={() => setCurrentView('adminliveclasses')}>
+                        <h3>🟢 Clases en Vivo</h3>
+                        <p>Crea y gestiona las sesiones de Zoom en el calendario D28D.</p>
+                        <button className="btn-card">Abrir Clases Vivo</button>
+                      </div>
+                    )}
+                  </>
+                )}
               </div>
-
-              <div className="card" onClick={() => setCurrentView('progress')}>
-                <h3>{t('card.progress.title', '📈 Progreso')}</h3>
-                <p>{t('card.progress.desc', 'Visualiza tu evolución')}</p>
-                <button className="btn-card">{t('card.progress.button', 'Ver Estadísticas')}</button>
-              </div>
-
-              <div className="card" onClick={() => setCurrentView('equivalentes')}>
-                <h3>{t('card.equivalentes.title', '🔄 Equivalentes por Grupo')}</h3>
-                <p>{t('card.equivalentes.desc', 'Intercambia alimentos manteniendo macros')}</p>
-                <button className="btn-card">{t('card.equivalentes.button', 'Ver Equivalentes')}</button>
-              </div>
-
-              <div className="card">
-                <h3>{t('card.recipes.title', '📚 Recetas')}</h3>
-                <p>{t('card.recipes.desc', 'Explora recetas saludables')}</p>
-                <button className="btn-card" onClick={() => setCurrentView('recipes')}>{t('card.recipes.button', 'Ver Recetas')}</button>
-              </div>
-
-              <div className="card" onClick={() => setCurrentView('training')}>
-                <h3>🏋️ Módulo Entrenamiento IA</h3>
-                <p>Genera rutinas con lógica biomecánica y configuración CV en JSON.</p>
-                <button className="btn-card">Abrir Entrenamiento</button>
-              </div>
-
-              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador']) && (
-                <div className="card" onClick={() => setCurrentView('admintraining')}>
-                  <h3>📋 Maestro Entrenamiento</h3>
-                  <p>Asigna y edita rutinas, gestiona RPE/RIR, y revisa el diario de cada cliente.</p>
-                  <button className="btn-card">Abrir Maestro</button>
-                </div>
-              )}
-
-              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) && (
-                <div className="card" onClick={() => setCurrentView('admingallery')}>
-                  <h3>🎬 Galería Entrenamiento</h3>
-                  <p>Administra videos de YouTube por ejercicio para el Coach Virtual.</p>
-                  <button className="btn-card">Abrir Galería</button>
-                </div>
-              )}
-
-              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
-                <div className="card" onClick={() => setCurrentView('adminliveclasses')}>
-                  <h3>🟢 Clases en Vivo</h3>
-                  <p>Crea y gestiona las sesiones de Zoom en el calendario D28D.</p>
-                  <button className="btn-card">Abrir Clases Vivo</button>
-                </div>
-              )}
-            </div>
+            )}
 
             <section className="quick-stats">
               <h3>{t('home.summary.title', 'Resumen del Día')}</h3>
@@ -294,7 +365,7 @@ export default function Dashboard() {
         </div>
         <div className="navbar-menu">
           <button
-            onClick={() => setCurrentView('home')}
+            onClick={() => { setCurrentView('home'); setSelectedModule(null); }}
             className={currentView === 'home' ? 'nav-link active' : 'nav-link'}
           >
             {t('nav.home', 'Inicio')}

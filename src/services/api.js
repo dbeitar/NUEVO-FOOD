@@ -23,7 +23,7 @@ let resolvedBase;
 // - Si NO estamos en localhost: usar env o prodBase.
 if (isLocalHost && !qsUseProd) {
   try { localStorage.removeItem('apiBaseOverride'); } catch (e) { void e; }
-  resolvedBase = 'http://localhost:3001/api';
+    resolvedBase = 'http://localhost:5175/api';
 } else {
   resolvedBase = (overrideBase || envBase || prodBase).replace(/\/+$/, '');
   if (!/\/api$/.test(resolvedBase)) resolvedBase = `${resolvedBase}/api`;
@@ -74,7 +74,7 @@ api.interceptors.response.use(
     // Reparación automática en dev: si estamos en localhost y la base NO es local y falla por CORS,
     // forzar base local y reintentar una sola vez.
     if (isLocalHost && !isLocalBase && isCors && !switchedToProd) {
-      const newBase = 'http://localhost:3001/api';
+        const newBase = 'http://localhost:5175/api';
       api.defaults.baseURL = newBase;
       try { localStorage.setItem('apiBaseOverride', newBase); } catch (e) { void e; }
       console.warn('API base reparada →', newBase);
@@ -116,7 +116,7 @@ try {
         }
       },
       repair() {
-        const finalBase = isLocalHost ? 'http://localhost:3001/api' : `${prodBase.replace(/\/+$/, '')}/api`;
+          const finalBase = isLocalHost ? 'http://localhost:5175/api' : `${prodBase.replace(/\/+$/, '')}/api`;
         api.defaults.baseURL = finalBase;
         try { localStorage.setItem('apiBaseOverride', finalBase); } catch (e) { void e; }
         console.info('API base repaired →', finalBase);
