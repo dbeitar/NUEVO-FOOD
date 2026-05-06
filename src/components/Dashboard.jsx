@@ -132,7 +132,7 @@ export default function Dashboard() {
                 
                 <div className="services-hero-grid">
                   <div className="service-card-hero" onClick={() => setSelectedModule('food-plan')}>
-                    <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=800&q=80" alt="Food Plan" className="service-card-hero-img" />
+                    <img src="https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=800&q=80" alt="D28D GYM virtual" className="service-card-hero-img" />
                     <div className="service-card-hero-content">
                       <h3 className="service-card-hero-title">FOOD PLAN</h3>
                       <p className="service-card-hero-desc">Alimentación inteligente guiada por expertos para maximizar tus resultados.</p>
@@ -399,7 +399,7 @@ export default function Dashboard() {
     <div className="dashboard-container">
       <nav className="navbar">
         <div className="navbar-brand">
-          <h1>🍽️ Food Plan</h1>
+          <h1>🍽️ D28D GYM virtual</h1>
         </div>
         <div className="navbar-menu">
           <button

@@ -82,7 +82,7 @@ export default function NutritionChat() {
 
   const bienvenida = useMemo(() => {
     const restr = user?.restricciones_detalles || (user?.tiene_restricciones ? 'restricciones registradas' : 'sin restricciones registradas');
-    return `¡Hola! Soy tu asistente de bienestar en Food Plan. He analizado tu perfil y tus restricciones de ${restr}. Mi objetivo es ayudarte a alcanzar tus metas con platos balanceados y sustitutos deliciosos. ¿En qué puedo ayudarte hoy?`;
+    return `¡Hola! Soy tu asistente de bienestar en D28D GYM virtual. He analizado tu perfil y tus restricciones de ${restr}. Mi objetivo es ayudarte a alcanzar tus metas con platos balanceados y sustitutos deliciosos. ¿En qué puedo ayudarte hoy?`;
   }, [user?.restricciones_detalles, user?.tiene_restricciones]);
 
   useEffect(() => {

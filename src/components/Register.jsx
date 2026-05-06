@@ -145,7 +145,7 @@ export default function Register({ onSwitchToLogin }) {
     <>
       <AuthLayout
         title={step === 1 ? 'Crear Cuenta' : 'Elige tu plan'}
-        subtitle={step === 1 ? 'Únete a Food Plan' : 'Selecciona un plan y completa tu registro'}
+        subtitle={step === 1 ? 'Únete a D28D GYM virtual' : 'Selecciona un plan y completa tu registro'}
       >
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}

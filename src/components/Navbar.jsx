@@ -5,7 +5,7 @@ export default function Navbar() {
     <header className="bg-white shadow-sm border-b border-slate-200 h-16 flex items-center justify-between px-6 md:hidden">
       <div className="flex items-center gap-2">
         <span className="text-2xl">🍽️</span>
-        <h1 className="text-lg font-bold text-stone-900 m-0">Food Plan</h1>
+        <h1 className="text-lg font-bold text-stone-900 m-0">D28D GYM virtual</h1>
       </div>
       
       {/* Mobile Menu Button - Placeholder */}

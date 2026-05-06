@@ -5,11 +5,11 @@
 
 ## 1. ACEPTACIÓN DE TÉRMINOS
 
-Al acceder y utilizar **Food Plan** ("la Aplicación", "el Servicio"), usted acepta estar vinculado por estos Términos y Condiciones. Si no está de acuerdo, por favor no utilice la Aplicación.
+Al acceder y utilizar **D28D GYM virtual** ("la Aplicación", "el Servicio"), usted acepta estar vinculado por estos Términos y Condiciones. Si no está de acuerdo, por favor no utilice la Aplicación.
 
 ## 2. DESCRIPCIÓN DEL SERVICIO
 
-Food Plan es una aplicación móvil/web que proporciona:
+D28D GYM virtual es una aplicación móvil/web que proporciona:
 - Cálculo personalizado de necesidades calóricas y nutricionales
 - Registro y seguimiento de ingesta alimentaria diaria
 - Recomendaciones automáticas de alimentos basadas en IA
@@ -18,7 +18,7 @@ Food Plan es una aplicación móvil/web que proporciona:
 
 ## 3. ELEGIBILIDAD
 
-Para utilizar Food Plan, usted debe:
+Para utilizar D28D GYM virtual, usted debe:
 - Tener al menos 18 años de edad
 - Tener capacidad legal para celebrar contratos
 - Aceptar estos términos de manera voluntaria
@@ -38,7 +38,7 @@ Usted se compromete a:
 
 **DESCARGO DE RESPONSABILIDAD IMPORTANTE:**
 
-Food Plan proporciona información educativa y nutricional. **NO es un sustituto de:**
+D28D GYM virtual proporciona información educativa y nutricional. **NO es un sustituto de:**
 - Consejo médico profesional
 - Diagnóstico de condiciones médicas
 - Tratamiento médico
@@ -56,7 +56,7 @@ La Aplicación se proporciona "tal cual" sin garantías. No nos responsabilizamo
 
 ## 6. LICENCIA Y PROPIEDAD INTELECTUAL
 
-Todos los contenidos de la Aplicación (código, diseño, texto, imágenes, gráficos) son propiedad de Food Plan o sus licenciantes. Usted recibe una licencia limitada para usar la Aplicación únicamente para fines personales y no comerciales.
+Todos los contenidos de la Aplicación (código, diseño, texto, imágenes, gráficos) son propiedad de D28D GYM virtual o sus licenciantes. Usted recibe una licencia limitada para usar la Aplicación únicamente para fines personales y no comerciales.
 
 **Está prohibido:**
 - Copiar o reproducir contenidos
@@ -66,7 +66,7 @@ Todos los contenidos de la Aplicación (código, diseño, texto, imágenes, grá
 
 ## 7. CONTENIDO GENERADO POR IA
 
-Food Plan utiliza inteligencia artificial para generar recomendaciones. Usted entiende y acepta que:
+D28D GYM virtual utiliza inteligencia artificial para generar recomendaciones. Usted entiende y acepta que:
 - Las recomendaciones de IA pueden no ser perfectas
 - La IA puede cometer errores o generar contenido inapropriado
 - No somos responsables por decisiones basadas en recomendaciones de IA
@@ -94,11 +94,11 @@ Se tomarán acciones legales contra usuarios que abusen del servicio.
 
 ## 10. LIMITACIÓN DE RESPONSABILIDAD
 
-La responsabilidad máxima de Food Plan en ningún caso excederá lo pagado por el usuario en los últimos 12 meses (o $0 si es gratis).
+La responsabilidad máxima de D28D GYM virtual en ningún caso excederá lo pagado por el usuario en los últimos 12 meses (o $0 si es gratis).
 
 ## 11. INDEMNIZACIÓN
 
-Usted se compromete a indemnizar y defender a Food Plan de reclamaciones, daños y gastos (incluyendo honorarios legales) derivados de:
+Usted se compromete a indemnizar y defender a D28D GYM virtual de reclamaciones, daños y gastos (incluyendo honorarios legales) derivados de:
 - Su incumplimiento de estos términos
 - Su uso indebido de la Aplicación
 - Violación de derechos de terceros
@@ -143,7 +143,7 @@ Al hacer clic en "ACEPTAR" durante el registro, usted reconoce que:
 
 ✓ Ha leído estos Términos y Condiciones
 ✓ Ha leído la Política de Privacidad
-✓ Comprende que Food Plan NO es asesor médico
+✓ Comprende que D28D GYM virtual NO es asesor médico
 ✓ Acepta asumir toda responsabilidad por su uso de la Aplicación
 ✓ Acepta todos los términos y condiciones sin reservas
 

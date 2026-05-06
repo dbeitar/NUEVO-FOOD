@@ -45,7 +45,7 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
   };
 
   return (
-    <AuthLayout title={t('auth.login', 'Iniciar Sesión')} subtitle={`${t('auth.welcome', 'Bienvenido a')} Food Plan`}>
+    <AuthLayout title={t('auth.login', 'Iniciar Sesión')} subtitle={`${t('auth.welcome', 'Bienvenido a')} D28D GYM virtual`}>
       {error ? (
         <div className="bg-red-50 text-red-700 border border-red-200 rounded-xl p-3 text-sm">{t('auth.login_error', 'Error en el login')}: {error}</div>
       ) : null}

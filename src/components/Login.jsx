@@ -57,7 +57,7 @@ export default function Login({ onSwitchToRegister }) {
             {t('auth.login', 'Iniciar Sesión')}
           </h2>
           <p className="auth-subtitle">
-            {t('auth.welcome', 'Bienvenido a')} <span className="font-semibold text-lime-500">Food Plan</span>
+            {t('auth.welcome', 'Bienvenido a')} <span className="font-semibold text-lime-500">D28D GYM virtual</span>
           </p>
         </div>
 

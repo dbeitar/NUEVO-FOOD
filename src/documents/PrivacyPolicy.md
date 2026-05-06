@@ -5,7 +5,7 @@
 
 ## 1. INTRODUCCIÓN
 
-**Food Plan** ("la Aplicación", "nosotros", "nuestro") se compromete a proteger la privacidad de nuestros usuarios. Esta Política de Privacidad explica cómo recopilamos, utilizamos, compartimos y protegemos su información personal.
+**D28D GYM virtual** ("la Aplicación", "nosotros", "nuestro") se compromete a proteger la privacidad de nuestros usuarios. Esta Política de Privacidad explica cómo recopilamos, utilizamos, compartimos y protegemos su información personal.
 
 ## 2. INFORMACIÓN QUE RECOPILAMOS
 
@@ -103,4 +103,4 @@ Si tiene preguntas sobre esta política:
 
 ---
 
-**ACEPTACIÓN:** Al registrarse en Food Plan, usted acepta esta Política de Privacidad en su totalidad.
+**ACEPTACIÓN:** Al registrarse en D28D GYM virtual, usted acepta esta Política de Privacidad en su totalidad.
