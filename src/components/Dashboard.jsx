@@ -273,33 +273,41 @@ export default function Dashboard() {
                       <p>Genera rutinas con lógica biomecánica y configuración CV en JSON.</p>
                       <button className="btn-card">Abrir Entrenamiento</button>
                     </div>
+
+                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador']) && (
+                      <div className="card" onClick={() => setCurrentView('admintraining')}>
+                        <h3>📋 Maestro de Rutinas</h3>
+                        <p>Crea y edita plantillas de entrenamiento, gestiona rutinas y recoge los datos del diario.</p>
+                        <button className="btn-card">Abrir Maestro</button>
+                      </div>
+                    )}
+
+                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) && (
+                      <div className="card" onClick={() => setCurrentView('admingallery')}>
+                        <h3>🎬 Galería de Entrenamientos</h3>
+                        <p>Administra videos de YouTube por ejercicio para las rutinas y clases.</p>
+                        <button className="btn-card">Abrir Galería</button>
+                      </div>
+                    )}
                   </>
                 )}
 
                 {/* --- MODULE: D28D --- */}
                 {selectedModule === 'd28d' && (
                   <>
-                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador']) && (
-                      <div className="card" onClick={() => setCurrentView('admintraining')}>
-                        <h3>📋 Plantillas de Clases</h3>
-                        <p>Crea y edita las plantillas de entrenamiento para la creación de clases y rutinas.</p>
-                        <button className="btn-card">Abrir Plantillas</button>
-                      </div>
-                    )}
-
-                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) && (
-                      <div className="card" onClick={() => setCurrentView('admingallery')}>
-                        <h3>🎬 Galería de Ejercicios</h3>
-                        <p>Administra videos de YouTube por ejercicio para las rutinas de D28D.</p>
-                        <button className="btn-card">Abrir Galería</button>
-                      </div>
-                    )}
-
                     {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
                       <div className="card" onClick={() => setCurrentView('adminliveclasses')}>
-                        <h3>🟢 Links de Reuniones</h3>
-                        <p>Crea y gestiona los links de reuniones (Zoom) para las sesiones en vivo.</p>
-                        <button className="btn-card">Gestionar Links</button>
+                        <h3>🟢 Clases en Vivo y Reuniones</h3>
+                        <p>Crea y gestiona los links de reuniones (Zoom) y plantillas para las sesiones en vivo.</p>
+                        <button className="btn-card">Gestionar Clases</button>
+                      </div>
+                    )}
+
+                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
+                      <div className="card" onClick={() => setCurrentView('admingyms')}>
+                        <h3>🏷️ Maestro Gym / Marca Blanca</h3>
+                        <p>Crea gimnasios, colores, logo, slug y configúralos para que consuman el ecosistema D28D.</p>
+                        <button className="btn-card">Abrir Maestro Gym</button>
                       </div>
                     )}
                   </>
@@ -435,27 +443,34 @@ export default function Dashboard() {
 
           {/* --- MENÚ TRAINING --- */}
           {selectedModule === 'training' && (
-            <button onClick={() => setCurrentView('training')} className={currentView === 'training' ? 'nav-link active' : 'nav-link'}>
-              Entrenadores
-            </button>
+            <>
+              <button onClick={() => setCurrentView('training')} className={currentView === 'training' ? 'nav-link active' : 'nav-link'}>
+                Entrenamiento IA
+              </button>
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador']) && (
+                <button onClick={() => setCurrentView('admintraining')} className={currentView === 'admintraining' ? 'nav-link active' : 'nav-link'}>
+                  Maestro de Rutinas
+                </button>
+              )}
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) && (
+                <button onClick={() => setCurrentView('admingallery')} className={currentView === 'admingallery' ? 'nav-link active' : 'nav-link'}>
+                  Galería de Entrenamientos
+                </button>
+              )}
+            </>
           )}
 
           {/* --- MENÚ D28D --- */}
           {selectedModule === 'd28d' && (
             <>
-              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador']) && (
-                <button onClick={() => setCurrentView('admintraining')} className={currentView === 'admintraining' ? 'nav-link active' : 'nav-link'}>
-                  Plantillas de Clases
-                </button>
-              )}
-              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) && (
-                <button onClick={() => setCurrentView('admingallery')} className={currentView === 'admingallery' ? 'nav-link active' : 'nav-link'}>
-                  Galería de Ejercicios
-                </button>
-              )}
               {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
                 <button onClick={() => setCurrentView('adminliveclasses')} className={currentView === 'adminliveclasses' ? 'nav-link active' : 'nav-link'}>
-                  Links de Reuniones
+                  Clases en Vivo
+                </button>
+              )}
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
+                <button onClick={() => setCurrentView('admingyms')} className={currentView === 'admingyms' ? 'nav-link active' : 'nav-link'}>
+                  Maestro Gym
                 </button>
               )}
               <button onClick={() => setCurrentView('liveclasses')} className={currentView === 'liveclasses' ? 'nav-link active' : 'nav-link'}>
