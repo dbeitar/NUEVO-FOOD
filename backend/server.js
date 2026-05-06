@@ -35,7 +35,7 @@ const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true';
 async function syncDemoAndCoreAccounts() {
   try {
     const demoEmail = (process.env.DEMO_USER_EMAIL || 'demo+20260302@foodplan.local').trim();
-    const coreEmails = (process.env.CORE_ACCOUNT_EMAILS || 'admin@foodplan.local,cliente@foodplan.local,cesar.gomez@cloudfarmers.app')
+    const coreEmails = (process.env.CORE_ACCOUNT_EMAILS || 'admin@foodplan.local,admin.d28d@foodplan.local,admin.gym@test.foodplan.local,trainer@test.foodplan.local,cliente@foodplan.local,cesar.gomez@cloudfarmers.app')
       .split(',')
       .map(s => s.trim())
       .filter(Boolean);

@@ -9,15 +9,41 @@ class UserDatabase {
         id: 1,
         nombre: 'Super Admin',
         email: 'admin@foodplan.local',
-        clave_hash: bcryptjs.hashSync('admin123', 10),
-        rol: 'super_admin'
+        clave_hash: bcryptjs.hashSync('Admin!234', 10),
+        rol: 'super_admin',
+        roles: ['super_admin']
       },
       {
         id: 2,
-        nombre: 'Cliente Ejemplo',
+        nombre: 'D28D Admin',
+        email: 'admin.d28d@foodplan.local',
+        clave_hash: bcryptjs.hashSync('Admin!234', 10),
+        rol: 'super_admin',
+        roles: ['super_admin', 'admin_d28d']
+      },
+      {
+        id: 3,
+        nombre: 'Admin Gym Test',
+        email: 'admin.gym@test.foodplan.local',
+        clave_hash: bcryptjs.hashSync('Admin!234', 10),
+        rol: 'admin_gimnasio',
+        roles: ['admin_gimnasio', 'admin_gym']
+      },
+      {
+        id: 4,
+        nombre: 'Entrenador Test',
+        email: 'trainer@test.foodplan.local',
+        clave_hash: bcryptjs.hashSync('Admin!234', 10),
+        rol: 'entrenador',
+        roles: ['entrenador', 'admin_training']
+      },
+      {
+        id: 5,
+        nombre: 'Cliente Test',
         email: 'cliente@foodplan.local',
-        clave_hash: bcryptjs.hashSync('cliente123', 10),
-        rol: 'usuario_final'
+        clave_hash: bcryptjs.hashSync('Admin!234', 10),
+        rol: 'usuario_final',
+        roles: ['usuario_final']
       }
     ];
 
