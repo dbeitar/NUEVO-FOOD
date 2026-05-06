@@ -25,7 +25,7 @@ export default function AdminUsers() {
     nombre: '',
     email: '',
     password: '',
-    rol: 'usuario_final',
+    roles: ['usuario_final'],
     gym_id: '',
     trainer_id: '',
     planId: ''
@@ -73,9 +73,9 @@ export default function AdminUsers() {
     try {
       if (editingUser) {
         // Edit logic (assign/role)
-        await api.put(`/admin/users/${editingUser.id}/role`, { rol: formData.rol });
+        await api.put(`/admin/users/${editingUser.id}/role`, { roles: formData.roles });
         await api.put(`/admin/users/${editingUser.id}/assign`, { 
-          gym_id: formData.rol === 'usuario_final' ? (formData.gym_id || null) : null, 
+          gym_id: formData.roles.includes('usuario_final') ? (formData.gym_id || null) : null, 
           trainer_id: formData.trainer_id || null 
         });
       } else {
@@ -84,7 +84,7 @@ export default function AdminUsers() {
           setError(t('plans.subscription', 'Plan de Suscripción') + ' ' + t('common.name_required', 'Nombre *').replace('Nombre *','es obligatorio'));
           return;
         }
-        if (formData.rol === 'usuario_final' && !formData.gym_id) {
+        if (formData.roles.includes('usuario_final') && !formData.gym_id) {
           setError(t('common.gym', 'Gimnasio') + ' ' + t('common.name_required', 'Nombre *').replace('Nombre *','es obligatorio') + ' ' + '(Usuario Final)');
           return;
         }
@@ -97,13 +97,15 @@ export default function AdminUsers() {
         // Create logic
         await api.post('/admin/users', {
           ...formData,
-          gym_id: formData.rol === 'usuario_final' && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined,
-          gymId: formData.rol === 'usuario_final' && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined,
+          rol: formData.roles[0] || 'usuario_final',
+          roles: formData.roles,
+          gym_id: formData.roles.includes('usuario_final') && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined,
+          gymId: formData.roles.includes('usuario_final') && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined,
           planId: formData.planId
         });
       }
       setEditingUser(null);
-      setFormData({ nombre: '', email: '', password: '', rol: 'usuario_final', gym_id: '', trainer_id: '', planId: '' });
+      setFormData({ nombre: '', email: '', password: '', roles: ['usuario_final'], gym_id: '', trainer_id: '', planId: '' });
       fetchUsers();
     } catch {
       setError(t('trainers.save_error', 'Error al guardar'));
@@ -117,7 +119,7 @@ export default function AdminUsers() {
       nombre: user.nombre,
       email: user.email,
       password: '', // Password not shown
-      rol: user.rol,
+      roles: user.roles && user.roles.length ? user.roles : [user.rol || 'usuario_final'],
       gym_id: user.gym_id || '',
       trainer_id: user.trainer_id || ''
     });
@@ -143,7 +145,8 @@ export default function AdminUsers() {
   };
 
   const formatRole = (rol) => {
-    return rol.replace('_', ' ').replace(/\b\w/g, l => l.toUpperCase());
+    if (!rol) return '-';
+    return String(rol).replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
   };
 
   return (
@@ -165,7 +168,7 @@ export default function AdminUsers() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black shadow-sm transition-colors"
           onClick={() => {
             setEditingUser(null);
-            setFormData({ nombre: '', email: '', password: '', rol: 'usuario_final', gym_id: '', trainer_id: '', planId: '' });
+            setFormData({ nombre: '', email: '', password: '', roles: ['usuario_final'], gym_id: '', trainer_id: '', planId: '' });
             setShowForm(true);
           }}
         >
@@ -193,7 +196,7 @@ export default function AdminUsers() {
             onClick={() => {
               setShowForm(false);
               setEditingUser(null);
-              setFormData({ nombre: '', email: '', password: '', rol: 'usuario_final', gym_id: '', trainer_id: '', planId: '' });
+              setFormData({ nombre: '', email: '', password: '', roles: ['usuario_final'], gym_id: '', trainer_id: '', planId: '' });
             }}
           >
             {t('common.close', 'Cerrar')}
@@ -251,21 +254,41 @@ export default function AdminUsers() {
               {plans.map(p => <option key={p.nombre} value={p.nombre}>{p.nombre.toUpperCase()}</option>)}
             </select>
           </div>
-          <div>
-            <label className="label">{t('common.role', 'Rol')}</label>
-            <select 
-              name="rol" 
-              value={formData.rol} 
-              onChange={handleInputChange}
-              className="input"
-            >
-              <option value="usuario_final">{t('common.user', 'Usuario')} Final</option>
-              <option value="entrenador">{t('common.trainer', 'Entrenador')}</option>
-              <option value="admin_gimnasio">Admin {t('common.gym', 'Gimnasio')}</option>
-              <option value="super_admin">Super Admin</option>
-            </select>
+          <div className="md:col-span-2">
+            <label className="label">{t('common.roles', 'Roles')}</label>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
+              {[
+                { value: 'usuario_final', label: 'Usuario Final' },
+                { value: 'entrenador', label: 'Entrenador' },
+                { value: 'nutricionista', label: 'Nutricionista' },
+                { value: 'admin_gimnasio', label: 'Admin Gimnasio' },
+                { value: 'admin_food_plan', label: 'Admin Food Plan' },
+                { value: 'admin_d28d', label: 'Admin D28D' },
+                { value: 'admin_training', label: 'Admin Entrenadores' },
+                { value: 'admin_gym', label: 'Admin Maestro Gym' },
+                { value: 'super_admin', label: 'Super Admin' }
+              ].map(role => (
+                <label key={role.value} className="flex items-center gap-2 text-sm text-stone-700 bg-stone-50 p-2 rounded-lg border border-stone-200 cursor-pointer hover:bg-stone-100">
+                  <input
+                    type="checkbox"
+                    checked={formData.roles.includes(role.value)}
+                    onChange={(e) => {
+                      const checked = e.target.checked;
+                      setFormData(prev => ({
+                        ...prev,
+                        roles: checked 
+                          ? [...prev.roles, role.value] 
+                          : prev.roles.filter(r => r !== role.value)
+                      }));
+                    }}
+                    className="rounded border-stone-300 text-lime-600 focus:ring-lime-500"
+                  />
+                  {role.label}
+                </label>
+              ))}
+            </div>
           </div>
-          {formData.rol === 'usuario_final' && (
+          {formData.roles.includes('usuario_final') && (
             <>
               <div>
                 <label className="label">{t('common.gym', 'Gimnasio')}</label>
@@ -299,14 +322,14 @@ export default function AdminUsers() {
               type="submit" 
               className="btn-primary disabled:opacity-60 disabled:cursor-not-allowed"
               disabled={
-                !editingUser && (
+                (!editingUser && (
                   !formData.nombre ||
                   !formData.email ||
                   !formData.password ||
                   !formData.planId ||
-                  (formData.rol === 'usuario_final' && !formData.gym_id) ||
+                  (formData.roles.includes('usuario_final') && !formData.gym_id) ||
                   users.some(u => String(u.email).toLowerCase() === String(formData.email).toLowerCase())
-                )
+                )) || formData.roles.length === 0
               }
             >
               {t('common.save', 'Guardar')}
@@ -432,10 +455,14 @@ export default function AdminUsers() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">#{user.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">{user.nombre}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{user.email}</td>
-                    <td className="px-6 py-4 whitespace-nowrap">
-                      <span className={`badge ${getRoleBadgeClass(user.rol)}`}>
-                        {formatRole(user.rol)}
-                      </span>
+                    <td className="px-6 py-4 whitespace-normal">
+                      <div className="flex flex-wrap gap-1">
+                        {(user.roles && user.roles.length ? user.roles : [user.rol]).map(r => (
+                          <span key={r} className={`badge ${getRoleBadgeClass(r)} text-xs px-2 py-0.5 whitespace-nowrap`}>
+                            {formatRole(r)}
+                          </span>
+                        ))}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
                       {user.gym_id ? (gyms.find(g => g.id === user.gym_id)?.nombre || user.gym_id) : '-'}

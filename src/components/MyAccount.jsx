@@ -184,14 +184,34 @@ export default function MyAccount() {
 
   return (
     <div className="space-y-8">
-      {/* <header className="account-header">
-        <h2>Mi Perfil</h2>
-        <div className="user-info">
-          <p><strong>Nombre:</strong> {user?.nombre}</p>
-          <p><strong>Email:</strong> {user?.email}</p>
-          <p><strong>Rol:</strong> {user?.rol}</p>
+      <header className="card bg-gradient-to-br from-stone-900 to-stone-800 text-white shadow-xl overflow-hidden relative">
+        <div className="absolute top-0 right-0 p-8 opacity-10">
+          <svg width="120" height="120" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1" strokeLinecap="round" strokeLinejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>
         </div>
-      </header> */}
+        <div className="relative z-10">
+          <h2 className="text-2xl font-['Playfair_Display'] font-bold text-lime-400 mb-4">{t('myaccount.profile', 'Mi Perfil')}</h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <p className="text-stone-400 text-sm uppercase tracking-wider">{t('common.name', 'Nombre')}</p>
+              <p className="font-medium text-lg">{user?.nombre}</p>
+            </div>
+            <div>
+              <p className="text-stone-400 text-sm uppercase tracking-wider">{t('common.email', 'Email')}</p>
+              <p className="font-medium text-lg">{user?.email}</p>
+            </div>
+            <div className="md:col-span-2 mt-2">
+              <p className="text-stone-400 text-sm uppercase tracking-wider mb-2">{t('common.roles', 'Roles Asignados')}</p>
+              <div className="flex flex-wrap gap-2">
+                {(user?.roles && user.roles.length ? user.roles : [user?.rol || 'usuario_final']).map(r => (
+                  <span key={r} className="px-3 py-1 bg-lime-500/20 text-lime-300 border border-lime-500/30 rounded-full text-xs font-semibold tracking-wide uppercase">
+                    {r.replace(/_/g, ' ')}
+                  </span>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </header>
 
       {error && <div className="card border border-red-800 text-red-400">{error}</div>}
 

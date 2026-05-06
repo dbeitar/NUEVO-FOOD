@@ -44,6 +44,21 @@ const ROLE_PERMISSIONS = {
     'live_classes.manage',
     'live_classes.view',
   ],
+  admin_food_plan: [
+    'nutrition.manage',
+    'nutrition.manage_assigned',
+    'users.manage_assigned',
+  ],
+  admin_training: [
+    'training.manage',
+    'trainers.manage',
+    'users.manage_assigned',
+  ],
+  admin_gym: [
+    'gyms.manage',
+    'brands.manage',
+    'users.manage_assigned',
+  ],
   entrenador: [
     'trainers.manage_own',
     'training.manage_own',

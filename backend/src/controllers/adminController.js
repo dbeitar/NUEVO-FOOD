@@ -11,7 +11,8 @@ function occupancyPercent(active, max) {
 
 const getOverview = (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    const isAuthorized = ['super_admin', 'admin_gimnasio', 'admin_food_plan', 'admin_training', 'admin_gym'].some(r => req.user?.roles?.includes(r) || req.user?.rol === r);
+    if (!isAuthorized) {
       return res.status(403).json({ error: 'No tienes permiso para ver este resumen' });
     }
 

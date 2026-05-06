@@ -23,7 +23,7 @@ let resolvedBase;
 // - Si NO estamos en localhost: usar env o prodBase.
 if (isLocalHost && !qsUseProd) {
   try { localStorage.removeItem('apiBaseOverride'); } catch (e) { void e; }
-    resolvedBase = 'http://localhost:5175/api';
+    resolvedBase = 'http://localhost:3001/api';
 } else {
   resolvedBase = (overrideBase || envBase || prodBase).replace(/\/+$/, '');
   if (!/\/api$/.test(resolvedBase)) resolvedBase = `${resolvedBase}/api`;

@@ -573,13 +573,13 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
   try {
     const { id } = req.params;
     const { rol, roles, permissions, module_access } = req.body || {};
-    const allowedRoles = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'nutricionista', 'usuario_final'];
+    const allowedRoles = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'admin_food_plan', 'admin_training', 'admin_gym', 'entrenador', 'nutricionista', 'usuario_final'];
     const nextRoles = Array.isArray(roles) && roles.length ? roles : [rol];
     if (!nextRoles.every((role) => allowedRoles.includes(role))) {
       return res.status(400).json({ error: 'Rol no válido' });
     }
     // Permisos: solo super_admin puede asignar roles admin
-    if (nextRoles.some((role) => ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d'].includes(role)) && req.user.rol !== 'super_admin') {
+    if (nextRoles.some((role) => ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'admin_food_plan', 'admin_training', 'admin_gym'].includes(role)) && req.user.rol !== 'super_admin') {
       return res.status(403).json({ error: 'Solo super_admin puede asignar roles administrativos' });
     }
     // Buscar usuario
