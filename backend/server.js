@@ -30,6 +30,19 @@ const { hydrateAccess } = require('./src/utils/accessControl');
 
 const app = express();
 const PORT = process.env.PORT || 3001;
+
+// 1. CORS DEBE IR PRIMERO QUE TODO
+app.use(cors({
+  origin: true, // En desarrollo, permite el origen que haga la petición
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
+  allowedHeaders: ['Content-Type', 'Authorization']
+}));
+app.options('*', cors()); // Habilitar pre-flight para todas las rutas
+
+app.use(express.json());
+app.use(morgan('dev'));
+
 const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true';
 
 async function syncDemoAndCoreAccounts() {
@@ -69,50 +82,6 @@ async function syncDemoAndCoreAccounts() {
     }
   } catch { }
 }
-
-// En modo DEV usamos almacenamiento JSON persistente (UserDatabase)
-
-// Middleware
-app.use(express.json());
-const defaultOrigins = [
-  'http://localhost:5173',
-  'http://localhost:5174',
-  'http://localhost:5175',
-  'http://localhost:5176',
-  'http://localhost:5177',
-  'http://localhost:5178',
-  'http://localhost:5180',
-  'http://[::1]:5173',
-  'http://[::1]:5174',
-  'http://[::1]:5175',
-  'http://[::1]:5176',
-  'http://[::1]:5177',
-  'http://[::1]:5178',
-  'http://[::1]:5180',
-  'https://plan-de-alimentacion-acero.vercel.app',
-  'https://food-plan-steel.vercel.app'
-];
-const envOrigins = String(process.env.CORS_ORIGIN || '')
-  .split(',')
-  .map(o => o.trim())
-  .filter(Boolean);
-const allowedOrigins = Array.from(new Set([...defaultOrigins, ...envOrigins]));
-app.use(cors({
-  origin: function (origin, callback) {
-    const isLocal = !origin || 
-      origin.startsWith('http://localhost:') || 
-      origin.startsWith('http://127.0.0.1:') || 
-      origin.startsWith('http://[::1]:');
-    if (isLocal || allowedOrigins.includes(origin)) {
-      return callback(null, true);
-    }
-    return callback(new Error('Not allowed by CORS'));
-  },
-  credentials: true,
-  methods: 'GET,HEAD,PUT,PATCH,POST,DELETE',
-}));
-// Responder preflight se maneja con el middleware de CORS global
-app.use(morgan('dev'));
 
 // Configuración de Rate Limiting
 if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') {
