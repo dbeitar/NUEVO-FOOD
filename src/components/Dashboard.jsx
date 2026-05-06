@@ -414,6 +414,34 @@ export default function Dashboard() {
             {t('nav.home', 'Inicio')}
           </button>
 
+          {/* --- PANEL GLOBAL SUPER ADMIN --- */}
+          {hasAnyRole(['super_admin']) && (
+            <div className="flex flex-wrap items-center gap-1 border-r border-slate-200 pr-2 mr-2">
+              <button onClick={() => setCurrentView('adminusers')} className={currentView === 'adminusers' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Usuarios</button>
+              <button onClick={() => setCurrentView('admincompanies')} className={currentView === 'admincompanies' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Empresas</button>
+              <button onClick={() => setCurrentView('admingyms')} className={currentView === 'admingyms' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Gyms</button>
+              <button onClick={() => setCurrentView('admintraining')} className={currentView === 'admintraining' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Rutinas</button>
+              <button onClick={() => setCurrentView('admingallery')} className={currentView === 'admingallery' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Galería</button>
+              <button onClick={() => setCurrentView('adminliveclasses')} className={currentView === 'adminliveclasses' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Live</button>
+              <button onClick={() => setCurrentView('adminplans')} className={currentView === 'adminplans' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Planes</button>
+              <button onClick={() => setCurrentView('ecosystem')} className={currentView === 'ecosystem' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Ecosistema</button>
+            </div>
+          )}
+
+          {/* --- GESTIÓN GLOBAL PARA OTROS ROLES --- */}
+          {!hasAnyRole(['super_admin']) && hasAnyRole(['admin_marca', 'admin_gimnasio', 'admin_gym']) && (
+            <>
+              <button onClick={() => setCurrentView('adminusers')} className={currentView === 'adminusers' ? 'nav-link active' : 'nav-link'}>
+                {t('nav.users', 'Usuarios')}
+              </button>
+              {hasAnyRole(['admin_gym']) && (
+                <button onClick={() => setCurrentView('admincompanies')} className={currentView === 'admincompanies' ? 'nav-link active' : 'nav-link'}>
+                  {t('nav.companies', 'Empresas')}
+                </button>
+              )}
+            </>
+          )}
+
           {/* --- MENÚ FOOD PLAN --- */}
           {selectedModule === 'food-plan' && (
             <>
