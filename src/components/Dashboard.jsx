@@ -370,130 +370,107 @@ export default function Dashboard() {
           >
             {t('nav.home', 'Inicio')}
           </button>
-          <button
-            onClick={() => setCurrentView('progress')}
-            className={currentView === 'progress' ? 'nav-link active' : 'nav-link'}
-          >
-            {t('nav.progress', 'Progreso')}
-          </button>
-          <button
-            onClick={() => setCurrentView('calculator')}
-            className={currentView === 'calculator' ? 'nav-link active' : 'nav-link'}
-          >
-            {t('nav.calculator', 'Calculadora')}
-          </button>
-          <button
-            onClick={() => setCurrentView('foodlog')}
-            className={currentView === 'foodlog' ? 'nav-link active' : 'nav-link'}
-          >
-            {t('nav.foods', 'Alimentos')}
-          </button>
-          <button
-            onClick={() => setCurrentView('equivalentes')}
-            className={currentView === 'equivalentes' ? 'nav-link active' : 'nav-link'}
-          >
-            {t('nav.equivalentes', 'Equivalentes')}
-          </button>
-          <button
-            onClick={() => setCurrentView('recipes')}
-            className={currentView === 'recipes' ? 'nav-link active' : 'nav-link'}
-          >
-            {t('nav.recipes', 'Recetas')}
-          </button>
-          <button
-            onClick={() => setCurrentView('training')}
-            className={currentView === 'training' ? 'nav-link active' : 'nav-link'}
-          >
-            Entrenamiento
-          </button>
-          {hasAnyRole(['super_admin']) && (
-            <button
-              onClick={() => setCurrentView('ecosystem')}
-              className={currentView === 'ecosystem' ? 'nav-link active' : 'nav-link'}
-            >
-              Ecosistema
+
+          {/* --- MENÚ FOOD PLAN --- */}
+          {selectedModule === 'food-plan' && (
+            <>
+              <button onClick={() => setCurrentView('progress')} className={currentView === 'progress' ? 'nav-link active' : 'nav-link'}>
+                {t('nav.progress', 'Progreso')}
+              </button>
+              <button onClick={() => setCurrentView('calculator')} className={currentView === 'calculator' ? 'nav-link active' : 'nav-link'}>
+                {t('nav.calculator', 'Calculadora')}
+              </button>
+              <button onClick={() => setCurrentView('foodlog')} className={currentView === 'foodlog' ? 'nav-link active' : 'nav-link'}>
+                {t('nav.foods', 'Alimentos')}
+              </button>
+              <button onClick={() => setCurrentView('equivalentes')} className={currentView === 'equivalentes' ? 'nav-link active' : 'nav-link'}>
+                {t('nav.equivalentes', 'Equivalentes')}
+              </button>
+              <button onClick={() => setCurrentView('recipes')} className={currentView === 'recipes' ? 'nav-link active' : 'nav-link'}>
+                {t('nav.recipes', 'Recetas')}
+              </button>
+              
+              {hasAnyRole(['super_admin']) && (
+                <button onClick={() => setCurrentView('foodsmanager')} className={currentView === 'foodsmanager' ? 'nav-link active' : 'nav-link'}>
+                  {t('nav.foodsmanager', 'Maestro de Alimentos')}
+                </button>
+              )}
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista']) && (
+                <button onClick={() => setCurrentView('admin')} className={currentView === 'admin' ? 'nav-link active' : 'nav-link'}>
+                  {t('nav.admin', 'Admin')}
+                </button>
+              )}
+            </>
+          )}
+
+          {/* --- MENÚ TRAINING --- */}
+          {selectedModule === 'training' && (
+            <button onClick={() => setCurrentView('training')} className={currentView === 'training' ? 'nav-link active' : 'nav-link'}>
+              Entrenadores
             </button>
           )}
-          {hasAnyRole(['super_admin']) && (
-            <button
-              onClick={() => setCurrentView('admincompanies')}
-              className={currentView === 'admincompanies' ? 'nav-link active' : 'nav-link'}
-            >
-              {t('nav.companies', 'Empresas')}
-            </button>
+
+          {/* --- MENÚ D28D --- */}
+          {selectedModule === 'd28d' && (
+            <>
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador']) && (
+                <button onClick={() => setCurrentView('admintraining')} className={currentView === 'admintraining' ? 'nav-link active' : 'nav-link'}>
+                  Plantillas Training
+                </button>
+              )}
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) && (
+                <button onClick={() => setCurrentView('admingallery')} className={currentView === 'admingallery' ? 'nav-link active' : 'nav-link'}>
+                  Galería Training
+                </button>
+              )}
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
+                <button onClick={() => setCurrentView('adminliveclasses')} className={currentView === 'adminliveclasses' ? 'nav-link active' : 'nav-link'}>
+                  Clases Vivo
+                </button>
+              )}
+              <button onClick={() => setCurrentView('liveclasses')} className={currentView === 'liveclasses' ? 'nav-link active' : 'nav-link'}>
+                Clases Públicas
+              </button>
+            </>
           )}
-          {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
-            <button
-              onClick={() => setCurrentView('admingyms')}
-              className={currentView === 'admingyms' ? 'nav-link active' : 'nav-link'}
-            >
-              Maestro Gym
-            </button>
+
+          {/* --- MENÚ GYM --- */}
+          {selectedModule === 'gym' && (
+            <>
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
+                <button onClick={() => setCurrentView('admingyms')} className={currentView === 'admingyms' ? 'nav-link active' : 'nav-link'}>
+                  Maestro Gym
+                </button>
+              )}
+              {hasAnyRole(['super_admin']) && (
+                <button onClick={() => setCurrentView('admincompanies')} className={currentView === 'admincompanies' ? 'nav-link active' : 'nav-link'}>
+                  {t('nav.companies', 'Empresas')}
+                </button>
+              )}
+              {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
+                <button onClick={() => setCurrentView('adminusers')} className={currentView === 'adminusers' ? 'nav-link active' : 'nav-link'}>
+                  {t('nav.users', 'Usuarios')}
+                </button>
+              )}
+              {hasAnyRole(['super_admin']) && (
+                <button onClick={() => setCurrentView('adminplans')} className={currentView === 'adminplans' ? 'nav-link active' : 'nav-link'}>
+                  {t('nav.plans', 'Planes')}
+                </button>
+              )}
+              {hasAnyRole(['super_admin']) && (
+                <button onClick={() => setCurrentView('ecosystem')} className={currentView === 'ecosystem' ? 'nav-link active' : 'nav-link'}>
+                  Ecosistema
+                </button>
+              )}
+            </>
           )}
+
+          {/* --- MI CUENTA (Siempre visible si no es super_admin, o según preferencia) --- */}
           {!hasAnyRole(['super_admin']) && (
-            <button
-              onClick={() => setCurrentView('myaccount')}
-              className={currentView === 'myaccount' ? 'nav-link active' : 'nav-link'}
-            >
+            <button onClick={() => setCurrentView('myaccount')} className={currentView === 'myaccount' ? 'nav-link active' : 'nav-link'}>
               {t('nav.myaccount', 'Mi Cuenta')}
             </button>
           )}
-          {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) ? (
-            <>
-              {hasAnyRole(['super_admin']) && (
-                <>
-                  <button
-                    onClick={() => setCurrentView('foodsmanager')}
-                    className={currentView === 'foodsmanager' ? 'nav-link active' : 'nav-link'}
-                  >
-                    {t('nav.foodsmanager', 'Maestro de Alimentos')}
-                  </button>
-                  <button
-                    onClick={() => setCurrentView('adminplans')}
-                    className={currentView === 'adminplans' ? 'nav-link active' : 'nav-link'}
-                  >
-                    {t('nav.plans', 'Planes')}
-                  </button>
-                </>
-              )}
-              <button
-                onClick={() => setCurrentView('adminusers')}
-                className={currentView === 'adminusers' ? 'nav-link active' : 'nav-link'}
-              >
-                {t('nav.users', 'Usuarios')}
-              </button>
-              <button
-                onClick={() => setCurrentView('admin')}
-                className={currentView === 'admin' ? 'nav-link active' : 'nav-link'}
-              >
-                {t('nav.admin', 'Admin')}
-              </button>
-              <button
-                onClick={() => setCurrentView('admintraining')}
-                className={currentView === 'admintraining' ? 'nav-link active' : 'nav-link'}
-              >
-                Plantillas Training
-              </button>
-              <button
-                onClick={() => setCurrentView('admingallery')}
-                className={currentView === 'admingallery' ? 'nav-link active' : 'nav-link'}
-              >
-                Galería Training
-              </button>
-              <button
-                onClick={() => setCurrentView('adminliveclasses')}
-                className={currentView === 'adminliveclasses' ? 'nav-link active' : 'nav-link'}
-              >
-                Clases Vivo
-              </button>
-            </>
-          ) : null}
-          <button
-            onClick={() => setCurrentView('liveclasses')}
-            className={currentView === 'liveclasses' ? 'nav-link active' : 'nav-link'}
-          >
-            Clases Públicas
-          </button>
         </div>
         <div className="navbar-user">
           <div className="mr-3">
