@@ -123,19 +123,7 @@ export default function Dashboard() {
               <p>{t('welcome.role', 'Rol')}: <strong>{user?.rol}</strong></p>
             </header>
 
-            {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && adminOverview?.counts && (
-              <section className="quick-stats">
-                <h3>Resumen Administrativo</h3>
-                <div className="stats-grid">
-                  <div className="stat-box"><label>Usuarios</label><p>{adminOverview.counts.users}</p></div>
-                  <div className="stat-box"><label>Gimnasios</label><p>{adminOverview.counts.gyms}</p></div>
-                  <div className="stat-box"><label>Entrenadores</label><p>{adminOverview.counts.trainers}</p></div>
-                  <div className="stat-box"><label>Alimentos</label><p>{adminOverview.counts.foods}</p></div>
-                  <div className="stat-box"><label>Planes</label><p>{adminOverview.counts.plans}</p></div>
-                  <div className="stat-box"><label>Suscripciones Activas</label><p>{adminOverview.counts.activeSubscriptions}</p></div>
-                </div>
-              </section>
-            )}
+            {/* Resumen administrativo movido abajo según el módulo */}
 
             {!selectedModule ? (
               <div className="services-hero">
@@ -160,9 +148,9 @@ export default function Dashboard() {
                   </div>
 
                   <div className="service-card-hero" onClick={() => setSelectedModule('training')}>
-                    <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80" alt="Training" className="service-card-hero-img" />
+                    <img src="https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80" alt="Entrenadores" className="service-card-hero-img" />
                     <div className="service-card-hero-content">
-                      <h3 className="service-card-hero-title">TRAINING</h3>
+                      <h3 className="service-card-hero-title">ENTRENADORES</h3>
                       <p className="service-card-hero-desc">Módulo funcional para entrenadores. Asigna y edita rutinas de tus clientes.</p>
                     </div>
                   </div>
@@ -319,39 +307,81 @@ export default function Dashboard() {
               </div>
             )}
 
-            <section className="quick-stats">
-              <h3>{t('home.summary.title', 'Resumen del Día')}</h3>
-              <div className="stats-grid">
-                <div className="stat-box">
-                  <label>{t('ai.calories', 'Calorías')}</label>
-                  <p>{Math.round(dayTotals?.totalCalorias || 0)} / {plan.calorias} kcal</p>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalCalorias || 0) / plan.calorias) * 100, 100)}%` }}></div>
+            {/* --- DASHBOARD: FOOD PLAN --- */}
+            {selectedModule === 'food-plan' && (
+              <section className="quick-stats">
+                <h3>{t('home.summary.title', 'Resumen del Día')}</h3>
+                <div className="stats-grid">
+                  <div className="stat-box">
+                    <label>{t('ai.calories', 'Calorías')}</label>
+                    <p>{Math.round(dayTotals?.totalCalorias || 0)} / {plan.calorias} kcal</p>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalCalorias || 0) / plan.calorias) * 100, 100)}%` }}></div>
+                    </div>
+                  </div>
+                  <div className="stat-box">
+                    <label>{t('ai.protein', 'Proteína')}</label>
+                    <p>{Math.round(dayTotals?.totalProteina || 0)} / {plan.proteina}g</p>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalProteina || 0) / plan.proteina) * 100, 100)}%` }}></div>
+                    </div>
+                  </div>
+                  <div className="stat-box">
+                    <label>{t('ai.carbs', 'Carbohidratos')}</label>
+                    <p>{Math.round(dayTotals?.totalCarbohidratos || 0)} / {plan.carbohidratos}g</p>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalCarbohidratos || 0) / plan.carbohidratos) * 100, 100)}%` }}></div>
+                    </div>
+                  </div>
+                  <div className="stat-box">
+                    <label>{t('ai.fats', 'Grasas')}</label>
+                    <p>{Math.round(dayTotals?.totalGrasas || 0)} / {plan.grasas}g</p>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalGrasas || 0) / plan.grasas) * 100, 100)}%` }}></div>
+                    </div>
                   </div>
                 </div>
-                <div className="stat-box">
-                  <label>{t('ai.protein', 'Proteína')}</label>
-                  <p>{Math.round(dayTotals?.totalProteina || 0)} / {plan.proteina}g</p>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalProteina || 0) / plan.proteina) * 100, 100)}%` }}></div>
-                  </div>
+              </section>
+            )}
+
+            {/* --- DASHBOARD: D28D --- */}
+            {selectedModule === 'd28d' && (
+              <section className="quick-stats">
+                <h3>Resumen D28D</h3>
+                <div className="stats-grid">
+                  <div className="stat-box"><label>Plantillas Globales</label><p>--</p></div>
+                  <div className="stat-box"><label>Clases Programadas</label><p>--</p></div>
+                  <div className="stat-box"><label>Asistencia Promedio</label><p>--</p></div>
+                  <div className="stat-box"><label>Videos en Galería</label><p>--</p></div>
                 </div>
-                <div className="stat-box">
-                  <label>{t('ai.carbs', 'Carbohidratos')}</label>
-                  <p>{Math.round(dayTotals?.totalCarbohidratos || 0)} / {plan.carbohidratos}g</p>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalCarbohidratos || 0) / plan.carbohidratos) * 100, 100)}%` }}></div>
-                  </div>
+              </section>
+            )}
+
+            {/* --- DASHBOARD: ENTRENADORES --- */}
+            {selectedModule === 'training' && (
+              <section className="quick-stats">
+                <h3>Resumen de Entrenadores</h3>
+                <div className="stats-grid">
+                  <div className="stat-box"><label>Entrenadores Activos</label><p>{adminOverview?.counts?.trainers || 0}</p></div>
+                  <div className="stat-box"><label>Rutinas Asignadas</label><p>--</p></div>
+                  <div className="stat-box"><label>Sesiones Completadas</label><p>--</p></div>
+                  <div className="stat-box"><label>Alertas Pendientes</label><p>0</p></div>
                 </div>
-                <div className="stat-box">
-                  <label>{t('ai.fats', 'Grasas')}</label>
-                  <p>{Math.round(dayTotals?.totalGrasas || 0)} / {plan.grasas}g</p>
-                  <div className="progress-bar">
-                    <div className="progress-fill" style={{ width: `${Math.min(((dayTotals?.totalGrasas || 0) / plan.grasas) * 100, 100)}%` }}></div>
-                  </div>
+              </section>
+            )}
+
+            {/* --- DASHBOARD: MAESTRO GYM --- */}
+            {selectedModule === 'gym' && hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && adminOverview?.counts && (
+              <section className="quick-stats">
+                <h3>Resumen Maestro Gym</h3>
+                <div className="stats-grid">
+                  <div className="stat-box"><label>Gimnasios Registrados</label><p>{adminOverview.counts.gyms}</p></div>
+                  <div className="stat-box"><label>Usuarios Activos</label><p>{adminOverview.counts.users}</p></div>
+                  <div className="stat-box"><label>Planes de Suscripción</label><p>{adminOverview.counts.plans}</p></div>
+                  <div className="stat-box"><label>Suscripciones Activas</label><p>{adminOverview.counts.activeSubscriptions}</p></div>
                 </div>
-              </div>
-            </section>
+              </section>
+            )}
           </>
         );
     }
