@@ -293,25 +293,25 @@ export default function Dashboard() {
                   <>
                     {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador']) && (
                       <div className="card" onClick={() => setCurrentView('admintraining')}>
-                        <h3>📋 Maestro Entrenamiento</h3>
-                        <p>Asigna y edita rutinas, gestiona RPE/RIR, y revisa el diario de cada cliente.</p>
-                        <button className="btn-card">Abrir Maestro</button>
+                        <h3>📋 Plantillas de Clases</h3>
+                        <p>Crea y edita las plantillas de entrenamiento para la creación de clases y rutinas.</p>
+                        <button className="btn-card">Abrir Plantillas</button>
                       </div>
                     )}
 
                     {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) && (
                       <div className="card" onClick={() => setCurrentView('admingallery')}>
-                        <h3>🎬 Galería Entrenamiento</h3>
-                        <p>Administra videos de YouTube por ejercicio para el Coach Virtual.</p>
+                        <h3>🎬 Galería de Ejercicios</h3>
+                        <p>Administra videos de YouTube por ejercicio para las rutinas de D28D.</p>
                         <button className="btn-card">Abrir Galería</button>
                       </div>
                     )}
 
                     {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
                       <div className="card" onClick={() => setCurrentView('adminliveclasses')}>
-                        <h3>🟢 Clases en Vivo</h3>
-                        <p>Crea y gestiona las sesiones de Zoom en el calendario D28D.</p>
-                        <button className="btn-card">Abrir Clases Vivo</button>
+                        <h3>🟢 Links de Reuniones</h3>
+                        <p>Crea y gestiona los links de reuniones (Zoom) para las sesiones en vivo.</p>
+                        <button className="btn-card">Gestionar Links</button>
                       </div>
                     )}
                   </>
@@ -415,17 +415,17 @@ export default function Dashboard() {
             <>
               {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador']) && (
                 <button onClick={() => setCurrentView('admintraining')} className={currentView === 'admintraining' ? 'nav-link active' : 'nav-link'}>
-                  Plantillas Training
+                  Plantillas de Clases
                 </button>
               )}
               {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador']) && (
                 <button onClick={() => setCurrentView('admingallery')} className={currentView === 'admingallery' ? 'nav-link active' : 'nav-link'}>
-                  Galería Training
+                  Galería de Ejercicios
                 </button>
               )}
               {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
                 <button onClick={() => setCurrentView('adminliveclasses')} className={currentView === 'adminliveclasses' ? 'nav-link active' : 'nav-link'}>
-                  Clases Vivo
+                  Links de Reuniones
                 </button>
               )}
               <button onClick={() => setCurrentView('liveclasses')} className={currentView === 'liveclasses' ? 'nav-link active' : 'nav-link'}>
