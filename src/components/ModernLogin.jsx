@@ -99,13 +99,17 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
             disabled={loading}
             className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black font-semibold shadow-sm transition-colors disabled:opacity-60"
           >
-            {loading && (
-              <span
-                aria-hidden="true"
-                className="h-5 w-5 rounded-full border-2 border-black/25 border-t-black animate-spin"
-              />
+            {loading ? (
+              <>
+                <span
+                  aria-hidden="true"
+                  className="h-5 w-5 rounded-full border-2 border-black/25 border-t-black animate-spin"
+                />
+                <span>{t('auth.logging_in', 'Iniciando sesión...')}</span>
+              </>
+            ) : (
+              <span>{t('auth.login', 'Iniciar Sesión')}</span>
             )}
-            {loading ? t('auth.logging_in', 'Iniciando sesión...') : t('auth.login', 'Iniciar Sesión')}
           </button>
       </form>
       <div className="mt-6 text-center text-sm text-stone-600">
