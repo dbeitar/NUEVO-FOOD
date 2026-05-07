@@ -30,6 +30,7 @@ export default function Dashboard() {
     return 'home';
   });
   const [selectedModule, setSelectedModule] = useState(null);
+  const [selectedProgram, setSelectedProgram] = useState(null);
   const [notifications, setNotifications] = useState([]);
   const [d28dStats, setD28dStats] = useState({ classes: 0, videos: 0, programs: 0 });
   const [dayTotals, setDayTotals] = useState(null);
@@ -138,7 +139,7 @@ export default function Dashboard() {
       case 'adminliveclasses':
         return <AdminLiveClasses />;
       case 'liveclasses':
-        return <LiveClasses />;
+        return <LiveClasses programId={selectedProgram} />;
       case 'programs':
         return <AdminProgramsManager />;
       default:
@@ -191,6 +192,14 @@ export default function Dashboard() {
                     <div className="service-card-hero-content">
                       <h3 className="service-card-hero-title">MAESTRO GYM</h3>
                       <p className="service-card-hero-desc">Gestión de modelo marca blanca. Los gimnasios consumen los videos y clases de D28D.</p>
+                    </div>
+                  </div>
+
+                  <div className="service-card-hero" onClick={() => setSelectedModule('programs')}>
+                    <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80" alt="Programas D28D" className="service-card-hero-img" />
+                    <div className="service-card-hero-content">
+                      <h3 className="service-card-hero-title">PROGRAMAS D28D</h3>
+                      <p className="service-card-hero-desc">Vital, Pancitas y Virtual D28D. Accede a los ciclos especializados.</p>
                     </div>
                   </div>
                 </div>
@@ -341,6 +350,34 @@ export default function Dashboard() {
                         <h3>🏷️ Maestro Gym / Marca Blanca</h3>
                         <p>Crea gimnasios, colores, logo, slug y configúralos para que consuman la plataforma modular D28D.</p>
                         <button className="btn-card">Abrir Maestro Gym</button>
+                      </div>
+                    )}
+                {/* --- MODULE: PROGRAMS D28D --- */}
+                {selectedModule === 'programs' && (
+                  <>
+                    <div className="card" onClick={() => { setSelectedProgram('vital'); setCurrentView('liveclasses'); }}>
+                      <h3 className="text-pink-600">🌸 Vital D28D</h3>
+                      <p>Programas enfocados en bienestar integral y salud femenina.</p>
+                      <button className="btn-card bg-pink-500 hover:bg-pink-600">Ver Clases Vital</button>
+                    </div>
+
+                    <div className="card" onClick={() => { setSelectedProgram('pancitas'); setCurrentView('liveclasses'); }}>
+                      <h3 className="text-indigo-600">🤰 Pancitas Fit</h3>
+                      <p>Entrenamiento especializado para el periodo de embarazo.</p>
+                      <button className="btn-card bg-indigo-500 hover:bg-indigo-600">Ver Clases Pancitas</button>
+                    </div>
+
+                    <div className="card" onClick={() => { setSelectedProgram('virtual_d28d'); setCurrentView('liveclasses'); }}>
+                      <h3 className="text-lime-600">🔥 Virtual D28D</h3>
+                      <p>El programa clásico de transformación en 28 días.</p>
+                      <button className="btn-card bg-lime-500 hover:bg-lime-600">Ver Clases Virtual</button>
+                    </div>
+
+                    {hasAnyRole(['super_admin', 'admin_d28d']) && (
+                      <div className="card" onClick={() => setCurrentView('programs')}>
+                        <h3>⚙️ Maestro de Programas</h3>
+                        <p>Gestiona los ciclos y configuraciones de los 3 programas principales.</p>
+                        <button className="btn-card">Administrar</button>
                       </div>
                     )}
                   </>

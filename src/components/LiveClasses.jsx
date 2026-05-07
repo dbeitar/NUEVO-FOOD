@@ -74,7 +74,7 @@ function monthDays(anchor) {
   });
 }
 
-export default function LiveClasses() {
+export default function LiveClasses({ programId }) {
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(false);
   const [joining, setJoining] = useState(null);
@@ -85,7 +85,8 @@ export default function LiveClasses() {
   const fetchClasses = async () => {
     try {
       setLoading(true);
-      const resp = await api.get('/live-classes');
+      const params = programId ? { program_id: programId } : {};
+      const resp = await api.get('/live-classes', { params });
       setClasses(resp.data?.data || []);
     } catch {
       setError('No se pudieron cargar las clases en vivo.');
@@ -96,7 +97,7 @@ export default function LiveClasses() {
 
   useEffect(() => {
     fetchClasses();
-  }, []);
+  }, [programId]);
 
   const activeClasses = useMemo(() => classes.filter((item) => item.active), [classes]);
   const upcoming = useMemo(() => activeClasses.filter((item) => new Date(item.end_time) >= new Date()), [activeClasses]);
@@ -183,7 +184,7 @@ export default function LiveClasses() {
       );
     }
     if (view === 'graphic') {
-      return <LiveClassSchedule />;
+      return <LiveClassSchedule programId={programId} />;
     }
     const days = view === 'month' ? monthDays(anchorDate) : weekDays(anchorDate);
     return (
