@@ -138,6 +138,38 @@ const adminTrainingController = {
         }
     },
 
+    addDay: (req, res) => {
+        try {
+            if (!isTrainerOrAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
+            const updated = TrainingPlansStore.addDay(req.params.id);
+            res.json({ success: true, data: updated });
+        } catch (e) { res.status(500).json({ error: 'Error' }); }
+    },
+
+    deleteDay: (req, res) => {
+        try {
+            if (!isTrainerOrAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
+            const updated = TrainingPlansStore.deleteDay(req.params.id, req.params.dayIndex);
+            res.json({ success: true, data: updated });
+        } catch (e) { res.status(500).json({ error: 'Error' }); }
+    },
+
+    addExercise: (req, res) => {
+        try {
+            if (!isTrainerOrAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
+            const updated = TrainingPlansStore.addExercise(req.params.id, req.params.dayIndex);
+            res.json({ success: true, data: updated });
+        } catch (e) { res.status(500).json({ error: 'Error' }); }
+    },
+
+    deleteExercise: (req, res) => {
+        try {
+            if (!isTrainerOrAdmin(req)) return res.status(403).json({ error: 'No autorizado' });
+            const updated = TrainingPlansStore.deleteExercise(req.params.id, req.params.dayIndex, req.params.exerciseIndex);
+            res.json({ success: true, data: updated });
+        } catch (e) { res.status(500).json({ error: 'Error' }); }
+    },
+
     deletePlan: (req, res) => {
         try {
             if (!isTrainerOrAdmin(req)) {

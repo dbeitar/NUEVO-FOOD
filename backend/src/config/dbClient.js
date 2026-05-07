@@ -65,4 +65,25 @@ async function query(text, params = []) {
   return res;
 }
 
-module.exports = { query };
+// Helper para transacciones en PostgreSQL
+async function getTransaction() {
+  await init();
+  if (client === 'mysql') {
+    const connection = await mysqlPool.getConnection();
+    await connection.beginTransaction();
+    return {
+      query: (text, params) => connection.execute(toMySQL(text), params).then(([rows]) => ({ rows })),
+      commit: () => connection.commit().then(() => connection.release()),
+      rollback: () => connection.rollback().then(() => connection.release()),
+    };
+  }
+  const pgClient = await pgPool.connect();
+  await pgClient.query('BEGIN');
+  return {
+    query: (text, params) => pgClient.query(text, params),
+    commit: () => pgClient.query('COMMIT').then(() => pgClient.release()),
+    rollback: () => pgClient.query('ROLLBACK').then(() => pgClient.release()),
+  };
+}
+
+module.exports = { query, getTransaction };

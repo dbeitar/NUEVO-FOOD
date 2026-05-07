@@ -126,6 +126,36 @@ export default function AdminTrainingManager() {
         }
     };
 
+    const addDay = async (planId) => {
+        try {
+            await api.post(`/training/admin/plans/${planId}/add-day`);
+            startEditing(planId);
+        } catch { alert('Error añadiendo día'); }
+    };
+
+    const deleteDay = async (planId, dayIdx) => {
+        if (!confirm('¿Eliminar este día completo?')) return;
+        try {
+            await api.delete(`/training/admin/plans/${planId}/delete-day/${dayIdx}`);
+            startEditing(planId);
+        } catch { alert('Error eliminando día'); }
+    };
+
+    const addExercise = async (planId, dayIdx) => {
+        try {
+            await api.post(`/training/admin/plans/${planId}/add-exercise/${dayIdx}`);
+            startEditing(planId);
+        } catch { alert('Error añadiendo ejercicio'); }
+    };
+
+    const deleteExercise = async (planId, dayIdx, exIdx) => {
+        if (!confirm('¿Eliminar este ejercicio?')) return;
+        try {
+            await api.delete(`/training/admin/plans/${planId}/delete-exercise/${dayIdx}/${exIdx}`);
+            startEditing(planId);
+        } catch { alert('Error eliminando ejercicio'); }
+    };
+
     return (
         <div className="card max-w-7xl mx-auto min-h-[80vh]">
             <h2 className="text-3xl font-bold text-stone-900 mb-2">Maestro de Administración de Entrenamientos</h2>
@@ -148,7 +178,13 @@ export default function AdminTrainingManager() {
                     className={`pb-2 px-1 font-semibold ${activeTab === 'log' ? 'border-b-2 border-lime-500 text-stone-900' : 'text-stone-500'}`}
                     onClick={() => setActiveTab('log')}
                 >
-                    Diario de Seguimiento
+                    Diario Global
+                </button>
+                <button
+                    className={`pb-2 px-1 font-semibold ${activeTab === 'stats' ? 'border-b-2 border-lime-500 text-stone-900' : 'text-stone-500'}`}
+                    onClick={() => setActiveTab('stats')}
+                >
+                    📈 Evolución & Stats
                 </button>
             </div>
 
@@ -234,7 +270,10 @@ export default function AdminTrainingManager() {
                                         <div className="bg-stone-50 border-b border-stone-200 p-4 flex flex-col gap-3">
                                             <div className="flex justify-between items-center">
                                                 <h4 className="font-bold text-stone-900">{d.nombre} (Día {d.dia})</h4>
-                                                <span className="text-xs font-semibold bg-stone-200 text-stone-700 px-2 py-1 rounded-full">{d.ejercicios?.length} ejercicios</span>
+                                                <div className="flex items-center gap-2">
+                                                    <span className="text-xs font-semibold bg-stone-200 text-stone-700 px-2 py-1 rounded-full">{d.ejercicios?.length} ejercicios</span>
+                                                    <button onClick={() => deleteDay(editingPlan.id, dIdx)} className="text-xs text-red-600 hover:underline">Eliminar Día</button>
+                                                </div>
                                             </div>
 
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2 p-3 bg-white border border-stone-200 rounded-xl">
@@ -287,6 +326,14 @@ export default function AdminTrainingManager() {
                                                 </div>
                                             </div>
                                         </div>
+                                        <div className="bg-stone-50 p-2 border-b border-stone-100 flex justify-end">
+                                            <button 
+                                                onClick={() => addExercise(editingPlan.id, dIdx)}
+                                                className="text-xs bg-lime-500 text-white px-3 py-1 rounded-lg font-bold hover:bg-lime-600 transition-all"
+                                            >
+                                                + Añadir Ejercicio
+                                            </button>
+                                        </div>
                                         <div className="p-0 overflow-x-auto">
                                             <table className="w-full text-left text-sm border-collapse min-w-[800px]">
                                                 <thead>
@@ -298,6 +345,7 @@ export default function AdminTrainingManager() {
                                                         <th className="p-3 w-32">Intensidad</th>
                                                         <th className="p-3 w-28">Descanso (s)</th>
                                                         <th className="p-3 w-32">Notas</th>
+                                                        <th className="p-3 w-10"></th>
                                                     </tr>
                                                 </thead>
                                                 <tbody>
@@ -365,6 +413,9 @@ export default function AdminTrainingManager() {
                                                                     onChange={(e) => updateExercise(editingPlan.id, dIdx, exIdx, 'notes', e.target.value)}
                                                                 />
                                                             </td>
+                                                            <td className="p-2">
+                                                                <button onClick={() => deleteExercise(editingPlan.id, dIdx, exIdx)} className="text-red-400 hover:text-red-600 font-bold">×</button>
+                                                            </td>
                                                         </tr>
                                                     ))}
                                                 </tbody>
@@ -372,6 +423,12 @@ export default function AdminTrainingManager() {
                                         </div>
                                     </div>
                                 ))}
+                                <button 
+                                    onClick={() => addDay(editingPlan.id)}
+                                    className="w-full py-4 border-2 border-dashed border-stone-300 rounded-2xl text-stone-500 font-bold hover:bg-stone-50 hover:border-lime-400 transition-all"
+                                >
+                                    + Añadir Nuevo Día de Entrenamiento
+                                </button>
                             </div>
                         </div>
                     )}
@@ -399,7 +456,7 @@ export default function AdminTrainingManager() {
                                     <p className="text-sm font-semibold text-stone-700 bg-stone-100 px-3 py-1 rounded inline-block mb-3">Día de Rutina: {log.dia}</p>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                                        {log.ejercicios.map((ex, i) => (
+                                        {log.ejercicios?.map((ex, i) => (
                                             <div key={i} className="border border-stone-100 rounded-lg p-3 bg-stone-50 text-sm">
                                                 <p className="font-bold mb-1 truncate">{ex.exercise_name}</p>
                                                 <p className="text-stone-600">Series completadas: <span className="font-bold">{ex.sets_done}</span></p>
@@ -414,6 +471,15 @@ export default function AdminTrainingManager() {
                                             </div>
                                         ))}
                                     </div>
+
+                                    {log.wellness && (
+                                        <div className="mt-3 p-3 bg-lime-50 border border-lime-100 rounded-xl flex flex-wrap gap-4 text-xs font-semibold text-lime-900">
+                                            <div className="flex items-center gap-1">😴 {log.wellness.sleep_hours}h (Calidad: {log.wellness.sleep_quality}/10)</div>
+                                            <div className="flex items-center gap-1">⚡ Energía: {log.wellness.energy_level}/10</div>
+                                            <div className="flex items-center gap-1">😰 Estrés: {log.wellness.stress_level}/10</div>
+                                            <div className="flex items-center gap-1">🍴 Apetito: {log.wellness.appetite}/10</div>
+                                        </div>
+                                    )}
 
                                     <div className="mt-4 pt-3 border-t border-stone-100">
                                         <label className="text-xs font-bold text-stone-500 block mb-1">NOTAS DEL ENTRENADOR</label>
@@ -434,6 +500,83 @@ export default function AdminTrainingManager() {
                             )}
                         </div>
                     )}
+                </div>
+            )}
+            {activeTab === 'stats' && (
+                <div className="space-y-6">
+                    <h3 className="font-bold text-2xl text-stone-900 mb-2">Dashboard de Evolución del Atleta</h3>
+                    <p className="text-stone-600 text-sm">Visualización de métricas de rendimiento y factores de recuperación agregados.</p>
+
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                        <div className="card border !border-stone-200 p-5 bg-stone-50">
+                            <span className="text-xs font-bold text-stone-500 uppercase">Total Sesiones</span>
+                            <p className="text-3xl font-black text-stone-900">{logs.length}</p>
+                        </div>
+                        <div className="card border !border-stone-200 p-5 bg-stone-50">
+                            <span className="text-xs font-bold text-stone-500 uppercase">Promedio Energía</span>
+                            <p className="text-3xl font-black text-lime-600">
+                                {(logs.reduce((acc, l) => acc + (l.wellness?.energy_level || 0), 0) / (logs.length || 1)).toFixed(1)}/10
+                            </p>
+                        </div>
+                        <div className="card border !border-stone-200 p-5 bg-stone-50">
+                            <span className="text-xs font-bold text-stone-500 uppercase">Calidad Sueño Avg</span>
+                            <p className="text-3xl font-black text-blue-600">
+                                {(logs.reduce((acc, l) => acc + (l.wellness?.sleep_quality || 0), 0) / (logs.length || 1)).toFixed(1)}/10
+                            </p>
+                        </div>
+                        <div className="card border !border-stone-200 p-5 bg-stone-50">
+                            <span className="text-xs font-bold text-stone-500 uppercase">Estrés Promedio</span>
+                            <p className="text-3xl font-black text-red-600">
+                                {(logs.reduce((acc, l) => acc + (l.wellness?.stress_level || 0), 0) / (logs.length || 1)).toFixed(1)}/10
+                            </p>
+                        </div>
+                    </div>
+
+                    <div className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm">
+                        <h4 className="font-bold text-lg mb-4 flex items-center gap-2">
+                            <span className="p-2 bg-lime-100 text-lime-700 rounded-lg">📈</span>
+                            Tendencia de Cargas por Usuario
+                        </h4>
+                        <div className="overflow-x-auto">
+                            <table className="w-full text-left">
+                                <thead>
+                                    <tr className="text-xs font-bold text-stone-400 uppercase border-b border-stone-100">
+                                        <th className="pb-3">Usuario</th>
+                                        <th className="pb-3">Último Entrenamiento</th>
+                                        <th className="pb-3 text-center">Ejercicios Totales</th>
+                                        <th className="pb-3 text-center">Horas Sueño Avg</th>
+                                        <th className="pb-3">Estado Sugerido</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-stone-50">
+                                    {Array.from(new Set(logs.map(l => l.user_id))).map(uid => {
+                                        const userLogs = logs.filter(l => l.user_id === uid);
+                                        const lastLog = userLogs[userLogs.length - 1];
+                                        const avgSleep = userLogs.reduce((acc, l) => acc + (l.wellness?.sleep_hours || 0), 0) / userLogs.length;
+                                        const avgStress = userLogs.reduce((acc, l) => acc + (l.wellness?.stress_level || 0), 0) / userLogs.length;
+                                        
+                                        return (
+                                            <tr key={uid} className="text-sm hover:bg-stone-50">
+                                                <td className="py-4 font-bold text-stone-800">{lastLog.user_name}</td>
+                                                <td className="py-4 text-stone-600">{lastLog.fecha}</td>
+                                                <td className="py-4 text-center font-semibold">{userLogs.reduce((acc, l) => acc + (l.ejercicios?.length || 0), 0)}</td>
+                                                <td className="py-4 text-center font-bold text-blue-500">{avgSleep.toFixed(1)}h</td>
+                                                <td className="py-4">
+                                                    {avgStress > 7 ? (
+                                                        <span className="text-[10px] bg-red-100 text-red-700 px-2 py-1 rounded-full font-bold">SOBRECARGADO</span>
+                                                    ) : avgSleep < 6 ? (
+                                                        <span className="text-[10px] bg-amber-100 text-amber-700 px-2 py-1 rounded-full font-bold">DÉFICIT RECUPERACIÓN</span>
+                                                    ) : (
+                                                        <span className="text-[10px] bg-green-100 text-green-700 px-2 py-1 rounded-full font-bold">OPTIMO PARA CARGA</span>
+                                                    )}
+                                                </td>
+                                            </tr>
+                                        );
+                                    })}
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
                 </div>
             )}
         </div>

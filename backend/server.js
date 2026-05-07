@@ -24,21 +24,36 @@ const liveClassRoutes = require('./src/routes/liveClassRoutes');
 const fitnessTestRoutes = require('./src/routes/fitnessTestRoutes');
 const ecosystemRoutes = require('./src/routes/ecosystemRoutes');
 const trainerMastersRoutes = require('./src/routes/trainerMastersRoutes');
+const programRoutes = require('./src/routes/programRoutes');
 const seedD28DData = require('./src/seedD28DData');
 const authMiddleware = require('./src/middleware/auth');
 const { hydrateAccess } = require('./src/utils/accessControl');
 
+const tracingMiddleware = require('./src/middleware/tracing');
 const app = express();
 const PORT = process.env.PORT || 3001;
 
-// 1. CORS DEBE IR PRIMERO QUE TODO
-app.use(cors({
-  origin: true, // En desarrollo, permite el origen que haga la petición
-  credentials: true,
-  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
-  allowedHeaders: ['Content-Type', 'Authorization']
-}));
-app.options('*', cors()); // Habilitar pre-flight para todas las rutas
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
+app.use((req, res, next) => {
+  const origin = req.headers.origin;
+  console.log(`[CORS DEBUG] ${req.method} ${req.url} from ${origin}`);
+  res.header("Access-Control-Allow-Origin", origin || "*");
+  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
+  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Trace-Id, X-Requested-With");
+  res.header("Access-Control-Allow-Credentials", "true");
+  
+  if (req.method === "OPTIONS") {
+    console.log(`[CORS DEBUG] Handled OPTIONS preflight`);
+    return res.sendStatus(200);
+  }
+  next();
+});
+
+app.use(tracingMiddleware);
 
 app.use(express.json());
 app.use(morgan('dev'));
@@ -146,42 +161,7 @@ if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') {
 }
 
 // Middleware para validar códigos de empleado (temporal)
-app.use('/api/auth', (req, res, next) => {
-  if (req.method === 'POST' && req.path === '/register') {
-    console.log('Auth middleware - path:', req.path, 'body:', req.body);
-    // Validar que tenga código de empleado
-    if (!req.body.codigo_empleado) {
-      console.log('No codigo_empleado provided');
-      return res.status(400).json({ error: 'Código de empleado requerido' });
-    }
-    // Por ahora, aceptar cualquier código de empleado
-    if (req.body.codigo_empleado) {
-      console.log('codigo_empleado valid, continuing');
-      // Código válido, continuar
-      next();
-    } else {
-      console.log('codigo_empleado invalid');
-      return res.status(400).json({ error: 'Código de empleado no encontrado' });
-    }
-  } else {
-    next();
-  }
-});
-
-app.use('/auth', (req, res, next) => {
-  if (req.method === 'POST' && req.path === '/register') {
-    if (!req.body.codigo_empleado) {
-      return res.status(400).json({ error: 'Código de empleado requerido' });
-    }
-    if (req.body.codigo_empleado) {
-      next();
-    } else {
-      return res.status(400).json({ error: 'Código de empleado no encontrado' });
-    }
-  } else {
-    next();
-  }
-});
+// Middleware de validación temporalmente desactivado para debugging
 
 // Rutas de Autenticación
 if (USE_DB_AUTH) {
@@ -666,6 +646,7 @@ app.use('/api/live-classes', liveClassRoutes);
 app.use('/api/fitness-tests', fitnessTestRoutes);
 app.use('/api/ecosystem', ecosystemRoutes);
 app.use('/api/trainer-masters', trainerMastersRoutes);
+app.use('/api/programs', programRoutes);
 
 app.use('/calculator', calculatorRoutes);
 app.use('/foods', foodRoutes);

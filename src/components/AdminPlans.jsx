@@ -17,8 +17,10 @@ export default function AdminPlans() {
     descripcion: '',
     precio_mensual: 0,
     max_users: 0,
-    features: ''
+    features: '',
+    program_id: 'virtual_d28d'
   });
+  const [programs, setPrograms] = useState([]);
 
   const fetchPlans = useCallback(async () => {
     try {
@@ -33,9 +35,19 @@ export default function AdminPlans() {
     }
   }, [t]);
 
+  const fetchPrograms = useCallback(async () => {
+    try {
+      const res = await api.get('/programs');
+      setPrograms(res.data.data || []);
+    } catch (err) {
+      console.error('Error loading programs', err);
+    }
+  }, []);
+
   useEffect(() => {
     fetchPlans();
-  }, [fetchPlans]);
+    fetchPrograms();
+  }, [fetchPlans, fetchPrograms]);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -59,7 +71,7 @@ export default function AdminPlans() {
         });
       }
       setEditingPlan(null);
-      setFormData({ nombre: '', descripcion: '', precio_mensual: 0, max_users: 0, features: '' });
+      setFormData({ nombre: '', descripcion: '', precio_mensual: 0, max_users: 0, features: '', program_id: 'virtual_d28d' });
       setShowForm(false);
       fetchPlans();
     } catch (err) {
@@ -74,7 +86,8 @@ export default function AdminPlans() {
       descripcion: plan.descripcion,
       precio_mensual: plan.precio_mensual,
       max_users: plan.max_users || 0,
-      features: Array.isArray(plan.features) ? plan.features.join(', ') : plan.features
+      features: Array.isArray(plan.features) ? plan.features.join(', ') : plan.features,
+      program_id: plan.program_id || 'virtual_d28d'
     });
     setShowForm(true);
   };
@@ -98,7 +111,7 @@ export default function AdminPlans() {
             className="btn-primary inline-flex items-center gap-2"
             onClick={() => {
               setEditingPlan(null);
-              setFormData({ nombre: '', descripcion: '', precio_mensual: 0, max_users: 0, features: '' });
+              setFormData({ nombre: '', descripcion: '', precio_mensual: 0, max_users: 0, features: '', program_id: 'virtual_d28d' });
               setShowForm(true);
             }}
           >
@@ -126,6 +139,20 @@ export default function AdminPlans() {
             </button>
           </div>
           <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="label">Programa</label>
+              <select 
+                name="program_id" 
+                value={formData.program_id} 
+                onChange={handleInputChange} 
+                required 
+                className="input"
+              >
+                {programs.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
             <div>
               <label className="label">{t('plans.name', 'Nombre del Plan')}</label>
               <input 
@@ -195,6 +222,7 @@ export default function AdminPlans() {
             <table className="min-w-full divide-y divide-slate-200">
               <thead className="bg-stone-50">
                 <tr>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Programa</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.name', 'Nombre')}</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('plans.price', 'Precio')}</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('plans.capacity', 'Cupo Máx')}</th>
@@ -208,6 +236,9 @@ export default function AdminPlans() {
                 ) : plans.length > 0 ? (
                   plans.map(plan => (
                     <tr key={plan.nombre} className="hover:bg-stone-100 transition-colors">
+                      <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900 capitalize">
+                        {programs.find(p => p.id === plan.program_id)?.name || plan.program_id}
+                      </td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">{plan.nombre}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">${plan.precio_mensual?.toLocaleString()}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{plan.max_users}</td>
@@ -233,7 +264,7 @@ export default function AdminPlans() {
                     </tr>
                   ))
                 ) : (
-                  <tr><td colSpan="5" className="px-6 py-4 text-center text-sm text-slate-400">{t('plans.none', 'No hay planes disponibles. Crea uno nuevo.')}</td></tr>
+                  <tr><td colSpan="6" className="px-6 py-4 text-center text-sm text-slate-400">{t('plans.none', 'No hay planes disponibles. Crea uno nuevo.')}</td></tr>
                 )}
               </tbody>
             </table>

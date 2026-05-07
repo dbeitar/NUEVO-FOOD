@@ -78,6 +78,14 @@ const TrainingLogStore = {
             completado: Boolean(completado),
             duration_minutes: Number(duration_minutes) || 0,
             trainer_notes: trainer_notes || '',
+            wellness: {
+                sleep_hours: 0,
+                sleep_quality: 5, // 1-10
+                stress_level: 5,  // 1-10
+                appetite: 5,      // 1-10
+                energy_level: 5,   // 1-10
+                soreness: 0       // 1-10
+            },
             created_at: new Date().toISOString(),
         };
         rows.push(entry);
@@ -93,6 +101,12 @@ const TrainingLogStore = {
         if (data.completado !== undefined) entry.completado = Boolean(data.completado);
         if (data.duration_minutes !== undefined) entry.duration_minutes = Number(data.duration_minutes);
         if (data.trainer_notes !== undefined) entry.trainer_notes = data.trainer_notes;
+        if (data.wellness) {
+            entry.wellness = {
+                ...entry.wellness,
+                ...data.wellness
+            };
+        }
         rows[idx] = entry;
         store.setAll(rows);
         return entry;

@@ -62,6 +62,7 @@ class LiveClassDatabase {
       gym_id: data.gym_id || null,
       is_global: data.is_global !== false,
       day_label: String(data.day_label || '').trim(),
+      program_id: data.program_id || null,
       class_type: String(data.class_type || 'METODO D28D').trim(),
       coach: String(data.coach || '').trim(),
       capacity: Number(data.capacity || 40),
@@ -89,6 +90,7 @@ class LiveClassDatabase {
     if (updates.gym_id !== undefined) item.gym_id = updates.gym_id || null;
     if (updates.is_global !== undefined) item.is_global = updates.is_global;
     if (updates.day_label !== undefined) item.day_label = String(updates.day_label || '').trim();
+    if (updates.program_id !== undefined) item.program_id = updates.program_id || null;
     if (updates.class_type !== undefined) item.class_type = String(updates.class_type || '').trim();
     if (updates.coach !== undefined) item.coach = String(updates.coach || '').trim();
     if (updates.capacity !== undefined) item.capacity = Number(updates.capacity || 40);

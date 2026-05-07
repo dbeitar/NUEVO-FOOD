@@ -1,9 +1,10 @@
 const express = require('express');
 const authenticateToken = require('../middleware/auth');
-const { getOverview } = require('../controllers/adminController');
+const adminController = require('../controllers/adminController');
 
 const router = express.Router();
 
-router.get('/overview', authenticateToken, getOverview);
+router.get('/overview', authenticateToken, adminController.getOverview);
+router.get('/audit-logs', authenticateToken, adminController.getAuditLogs);
 
 module.exports = router;

@@ -1,0 +1,15 @@
+{
+    "keep": {
+        "days": true,
+        "amount": 14
+    },
+    "auditLog": "/Users/cesargomez/Desktop/MVPFOOD/backend/logs/.2c023881abccf63cc1cc725e788cb028051568dd-audit.json",
+    "files": [
+        {
+            "date": 1778178615582,
+            "name": "/Users/cesargomez/Desktop/MVPFOOD/backend/logs/error-2026-05-07.log",
+            "hash": "a1cb9c0c0f578bb3d9257fac8003698ee059173253883a8a119f31b3c0a1a760"
+        }
+    ],
+    "hashType": "sha256"
+}

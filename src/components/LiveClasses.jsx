@@ -1,11 +1,13 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
+import LiveClassSchedule from './LiveClassSchedule';
 
 const viewOptions = [
   { id: 'month', label: 'Mensual' },
   { id: 'week', label: 'Semanal' },
   { id: 'day', label: 'Diaria' },
   { id: 'upcoming', label: 'Proximas' },
+  { id: 'graphic', label: 'Horario Gráfico' },
 ];
 
 function formatDateTime(value) {
@@ -77,7 +79,7 @@ export default function LiveClasses() {
   const [loading, setLoading] = useState(false);
   const [joining, setJoining] = useState(null);
   const [error, setError] = useState('');
-  const [view, setView] = useState('week');
+  const [view, setView] = useState('graphic');
   const [anchorDate, setAnchorDate] = useState(new Date());
 
   const fetchClasses = async () => {
@@ -179,6 +181,9 @@ export default function LiveClasses() {
           {dayItems.length ? dayItems.map((item) => renderClassCard(item)) : <EmptyState />}
         </div>
       );
+    }
+    if (view === 'graphic') {
+      return <LiveClassSchedule />;
     }
     const days = view === 'month' ? monthDays(anchorDate) : weekDays(anchorDate);
     return (

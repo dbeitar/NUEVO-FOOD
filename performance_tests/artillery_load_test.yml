@@ -1,0 +1,40 @@
+config:
+  target: "http://localhost:3001"
+  phases:
+    - duration: 60
+      arrivalRate: 5
+      rampTo: 50
+      name: "Ramp up to 50 users"
+    - duration: 240
+      arrivalRate: 50
+      name: "Sustained load of 50 users"
+  defaults:
+    headers:
+      Content-Type: "application/json"
+
+scenarios:
+  - name: "Flujo de Usuario: Login -> Ver Menú -> Ver Categorías"
+    flow:
+      - post:
+          url: "/api/auth/login"
+          json:
+            email: "admin@foodplan.local"
+            password: "Admin!234"
+          capture:
+            - json: "$.token"
+              as: "authToken"
+      - get:
+          url: "/api/health"
+      - get:
+          url: "/api/foods"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      - think: 1
+      - get:
+          url: "/api/foods/categories"
+          headers:
+            Authorization: "Bearer {{ authToken }}"
+      - get:
+          url: "/api/foods/search?query=pollo"
+          headers:
+            Authorization: "Bearer {{ authToken }}"

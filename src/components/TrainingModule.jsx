@@ -38,7 +38,18 @@ export default function TrainingModule() {
   const [assistantResult, setAssistantResult] = useState(null);
 
   // === WORKOUT LOGGING STATE ===
-  const [workoutLog, setWorkoutLog] = useState({ cardioBpm: '', cardioLimit: '', exercises: {} });
+  const [workoutLog, setWorkoutLog] = useState({ 
+    cardioBpm: '', 
+    cardioLimit: '', 
+    exercises: {},
+    wellness: {
+      sleep_hours: 8,
+      sleep_quality: 5,
+      stress_level: 5,
+      appetite: 5,
+      energy_level: 5
+    }
+  });
   const [savingLog, setSavingLog] = useState(false);
 
   useEffect(() => {
@@ -169,6 +180,16 @@ export default function TrainingModule() {
     }));
   };
 
+  const updateWellnessField = (field, value) => {
+    setWorkoutLog((prev) => ({
+      ...prev,
+      wellness: {
+        ...prev.wellness,
+        [field]: value,
+      },
+    }));
+  };
+
   const saveLog = async () => {
     if (!plan || !day) return;
     try {
@@ -189,6 +210,7 @@ export default function TrainingModule() {
             notes: ''
           };
         }),
+        wellness: workoutLog.wellness
       };
       const resp = await api.post('/training/log', payload);
       if (resp.data.success) {
@@ -342,6 +364,61 @@ export default function TrainingModule() {
                 ) : (
                   <p className="text-xs text-red-500">Video no asignado</p>
                 )}
+              </div>
+            </div>
+
+            {/* FACTORES DE BIENESTAR (WELLNESS) */}
+            <div className="bg-stone-900 text-white p-5 rounded-2xl mb-6 shadow-xl">
+              <h5 className="font-bold text-lime-400 text-sm mb-4 uppercase tracking-widest flex items-center gap-2">
+                <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
+                Factores Clave de Rendimiento (Wellness)
+              </h5>
+              <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Sueño (Horas)</label>
+                  <input 
+                    type="number" 
+                    className="w-full bg-stone-800 border-none rounded-lg py-1 px-2 text-sm focus:ring-1 focus:ring-lime-500"
+                    value={workoutLog.wellness.sleep_hours}
+                    onChange={(e) => updateWellnessField('sleep_hours', Number(e.target.value))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Calidad Sueño (1-10)</label>
+                  <input 
+                    type="range" min="1" max="10"
+                    className="w-full accent-lime-500"
+                    value={workoutLog.wellness.sleep_quality}
+                    onChange={(e) => updateWellnessField('sleep_quality', Number(e.target.value))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Estrés (1-10)</label>
+                  <input 
+                    type="range" min="1" max="10"
+                    className="w-full accent-red-500"
+                    value={workoutLog.wellness.stress_level}
+                    onChange={(e) => updateWellnessField('stress_level', Number(e.target.value))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Apetito (1-10)</label>
+                  <input 
+                    type="range" min="1" max="10"
+                    className="w-full accent-blue-500"
+                    value={workoutLog.wellness.appetite}
+                    onChange={(e) => updateWellnessField('appetite', Number(e.target.value))}
+                  />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-bold text-stone-400 uppercase tracking-tighter">Energía (1-10)</label>
+                  <input 
+                    type="range" min="1" max="10"
+                    className="w-full accent-yellow-500"
+                    value={workoutLog.wellness.energy_level}
+                    onChange={(e) => updateWellnessField('energy_level', Number(e.target.value))}
+                  />
+                </div>
               </div>
             </div>
 

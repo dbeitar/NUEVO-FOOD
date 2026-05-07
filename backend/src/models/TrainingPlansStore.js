@@ -170,6 +170,62 @@ const TrainingPlansStore = {
         return plan;
     },
 
+    addDay(planId) {
+        const plan = this.getById(planId);
+        if (!plan) return null;
+        const nextDia = (plan.dias?.length || 0) + 1;
+        plan.dias.push({
+            dia: nextDia,
+            nombre: `Día ${nextDia}`,
+            warmup_url: '',
+            stretching_url: '',
+            cardio: { goal: 'oxidación', bpm: 130, limit_type: 'time', limit_value: 20 },
+            ejercicios: []
+        });
+        plan.updated_at = new Date().toISOString();
+        store.setAll(rows);
+        return plan;
+    },
+
+    deleteDay(planId, dayIndex) {
+        const plan = this.getById(planId);
+        if (!plan || !plan.dias) return null;
+        plan.dias.splice(dayIndex, 1);
+        // Re-index days
+        plan.dias.forEach((d, i) => d.dia = i + 1);
+        plan.updated_at = new Date().toISOString();
+        store.setAll(rows);
+        return plan;
+    },
+
+    addExercise(planId, dayIndex) {
+        const plan = this.getById(planId);
+        if (!plan || !plan.dias?.[dayIndex]) return null;
+        plan.dias[dayIndex].ejercicios.push({
+            exercise_name: 'Nuevo Ejercicio',
+            sets: 3,
+            reps: 10,
+            rest_seconds: 60,
+            intensity_type: 'RPE',
+            intensity_value: 8,
+            tempo: '2-1-2-0',
+            youtube_url: '',
+            notes: ''
+        });
+        plan.updated_at = new Date().toISOString();
+        store.setAll(rows);
+        return plan;
+    },
+
+    deleteExercise(planId, dayIndex, exIndex) {
+        const plan = this.getById(planId);
+        if (!plan || !plan.dias?.[dayIndex]?.ejercicios) return null;
+        plan.dias[dayIndex].ejercicios.splice(exIndex, 1);
+        plan.updated_at = new Date().toISOString();
+        store.setAll(rows);
+        return plan;
+    },
+
     delete(id) {
         const idx = rows.findIndex((r) => r.id === Number(id));
         if (idx === -1) return false;

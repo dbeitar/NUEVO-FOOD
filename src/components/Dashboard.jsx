@@ -17,10 +17,11 @@ import AdminTrainingGallery from './AdminTrainingGallery';
 import AdminTrainingManager from './AdminTrainingManager';
 import AdminLiveClasses from './AdminLiveClasses';
 import LiveClasses from './LiveClasses';
-import EcosystemOverview from './EcosystemOverview';
 import { useI18n } from '../context/useI18n';
 import NutritionChat from './NutritionChat';
 import api from '../services/api';
+import AuditDashboard from './AuditDashboard';
+import AdminProgramsManager from './AdminProgramsManager';
 
 export default function Dashboard() {
   const { user, logout } = useAuth();
@@ -29,6 +30,8 @@ export default function Dashboard() {
     return 'home';
   });
   const [selectedModule, setSelectedModule] = useState(null);
+  const [notifications, setNotifications] = useState([]);
+  const [d28dStats, setD28dStats] = useState({ classes: 0, videos: 0, programs: 0 });
   const [dayTotals, setDayTotals] = useState(null);
   const [adminOverview, setAdminOverview] = useState(null);
   const plan = { calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 };
@@ -57,7 +60,28 @@ export default function Dashboard() {
       }
     };
     fetchTotals();
-  }, [today]);
+    // fetchNotifications(); // Removido para evitar error de referencia
+
+    if (selectedModule === 'd28d') {
+      const fetchD28DStats = async () => {
+        try {
+          const [cls, vids, progs] = await Promise.all([
+            api.get('/live-classes/admin'),
+            api.get('/training/admin/gallery'),
+            api.get('/programs')
+          ]);
+          setD28dStats({
+            classes: cls.data?.data?.length || 0,
+            videos: vids.data?.data?.length || 0,
+            programs: progs.data?.data?.length || 0
+          });
+        } catch (err) {
+          console.warn('Error fetching D28D stats', err);
+        }
+      };
+      fetchD28DStats();
+    }
+  }, [today, selectedModule]);
 
   useEffect(() => {
     const isAdmin = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_food_plan', 'admin_training', 'admin_gym']);
@@ -99,6 +123,8 @@ export default function Dashboard() {
         return <AdminGyms />;
       case 'myaccount':
         return <MyAccount />;
+      case 'audit':
+        return hasAnyRole(['super_admin']) ? <AuditDashboard /> : null;
       case 'progress':
         return <Progress />;
       case 'equivalentes':
@@ -113,8 +139,8 @@ export default function Dashboard() {
         return <AdminLiveClasses />;
       case 'liveclasses':
         return <LiveClasses />;
-      case 'ecosystem':
-        return <EcosystemOverview />;
+      case 'programs':
+        return <AdminProgramsManager />;
       default:
         return (
           <>
@@ -183,13 +209,7 @@ export default function Dashboard() {
                 {/* --- MODULE: GYM --- */}
                 {selectedModule === 'gym' && (
                   <>
-                    {hasAnyRole(['super_admin']) && (
-                      <div className="card" onClick={() => setCurrentView('ecosystem')}>
-                        <h3>🧩 Ecosistema Modular</h3>
-                        <p>Controla modulos, marcas blancas, permisos y reglas D28D bloqueadas.</p>
-                        <button className="btn-card">Abrir Ecosistema</button>
-                      </div>
-                    )}
+                    {/* Ecosistema removido */}
                     {hasAnyRole(['super_admin', 'admin_gym']) && (
                       <div className="card" onClick={() => setCurrentView('admincompanies')}>
                         <h3>{t('card.companies.title', '🏢 Empresas')}</h3>
@@ -308,10 +328,18 @@ export default function Dashboard() {
                       </div>
                     )}
 
+                    {hasAnyRole(['super_admin']) && (
+                      <div className="card" onClick={() => setCurrentView('programs')}>
+                        <h3>⚙️ Configuración de Programas</h3>
+                        <p>Ajusta las cuentas de Zoom (Vital, Pancitas, D28D) y plantillas globales.</p>
+                        <button className="btn-card">Abrir Programas</button>
+                      </div>
+                    )}
+
                     {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym']) && (
                       <div className="card" onClick={() => setCurrentView('admingyms')}>
                         <h3>🏷️ Maestro Gym / Marca Blanca</h3>
-                        <p>Crea gimnasios, colores, logo, slug y configúralos para que consuman el ecosistema D28D.</p>
+                        <p>Crea gimnasios, colores, logo, slug y configúralos para que consuman la plataforma modular D28D.</p>
                         <button className="btn-card">Abrir Maestro Gym</button>
                       </div>
                     )}
@@ -362,10 +390,10 @@ export default function Dashboard() {
               <section className="quick-stats">
                 <h3>Resumen D28D</h3>
                 <div className="stats-grid">
-                  <div className="stat-box"><label>Plantillas Globales</label><p>--</p></div>
-                  <div className="stat-box"><label>Clases Programadas</label><p>--</p></div>
+                  <div className="stat-box"><label>Programas Activos</label><p>{d28dStats.programs}</p></div>
+                  <div className="stat-box"><label>Clases Programadas</label><p>{d28dStats.classes}</p></div>
                   <div className="stat-box"><label>Asistencia Promedio</label><p>--</p></div>
-                  <div className="stat-box"><label>Videos en Galería</label><p>--</p></div>
+                  <div className="stat-box"><label>Videos en Galería</label><p>{d28dStats.videos}</p></div>
                 </div>
               </section>
             )}
@@ -423,8 +451,8 @@ export default function Dashboard() {
               <button onClick={() => setCurrentView('admintraining')} className={currentView === 'admintraining' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Rutinas</button>
               <button onClick={() => setCurrentView('admingallery')} className={currentView === 'admingallery' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Galería</button>
               <button onClick={() => setCurrentView('adminliveclasses')} className={currentView === 'adminliveclasses' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Live</button>
+              <button onClick={() => setCurrentView('programs')} className={currentView === 'programs' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Programas</button>
               <button onClick={() => setCurrentView('adminplans')} className={currentView === 'adminplans' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Planes</button>
-              <button onClick={() => setCurrentView('ecosystem')} className={currentView === 'ecosystem' ? 'nav-link active text-xs px-2' : 'nav-link text-xs px-2'}>Ecosistema</button>
             </div>
           )}
 
@@ -451,6 +479,15 @@ export default function Dashboard() {
               <button onClick={() => setCurrentView('calculator')} className={currentView === 'calculator' ? 'nav-link active' : 'nav-link'}>
                 {t('nav.calculator', 'Calculadora')}
               </button>
+              {hasAnyRole(['super_admin']) && (
+                <button
+                  onClick={() => setCurrentView('audit')}
+                  className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${currentView === 'audit' ? 'bg-indigo-600 text-white shadow-lg' : 'text-gray-600 hover:bg-gray-100'}`}
+                >
+                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>
+                  <span>Auditoría</span>
+                </button>
+              )}
               <button onClick={() => setCurrentView('foodlog')} className={currentView === 'foodlog' ? 'nav-link active' : 'nav-link'}>
                 {t('nav.foods', 'Alimentos')}
               </button>
@@ -533,11 +570,6 @@ export default function Dashboard() {
               {hasAnyRole(['super_admin']) && (
                 <button onClick={() => setCurrentView('adminplans')} className={currentView === 'adminplans' ? 'nav-link active' : 'nav-link'}>
                   {t('nav.plans', 'Planes')}
-                </button>
-              )}
-              {hasAnyRole(['super_admin']) && (
-                <button onClick={() => setCurrentView('ecosystem')} className={currentView === 'ecosystem' ? 'nav-link active' : 'nav-link'}>
-                  Ecosistema
                 </button>
               )}
             </>

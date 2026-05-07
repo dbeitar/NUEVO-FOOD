@@ -10,6 +10,7 @@ const defaultForm = {
   gym_id: '',
   is_global: false,
   active: true,
+  program_id: '',
 };
 
 function formatDateTimeLocal(value) {
@@ -25,6 +26,7 @@ export default function AdminLiveClasses() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [attendance, setAttendance] = useState([]);
+  const [programs, setPrograms] = useState([]);
 
   const fetchItems = async () => {
     try {
@@ -47,9 +49,19 @@ export default function AdminLiveClasses() {
     }
   };
 
+  const fetchPrograms = async () => {
+    try {
+      const resp = await api.get('/programs');
+      setPrograms(resp.data?.data || []);
+    } catch (err) {
+      console.warn('Error loading programs', err);
+    }
+  };
+
   useEffect(() => {
     fetchItems();
     fetchAttendance();
+    fetchPrograms();
   }, []);
 
   const handleChange = (field, value) => {
@@ -70,6 +82,7 @@ export default function AdminLiveClasses() {
           gym_id: form.gym_id || null,
           is_global: form.is_global,
           active: form.active,
+          program_id: form.program_id || null,
         };
         if (form.id) {
           await api.put(`/live-classes/admin/${form.id}`, payload);
@@ -97,6 +110,7 @@ export default function AdminLiveClasses() {
       gym_id: item.gym_id || '',
       is_global: !!item.is_global,
       active: !!item.active,
+      program_id: item.program_id || '',
     });
   };
 
@@ -138,12 +152,31 @@ export default function AdminLiveClasses() {
           </label>
           <label className="block">
             <span className="text-sm font-semibold text-slate-700">Enlace Zoom</span>
-            <input
-              className="input w-full"
-              value={form.zoom_link}
-              onChange={(e) => handleChange('zoom_link', e.target.value)}
-              required
-            />
+            <div className="flex gap-2">
+              <input
+                className="input w-full"
+                value={form.zoom_link}
+                onChange={(e) => handleChange('zoom_link', e.target.value)}
+                required
+              />
+              <select 
+                className="input text-xs w-auto"
+                onChange={(e) => {
+                  const p = programs.find(pg => pg.id === e.target.value);
+                  if (p) {
+                    // Si es virtual_d28d, tiene múltiples cuentas. Usamos la primera por ahora o pedimos elegir.
+                    const email = p.zoom_accounts ? p.zoom_accounts[0].email : p.zoom_email;
+                    handleChange('zoom_link', `Zoom: ${email}`);
+                    handleChange('program_id', p.id);
+                  }
+                }}
+              >
+                <option value="">Plantilla...</option>
+                {programs.map(p => (
+                  <option key={p.id} value={p.id}>{p.name}</option>
+                ))}
+              </select>
+            </div>
           </label>
         </div>
 
@@ -220,7 +253,7 @@ export default function AdminLiveClasses() {
             <tr>
               <th className="px-4 py-3">Título</th>
               <th className="px-4 py-3">Inicio</th>
-              <th className="px-4 py-3">Fin</th>
+              <th className="px-4 py-3">Programa</th>
               <th className="px-4 py-3">Gym / Global</th>
               <th className="px-4 py-3">Activo</th>
               <th className="px-4 py-3">Acciones</th>
@@ -244,7 +277,7 @@ export default function AdminLiveClasses() {
                 <tr key={item.id} className="border-t border-slate-200">
                   <td className="px-4 py-4 font-medium text-slate-900">{item.title}</td>
                   <td className="px-4 py-4 text-slate-600">{item.start_time}</td>
-                  <td className="px-4 py-4 text-slate-600">{item.end_time}</td>
+                  <td className="px-4 py-4 text-slate-600 font-bold capitalize">{programs.find(p => p.id === item.program_id)?.name || '---'}</td>
                   <td className="px-4 py-4 text-slate-600">{item.is_global ? 'Global' : item.gym_id || 'Privada'}</td>
                   <td className="px-4 py-4 text-slate-600">{item.active ? 'Sí' : 'No'}</td>
                   <td className="px-4 py-4 space-x-2">

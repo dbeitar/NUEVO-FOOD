@@ -19,6 +19,7 @@ export default function AdminUsers() {
   const [showAssignedModal, setShowAssignedModal] = useState(false);
   const [assignedTitle, setAssignedTitle] = useState('');
   const [assignedList, setAssignedList] = useState([]);
+  const [programs, setPrograms] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -44,15 +45,17 @@ export default function AdminUsers() {
 
   const fetchResources = useCallback(async () => {
     try {
-      const [gymRes, trainerRes, plansRes] = await Promise.all([
+      const [gymRes, trainerRes, plansRes, progRes] = await Promise.all([
         api.get('/gyms'),
         api.get('/trainers'),
-        api.get('/accounts/plans')
+        api.get('/accounts/plans'),
+        api.get('/programs')
       ]);
       setGyms(gymRes.data || []);
       setTrainers(trainerRes.data || []);
       const plansData = Array.isArray(plansRes.data) ? plansRes.data : (plansRes.data.data || []);
       setPlans(plansData);
+      setPrograms(progRes.data.data || []);
     } catch {
       console.error('Error loading resources');
     }
@@ -441,6 +444,7 @@ export default function AdminUsers() {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.email', 'Email')}</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.role', 'Rol')}</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.gym', 'Gimnasio')}</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Programa</th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
               </tr>
             </thead>
@@ -466,6 +470,13 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
                       {user.gym_id ? (gyms.find(g => g.id === user.gym_id)?.nombre || user.gym_id) : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
+                      {(() => {
+                        const plan = plans.find(p => p.nombre === user.planId);
+                        const program = programs.find(p => p.id === plan?.program_id);
+                        return program ? <span className="font-bold text-stone-900 capitalize">{program.name}</span> : '-';
+                      })()}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                       <div className="flex justify-end gap-2">

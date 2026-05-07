@@ -24,6 +24,10 @@ router.put('/admin/plans/:id', adminTrainingController.updatePlan);
 router.patch('/admin/plans/:id/day/:dayIndex', adminTrainingController.updateDay);
 router.patch('/admin/plans/:id/exercise/:dayIndex/:exerciseIndex', adminTrainingController.updateExercise);
 router.post('/admin/plans/:id/reorder/:dayIndex', adminTrainingController.reorderExercise);
+router.post('/admin/plans/:id/add-day', adminTrainingController.addDay);
+router.delete('/admin/plans/:id/delete-day/:dayIndex', adminTrainingController.deleteDay);
+router.post('/admin/plans/:id/add-exercise/:dayIndex', adminTrainingController.addExercise);
+router.delete('/admin/plans/:id/delete-exercise/:dayIndex/:exerciseIndex', adminTrainingController.deleteExercise);
 router.delete('/admin/plans/:id', adminTrainingController.deletePlan);
 
 // Diario de Entrenamiento
