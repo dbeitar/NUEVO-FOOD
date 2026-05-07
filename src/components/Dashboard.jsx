@@ -144,7 +144,7 @@ export default function Dashboard() {
         return <AdminProgramsManager />;
       default:
         return (
-          <>
+          <div className="dashboard-main-view">
             <header className="dashboard-header">
               <h2>{t('welcome.title', 'Bienvenido, {name}!').replace('{name}', user?.nombre || '')}</h2>
               <p className="flex items-center gap-2">
@@ -195,13 +195,6 @@ export default function Dashboard() {
                     </div>
                   </div>
 
-                  <div className="service-card-hero" onClick={() => setSelectedModule('programs')}>
-                    <img src="https://images.unsplash.com/photo-1552664730-d307ca884978?auto=format&fit=crop&w=800&q=80" alt="Programas D28D" className="service-card-hero-img" />
-                    <div className="service-card-hero-content">
-                      <h3 className="service-card-hero-title">PROGRAMAS D28D</h3>
-                      <p className="service-card-hero-desc">Vital, Pancitas y Virtual D28D. Accede a los ciclos especializados.</p>
-                    </div>
-                  </div>
                 </div>
               </div>
             ) : (
@@ -329,32 +322,6 @@ export default function Dashboard() {
                 {/* --- MODULE: D28D --- */}
                 {selectedModule === 'd28d' && (
                   <>
-                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
-                      <div className="card" onClick={() => setCurrentView('adminliveclasses')}>
-                        <h3>🟢 Clases en Vivo y Reuniones</h3>
-                        <p>Crea y gestiona los links de reuniones (Zoom) y plantillas para las sesiones en vivo.</p>
-                        <button className="btn-card">Gestionar Clases</button>
-                      </div>
-                    )}
-
-                    {hasAnyRole(['super_admin']) && (
-                      <div className="card" onClick={() => setCurrentView('programs')}>
-                        <h3>⚙️ Configuración de Programas</h3>
-                        <p>Ajusta las cuentas de Zoom (Vital, Pancitas, D28D) y plantillas globales.</p>
-                        <button className="btn-card">Abrir Programas</button>
-                      </div>
-                    )}
-
-                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym']) && (
-                      <div className="card" onClick={() => setCurrentView('admingyms')}>
-                        <h3>🏷️ Maestro Gym / Marca Blanca</h3>
-                        <p>Crea gimnasios, colores, logo, slug y configúralos para que consuman la plataforma modular D28D.</p>
-                        <button className="btn-card">Abrir Maestro Gym</button>
-                      </div>
-                    )}
-                {/* --- MODULE: PROGRAMS D28D --- */}
-                {selectedModule === 'programs' && (
-                  <>
                     <div className="card" onClick={() => { setSelectedProgram('vital'); setCurrentView('liveclasses'); }}>
                       <h3 className="text-pink-600">🌸 Vital D28D</h3>
                       <p>Programas enfocados en bienestar integral y salud femenina.</p>
@@ -373,11 +340,19 @@ export default function Dashboard() {
                       <button className="btn-card bg-lime-500 hover:bg-lime-600">Ver Clases Virtual</button>
                     </div>
 
+                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
+                      <div className="card" onClick={() => setCurrentView('adminliveclasses')}>
+                        <h3>🟢 Clases en Vivo y Reuniones</h3>
+                        <p>Crea y gestiona los links de reuniones (Zoom) y plantillas para las sesiones en vivo.</p>
+                        <button className="btn-card">Gestionar Clases</button>
+                      </div>
+                    )}
+
                     {hasAnyRole(['super_admin', 'admin_d28d']) && (
                       <div className="card" onClick={() => setCurrentView('programs')}>
                         <h3>⚙️ Maestro de Programas</h3>
                         <p>Gestiona los ciclos y configuraciones de los 3 programas principales.</p>
-                        <button className="btn-card">Administrar</button>
+                        <button className="btn-card">Administrar Ciclos</button>
                       </div>
                     )}
                   </>
@@ -460,7 +435,7 @@ export default function Dashboard() {
                 </div>
               </section>
             )}
-          </>
+          </div>
         );
     }
   };

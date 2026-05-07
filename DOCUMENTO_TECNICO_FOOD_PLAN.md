@@ -1,6 +1,6 @@
-# Documento Técnico para Programadores — Food Plan
+# Documento Técnico para Programadores — D28D GYM Virtual (Food Plan)
 
-Este documento describe la arquitectura, herramientas, funcionalidades, decisiones de diseño, configuración/despliegue y flujos principales del proyecto Food Plan. Está basado exclusivamente en el código y archivos de configuración presentes en el repositorio.
+Este documento describe la arquitectura, herramientas, funcionalidades, decisiones de diseño, configuración/despliegue y flujos principales de la plataforma D28D GYM Virtual. Incluye los módulos de Food Plan, Entrenamiento, Clases en Vivo, Programas D28D (Vital, Pancitas, Virtual D28D) y Maestro Gym (Marca Blanca). Actualizado: Mayo 2026.
 
 ## 1. Estructura del Proyecto
 
@@ -15,6 +15,8 @@ proyectofood-plan/
 │   │   ├── recipes.json             # Biblioteca de recetas
 │   │   ├── daily_food_logs.json     # Registros diarios
 │   │   ├── accounts.json, plans.json, gyms.json, trainers.json, user_plans.json, payments.json
+│   │   ├── live_classes.json          # Clases en vivo (horarios, inscripciones, asistencia)
+│   │   └── program_settings.json      # Configuración de programas D28D (Zoom, ciclos)
 │   ├── scripts/
 │   │   └── cleanupFoods.js          # Utilidad de limpieza del catálogo (usa JsonStore)
 │   ├── src/
@@ -27,6 +29,7 @@ proyectofood-plan/
 │   │   │   ├── recipeController.js  # CRUD/Import recetas
 │   │   │   ├── foodLogController.js # Totales diarios, etc.
 │   │   │   ├── aiController.js      # Sugerencias/recetas IA (Ollama local o fallback)
+│   │   │   ├── programController.js   # CRUD programas D28D + configuración Zoom
 │   │   │   ├── gymController.js, trainersController.js, accountsController.js, planController.js, paymentsController.js
 │   │   ├── middleware/
 │   │   │   └── auth.js              # Verificación JWT (Authorization: Bearer ...)
@@ -34,11 +37,14 @@ proyectofood-plan/
 │   │   │   ├── UserDatabase.js      # Usuarios (JSON), hashing bcrypt
 │   │   │   ├── FoodDatabase.js      # Catálogo de alimentos (semillas y CRUD)
 │   │   │   ├── RecipeDatabase.js    # Recetas (get/search/create/update/delete/replaceAll)
+│   │   │   ├── LiveClassDatabase.js   # Clases en vivo (enroll, join, attendance por gym)
+│   │   │   ├── ProgramSettingsDatabase.js # Programas D28D (Vital, Pancitas, Virtual)
 │   │   │   ├── DailyFoodLog.js, AccountsDatabase.js, TrainersDatabase.js, GymDatabase.js, PaymentsDatabase.js, UserPlanStore.js, CalculatorConcepts.js
 │   │   └── routes/                  # Rutas API (montadas en server.js)
 │   │       ├── authRoutes.js        # Modo DB: /api/auth/*
 │   │       ├── foodRoutes.js        # /api/foods (auth)
 │   │       ├── recipeRoutes.js      # /api/recipes
+│   │       ├── programRoutes.js       # /api/programs (CRUD programas D28D)
 │   │       ├── foodLogRoutes.js, aiRoutes.js, gymRoutes.js, trainersRoutes.js, accountsRoutes.js, planRoutes.js, paymentsRoutes.js
 │   │   └── utils/
 │   │       └── JsonStore.js         # Persistencia JSON con backups timestamp
@@ -51,21 +57,27 @@ proyectofood-plan/
 │
 ├── src/                             # Frontend React + Vite
 │   ├── components/                  # Vistas y UI (admin y usuario)
-│   │   ├── Dashboard.jsx            # Home/app shell + navegación interna
+│   │   ├── Dashboard.jsx            # Home/app shell + navegación modular por servicios
 │   │   ├── ModernLogin.jsx, Register.jsx, ProtectedRoute.jsx
 │   │   ├── FoodLog.jsx, AdminFoodsManager.jsx, Recipes.jsx
 │   │   ├── AdminUsers.jsx, AdminPlans.jsx, AdminGyms.jsx, AdminTrainers.jsx, AdminCompanies.jsx
 │   │   ├── Calculator.jsx, AdminCalculator.jsx
+│   │   ├── LiveClasses.jsx           # Vista calendario/horario de clases en vivo
+│   │   ├── LiveClassSchedule.jsx     # Horario gráfico semanal con inscripción y cupos
+│   │   ├── AdminLiveClasses.jsx      # Admin: crear/editar clases y plantillas Zoom
+│   │   ├── AdminProgramsManager.jsx  # Admin: gestión de programas D28D + 13 ciclos
+│   │   ├── TrainingModule.jsx, AdminTrainingManager.jsx, AdminTrainingGallery.jsx
 │   │   ├── MyAccount.jsx, Progress.jsx, Equivalentes.jsx
-│   │   └── NutritionChat.jsx, PrivacyPolicyModal.jsx, TermsOfServiceModal.jsx, etc.
+│   │   └── NutritionChat.jsx, AuditDashboard.jsx, etc.
 │   ├── context/                     # Contextos (Auth, I18n, Toast) y hooks
 │   │   ├── AuthContext.jsx, useAuth.js
 │   │   ├── I18nContext.jsx, useI18n.js, i18n/
 │   │   └── ToastContext.jsx (...)
 │   ├── services/
 │   │   └── api.js                   # Axios baseURL dinámico + interceptores
-│   ├── utils/                       # Utilidades de nutrición
-│   │   └── nutrition.js
+│   ├── utils/                       # Utilidades
+│   │   ├── nutrition.js             # Cálculos nutricionales (TMB, TDEE, macros)
+│   │   └── cycleUtils.js            # 13 ciclos anuales de 28 días con fechas fijas
 │   ├── App.jsx, main.jsx, index.css # App root y estilos (Tailwind 4)
 │   └── documents/                   # Documentos legales (MD)
 │
@@ -124,6 +136,15 @@ Tabla principal para programadores. Resume los módulos críticos, el archivo do
 | Cálculos nutricionales | `src/utils/nutrition.js` | Contiene TMB/TDEE, macros objetivo, sustituciones por restricciones, armado de comidas y planes semanales. |
 | Administración usuarios | `src/components/AdminUsers.jsx` | UI para crear, editar, asignar roles/gimnasios/entrenadores y resetear contraseñas desde administración. |
 | Gimnasios y ecosistema | `src/components/AdminGyms.jsx` | Gestión de gimnasios y visibilidad del modelo multi-gimnasio/marca blanca. |
+| Clases en Vivo (Admin) | `src/components/AdminLiveClasses.jsx` | Creación y gestión de clases en vivo, links de Zoom y plantillas por programa. |
+| Horario Gráfico | `src/components/LiveClassSchedule.jsx` | Vista semanal tipo grilla con colores por franja horaria, inscripción, cupos enmascarados (regla del 19) y asistencia automática al entrar a Zoom. |
+| Clases en Vivo (Usuario) | `src/components/LiveClasses.jsx` | Calendario multi-vista (mes/semana/día/gráfico) de clases con filtro por `programId`. |
+| Programas D28D | `src/components/AdminProgramsManager.jsx` | Gestión de los 3 programas (Vital, Pancitas, Virtual D28D), credenciales Zoom por programa y selección del ciclo activo de los 13 anuales. |
+| Ciclos de 28 días | `src/utils/cycleUtils.js` | Definición de 13 ciclos anuales exactos (364 días). Fechas fijas del Ciclo 7 al 13 según calendario proporcionado. |
+| Entrenamiento IA | `src/components/TrainingModule.jsx` | Módulo de rutinas con lógica biomecánica y configuración CV. |
+| Maestro Rutinas | `src/components/AdminTrainingManager.jsx` | Plantillas de entrenamiento, gestión de rutinas y diario de ejercicio. |
+| Galería Videos | `src/components/AdminTrainingGallery.jsx` | Administración de videos de YouTube por ejercicio para rutinas y clases. |
+| Auditoría | `src/components/AuditDashboard.jsx` | Panel de auditoría del sistema (solo super_admin). |
 | Documento técnico Word | `scripts/md-to-docx.mjs` | Convierte este Markdown a `.docx`, preservando encabezados, listas, bloques de código y tablas con columnas Word reales. |
 
 ## 4. Funcionalidades Implementadas
@@ -151,6 +172,34 @@ Sugerencias con IA y Equivalentes
 
 Módulos de Administración
 - Usuarios/Roles, Planes, Gimnasios, Entrenadores, Cuentas: rutas en `/api/*` (ver carpeta routes) y vistas en `src/components/*` (AdminUsers, AdminPlans, AdminGyms, AdminTrainers, AdminCompanies).
+
+Módulo de Entrenamiento
+- Rutinas biomecánicas con IA, asignación por entrenador, diario de ejercicio y galería de videos YouTube.
+- Componentes: `TrainingModule.jsx`, `AdminTrainingManager.jsx`, `AdminTrainingGallery.jsx`.
+
+Clases en Vivo y Programas D28D
+- Tres programas principales dentro del módulo D28D: **Vital**, **Pancitas Fit** y **Virtual D28D**.
+- Cada programa tiene credenciales Zoom dedicadas:
+  - Zoom 1: `D28Dzoom1@gmail.com` / Zoom 2: `d28dzoom2@gmail.com` (Virtual D28D)
+  - Zoom P: `Pancitasfitbyd28d@gmail.com` (Pancitas)
+  - Zoom V: `D28dvital@gmail.com` (Vital)
+- **Horario gráfico semanal** (`LiveClassSchedule.jsx`) con 5 franjas horarias (6:20am, 8:20am, 9:00am, 6:20pm, 7:00pm), colores por franja y 6 días (Lunes a Sábado).
+- **Regla de cupos enmascarados**: El sistema muestra "Cupos disponibles: 20" inicialmente. Cuando se alcanzan 19 inscripciones, el display se congela en "1 Disponible" pero permite inscripciones ilimitadas adicionales.
+- **Asistencia automática**: Al hacer clic en "Entrar a Zoom", se registra la asistencia del usuario vinculada a su gimnasio antes de abrir el enlace.
+- Inscripción directa desde el horario gráfico con botón "Inscribirme" / "Entrar a Zoom".
+
+Estructura de 13 Ciclos Anuales
+- Cada año se divide en **13 ciclos de 28 días** (364 días exactos). Definidos en `src/utils/cycleUtils.js`.
+- Fechas asignadas del Ciclo 7 al 13:
+  - Ciclo 7: 1 Junio | Ciclo 8: 29 Junio | Ciclo 9: 27 Julio | Ciclo 10: 24 Agosto
+  - Ciclo 11: 21 Septiembre | Ciclo 12: 19 Octubre | Ciclo 13: 16 Noviembre
+  - Ciclo 1 (Vacacional): 14 Diciembre
+- El administrador puede seleccionar el ciclo activo por programa desde `AdminProgramsManager`.
+
+Navegación Modular del Dashboard
+- El Dashboard organiza la plataforma en **4 servicios principales** (cards hero): Food Plan, D28D, Entrenadores y Maestro Gym.
+- Al entrar a D28D se muestran las cards de Vital, Pancitas y Virtual D28D, más las herramientas administrativas (solo para super_admin/admin_d28d).
+- El Super Admin tiene acceso directo a todos los módulos desde la barra de navegación superior.
 
 ## 5. Características Específicas y Decisiones
 
@@ -272,4 +321,19 @@ URLs locales:
 
 ---
 
-Esta documentación refleja el estado actual del repositorio y enlaza a las secciones de código relevantes para facilitar la incorporación de nuevos desarrolladores.
+## 11. Roles del Sistema
+
+| Rol | Acceso |
+| --- | --- |
+| `super_admin` | Acceso total a todos los módulos, barra rápida de navegación global |
+| `admin_d28d` | Programas D28D, clases en vivo, maestro de programas |
+| `admin_gym` | Maestro Gym, empresas, usuarios, planes |
+| `admin_marca` | Marca blanca, gimnasios, usuarios |
+| `admin_gimnasio` | Gestión del gimnasio asignado |
+| `entrenador` | Módulo de entrenamiento, galería de videos |
+| `nutricionista` | Food Plan, calculadora admin |
+| `usuario_final` | Calculadora, food log, recetas, clases públicas, mi cuenta |
+
+---
+
+Esta documentación refleja el estado actual del repositorio (Mayo 2026) y enlaza a las secciones de código relevantes para facilitar la incorporación de nuevos desarrolladores.
