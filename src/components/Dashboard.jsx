@@ -211,33 +211,11 @@ export default function Dashboard() {
                 {/* --- MODULE: GYM --- */}
                 {selectedModule === 'gym' && (
                   <>
-                    {/* Ecosistema removido */}
-                    {hasAnyRole(['super_admin', 'admin_gym']) && (
-                      <div className="card" onClick={() => setCurrentView('admincompanies')}>
-                        <h3>{t('card.companies.title', '🏢 Empresas')}</h3>
-                        <p>{t('card.companies.desc', 'Consulta gimnasios, entrenadores y usuarios asociados')}</p>
-                        <button className="btn-card">{t('card.companies.button', 'Abrir Empresas')}</button>
-                      </div>
-                    )}
                     {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym']) && (
                       <div className="card" onClick={() => setCurrentView('admingyms')}>
                         <h3>🏷️ Maestro Gym / Marca Blanca</h3>
                         <p>Crea gimnasios, colores, logo, slug, WhatsApp y mensaje de marca.</p>
                         <button className="btn-card">Abrir Maestro Gym</button>
-                      </div>
-                    )}
-                    {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym']) && (
-                      <div className="card" onClick={() => setCurrentView('adminusers')}>
-                        <h3>{t('card.users.title', '👥 Usuarios y Roles')}</h3>
-                        <p>{t('card.users.desc', 'Consulta y ajusta los roles de usuarios')}</p>
-                        <button className="btn-card">{t('card.users.button', 'Abrir Usuarios')}</button>
-                      </div>
-                    )}
-                    {hasAnyRole(['super_admin', 'admin_gym']) && (
-                      <div className="card" onClick={() => setCurrentView('adminplans')}>
-                        <h3>{t('card.plans.title', '🧾 Planes de Suscripción')}</h3>
-                        <p>{t('card.plans.desc', 'Crea, edita y elimina planes')}</p>
-                        <button className="btn-card">{t('card.plans.button', 'Gestionar Planes')}</button>
                       </div>
                     )}
                   </>

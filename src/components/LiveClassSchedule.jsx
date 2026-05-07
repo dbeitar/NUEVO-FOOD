@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Calendar, Clock, User, ExternalLink, CheckCircle, Users } from 'lucide-react';
+import { Calendar, Clock, User, ExternalLink, CheckCircle, Users, Info } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 
 export default function LiveClassSchedule({ programId }) {
