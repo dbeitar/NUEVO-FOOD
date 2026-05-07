@@ -686,5 +686,1629 @@
     "proteina": 17.1,
     "carbohidratos": 0,
     "grasas": 2
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-01",
+    "entries": [
+      {
+        "id": "demo-2026-06-01-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 675,
+        "proteina": 50,
+        "carbohidratos": 94,
+        "grasas": 23,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-01-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 675,
+        "proteina": 50,
+        "carbohidratos": 94,
+        "grasas": 23,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-01-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 675,
+        "proteina": 50,
+        "carbohidratos": 94,
+        "grasas": 23,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-01-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 225,
+        "proteina": 17,
+        "carbohidratos": 31,
+        "grasas": 8,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2250,
+    "totalProteina": 167,
+    "totalCarbohidratos": 313,
+    "totalGrasas": 77
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-02",
+    "entries": [
+      {
+        "id": "demo-2026-06-02-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 585,
+        "proteina": 47,
+        "carbohidratos": 84,
+        "grasas": 20,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-02-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 585,
+        "proteina": 47,
+        "carbohidratos": 84,
+        "grasas": 20,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-02-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 585,
+        "proteina": 47,
+        "carbohidratos": 84,
+        "grasas": 20,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-02-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 195,
+        "proteina": 16,
+        "carbohidratos": 28,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1950,
+    "totalProteina": 157,
+    "totalCarbohidratos": 280,
+    "totalGrasas": 67
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-03",
+    "entries": [
+      {
+        "id": "demo-2026-06-03-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 590,
+        "proteina": 45,
+        "carbohidratos": 67,
+        "grasas": 19,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-03-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 590,
+        "proteina": 45,
+        "carbohidratos": 67,
+        "grasas": 19,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-03-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 590,
+        "proteina": 45,
+        "carbohidratos": 67,
+        "grasas": 19,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-03-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 197,
+        "proteina": 15,
+        "carbohidratos": 22,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1967,
+    "totalProteina": 150,
+    "totalCarbohidratos": 223,
+    "totalGrasas": 63
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-04",
+    "entries": [
+      {
+        "id": "demo-2026-06-04-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 633,
+        "proteina": 43,
+        "carbohidratos": 80,
+        "grasas": 20,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-04-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 633,
+        "proteina": 43,
+        "carbohidratos": 80,
+        "grasas": 20,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-04-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 633,
+        "proteina": 43,
+        "carbohidratos": 80,
+        "grasas": 20,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-04-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 211,
+        "proteina": 14,
+        "carbohidratos": 27,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2110,
+    "totalProteina": 143,
+    "totalCarbohidratos": 267,
+    "totalGrasas": 67
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-05",
+    "entries": [
+      {
+        "id": "demo-2026-06-05-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 630,
+        "proteina": 50,
+        "carbohidratos": 75,
+        "grasas": 19,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-05-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 630,
+        "proteina": 50,
+        "carbohidratos": 75,
+        "grasas": 19,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-05-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 630,
+        "proteina": 50,
+        "carbohidratos": 75,
+        "grasas": 19,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-05-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 210,
+        "proteina": 17,
+        "carbohidratos": 25,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2100,
+    "totalProteina": 167,
+    "totalCarbohidratos": 250,
+    "totalGrasas": 63
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-06",
+    "entries": [
+      {
+        "id": "demo-2026-06-06-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 601,
+        "proteina": 44,
+        "carbohidratos": 65,
+        "grasas": 19,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-06-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 601,
+        "proteina": 44,
+        "carbohidratos": 65,
+        "grasas": 19,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-06-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 601,
+        "proteina": 44,
+        "carbohidratos": 65,
+        "grasas": 19,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-06-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 200,
+        "proteina": 15,
+        "carbohidratos": 22,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2003,
+    "totalProteina": 147,
+    "totalCarbohidratos": 217,
+    "totalGrasas": 63
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-07",
+    "entries": [
+      {
+        "id": "demo-2026-06-07-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 530,
+        "proteina": 42,
+        "carbohidratos": 68,
+        "grasas": 18,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-07-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 530,
+        "proteina": 42,
+        "carbohidratos": 68,
+        "grasas": 18,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-07-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 530,
+        "proteina": 42,
+        "carbohidratos": 68,
+        "grasas": 18,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-07-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 177,
+        "proteina": 14,
+        "carbohidratos": 23,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1767,
+    "totalProteina": 140,
+    "totalCarbohidratos": 227,
+    "totalGrasas": 60
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-08",
+    "entries": [
+      {
+        "id": "demo-2026-06-08-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 554,
+        "proteina": 45,
+        "carbohidratos": 71,
+        "grasas": 17,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-08-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 554,
+        "proteina": 45,
+        "carbohidratos": 71,
+        "grasas": 17,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-08-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 554,
+        "proteina": 45,
+        "carbohidratos": 71,
+        "grasas": 17,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-08-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 185,
+        "proteina": 15,
+        "carbohidratos": 24,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1847,
+    "totalProteina": 150,
+    "totalCarbohidratos": 237,
+    "totalGrasas": 57
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-09",
+    "entries": [
+      {
+        "id": "demo-2026-06-09-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 565,
+        "proteina": 44,
+        "carbohidratos": 80,
+        "grasas": 20,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-09-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 565,
+        "proteina": 44,
+        "carbohidratos": 80,
+        "grasas": 20,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-09-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 565,
+        "proteina": 44,
+        "carbohidratos": 80,
+        "grasas": 20,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-09-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 188,
+        "proteina": 15,
+        "carbohidratos": 27,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1883,
+    "totalProteina": 147,
+    "totalCarbohidratos": 267,
+    "totalGrasas": 67
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-10",
+    "entries": [
+      {
+        "id": "demo-2026-06-10-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 639,
+        "proteina": 50,
+        "carbohidratos": 92,
+        "grasas": 22,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-10-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 639,
+        "proteina": 50,
+        "carbohidratos": 92,
+        "grasas": 22,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-10-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 639,
+        "proteina": 50,
+        "carbohidratos": 92,
+        "grasas": 22,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-10-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 213,
+        "proteina": 17,
+        "carbohidratos": 31,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2130,
+    "totalProteina": 167,
+    "totalCarbohidratos": 307,
+    "totalGrasas": 73
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-11",
+    "entries": [
+      {
+        "id": "demo-2026-06-11-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 613,
+        "proteina": 50,
+        "carbohidratos": 70,
+        "grasas": 22,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-11-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 613,
+        "proteina": 50,
+        "carbohidratos": 70,
+        "grasas": 22,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-11-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 613,
+        "proteina": 50,
+        "carbohidratos": 70,
+        "grasas": 22,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-11-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 204,
+        "proteina": 17,
+        "carbohidratos": 23,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2043,
+    "totalProteina": 167,
+    "totalCarbohidratos": 233,
+    "totalGrasas": 73
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-12",
+    "entries": [
+      {
+        "id": "demo-2026-06-12-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 671,
+        "proteina": 55,
+        "carbohidratos": 75,
+        "grasas": 22,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-12-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 671,
+        "proteina": 55,
+        "carbohidratos": 75,
+        "grasas": 22,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-12-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 671,
+        "proteina": 55,
+        "carbohidratos": 75,
+        "grasas": 22,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-12-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 224,
+        "proteina": 18,
+        "carbohidratos": 25,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2237,
+    "totalProteina": 183,
+    "totalCarbohidratos": 250,
+    "totalGrasas": 73
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-13",
+    "entries": [
+      {
+        "id": "demo-2026-06-13-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 552,
+        "proteina": 40,
+        "carbohidratos": 78,
+        "grasas": 16,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-13-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 552,
+        "proteina": 40,
+        "carbohidratos": 78,
+        "grasas": 16,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-13-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 552,
+        "proteina": 40,
+        "carbohidratos": 78,
+        "grasas": 16,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-13-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 184,
+        "proteina": 13,
+        "carbohidratos": 26,
+        "grasas": 5,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1840,
+    "totalProteina": 133,
+    "totalCarbohidratos": 260,
+    "totalGrasas": 53
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-14",
+    "entries": [
+      {
+        "id": "demo-2026-06-14-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 542,
+        "proteina": 43,
+        "carbohidratos": 64,
+        "grasas": 18,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-14-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 542,
+        "proteina": 43,
+        "carbohidratos": 64,
+        "grasas": 18,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-14-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 542,
+        "proteina": 43,
+        "carbohidratos": 64,
+        "grasas": 18,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-14-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 181,
+        "proteina": 14,
+        "carbohidratos": 21,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1807,
+    "totalProteina": 143,
+    "totalCarbohidratos": 213,
+    "totalGrasas": 60
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-15",
+    "entries": [
+      {
+        "id": "demo-2026-06-15-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 680,
+        "proteina": 55,
+        "carbohidratos": 77,
+        "grasas": 24,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-15-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 680,
+        "proteina": 55,
+        "carbohidratos": 77,
+        "grasas": 24,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-15-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 680,
+        "proteina": 55,
+        "carbohidratos": 77,
+        "grasas": 24,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-15-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 227,
+        "proteina": 18,
+        "carbohidratos": 26,
+        "grasas": 8,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2267,
+    "totalProteina": 183,
+    "totalCarbohidratos": 257,
+    "totalGrasas": 80
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-16",
+    "entries": [
+      {
+        "id": "demo-2026-06-16-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 593,
+        "proteina": 45,
+        "carbohidratos": 70,
+        "grasas": 21,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-16-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 593,
+        "proteina": 45,
+        "carbohidratos": 70,
+        "grasas": 21,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-16-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 593,
+        "proteina": 45,
+        "carbohidratos": 70,
+        "grasas": 21,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-16-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 198,
+        "proteina": 15,
+        "carbohidratos": 23,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1977,
+    "totalProteina": 150,
+    "totalCarbohidratos": 233,
+    "totalGrasas": 70
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-17",
+    "entries": [
+      {
+        "id": "demo-2026-06-17-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 668,
+        "proteina": 50,
+        "carbohidratos": 84,
+        "grasas": 22,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-17-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 668,
+        "proteina": 50,
+        "carbohidratos": 84,
+        "grasas": 22,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-17-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 668,
+        "proteina": 50,
+        "carbohidratos": 84,
+        "grasas": 22,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-17-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 223,
+        "proteina": 17,
+        "carbohidratos": 28,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2227,
+    "totalProteina": 167,
+    "totalCarbohidratos": 280,
+    "totalGrasas": 73
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-18",
+    "entries": [
+      {
+        "id": "demo-2026-06-18-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 544,
+        "proteina": 37,
+        "carbohidratos": 62,
+        "grasas": 19,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-18-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 544,
+        "proteina": 37,
+        "carbohidratos": 62,
+        "grasas": 19,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-18-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 544,
+        "proteina": 37,
+        "carbohidratos": 62,
+        "grasas": 19,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-18-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 181,
+        "proteina": 12,
+        "carbohidratos": 21,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1813,
+    "totalProteina": 123,
+    "totalCarbohidratos": 207,
+    "totalGrasas": 63
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-19",
+    "entries": [
+      {
+        "id": "demo-2026-06-19-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 605,
+        "proteina": 42,
+        "carbohidratos": 83,
+        "grasas": 20,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-19-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 605,
+        "proteina": 42,
+        "carbohidratos": 83,
+        "grasas": 20,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-19-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 605,
+        "proteina": 42,
+        "carbohidratos": 83,
+        "grasas": 20,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-19-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 202,
+        "proteina": 14,
+        "carbohidratos": 28,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2017,
+    "totalProteina": 140,
+    "totalCarbohidratos": 277,
+    "totalGrasas": 67
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-20",
+    "entries": [
+      {
+        "id": "demo-2026-06-20-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 596,
+        "proteina": 48,
+        "carbohidratos": 69,
+        "grasas": 18,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-20-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 596,
+        "proteina": 48,
+        "carbohidratos": 69,
+        "grasas": 18,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-20-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 596,
+        "proteina": 48,
+        "carbohidratos": 69,
+        "grasas": 18,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-20-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 199,
+        "proteina": 16,
+        "carbohidratos": 23,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1987,
+    "totalProteina": 160,
+    "totalCarbohidratos": 230,
+    "totalGrasas": 60
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-21",
+    "entries": [
+      {
+        "id": "demo-2026-06-21-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 586,
+        "proteina": 43,
+        "carbohidratos": 77,
+        "grasas": 18,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-21-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 586,
+        "proteina": 43,
+        "carbohidratos": 77,
+        "grasas": 18,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-21-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 586,
+        "proteina": 43,
+        "carbohidratos": 77,
+        "grasas": 18,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-21-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 195,
+        "proteina": 14,
+        "carbohidratos": 26,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1953,
+    "totalProteina": 143,
+    "totalCarbohidratos": 257,
+    "totalGrasas": 60
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-22",
+    "entries": [
+      {
+        "id": "demo-2026-06-22-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 548,
+        "proteina": 45,
+        "carbohidratos": 73,
+        "grasas": 17,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-22-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 548,
+        "proteina": 45,
+        "carbohidratos": 73,
+        "grasas": 17,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-22-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 548,
+        "proteina": 45,
+        "carbohidratos": 73,
+        "grasas": 17,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-22-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 183,
+        "proteina": 15,
+        "carbohidratos": 24,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1827,
+    "totalProteina": 150,
+    "totalCarbohidratos": 243,
+    "totalGrasas": 57
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-23",
+    "entries": [
+      {
+        "id": "demo-2026-06-23-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 515,
+        "proteina": 40,
+        "carbohidratos": 58,
+        "grasas": 18,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-23-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 515,
+        "proteina": 40,
+        "carbohidratos": 58,
+        "grasas": 18,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-23-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 515,
+        "proteina": 40,
+        "carbohidratos": 58,
+        "grasas": 18,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-23-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 172,
+        "proteina": 13,
+        "carbohidratos": 19,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1717,
+    "totalProteina": 133,
+    "totalCarbohidratos": 193,
+    "totalGrasas": 60
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-24",
+    "entries": [
+      {
+        "id": "demo-2026-06-24-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 653,
+        "proteina": 49,
+        "carbohidratos": 86,
+        "grasas": 21,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-24-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 653,
+        "proteina": 49,
+        "carbohidratos": 86,
+        "grasas": 21,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-24-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 653,
+        "proteina": 49,
+        "carbohidratos": 86,
+        "grasas": 21,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-24-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 218,
+        "proteina": 16,
+        "carbohidratos": 29,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2177,
+    "totalProteina": 163,
+    "totalCarbohidratos": 287,
+    "totalGrasas": 70
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-25",
+    "entries": [
+      {
+        "id": "demo-2026-06-25-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 542,
+        "proteina": 41,
+        "carbohidratos": 66,
+        "grasas": 17,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-25-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 542,
+        "proteina": 41,
+        "carbohidratos": 66,
+        "grasas": 17,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-25-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 542,
+        "proteina": 41,
+        "carbohidratos": 66,
+        "grasas": 17,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-25-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 181,
+        "proteina": 14,
+        "carbohidratos": 22,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1807,
+    "totalProteina": 137,
+    "totalCarbohidratos": 220,
+    "totalGrasas": 57
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-26",
+    "entries": [
+      {
+        "id": "demo-2026-06-26-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 689,
+        "proteina": 51,
+        "carbohidratos": 78,
+        "grasas": 23,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-26-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 689,
+        "proteina": 51,
+        "carbohidratos": 78,
+        "grasas": 23,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-26-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 689,
+        "proteina": 51,
+        "carbohidratos": 78,
+        "grasas": 23,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-26-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 230,
+        "proteina": 17,
+        "carbohidratos": 26,
+        "grasas": 8,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2297,
+    "totalProteina": 170,
+    "totalCarbohidratos": 260,
+    "totalGrasas": 77
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-27",
+    "entries": [
+      {
+        "id": "demo-2026-06-27-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 572,
+        "proteina": 45,
+        "carbohidratos": 74,
+        "grasas": 19,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-27-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 572,
+        "proteina": 45,
+        "carbohidratos": 74,
+        "grasas": 19,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-27-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 572,
+        "proteina": 45,
+        "carbohidratos": 74,
+        "grasas": 19,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-27-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 191,
+        "proteina": 15,
+        "carbohidratos": 25,
+        "grasas": 6,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 1907,
+    "totalProteina": 150,
+    "totalCarbohidratos": 247,
+    "totalGrasas": 63
+  },
+  {
+    "user_id": 101,
+    "fecha": "2026-06-28",
+    "entries": [
+      {
+        "id": "demo-2026-06-28-0",
+        "meal_type": "desayuno",
+        "food_name": "Alimento demo desayuno",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 605,
+        "proteina": 46,
+        "carbohidratos": 68,
+        "grasas": 21,
+        "hora": "8:00"
+      },
+      {
+        "id": "demo-2026-06-28-1",
+        "meal_type": "almuerzo",
+        "food_name": "Alimento demo almuerzo",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 605,
+        "proteina": 46,
+        "carbohidratos": 68,
+        "grasas": 21,
+        "hora": "12:00"
+      },
+      {
+        "id": "demo-2026-06-28-2",
+        "meal_type": "cena",
+        "food_name": "Alimento demo cena",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 605,
+        "proteina": 46,
+        "carbohidratos": 68,
+        "grasas": 21,
+        "hora": "16:00"
+      },
+      {
+        "id": "demo-2026-06-28-3",
+        "meal_type": "snack",
+        "food_name": "Alimento demo snack",
+        "cantidad": 1,
+        "unidad": "porción",
+        "calorias": 202,
+        "proteina": 15,
+        "carbohidratos": 23,
+        "grasas": 7,
+        "hora": "20:00"
+      }
+    ],
+    "totalCalorias": 2017,
+    "totalProteina": 153,
+    "totalCarbohidratos": 227,
+    "totalGrasas": 70
   }
 ]

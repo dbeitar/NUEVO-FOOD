@@ -368,5 +368,240 @@
       "users.manage_assigned"
     ],
     "module_access": {}
+  },
+  {
+    "id": 100,
+    "nombre": "PowerFit Admin",
+    "email": "admin@powerfit.gym",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "admin_gimnasio",
+    "roles": [
+      "admin_gimnasio",
+      "admin_gym"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 101,
+    "nombre": "María Fitness (Híbrido)",
+    "email": "maria@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10,
+    "plan_type": "premium"
+  },
+  {
+    "id": 102,
+    "nombre": "Carlos Entrenador-Nutri",
+    "email": "carlos@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "entrenador",
+    "roles": [
+      "entrenador",
+      "nutricionista",
+      "admin_training"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 103,
+    "nombre": "Laura Vital",
+    "email": "laura@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 104,
+    "nombre": "Andrés D28D",
+    "email": "andres@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 105,
+    "nombre": "Sofia Pancitas",
+    "email": "sofia@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 106,
+    "nombre": "Demo User 6",
+    "email": "user6@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 107,
+    "nombre": "Demo User 7",
+    "email": "user7@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 108,
+    "nombre": "Demo User 8",
+    "email": "user8@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 109,
+    "nombre": "Demo User 9",
+    "email": "user9@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 110,
+    "nombre": "Demo User 10",
+    "email": "user10@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 111,
+    "nombre": "Demo User 11",
+    "email": "user11@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 112,
+    "nombre": "Demo User 12",
+    "email": "user12@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 113,
+    "nombre": "Demo User 13",
+    "email": "user13@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 114,
+    "nombre": "Demo User 14",
+    "email": "user14@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 115,
+    "nombre": "Demo User 15",
+    "email": "user15@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 116,
+    "nombre": "Demo User 16",
+    "email": "user16@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 117,
+    "nombre": "Demo User 17",
+    "email": "user17@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 118,
+    "nombre": "Demo User 18",
+    "email": "user18@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 119,
+    "nombre": "Demo User 19",
+    "email": "user19@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
+  },
+  {
+    "id": 120,
+    "nombre": "Demo User 20",
+    "email": "user20@demo.d28d.com",
+    "clave_hash": "$2b$10$yI5t4mMVIy8QliBjnDiQjuZQ0AV8FWzTMi7LtwNa/2FmI8wRTiruO",
+    "rol": "usuario_final",
+    "roles": [
+      "usuario_final"
+    ],
+    "gym_id": 10
   }
 ]

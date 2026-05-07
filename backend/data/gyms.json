@@ -83,5 +83,30 @@
     "creado": "2026-05-01T14:28:53.031Z",
     "teléfono": "+573152521581",
     "telefono": "+573152521581"
+  },
+  {
+    "id": 10,
+    "nombre": "PowerFit",
+    "direccion": "Carrera 7 #72-41, Bogotá",
+    "teléfono": "+57 300 123 4567",
+    "email": "info@powerfit.gym",
+    "ciudad": "Bogotá",
+    "país": "Colombia",
+    "latitude": 4.6581,
+    "longitude": -74.0544,
+    "activo": true,
+    "creado": "2026-05-01T00:00:00.000Z",
+    "plan_id": "vip",
+    "slug": "powerfit",
+    "color_primario": "#FF6B00",
+    "color_secundario": "#1a1a2e",
+    "logo_url": "",
+    "whatsapp": "+573001234567",
+    "mensaje_marca": "PowerFit — Tu mejor versión",
+    "modulos_activos": {
+      "d28d": true,
+      "alimentacion": false,
+      "entrenamiento": true
+    }
   }
 ]
