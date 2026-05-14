@@ -3,6 +3,14 @@ import { useAuth } from '../context/useAuth';
 import { calcularEdad, computeNutritionPlan, findSubstitute, detectConstraint, detectFoodKeyword, pickEquivalentForConstraint, buildMealSuggestion, buildWeeklyPlan, buildShoppingList, buildDailyPlanDetailed } from '../utils/nutrition';
 import api from '../services/api';
 import jsPDF from 'jspdf';
+import { PUBLIC_BRAND_NAME } from '../utils/branding';
+
+const slugifyBrand = (name) => (name || 'plan')
+  .toLowerCase()
+  .normalize('NFD')
+  .replace(/[\u0300-\u036f]/g, '')
+  .replace(/[^a-z0-9]+/g, '-')
+  .replace(/(^-|-$)/g, '');
 
 export default function NutritionChat() {
   const { user } = useAuth();
@@ -86,13 +94,16 @@ export default function NutritionChat() {
   }, [user?.restricciones_detalles, user?.tiene_restricciones]);
 
   useEffect(() => {
-    setMessages([
-      { role: 'bot', text: bienvenida },
-      {
-        role: 'bot',
-        text: `Objetivo: ${user?.objetivo || 'mantenimiento'}. Calorías objetivo: ${plan.calorias} kcal · Proteína ${plan.macros.proteina}g · Carbohidratos ${plan.macros.carbohidratos}g · Grasas ${plan.macros.grasas}g`,
-      },
-    ]);
+    setMessages((prev) => {
+      if (prev && prev.length > 0) return prev;
+      return [
+        { role: 'bot', text: bienvenida },
+        {
+          role: 'bot',
+          text: `Objetivo: ${user?.objetivo || 'mantenimiento'}. Calorías objetivo: ${plan.calorias} kcal · Proteína ${plan.macros.proteina}g · Carbohidratos ${plan.macros.carbohidratos}g · Grasas ${plan.macros.grasas}g`,
+        },
+      ];
+    });
   }, [bienvenida, plan.calorias, plan.macros.proteina, plan.macros.carbohidratos, plan.macros.grasas, user?.objetivo]);
 
   useEffect(() => {
@@ -145,7 +156,7 @@ export default function NutritionChat() {
       doc.text(`- ${it.nombre}: ${it.totalGramos} g`, 12, y);
       y += 6;
     });
-    doc.save('plan-semanal-foodplan.pdf');
+    doc.save(`plan-semanal-${slugifyBrand(PUBLIC_BRAND_NAME)}.pdf`);
   };
 
   const handleSend = () => {
@@ -189,9 +200,10 @@ export default function NutritionChat() {
         }
         y += 2;
       });
-      doc.save('plan-diario-recetas.pdf');
+      const dailyFile = `plan-diario-${slugifyBrand(PUBLIC_BRAND_NAME)}.pdf`;
+      doc.save(dailyFile);
       setTimeout(() => {
-        setMessages((m) => [...m, { role: 'bot', text: 'PDF diario con recetas y tiempos generado: plan-diario-recetas.pdf' }]);
+        setMessages((m) => [...m, { role: 'bot', text: `PDF diario con recetas y tiempos generado: ${dailyFile}` }]);
       }, 120);
       return;
     }
