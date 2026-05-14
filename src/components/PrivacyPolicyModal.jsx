@@ -3,131 +3,95 @@
 const PrivacyPolicyModal = ({ onClose, onAccept }) => {
   const privacyContent = `# Política de Privacidad
 
-**Última actualización:** 20 de febrero de 2026
-**Vigencia:** A partir del 20 de febrero de 2026
+**Versión:** Piloto controlado 2026
+**Última actualización:** 14 de mayo de 2026
 
-## 1. INTRODUCCIÓN
+## 1. Quién es el responsable
 
-En D28D Gimnasio Virtual ("nosotros", "nuestro", "nos"), respetamos su privacidad y estamos comprometidos con proteger sus datos personales. Esta Política de Privacidad explica cómo recopilamos, usamos, compartimos y protegemos su información.
+El responsable del tratamiento de tus datos es el **operador del gimnasio** al que te afiliaste (o D28D Gimnasio Virtual cuando uses la plataforma directamente). Tu gimnasio te indicará cómo contactarlo y cómo ejercer tus derechos.
 
-**Responsable del Tratamiento de Datos:**
-JHON NICOLAS DEL RIO CASALLAS
-Cédula de Ciudadanía 1153465988
-KM 1 VIA MANCILLA ALTOS DEL BOSQUE CASA 6B
-nicolasdelrio718@gmail.com
-3192635819
+## 2. Qué datos recogemos
 
-## 2. INFORMACIÓN QUE RECOPILAMOS
+### Datos que tú nos das
+- Identidad básica: nombre, correo, teléfono.
+- Datos de salud y composición que ingresas voluntariamente (peso, altura, edad, género, objetivo, restricciones alimentarias, lesiones).
+- Tu contraseña (almacenada cifrada con bcrypt, nunca en texto plano).
 
-### 2.1 Información Proporcionada Directamente
-- Nombre completo
-- Correo electrónico
-- Número de teléfono
-- Fecha de nacimiento
-- Datos antropométricos (peso, altura)
-- Objetivo nutricional/fitness
-- Historial dietético
-- Contraseña (encriptada)
-- Información de pago (si aplica)
+### Datos generados por tu uso
+- Registros nutricionales que tú creas (comidas, porciones, calorías).
+- Registros de entrenamiento (rutinas completadas, sensaciones, RPE si aplica).
+- Asistencia a clases en vivo (cuando entras al enlace).
+- Información técnica mínima (IP, navegador, hora) para seguridad y auditoría.
 
-**Nota sobre Datos Sensibles:** Algunos de los datos solicitados, como la fecha de nacimiento, peso, altura, género, objetivo nutricional e historial dietético/restricciones, son considerados datos sensibles bajo la Ley 1581 de 2012. Usted no está obligado a autorizar el tratamiento de estos datos. Sin embargo, la provisión de esta información nos permite ofrecerle un servicio más personalizado y efectivo.
+### Datos sensibles
+Algunos de los datos anteriores (peso, edad, género, restricciones alimentarias, condiciones médicas) son **datos sensibles** bajo normativa LATAM (p.ej. Ley 1581/2012 en Colombia, Ley 25.326 en Argentina, LGPD en Brasil). Solo los tratamos para personalizar tu plan. **No estás obligado a entregarlos**, pero sin ellos el plan será genérico.
 
-### 2.2 Información Recopilada Automáticamente
-- Dirección IP
-- Tipo de dispositivo y navegador
-- Sistema operativo
-- Actividad de uso (búsquedas, clics, tiempo en la aplicación)
-- Cookies y tecnologías similares
-- Ubicación general (país/región)
+## 3. Para qué usamos tus datos
 
-### 2.3 Información de Terceros
-- Datos de servicios conectados (Google, Apple)
-- Información de nutricionistas o entrenadores (si aplica)
+- Calcular y mantener actualizado tu plan nutricional y de entrenamiento.
+- Permitir a tu coach y/o tu gimnasio acompañarte.
+- Generar registros y reportes que tú puedes consultar.
+- Operar la agenda de clases en vivo y la asistencia.
+- Cumplir obligaciones legales aplicables (auditoría, seguridad).
+- Mejorar la plataforma de forma agregada y anonimizada.
 
-## 3. USO DE SUS DATOS
+**No vendemos tus datos. No los compartimos con anunciantes.**
 
-Usamos su información para:
-- Crear y mantener su cuenta
-- Proporcionar funcionalidades de la aplicación
-- Calcular necesidades nutricionales personalizadas
-- Generar recomendaciones de IA
-- Mejorar nuestros servicios
-- Detectar y prevenir fraude
-- Cumplir obligaciones legales
-- Enviar notificaciones de servicio
-- Marketing (solo con tu consentimiento)
-- Análisis de seguridad
+## 4. Quién ve tus datos
 
-## 4. COMPARTIR DE DATOS
+- **Tú mismo**, en tu cuenta.
+- **Tu coach asignado** (si tu gimnasio te asignó uno).
+- **El admin de tu gimnasio**, dentro de su tenant, para operación.
+- **Proveedores técnicos** estrictamente necesarios (hosting, base de datos), bajo acuerdos de confidencialidad.
+- **Autoridades**, solo cuando una orden judicial nos obligue.
 
-**NO vendemos, alquilamos o compartimos sus datos personales con terceros** excepto cuando sea legalmente requerido.
+Otros gimnasios o usuarios **no** ven tus datos. La separación multi-tenant es estricta (cada gym solo ve los suyos).
 
-### 4.1 Compartición Permitida
-- Servicios de hosting y almacenamiento en la nube
-- Proveedores de análisis (Google Analytics)
-- Procesadores de pago (cuando donativos/premium)
-- Autoridades legales (subpoenas, orden judicial)
-- Profesionales de salud (solo con su consentimiento expreso)
+## 5. Cómo los protegemos
 
-### 4.2 Protección de Datos en Tránsito
-Toda información compartida se envía mediante encriptación HTTPS/SSL.
+- Conexiones cifradas (HTTPS/TLS).
+- Contraseñas hasheadas con bcrypt.
+- Acceso por roles: tu admin gym no puede ver datos de otro gym, tu coach no puede asignarse roles administrativos.
+- Logs de auditoría para acciones administrativas críticas.
+- Variables sensibles (claves JWT, contraseñas) gestionadas por separado y nunca expuestas al cliente.
 
-## 5. SEGURIDAD DE DATOS
+## 6. Tus derechos
 
-Implementamos múltiples capas de seguridad:
-- Encriptación SSL/TLS para datos en tránsito
-- Hashing bcryptjs para contraseñas
-- Control de acceso basado en roles (RBAC)
-- Firewalls y monitoreo de seguridad
-- Auditoría de accesos
-- Políticas de retención de datos
-- Protección contra inyección SQL
-- Validación de entrada en todos los formularios
+Puedes en cualquier momento:
+- Acceder a una copia de tus datos.
+- Corregir información incorrecta.
+- Solicitar la eliminación de tu cuenta y tus registros.
+- Llevarte tus datos en un formato exportable (p.ej. PDF / JSON).
+- Oponerte a tratamientos específicos y retirar consentimientos.
 
-## 6. DERECHOS DEL USUARIO
+Para ejercerlos, **escribe a tu gimnasio** o al canal que tu marca te haya compartido.
 
-Usted tiene derecho a:
-- **Accesso**: Solicitar una copia de sus datos
-- **Rectificación**: Corregir información incorrecta
-- **Eliminación**: Solicitar borrado de sus datos
-- **Portabilidad**: Recibir datos en formato transferible
-- **Restricción**: Limitar uso de sus datos
-- **Oposición**: Oponerse a ciertos usos
-- **Revocar consentimiento**: En cualquier momento
+## 7. Retención
 
-Para ejercitar estos derechos: privacy@foodplan.app
+- **Cuenta activa**: tus datos se mantienen mientras uses la plataforma.
+- **Cuenta inactiva**: pueden ser eliminados tras 24 meses sin actividad.
+- **Eliminación a solicitud**: hasta 30 días para completar la baja, conservando solo lo que la ley nos exija.
+- **Logs de seguridad**: máximo 12 meses.
 
-## 7. RETENCIÓN DE DATOS
+## 8. Cookies y almacenamiento local
 
-- **Cuenta activa**: Datos se mantienen mientras use la app
-- **Cuenta inactiva**: Se pueden eliminar después de 24 meses
-- **Solicitud de eliminación**: Eliminamos dentro de 30 días
-- **Datos de pago**: Retenidos por requisitos fiscales (7 años)
-- **Logs de seguridad**: Máximo 1 año
+Usamos almacenamiento del navegador para:
+- Mantener tu sesión iniciada (JWT) sin pedirte login en cada visita.
+- Recordar preferencias mínimas (idioma).
 
-## 8. COOKIES Y TECNOLOGÍAS DE RASTREO
+No usamos cookies de seguimiento publicitario.
 
-Usamos cookies para:
-- Mantener su sesión de inicio de sesión
-- Recordar preferencias
-- Análisis de uso
-- Seguridad
+## 9. Menores de edad
 
-Puede desactivar cookies en su navegador, pero esto puede afectar funcionalidades.
+La plataforma está pensada para mayores de 18. Si un menor la usa, debe ser bajo supervisión y consentimiento explícito de un adulto responsable y de su gimnasio.
 
-## 9. CAMBIOS A ESTA POLÍTICA
+## 10. Cambios a esta política
 
-Podemos actualizar esta política en cualquier momento. Si hay cambios materiales:
-- Le notificaremos por correo electrónico
-- Actualizaremos la fecha de vigencia
-- Le solicitaremos consentimiento si es necesario
+Si actualizamos esta política, te avisaremos por los canales del gimnasio y por la propia plataforma antes de que entre en vigor. El uso continuado implica aceptación de la versión vigente.
 
-## 10. CONTACTO
+## 11. Contacto
 
-Para preguntas sobre privacidad:
-- **Email**: privacy@foodplan.app
-- **Dirección**: Calle Principal 123, Bogotá, Colombia
-- **Teléfono**: +57 (1) 1234-5678`;
+Para preguntas o ejercer derechos sobre tus datos personales: contacta a tu **gimnasio** o al canal oficial que tu marca te haya compartido.`;
 
   return (
     <div className="policy-modal-overlay" onClick={onClose}>

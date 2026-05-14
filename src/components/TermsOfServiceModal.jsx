@@ -3,84 +3,67 @@
 const TermsOfServiceModal = ({ onClose, onAccept }) => {
   const termsContent = `# Términos y Condiciones de Uso
 
-**Última actualización:** 20 de febrero de 2026
-**Vigencia:** A partir del 20 de febrero de 2026
+**Versión:** Piloto controlado 2026
+**Última actualización:** 14 de mayo de 2026
 
-## 1. ACEPTACIÓN DE TÉRMINOS
+## 1. Qué es esta plataforma
 
-Al acceder y utilizar **D28D Gimnasio Virtual** ("la Aplicación", "el Servicio"), usted acepta estar vinculado por estos Términos y Condiciones. Si no está de acuerdo, por favor no utilice la Aplicación.
+**D28D Gimnasio Virtual** es una plataforma de acompañamiento fitness y nutricional. Reúne tres servicios sobre el mismo entorno:
+- **Plan de Alimentación** (calculadora, catálogo de alimentos, recetas y registro diario).
+- **Entrenamiento** (rutinas, galería de videos y diario por ejercicio).
+- **Clases en vivo** (agenda y enlace de la reunión correspondiente).
 
-## 2. DESCRIPCIÓN DEL SERVICIO
+Tu gimnasio puede operar como marca blanca sobre esta plataforma.
 
-D28D Gimnasio Virtual es una aplicación móvil/web que proporciona:
-- Cálculo personalizado de necesidades calóricas y nutricionales
-- Registro y seguimiento de ingesta alimentaria diaria
-- Recomendaciones automáticas de alimentos basados en IA
-- Análisis de progreso nutricional
-- Base de datos de alimentos con información nutricional
+## 2. Aceptación
 
-## 3. ELEGIBILIDAD
+Al crear una cuenta o iniciar sesión aceptas estos términos. Si no estás de acuerdo, no uses la plataforma.
 
-Para utilizar D28D Gimnasio Virtual, usted debe:
-- Tener al menos 18 años de edad
-- Tener capacidad legal para celebrar contratos
-- Aceptar estos términos de manera voluntaria
-- Proporcionar información exacta y completa
+## 3. Quién puede usarla
 
-## 4. RESPONSABILIDADES DEL USUARIO
+- Mayores de 18 años, o menores con consentimiento explícito de un adulto responsable y bajo supervisión del coach/gimnasio.
+- Usuarios que aporten datos verdaderos: tus métricas y restricciones afectan el plan que recibes.
+- Si tienes alguna condición médica relevante, **consulta primero a tu profesional de salud**.
 
-Usted se compromete a:
-- No usar la Aplicación para actividades ilegales
-- No intentar acceder a áreas no autorizadas
-- No interferir con la seguridad o integridad de la Aplicación
-- Mantener la confidencialidad de su contraseña
-- No compartir su cuenta con terceros
-- No proporcionar información falsa o engañosa
+## 4. Lo que esperamos de ti
 
-## 5. LÍMITE DE RESPONSABILIDAD
+- Cuida tu contraseña. No la compartas.
+- No subas información de terceros sin su permiso.
+- No intentes vulnerar la seguridad ni saltar restricciones de acceso.
+- Reporta a tu coach o al admin de tu gimnasio cualquier comportamiento extraño en la plataforma.
 
-**DESCARGO DE RESPONSABILIDAD IMPORTANTE:**
+## 5. Lo que **no** somos
 
-D28D Gimnasio Virtual proporciona información educativa y nutricional. **NO es un sustituto de:**
-- Consejo médico profesional
-- Diagnóstico de condiciones médicas
-- Tratamiento médico
+- **No somos médicos ni clínica.** Las recomendaciones del plan son orientación nutricional y de actividad física, no un diagnóstico ni un tratamiento.
+- **No reemplazamos a tu nutricionista, médico o entrenador presencial.** Si tienes condiciones especiales (embarazo, lesiones, patologías, alergias), tu profesional siempre tiene la última palabra.
+- Las sugerencias automáticas (sustituciones, ajustes de porciones, ordenes de comidas) son **asistencias prácticas**, no consejo clínico.
 
-**Siempre consulte a un profesional de la salud o nutricionista** antes de hacer cambios significativos en su dieta.
+## 6. Asistencia automatizada
 
-## 6. PROPIEDAD INTELECTUAL
+La plataforma puede usar asistencia automatizada para calcular requerimientos, sugerir sustituciones y armar planes. Estas sugerencias son orientativas. Tu coach o tu gimnasio pueden ajustarlas. Si algo no encaja con tu situación, **avisa a tu coach** antes de seguirlo.
 
-Todos los contenidos de la Aplicación (código, diseño, texto, imágenes, gráficos) son propiedad de D28D Gimnasio Virtual. Usted recibe una licencia limitada para usar la Aplicación únicamente para fines personales y no comerciales.
+## 7. Tus datos
 
-## 7. CONTENIDO GENERADO POR IA
+- Recopilamos solo lo necesario para personalizar tu experiencia: identidad básica, métricas que tú ingresas y tu actividad dentro de la plataforma.
+- Tu plan y tus registros pertenecen a tu cuenta. Tu gimnasio y/o tu coach asignado los ven para acompañarte.
+- Ver el detalle completo en la **Política de Privacidad**.
 
-D28D Gimnasio Virtual utiliza inteligencia artificial para generar recomendaciones. Usted entiende y acepta que:
-- Las recomendaciones de IA pueden no ser perfectas
-- No somos responsables por decisiones basadas en IA
-- Siempre ejerza criterio profesional
+## 8. Disponibilidad del servicio
 
-## 8. PROHIBICIÓN DE ABUSO
+Durante el piloto controlado pueden existir ventanas de mantenimiento, ajustes y reinicios. Avisaremos por los canales del gimnasio cuando sean previsibles.
 
-**Uso prohibido incluye:**
-- Scraping automatizado de datos
-- Intentos de hackeo
-- Distribución de malware
-- Spam o acoso
-- Violación de derechos de terceros
+## 9. Cuenta y baja
 
-## 9. RESOLUCIÓN DE DISPUTAS
+- Puedes pedir la baja de tu cuenta a tu gimnasio en cualquier momento.
+- Podemos suspender una cuenta si detectamos abuso, uso indebido o riesgo para otros usuarios.
 
-Cualquier disputa será resuelta mediante:
-- Negociación amistosa
-- Arbitraje bajo las leyes de Colombia
-- Jurisdicción en Bogotá, Colombia
+## 10. Cambios a estos términos
 
-## 10. CONTACTO
+Podemos actualizar estos términos para reflejar mejoras o cambios regulatorios. Te avisaremos con tiempo razonable. El uso continuado implica aceptación de la versión vigente.
 
-Para preguntas sobre estos Términos:
-- **Email**: legal@foodplan.app
-- **Dirección**: Calle Principal 123, Bogotá, Colombia
-- **Teléfono**: +57 (1) 1234-5678`;
+## 11. Contacto
+
+Si tienes dudas o quieres ejercer tus derechos sobre tus datos, contáctanos a través de tu gimnasio o al canal que tu marca te haya compartido.`;
 
   return (
     <div className="policy-modal-overlay" onClick={onClose}>
