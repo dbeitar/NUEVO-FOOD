@@ -77,7 +77,14 @@ function resolveSplitType(daysAvailable) {
   return 'push_pull_legs';
 }
 
-function inferMovementPattern(exercise) {
+// NOTA: las funciones `inferMovementPattern` y `buildCvTrackingLogic` fueron
+// retiradas del payload activo (pre-piloto, 2026-05-14) porque exponían lógica
+// de computer-vision (MediaPipe-like landmarks, reglas biomecánicas y feedback
+// de audio) que la UI no consume. Si en el futuro se decide reactivar pose
+// estimation, se vuelve a importar desde el archivo histórico bajo
+// `backend/_archive/legacy/` y se conecta detrás de un feature flag.
+
+function _legacyInferMovementPattern(exercise) {
   const name = normalize(exercise.exercise_name);
   const category = normalize(exercise.category);
   const source = `${name} ${category}`;
@@ -148,8 +155,9 @@ function isBeginnerFriendly(exercise) {
   return true;
 }
 
-function buildCvTrackingLogic(exercise, level) {
-  const pattern = inferMovementPattern(exercise);
+// eslint-disable-next-line no-unused-vars
+function _legacyBuildCvTrackingLogic(exercise, level) {
+  const pattern = _legacyInferMovementPattern(exercise);
   const category = normalize(exercise.category);
   const isBeginner = level === 'principiante';
   const hasUnilateral = normalize(exercise.exercise_name).includes('UNILATERAL');
@@ -414,7 +422,6 @@ function buildRoutine(level, objective, daysAvailable) {
   const exercise_sequence = selectedExercises.map((exercise) => ({
     exercise_name: exercise.exercise_name,
     prescription: buildPrescription(level, objective),
-    cv_tracking_logic: buildCvTrackingLogic(exercise, level),
   }));
 
   return {
@@ -532,7 +539,7 @@ const substituteExercise = async (req, res) => {
         sets: 3,
         reps: '10-12',
         youtube_url: gallery?.youtube_url || null,
-        reason: cause ? `Adaptado debido a: ${cause}` : 'Adaptación biomecánica ideal.'
+        reason: cause ? `Adaptado debido a: ${cause}` : 'Variante equivalente recomendada.'
       }
     });
   } catch (error) {

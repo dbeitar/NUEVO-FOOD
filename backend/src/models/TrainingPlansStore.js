@@ -38,8 +38,8 @@ const TrainingPlansStore = {
             dias: (dias || []).map((d, i) => ({
                 dia: d.dia || i + 1,
                 nombre: d.nombre || `Día ${i + 1}`,
-                warmup_url: d.warmup_url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
-                stretching_url: d.stretching_url || 'https://www.youtube.com/watch?v=dQw4w9WgXcQ',
+                warmup_url: d.warmup_url || null,
+                stretching_url: d.stretching_url || null,
                 cardio: d.cardio || {
                     goal: 'oxidación',
                     bpm: 130,

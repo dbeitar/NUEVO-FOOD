@@ -15,7 +15,7 @@ const baseRoutines = [
       {
         dia: 1,
         nombre: "Día 1: Empuje + Tracción + Pierna",
-        warmup_url: "https://www.youtube.com/watch?v=dQw4w9WgXcQ",
+        warmup_url: null,
         ejercicios: [
           { exercise_name: "Sentadilla con Barra", sets: 3, reps: "8-10", rest_seconds: 90, intensity_type: "RPE", intensity_value: 8 },
           { exercise_name: "Press de Banca", sets: 3, reps: "8-10", rest_seconds: 90, intensity_type: "RPE", intensity_value: 8 },

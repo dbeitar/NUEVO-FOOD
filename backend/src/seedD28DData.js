@@ -5,7 +5,7 @@ const ExercisesGalleryStore = require('./models/ExercisesGalleryStore');
 const TrainingPlansStore = require('./models/TrainingPlansStore');
 const UserDatabase = require('./models/UserDatabase');
 
-const video = 'https://www.youtube.com/watch?v=dQw4w9WgXcQ';
+const video = null;
 
 const d28dExercises = [
   ['Sentadilla goblet', 'Pierna'],
