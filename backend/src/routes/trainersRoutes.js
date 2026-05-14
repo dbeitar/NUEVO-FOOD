@@ -4,16 +4,18 @@ const trainersController = require('../controllers/trainersController');
 
 const router = express.Router();
 
-// Rutas públicas
+// Todas las rutas de /api/trainers requieren autenticación.
+// El controlador aplica filtro multi-tenant según el JWT.
+router.use(authenticateToken);
+
 router.get('/', trainersController.getAllTrainers);
-router.get('/:id', trainersController.getTrainerById);
-router.get('/gym/:gymId', trainersController.getTrainersByGym);
 router.get('/search/specialty', trainersController.searchBySpecialty);
 router.get('/search/general', trainersController.searchTrainers);
+router.get('/gym/:gymId', trainersController.getTrainersByGym);
+router.get('/:id', trainersController.getTrainerById);
 
-// Rutas protegidas (admin)
-router.post('/', authenticateToken, trainersController.createTrainer);
-router.put('/:id', authenticateToken, trainersController.updateTrainer);
-router.delete('/:id', authenticateToken, trainersController.deleteTrainer);
+router.post('/', trainersController.createTrainer);
+router.put('/:id', trainersController.updateTrainer);
+router.delete('/:id', trainersController.deleteTrainer);
 
 module.exports = router;

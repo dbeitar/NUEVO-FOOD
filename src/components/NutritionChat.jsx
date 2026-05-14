@@ -81,8 +81,8 @@ export default function NutritionChat() {
   }, [user?.peso, user?.altura, edad, user?.genero, user?.objetivo]);
 
   const bienvenida = useMemo(() => {
-    const restr = user?.restricciones_detalles || (user?.tiene_restricciones ? 'restricciones registradas' : 'sin restricciones registradas');
-    return `¡Hola! Soy tu asistente de bienestar en D28D GYM virtual. He analizado tu perfil y tus restricciones de ${restr}. Mi objetivo es ayudarte a alcanzar tus metas con platos balanceados y sustitutos deliciosos. ¿En qué puedo ayudarte hoy?`;
+    const restr = user?.restricciones_detalles || (user?.tiene_restricciones ? 'tus restricciones registradas' : 'sin restricciones registradas');
+    return `Hola, soy tu asistente nutricional. Tengo en cuenta tu perfil (${restr}) para sugerir comidas y sustitutos prácticos. ¿En qué te ayudo hoy?`;
   }, [user?.restricciones_detalles, user?.tiene_restricciones]);
 
   useEffect(() => {
@@ -293,9 +293,9 @@ export default function NutritionChat() {
       <button
         className="fixed bottom-4 right-4 z-50 rounded-full bg-lime-500 text-black shadow-lg px-4 py-3"
         onClick={() => setOpen(true)}
-        aria-label="Abrir Health-Bot"
+        aria-label="Abrir asistente nutricional"
       >
-        Health‑Bot
+        Asistente
       </button>
     );
   }
@@ -305,7 +305,7 @@ export default function NutritionChat() {
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xl flex flex-col h-[70vh] md:h-[60vh]">
         <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
           <div>
-            <div className="font-semibold text-stone-900">Health‑Bot</div>
+            <div className="font-semibold text-stone-900">Asistente nutricional</div>
             <div className="text-xs text-stone-600">Plan diario: {plan.calorias} kcal · P {plan.macros.proteina}g · C {plan.macros.carbohidratos}g · G {plan.macros.grasas}g</div>
           </div>
           <div className="flex items-center gap-2">

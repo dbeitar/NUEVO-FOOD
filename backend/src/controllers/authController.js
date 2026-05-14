@@ -36,8 +36,11 @@ const registerUser = async (req, res) => {
       return res.status(409).json({ error: 'El email ya está registrado' });
     }
 
-    // Generar o usar contraseña proporcionada
-    const rawPassword = password && String(password).length >= 6 ? String(password) : Math.random().toString(36).slice(-8);
+    // Generar o usar contraseña proporcionada. Las temporales NUNCA se loggean
+    // ni se devuelven; el usuario debe restablecerla por flujo de admin.
+    const rawPassword = password && String(password).length >= 8
+      ? String(password)
+      : require('crypto').randomBytes(9).toString('base64url');
     const hashedPassword = await bcrypt.hash(rawPassword, 10);
 
     // Insertar usuario en la base de datos
@@ -56,13 +59,13 @@ const registerUser = async (req, res) => {
       user = result.rows[0];
     }
 
-    // TODO: Enviar contraseña por email (SendGrid)
-    if (process.env.NODE_ENV !== 'production' && !password) {
-      console.log(`Contraseña temporal para ${email}: ${rawPassword}`);
-    }
+    // TODO (futuro): enviar contraseña temporal por email (SendGrid).
+    // Hoy NO se loggea ni se devuelve por seguridad; admin la restablece manualmente.
 
     res.status(201).json({
-      message: password ? 'Usuario registrado exitosamente.' : 'Usuario registrado exitosamente. Se envió una clave temporal al correo.',
+      message: password
+        ? 'Usuario registrado exitosamente.'
+        : 'Usuario registrado. El administrador debe asignar una contraseña inicial.',
       user,
     });
   } catch (error) {
@@ -74,36 +77,29 @@ const registerUser = async (req, res) => {
 // Login de usuario
 const loginUser = async (req, res) => {
   try {
-    console.log('Login attempt:', { email: req.body.email, hasPassword: !!req.body.password });
-    const { email, password } = req.body;
+    const { email, password } = req.body || {};
 
     if (!email || !password) {
-      console.log('Missing email or password');
       return res.status(400).json({ error: 'Email y contraseña son requeridos' });
     }
 
     let user;
-
     if (USE_DB_AUTH) {
-      // Usar base de datos
-      console.log('Using database auth');
       const result = await db.query('SELECT * FROM users WHERE email = $1', [email]);
       user = result.rows ? result.rows[0] : result[0];
     } else {
-      // Usar archivos JSON
-      console.log('Using JSON auth');
       user = userDB.getByEmail(email);
     }
 
-    console.log('User found:', !!user);
     if (!user) {
       return res.status(401).json({ error: 'Email o contraseña incorrectos' });
     }
 
-    // Verificar contraseña
-    const validPassword = await bcrypt.compare(password, user.clave_hash);
-    console.log('Password valid:', validPassword);
+    if (!user.clave_hash) {
+      return res.status(401).json({ error: 'Cuenta sin contraseña asignada. Contacta al administrador.' });
+    }
 
+    const validPassword = await bcrypt.compare(password, user.clave_hash);
     if (!validPassword) {
       return res.status(401).json({ error: 'Email o contraseña incorrectos' });
     }
@@ -179,23 +175,23 @@ const getProfile = async (req, res) => {
 // Admin: resetear contraseña de un usuario por email
 const adminResetPassword = async (req, res) => {
   try {
-    if (!req.user || req.user.rol !== 'admin') {
+    const role = req.user?.rol;
+    if (!['super_admin', 'admin_gimnasio', 'admin_marca'].includes(role)) {
       return res.status(403).json({ error: 'Acceso denegado' });
     }
-    const { email, password } = req.body;
-    if (!email || !password || password.length < 6) {
-      return res.status(400).json({ error: 'Email y nueva contraseña (≥6) son requeridos' });
+    const { email, password } = req.body || {};
+    if (!email || !password || String(password).length < 8) {
+      return res.status(400).json({ error: 'Email y nueva contraseña (>=8) son requeridos' });
     }
     const userQ = await db.query('SELECT id FROM users WHERE email = $1', [email]);
     if (!userQ.rows || userQ.rows.length === 0) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
     const hashed = await bcrypt.hash(password, 10);
-    const upd = await db.query('UPDATE users SET clave_hash = $1 WHERE email = $2', [hashed, email]);
-    // Para MySQL, rows.affectedRows; para PG, upd.rowCount
+    await db.query('UPDATE users SET clave_hash = $1 WHERE email = $2', [hashed, email]);
     res.json({ success: true, message: 'Contraseña actualizada' });
   } catch (error) {
-    console.error('Error reseteando contraseña:', error);
+    console.error('Error reseteando contraseña:', error.message);
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };

@@ -1,9 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 
-// Feature flag: el seguimiento biomecánico en tiempo real queda suspendido por ahora.
-const ENABLE_REALTIME_COACH = false;
-
 function toEmbedUrl(url) {
   if (!url) return '';
   try {
@@ -531,22 +528,6 @@ export default function TrainingModule() {
               )}
             </div>
 
-            <div className="card">
-              <h4 className="text-lg font-bold text-stone-900 mb-3">Coach Virtual - Cámara + MediaPipe</h4>
-              <p className="text-sm text-stone-600 mb-4">
-                Seguimiento de biomecánica en tiempo real para el día seleccionado.
-              </p>
-              {ENABLE_REALTIME_COACH ? (
-                <div className="text-sm text-stone-600">
-                  {/* Se habilitará cuando retomemos el CV en vivo. */}
-                  Coach en vivo habilitado.
-                </div>
-              ) : (
-                <div className="rounded-xl border border-dashed border-stone-300 p-6 text-stone-600 text-sm">
-                  El seguimiento en tiempo real está <strong>suspendido</strong> por ahora.
-                </div>
-              )}
-            </div>
           </div>
         </>
       )}

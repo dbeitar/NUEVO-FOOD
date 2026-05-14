@@ -47,9 +47,13 @@ temp_design_preview.html
 # Otros
 package-lock.json
 
-# Bases de datos JSON en memoria
+# Bases de datos JSON locales (no versionar; usar .example.json como semilla)
 backend/data/*.json
 backend/data/*.bak
+backend/data/backups/
+backend/data/localStorage_backup.json
+# Excepción: sí versionamos los archivos de ejemplo
+!backend/data/*.example.json
 
 # Temp files
 temp_token.json

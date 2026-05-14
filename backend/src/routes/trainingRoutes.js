@@ -4,12 +4,11 @@ const trainingController = require('../controllers/trainingController');
 const adminTrainingController = require('../controllers/adminTrainingController');
 const router = express.Router();
 
-// Existing:
-router.post('/plan-json', trainingController.generatePlanJson);
-
-// New AI Dashboard and Assistant endpoints:
-// Protect these with auth if possible
+// Todas las rutas de /api/training requieren autenticación.
 router.use(authMiddleware);
+
+// Generación de plan (antes era pública por error)
+router.post('/plan-json', trainingController.generatePlanJson);
 
 router.get('/gallery', trainingController.getPublicGallery);
 router.get('/admin/gallery', trainingController.getAdminGallery);

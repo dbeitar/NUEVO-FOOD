@@ -2,6 +2,7 @@
  
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../context/useI18n';
+import { PUBLIC_BRAND_NAME } from '../utils/branding';
 
 export default function Sidebar() {
   const { user, logout } = useAuth();
@@ -55,8 +56,8 @@ export default function Sidebar() {
   return (
     <aside className="w-64 bg-white text-stone-700 h-screen flex flex-col fixed left-0 top-0 z-30 hidden md:flex border-r border-slate-200">
       <div className="p-6 border-b border-slate-200 flex items-center gap-3">
-        <span className="text-2xl">🍽️</span>
-        <h1 className="text-xl font-bold text-stone-900 tracking-tight m-0">D28D GYM virtual</h1>
+        <span className="text-2xl" aria-hidden="true">●</span>
+        <h1 className="text-xl font-bold text-stone-900 tracking-tight m-0">{PUBLIC_BRAND_NAME}</h1>
       </div>
       
       <nav className="flex-1 overflow-y-auto py-4 px-3 space-y-1">

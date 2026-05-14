@@ -32,60 +32,87 @@ const { hydrateAccess } = require('./src/utils/accessControl');
 const tracingMiddleware = require('./src/middleware/tracing');
 const app = express();
 const PORT = process.env.PORT || 3001;
+const NODE_ENV = String(process.env.NODE_ENV || 'development').toLowerCase();
+const IS_PROD = NODE_ENV === 'production';
 
-app.use((req, res, next) => {
-  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
-  next();
-});
+// === Validación de configuración crítica al arrancar =========================
+// El servidor se niega a arrancar si JWT_SECRET no está definido o es débil.
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET || String(JWT_SECRET).trim().length < 32) {
+  console.error('[CONFIG] JWT_SECRET no definido o demasiado corto (>=32 chars). Aborto arranque.');
+  console.error('[CONFIG] Genera uno con: node -e "console.log(require(\'crypto\').randomBytes(48).toString(\'hex\'))"');
+  process.exit(1);
+}
 
-app.use((req, res, next) => {
-  const origin = req.headers.origin;
-  console.log(`[CORS DEBUG] ${req.method} ${req.url} from ${origin}`);
-  res.header("Access-Control-Allow-Origin", origin || "*");
-  res.header("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS, PATCH");
-  res.header("Access-Control-Allow-Headers", "Content-Type, Authorization, X-Trace-Id, X-Requested-With");
-  res.header("Access-Control-Allow-Credentials", "true");
-  
-  if (req.method === "OPTIONS") {
-    console.log(`[CORS DEBUG] Handled OPTIONS preflight`);
-    return res.sendStatus(200);
-  }
-  next();
-});
+// === CORS (lista blanca configurable) ========================================
+const corsOriginEnv = (process.env.CORS_ORIGIN || '').trim();
+const corsAllowList = corsOriginEnv
+  ? corsOriginEnv.split(',').map((s) => s.trim()).filter(Boolean)
+  : (IS_PROD ? [] : ['http://localhost:5175', 'http://127.0.0.1:5175']);
+if (IS_PROD && corsAllowList.length === 0) {
+  console.error('[CONFIG] CORS_ORIGIN obligatorio en producción. Aborto arranque.');
+  process.exit(1);
+}
+
+const corsOptions = {
+  origin: (origin, cb) => {
+    // Permitir requests sin origin (curl, healthchecks, mismo origen)
+    if (!origin) return cb(null, true);
+    if (corsAllowList.includes(origin)) return cb(null, true);
+    return cb(new Error(`Origin no permitido por CORS: ${origin}`));
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization', 'X-Trace-Id', 'X-Requested-With'],
+};
+
+app.use(cors(corsOptions));
 
 app.use(tracingMiddleware);
-
 app.use(express.json());
-app.use(morgan('dev'));
+
+// Logger HTTP (silencioso en test; combinado en prod; dev en desarrollo)
+if (NODE_ENV !== 'test') {
+  app.use(morgan(IS_PROD ? 'combined' : 'dev'));
+}
 
 const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true';
+const ENABLE_DEV_ROUTES = !IS_PROD && String(process.env.ENABLE_DEV_ROUTES || '').toLowerCase() === 'true';
+const SEED_DEMO = String(process.env.SEED_DEMO || '').toLowerCase() === 'true';
 
 async function syncDemoAndCoreAccounts() {
+  // Opt-in. Sin SEED_DEMO=true este bloque no toca usuarios.
+  if (!SEED_DEMO) return;
+  // Exigir contraseñas explícitas: nunca usar fallbacks como 'Admin!234'.
+  const demoPassword = (process.env.DEMO_PASSWORD || '').trim();
+  const corePassword = (process.env.CORE_PASSWORD || '').trim();
+  if (!demoPassword || !corePassword || demoPassword.length < 8 || corePassword.length < 8) {
+    console.warn('[SEED_DEMO] DEMO_PASSWORD y CORE_PASSWORD requeridas (>=8 chars). Sync abortado.');
+    return;
+  }
   try {
     const demoEmail = (process.env.DEMO_USER_EMAIL || 'demo+20260302@foodplan.local').trim();
-    const coreEmails = (process.env.CORE_ACCOUNT_EMAILS || 'admin@foodplan.local,admin.d28d@foodplan.local,admin.gym@test.foodplan.local,trainer@test.foodplan.local,cliente@foodplan.local,cesar.gomez@cloudfarmers.app')
+    const coreEmails = (process.env.CORE_ACCOUNT_EMAILS || '')
       .split(',')
-      .map(s => s.trim())
+      .map((s) => s.trim())
       .filter(Boolean);
-    const demoPassword = process.env.DEMO_PASSWORD || 'Demo!234';
-    const corePassword = process.env.CORE_PASSWORD || 'Admin!234';
     const demoHash = await bcryptjs.hash(demoPassword, 10);
     const coreHash = await bcryptjs.hash(corePassword, 10);
     if (USE_DB_AUTH) {
       for (const email of coreEmails) {
         try {
           await db.query('UPDATE users SET clave_hash = $1 WHERE email = $2', [coreHash, email]);
-        } catch { }
+        } catch { /* noop */ }
       }
       try {
         const r = await db.query('SELECT id FROM users WHERE email = $1', [demoEmail]);
-        const exists = (r.rows && r.rows.length > 0);
+        const exists = r.rows && r.rows.length > 0;
         if (exists) {
           await db.query('UPDATE users SET clave_hash = $1 WHERE email = $2', [demoHash, demoEmail]);
         } else {
           await db.query('INSERT INTO users (nombre, email, clave_hash, rol) VALUES ($1, $2, $3, $4)', ['Demo Público', demoEmail, demoHash, 'usuario_final']);
         }
-      } catch { }
+      } catch { /* noop */ }
     } else {
       for (const email of coreEmails) {
         const u = userDB.getByEmail(email);
@@ -95,47 +122,55 @@ async function syncDemoAndCoreAccounts() {
       if (du) userDB.update(du.id, { clave_hash: demoHash });
       else userDB.create({ nombre: 'Demo Público', email: demoEmail, clave_hash: demoHash, rol: 'usuario_final' });
     }
-  } catch { }
+    console.log('[SEED_DEMO] Sincronización completada.');
+  } catch (e) {
+    console.error('[SEED_DEMO] Error:', e.message);
+  }
 }
 
-// Configuración de Rate Limiting
-if (String(process.env.NODE_ENV || '').toLowerCase() === 'production') {
+// Rate limiting global en producción
+if (IS_PROD) {
   const apiLimiter = rateLimit({
-    windowMs: 15 * 60 * 1000, // 15 minutos
-    max: 100, // Limita cada IP a 100 solicitudes por windowMs
-    message: 'Demasiadas solicitudes desde esta IP, por favor intenta de nuevo después de 15 minutos.'
+    windowMs: 15 * 60 * 1000,
+    max: 100,
+    message: 'Demasiadas solicitudes desde esta IP, intenta de nuevo en 15 minutos.',
+    standardHeaders: true,
+    legacyHeaders: false,
   });
   app.use(apiLimiter);
-} else {
-  // En desarrollo, no limitar
-  console.log('⚠️  Rate limit desactivado en desarrollo');
 }
 
-// Health checks
-app.get('/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'ok' });
-});
-app.post('/api/test', (req, res) => {
-  res.json({ received: req.body, method: req.method, url: req.url });
+// Rate limit reforzado para auth en cualquier entorno
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000,
+  max: 20,
+  message: 'Demasiados intentos. Intenta de nuevo en 15 minutos.',
+  standardHeaders: true,
+  legacyHeaders: false,
 });
 
-// Herramientas de desarrollo (solo fuera de producción)
-if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') {
-  app.get('/api/dev/users', (req, res) => {
-    const list = userDB.getAll().map(u => ({ id: u.id, email: u.email, rol: u.rol }));
+// Health checks (públicos, mínimos)
+app.get('/health', (_req, res) => res.json({ status: 'ok' }));
+app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
+
+// Endpoints de desarrollo: SOLO si NODE_ENV != production Y ENABLE_DEV_ROUTES=true.
+// Sin password por defecto. Sin echo de body.
+if (ENABLE_DEV_ROUTES) {
+  console.log('[DEV] Endpoints /api/dev/* habilitados (no usar en producción)');
+  app.get('/api/dev/users', (_req, res) => {
+    const list = userDB.getAll().map((u) => ({ id: u.id, email: u.email, rol: u.rol }));
     res.json({ data: list });
   });
   app.post('/api/dev/users/reset-passwords', async (req, res) => {
     try {
-      const emails = req.body?.emails || [
-        'admin@foodplan.local',
-        'cliente@foodplan.local',
-        'cesar.gomez@cloudfarmers.app'
-      ];
-      const password = req.body?.password || 'admin123';
+      const emails = Array.isArray(req.body?.emails) ? req.body.emails : [];
+      const password = String(req.body?.password || '').trim();
+      if (emails.length === 0) {
+        return res.status(400).json({ error: 'Lista de emails requerida' });
+      }
+      if (password.length < 8) {
+        return res.status(400).json({ error: 'Password requerida y >= 8 chars' });
+      }
       const hash = await bcryptjs.hash(password, 10);
       const updated = [];
       for (const email of emails) {
@@ -145,12 +180,12 @@ if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') {
           updated.push({ id: u.id, email: u.email });
         }
       }
-      res.json({ success: true, updated, password });
+      res.json({ success: true, updated });
     } catch (e) {
       res.status(500).json({ error: 'Error reseteando contraseñas' });
     }
   });
-  app.post('/api/dev/sync-demo', async (req, res) => {
+  app.post('/api/dev/sync-demo', async (_req, res) => {
     try {
       await syncDemoAndCoreAccounts();
       res.json({ success: true });
@@ -160,35 +195,85 @@ if (String(process.env.NODE_ENV || '').toLowerCase() !== 'production') {
   });
 }
 
-// Middleware para validar códigos de empleado (temporal)
-// Middleware de validación temporalmente desactivado para debugging
+// Aplicar rate limit reforzado a todo /api/auth/*
+app.use('/api/auth', authLimiter);
 
 // Rutas de Autenticación
 if (USE_DB_AUTH) {
   app.use('/api/auth', authRoutes);
-  app.use('/auth', authRoutes);
 } else {
+  // ---------- Auth (modo JSON local) ----------
+  // Helpers internos
+  const buildAuthToken = (user) => {
+    const access = hydrateAccess(user);
+    return {
+      access,
+      token: jwt.sign(
+        {
+          id: user.id,
+          email: user.email,
+          rol: user.rol,
+          roles: access.roles,
+          permissions: access.permissions,
+          module_access: access.module_access,
+          gym_id: user.gym_id || user.gymId || null,
+          trainer_id: user.trainer_id || null,
+        },
+        JWT_SECRET,
+        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
+      ),
+    };
+  };
+
+  const profileShape = (user) => {
+    const access = hydrateAccess(user);
+    return {
+      id: user.id,
+      nombre: user.nombre,
+      email: user.email,
+      telefono: user.telefono || null,
+      fecha_nacimiento: user.fecha_nacimiento,
+      peso: user.peso,
+      altura: user.altura,
+      objetivo: user.objetivo,
+      genero: user.genero || null,
+      tiene_restricciones: user.tiene_restricciones ?? false,
+      restricciones_detalles: user.restricciones_detalles || '',
+      rol: user.rol,
+      roles: access.roles,
+      permissions: access.permissions,
+      module_access: access.module_access,
+      gym_id: user.gym_id || user.gymId || null,
+      trainer_id: user.trainer_id || null,
+    };
+  };
+
   app.post('/api/auth/register', async (req, res) => {
     try {
-      const { nombre, email, password, teléfono, telefono, fecha_nacimiento, peso, altura, objetivo, genero = null, rol = 'usuario_final', tiene_restricciones = false, restricciones_detalles = '', medidas_biomecanicas, experiencia, metodo_entrenamiento } = req.body;
+      const {
+        nombre, email, password,
+        teléfono, telefono,
+        fecha_nacimiento, peso, altura, objetivo,
+        genero = null, rol = 'usuario_final',
+        tiene_restricciones = false, restricciones_detalles = '',
+        medidas_biomecanicas, experiencia, metodo_entrenamiento,
+      } = req.body || {};
 
-      if (!nombre || !email || !password) {
-        // Alineado con cambios de la tarde: permitir contraseña temporal si no llega password
-        if (!nombre || !email) {
-          return res.status(400).json({ error: 'Nombre y email son requeridos' });
-        }
+      if (!nombre || !email) {
+        return res.status(400).json({ error: 'Nombre y email son requeridos' });
       }
-      // Validar género obligatorio en inscripción
       const validGeneros = ['masculino', 'femenino'];
       if (!genero || !validGeneros.includes(genero)) {
         return res.status(400).json({ error: 'El género es obligatorio y debe ser masculino o femenino' });
       }
 
       let finalPassword = password;
-      if (!finalPassword || String(finalPassword).length < 6) {
-        // Generar contraseña temporal de 8 caracteres
-        finalPassword = Math.random().toString(36).slice(-8);
-        console.log(`Contraseña temporal generada para ${email}: ${finalPassword}`);
+      let usedTemp = false;
+      if (!finalPassword || String(finalPassword).length < 8) {
+        // Contraseña temporal: NO se loggea, NO se devuelve. El usuario debe
+        // cambiarla por flujo "olvidé mi contraseña" o por admin.
+        finalPassword = require('crypto').randomBytes(9).toString('base64url');
+        usedTemp = true;
       }
 
       if (userDB.getByEmail(email)) {
@@ -196,7 +281,6 @@ if (USE_DB_AUTH) {
       }
 
       const hashedPassword = await bcryptjs.hash(finalPassword, 10);
-
       const created = userDB.create({
         nombre,
         email,
@@ -212,94 +296,37 @@ if (USE_DB_AUTH) {
         rol,
         medidas_biomecanicas,
         experiencia,
-        metodo_entrenamiento
+        metodo_entrenamiento,
       });
 
-      // Si la contraseña fue temporal, informamos en el mensaje (el front no depende de este texto)
-      const usedTemp = !password || String(password).length < 6;
       const message = usedTemp
-        ? 'Usuario registrado exitosamente. Se generó una clave temporal.'
+        ? 'Usuario registrado. Se generó una clave temporal; pídela al administrador o usa "Olvidé mi contraseña".'
         : 'Usuario registrado exitosamente';
-      res.status(201).json({ message, user: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol } });
-    } catch (error) {
-      console.error('Error registrando usuario:', error);
-      res.status(500).json({ error: 'Error interno del servidor' });
-    }
-  });
-  app.post('/auth/register', async (req, res) => {
-    try {
-      const { nombre, email, password, teléfono, telefono, fecha_nacimiento, peso, altura, objetivo, genero = null, rol = 'usuario_final', tiene_restricciones = false, restricciones_detalles = '', medidas_biomecanicas, experiencia, metodo_entrenamiento } = req.body;
-      if (!nombre || !email || !password) {
-        if (!nombre || !email) {
-          return res.status(400).json({ error: 'Nombre y email son requeridos' });
-        }
-      }
-      const validGeneros = ['masculino', 'femenino'];
-      if (!genero || !validGeneros.includes(genero)) {
-        return res.status(400).json({ error: 'El género es obligatorio y debe ser masculino o femenino' });
-      }
-      let finalPassword = password;
-      if (!finalPassword || String(finalPassword).length < 6) {
-        finalPassword = Math.random().toString(36).slice(-8);
-        console.log(`Contraseña temporal generada para ${email}: ${finalPassword}`);
-      }
-      if (userDB.getByEmail(email)) {
-        return res.status(409).json({ error: 'El email ya está registrado' });
-      }
-      const hashedPassword = await bcryptjs.hash(finalPassword, 10);
-      const created = userDB.create({
-        nombre,
-        email,
-        telefono: teléfono || telefono || null,
-        fecha_nacimiento,
-        peso,
-        altura,
-        objetivo,
-        genero,
-        tiene_restricciones: Boolean(tiene_restricciones),
-        restricciones_detalles: restricciones_detalles || '',
-        clave_hash: hashedPassword,
-        rol,
-        medidas_biomecanicas,
-        experiencia,
-        metodo_entrenamiento
+      res.status(201).json({
+        message,
+        user: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol },
       });
-      const usedTemp = !password || String(password).length < 6;
-      const message = usedTemp ? 'Usuario registrado exitosamente. Se generó una clave temporal.' : 'Usuario registrado exitosamente';
-      res.status(201).json({ message, user: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol } });
     } catch (error) {
-      console.error('Error registrando usuario:', error);
+      console.error('Error registrando usuario:', error.message);
       res.status(500).json({ error: 'Error interno del servidor' });
     }
   });
 
   app.post('/api/auth/login', async (req, res) => {
     try {
-      const { email, password } = req.body;
-
+      const { email, password } = req.body || {};
       if (!email || !password) {
         return res.status(400).json({ error: 'Email y contraseña son requeridos' });
       }
-
       const user = userDB.getByEmail(email);
-
       if (!user) {
         return res.status(401).json({ error: 'Email o contraseña incorrectos' });
       }
-
       const validPassword = await bcryptjs.compare(password, user.clave_hash);
-
       if (!validPassword) {
         return res.status(401).json({ error: 'Email o contraseña incorrectos' });
       }
-
-      const access = hydrateAccess(user);
-      const token = jwt.sign(
-        { id: user.id, email: user.email, rol: user.rol, roles: access.roles, permissions: access.permissions, module_access: access.module_access, gym_id: user.gym_id || user.gymId || null, trainer_id: user.trainer_id || null },
-        process.env.JWT_SECRET || 'secret_key_dev',
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-      );
-
+      const { access, token } = buildAuthToken(user);
       res.json({
         message: 'Login exitoso',
         token,
@@ -314,45 +341,7 @@ if (USE_DB_AUTH) {
         },
       });
     } catch (error) {
-      console.error('Error en login:', error);
-      res.status(500).json({ error: 'Error interno del servidor' });
-    }
-  });
-  app.post('/auth/login', async (req, res) => {
-    try {
-      const { email, password } = req.body;
-      if (!email || !password) {
-        return res.status(400).json({ error: 'Email y contraseña son requeridos' });
-      }
-      const user = userDB.getByEmail(email);
-      if (!user) {
-        return res.status(401).json({ error: 'Email o contraseña incorrectos' });
-      }
-      const validPassword = await bcryptjs.compare(password, user.clave_hash);
-      if (!validPassword) {
-        return res.status(401).json({ error: 'Email o contraseña incorrectos' });
-      }
-      const access = hydrateAccess(user);
-      const token = jwt.sign(
-        { id: user.id, email: user.email, rol: user.rol, roles: access.roles, permissions: access.permissions, module_access: access.module_access, gym_id: user.gym_id || user.gymId || null, trainer_id: user.trainer_id || null },
-        process.env.JWT_SECRET || 'secret_key_dev',
-        { expiresIn: process.env.JWT_EXPIRES_IN || '7d' }
-      );
-      res.json({
-        message: 'Login exitoso',
-        token,
-        user: {
-          id: user.id,
-          nombre: user.nombre,
-          email: user.email,
-          rol: user.rol,
-          roles: access.roles,
-          permissions: access.permissions,
-          module_access: access.module_access,
-        },
-      });
-    } catch (error) {
-      console.error('Error en login:', error);
+      console.error('Error en login:', error.message);
       res.status(500).json({ error: 'Error interno del servidor' });
     }
   });
@@ -360,73 +349,15 @@ if (USE_DB_AUTH) {
   app.get('/api/auth/profile', (req, res) => {
     try {
       const token = req.headers['authorization']?.split(' ')[1];
-
       if (!token) {
         return res.status(401).json({ error: 'Token no proporcionado' });
       }
-
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_dev');
-      const user = userDB.getById(decoded.id);
-
-      if (!user) {
-        return res.status(404).json({ error: 'Usuario no encontrado' });
-      }
-
-      const access = hydrateAccess(user);
-      res.json({
-        id: user.id,
-        nombre: user.nombre,
-        email: user.email,
-        telefono: user.telefono || null,
-        fecha_nacimiento: user.fecha_nacimiento,
-        peso: user.peso,
-        altura: user.altura,
-        objetivo: user.objetivo,
-        genero: user.genero || null,
-        tiene_restricciones: user.tiene_restricciones ?? false,
-        restricciones_detalles: user.restricciones_detalles || '',
-        rol: user.rol,
-        roles: access.roles,
-        permissions: access.permissions,
-        module_access: access.module_access,
-        gym_id: user.gym_id || user.gymId || null,
-        trainer_id: user.trainer_id || null,
-      });
-    } catch (error) {
-      res.status(403).json({ error: 'Token inválido o expirado' });
-    }
-  });
-  app.get('/auth/profile', (req, res) => {
-    try {
-      const token = req.headers['authorization']?.split(' ')[1];
-      if (!token) {
-        return res.status(401).json({ error: 'Token no proporcionado' });
-      }
-      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'secret_key_dev');
+      const decoded = jwt.verify(token, JWT_SECRET);
       const user = userDB.getById(decoded.id);
       if (!user) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
-      const access = hydrateAccess(user);
-      res.json({
-        id: user.id,
-        nombre: user.nombre,
-        email: user.email,
-        telefono: user.telefono || null,
-        fecha_nacimiento: user.fecha_nacimiento,
-        peso: user.peso,
-        altura: user.altura,
-        objetivo: user.objetivo,
-        genero: user.genero || null,
-        tiene_restricciones: user.tiene_restricciones ?? false,
-        restricciones_detalles: user.restricciones_detalles || '',
-        rol: user.rol,
-        roles: access.roles,
-        permissions: access.permissions,
-        module_access: access.module_access,
-        gym_id: user.gym_id || user.gymId || null,
-        trainer_id: user.trainer_id || null,
-      });
+      res.json(profileShape(user));
     } catch (error) {
       res.status(403).json({ error: 'Token inválido o expirado' });
     }
@@ -458,10 +389,6 @@ app.post('/api/auth/admin/reset-password', authMiddleware, async (req, res) => {
     console.error('Error universal reset-password:', e);
     return res.status(500).json({ error: 'Error interno del servidor' });
   }
-});
-app.post('/auth/admin/reset-password', authMiddleware, async (req, res) => {
-  // Alias sin prefijo /api
-  return app._router.handle({ ...req, url: '/api/auth/admin/reset-password', method: 'POST' }, res, () => { });
 });
 
 // Admin: Usuarios y Roles (modo memoria)
@@ -613,11 +540,6 @@ app.delete('/api/admin/users/:id', authMiddleware, (req, res) => {
   }
 });
 
-// Health check
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'Backend Food Plan corriendo correctamente ✅' });
-});
-
 // Rutas de calculadora
 app.use('/api/calculator', calculatorRoutes);
 
@@ -648,41 +570,28 @@ app.use('/api/ecosystem', ecosystemRoutes);
 app.use('/api/trainer-masters', trainerMastersRoutes);
 app.use('/api/programs', programRoutes);
 
-app.use('/calculator', calculatorRoutes);
-app.use('/foods', foodRoutes);
-app.use('/food-log', foodLogRoutes);
-app.use('/ai', aiRoutes);
-app.use('/plan', planRoutes);
-app.use('/recipes', recipeRoutes);
-app.use('/gyms', gymRoutes);
-app.use('/trainers', trainersRoutes);
-app.use('/accounts', accountsRoutes);
-app.use('/admin', adminRoutes);
-app.use('/training', trainingRoutes);
-app.use('/live-classes', liveClassRoutes);
-app.use('/fitness-tests', fitnessTestRoutes);
-app.use('/ecosystem', ecosystemRoutes);
-app.use('/trainer-masters', trainerMastersRoutes);
-
-// Error handler
-app.use((err, req, res, next) => {
-  console.error(err.stack);
+// Manejo de errores final (incluye CORS rechazado)
+// eslint-disable-next-line no-unused-vars
+app.use((err, _req, res, _next) => {
+  if (err && /CORS/.test(String(err.message))) {
+    return res.status(403).json({ error: err.message });
+  }
+  console.error(err && err.stack ? err.stack : err);
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
+// Seed/sync controlados por env
 syncDemoAndCoreAccounts();
 try {
   const seeded = seedD28DData();
-  console.log(`🏷️  Datos demo D28D listos (gym ${seeded.gym_id})`);
+  console.log(`[D28D] Datos demo listos (gym ${seeded.gym_id})`);
 } catch (error) {
-  console.error('Error preparando datos demo D28D:', error);
+  console.error('Error preparando datos demo D28D:', error.message);
 }
+
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor corriendo en http://localhost:${PORT}`);
-  console.log(`📊 Health check: http://localhost:${PORT}/api/health`);
-  if (USE_DB_AUTH) {
-    console.log('🔐 Autenticación usando Base de Datos (PostgreSQL) ');
-  } else {
-    console.log('🗂️  MODO DESARROLLO - Autenticación persistente en JSON (backend/data/users.json) ');
-  }
+  console.log(`[server] Escuchando en http://localhost:${PORT} (env=${NODE_ENV})`);
+  console.log(`[server] CORS allow: ${corsAllowList.join(', ') || '(ninguno; bloqueado)'}`);
+  if (ENABLE_DEV_ROUTES) console.log('[server] /api/dev/* habilitados');
+  console.log(`[server] Auth backend: ${USE_DB_AUTH ? 'DB' : 'JSON'}`);
 });

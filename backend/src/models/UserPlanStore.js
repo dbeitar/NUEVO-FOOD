@@ -10,31 +10,16 @@ function save() {
   store.setAll(plans);
 }
 
-function defaultPlan() {
-  return {
-    calorias: 2000,
-    proteina: 150,
-    carbohidratos: 250,
-    grasas: 65,
-    objetivo: 'Mantenimiento',
-    nivelActividad: 'Moderado',
-    updatedAt: new Date(),
-    updatedBy: null,
-  };
-}
-
 module.exports = {
+  // Devuelve el plan del usuario o null si todavía no tiene uno asignado.
+  // No se auto-popula con valores ficticios para no mostrar datos falsos al usuario.
   get(userId) {
     const key = String(userId);
-    if (!plans[key]) {
-      plans[key] = defaultPlan();
-      save();
-    }
-    return plans[key];
+    return plans[key] || null;
   },
   update(userId, updates = {}, updatedBy = null) {
     const key = String(userId);
-    const prev = this.get(userId);
+    const prev = plans[key] || {};
     const merged = {
       ...prev,
       ...updates,

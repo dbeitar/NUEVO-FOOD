@@ -2,55 +2,28 @@ const JsonStore = require('../utils/JsonStore');
 const bcryptjs = require('bcryptjs');
 const { hydrateAccess, normalizeRoles } = require('../utils/accessControl');
 
+// Seed inicial de usuarios. Las contraseñas se generan a partir de la env
+// `INITIAL_USERS_PASSWORD`. Si no está definida, el seed inicial NO crea
+// contraseñas (el clave_hash queda vacío y el usuario no puede loggearse hasta
+// que un admin le asigne una nueva). Esto evita versionar/usar `Admin!234`.
+function makeInitialUsers() {
+  const seedPwd = String(process.env.INITIAL_USERS_PASSWORD || '').trim();
+  const hash = seedPwd.length >= 8 ? bcryptjs.hashSync(seedPwd, 10) : '';
+  return [
+    { id: 1, nombre: 'Super Admin', email: 'admin@foodplan.local', clave_hash: hash, rol: 'super_admin', roles: ['super_admin'] },
+    { id: 2, nombre: 'D28D Admin', email: 'admin.d28d@foodplan.local', clave_hash: hash, rol: 'super_admin', roles: ['super_admin', 'admin_d28d'] },
+    { id: 3, nombre: 'Admin Gym Test', email: 'admin.gym@test.foodplan.local', clave_hash: hash, rol: 'admin_gimnasio', roles: ['admin_gimnasio', 'admin_gym'] },
+    { id: 4, nombre: 'Entrenador Test', email: 'trainer@test.foodplan.local', clave_hash: hash, rol: 'entrenador', roles: ['entrenador', 'admin_training'] },
+    { id: 5, nombre: 'Cliente Test', email: 'cliente@foodplan.local', clave_hash: hash, rol: 'usuario_final', roles: ['usuario_final'] },
+  ];
+}
+
 class UserDatabase {
   constructor() {
-    const initialUsers = [
-      {
-        id: 1,
-        nombre: 'Super Admin',
-        email: 'admin@foodplan.local',
-        clave_hash: bcryptjs.hashSync('Admin!234', 10),
-        rol: 'super_admin',
-        roles: ['super_admin']
-      },
-      {
-        id: 2,
-        nombre: 'D28D Admin',
-        email: 'admin.d28d@foodplan.local',
-        clave_hash: bcryptjs.hashSync('Admin!234', 10),
-        rol: 'super_admin',
-        roles: ['super_admin', 'admin_d28d']
-      },
-      {
-        id: 3,
-        nombre: 'Admin Gym Test',
-        email: 'admin.gym@test.foodplan.local',
-        clave_hash: bcryptjs.hashSync('Admin!234', 10),
-        rol: 'admin_gimnasio',
-        roles: ['admin_gimnasio', 'admin_gym']
-      },
-      {
-        id: 4,
-        nombre: 'Entrenador Test',
-        email: 'trainer@test.foodplan.local',
-        clave_hash: bcryptjs.hashSync('Admin!234', 10),
-        rol: 'entrenador',
-        roles: ['entrenador', 'admin_training']
-      },
-      {
-        id: 5,
-        nombre: 'Cliente Test',
-        email: 'cliente@foodplan.local',
-        clave_hash: bcryptjs.hashSync('Admin!234', 10),
-        rol: 'usuario_final',
-        roles: ['usuario_final']
-      }
-    ];
-
-    this.store = new JsonStore('users.json', initialUsers);
+    this.store = new JsonStore('users.json', makeInitialUsers());
     this.users = (this.store.getAll() || []).map((user) => this.normalizeUser(user));
 
-    this.nextId = this.users.length > 0 ? Math.max(...this.users.map(u => u.id)) + 1 : 1;
+    this.nextId = this.users.length > 0 ? Math.max(...this.users.map((u) => u.id)) + 1 : 1;
   }
 
   save() {

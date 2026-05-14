@@ -1,15 +1,9 @@
 const axios = require('axios');
 const FoodDatabase = require('../models/FoodDatabase');
 
-// Configurar clientes IA – sanitizar claves para evitar falsos positivos
-const INVALID_KEYS = ['disabled', 'none', 'off', 'false', 'null', 'undefined', ''];
-const sanitizeKey = (raw) => {
-  const val = (raw || '').trim();
-  if (val.length < 10 || INVALID_KEYS.includes(val.toLowerCase())) return '';
-  return val;
-};
-// IA gratuita/local (recomendado): Ollama en la máquina del usuario
-const ollamaBaseUrl = (process.env.OLLAMA_BASE_URL || 'http://localhost:11434').replace(/\/+$/, '');
+// IA local opcional (Ollama en la máquina del usuario o servidor self-hosted).
+// Si no está disponible, todo cae a sugerencias determinísticas.
+const ollamaBaseUrl = (process.env.OLLAMA_BASE_URL || '').replace(/\/+$/, '');
 const ollamaModel = (process.env.OLLAMA_MODEL || 'llama3.1:8b').trim();
 
 // Sistema de Sustitutos (categorías equivalentes)
@@ -116,13 +110,16 @@ const aiController = {
     }
     return razon;
   },
-  // Indicar si la IA (local) está habilitada
-  isEnabled: (req, res) => {
+  // Indicar si la IA local está disponible (responde Ollama).
+  // Si OLLAMA_BASE_URL no está configurada, IA está deshabilitada y todo
+  // sigue funcionando con cálculos determinísticos.
+  isEnabled: async (_req, res) => {
+    if (!ollamaBaseUrl) return res.json({ success: true, enabled: false });
     try {
-      const enabled = Boolean(ollamaBaseUrl);
-      res.json({ success: true, enabled });
-    } catch (error) {
-      res.status(500).json({ success: false, error: 'Error verificando estado de IA' });
+      await axios.get(`${ollamaBaseUrl}/api/tags`, { timeout: 1500 });
+      res.json({ success: true, enabled: true });
+    } catch {
+      res.json({ success: true, enabled: false });
     }
   },
   // Generar sugerencias de alimentos basadas en ingesta actual
@@ -215,52 +212,41 @@ const aiController = {
       // Obtener alimentos disponibles
       const todosAlimentos = FoodDatabase.getAll();
 
-      // Prompt Maestro adaptado
+      // Prompt simple, práctico y humano. Sin claims clínicos, sin "biomecánica",
+      // sin citas a estudios. La IA sugiere; no diagnostica ni prescribe.
       const prompt = `
-INSTRUCCIONES DE ACTUACIÓN PROFESIONAL
-Actúa como un experto en Nutrición Deportiva y Clínica con enfoque en medicina basada en evidencia. Tu tarea es procesar los datos de la calculadora de la app FOOD PLAN para generar un protocolo nutricional y de entrenamiento de alta precisión.
+Eres un asistente nutricional sencillo. A partir de lo que el usuario consumió hoy
+y de su meta diaria, sugiere alimentos concretos del catálogo para cerrar lo que falte.
+No diagnostiques, no des consejo médico, no inventes fuentes.
 
-DATOS DE ENTRADA (Calculados por el sistema):
-Datos Biométricos: { "currentIntake": ${JSON.stringify(currentIntake)}, "targetGoals": ${JSON.stringify(targetGoals)} }
-Restricciones Médicas/Patologías: ${req.body?.patologias || 'N/A'}
-Nivel de Actividad: ${req.body?.nivelActividad || 'N/A'}
-Objetivo Fisiológico: ${objetivo || 'N/A'}
-Preferencias/Restricciones Alimentarias: ${Array.isArray(preferencias) ? preferencias.join(', ') : (req.body?.restricciones_text || 'N/A')}
+Contexto del usuario:
+- Consumido hoy: ${JSON.stringify(currentIntake)}
+- Meta del día: ${JSON.stringify(targetGoals)}
+- Falta para la meta: ${JSON.stringify(faltantes)}
+- Objetivo: ${objetivo || 'No especificado'}
+- Preferencias: ${Array.isArray(preferencias) ? preferencias.join(', ') : (req.body?.restricciones_text || 'Ninguna especificada')}
 
-REGLAS DE PROCESAMIENTO:
-- Cálculo Metabólico: Utiliza Mifflin-St Jeor para determinar el gasto energético total. Si el % de grasa es conocido, prioriza Katch-McArdle.
-- Seguridad Médica: Cruza las patologías con la dieta. (Ej: Si hay resistencia a la insulina, prioriza carbohidratos de carga glucémica baja y cita a la ADA - American Diabetes Association).
-- Distribución de Macros: Sigue el consenso de la ISSN para la ingesta proteica según el objetivo (ej. 1.6g a 2.2g/kg para hipertrofia).
-- Sistema de Sustitutos: Genera un menú ejemplo, pero añade siempre una sección de "Equivalentes por Grupo" para que el usuario pueda intercambiar alimentos manteniendo los macros.
+Catálogo (solo puedes recomendar de aquí):
+${todosAlimentos.slice(0, 15).map((f) => `- ${f.nombre}: ${f.calorias}cal, ${f.proteina}g prot, ${f.carbohidratos}g carbs, ${f.grasas}g grasas (porción: ${f.cantidad}${f.unidad})`).join('\n')}
 
-ALIMENTOS DISPONIBLES:
-${todosAlimentos.slice(0, 15).map((f) => `- ${f.nombre}: ${f.calorias}cal, ${f.proteina}g proteína, ${f.carbohidratos}g carbs, ${f.grasas}g grasas (porción: ${f.cantidad}${f.unidad})`).join('\n')}
-
-SISTEMA DE SUSTITUTOS (JSON):
-${JSON.stringify(EQUIVALENTES, null, 2)}
-
-FORMATO DE SALIDA REQUERIDO:
-- Análisis Biomecánico: breve explicación de por qué elegiste esas calorías.
-- Plan Nutricional: desglose por comidas (Macros incluidos).
-- Sustitutos Sugeridos: tabla de intercambios rápidos.
-- Recomendación de Ejercicio: basada en las guías de la ACSM.
-- Fuentes: cita al menos 2 estudios o consensos internacionales (PubMed/ISSN/WHO) que avalen este plan específico.
-
-Devuelve SIEMPRE un JSON con esta estructura mínima:
+Devuelve SOLO un JSON válido con esta estructura:
 {
   "sugerencias": [
-    {"alimento": "string", "razon": "string", "porcion": "string", "aporte": {"calorias": 0, "proteina": 0, "carbohidratos": 0, "grasas": 0}}
+    {"alimento": "string", "razon": "string corto y claro", "porcion": "string",
+     "aporte": {"calorias": 0, "proteina": 0, "carbohidratos": 0, "grasas": 0}}
   ],
-  "resumen": "string",
-  "consejo": "string",
-  "equivalentes_por_grupo": ${JSON.stringify(EQUIVALENTES.categorias_equivalentes)}
+  "resumen": "1-2 frases simples",
+  "consejo": "1 frase práctica"
 }
 `;
 
+      // Si no hay Ollama configurado, fallback inmediato.
+      if (!ollamaBaseUrl) {
+        return res.json(fallbackQuick());
+      }
+
       let sugerencias = {};
       try {
-        // Ollama local (gratis): requiere que el usuario tenga Ollama corriendo
-        // Endpoint: POST {base}/api/chat
         const response = await axios.post(
           `${ollamaBaseUrl}/api/chat`,
           {
@@ -272,24 +258,13 @@ Devuelve SIEMPRE un JSON con esta estructura mínima:
           { headers: { 'Content-Type': 'application/json' }, timeout: 20000 }
         );
         const text = response.data?.message?.content || '';
-        try {
-          const jsonMatch = String(text).match(/\{[\s\S]*\}/);
-          if (jsonMatch) {
-            sugerencias = JSON.parse(jsonMatch[0]);
-          } else {
-            sugerencias = { sugerencias: [], resumen: text };
-          }
-        } catch (parseError) {
-          console.error('Error parsing Ollama response:', parseError);
-          sugerencias = { sugerencias: [], resumen: String(text) };
-        }
+        const jsonMatch = String(text).match(/\{[\s\S]*\}/);
+        sugerencias = jsonMatch ? JSON.parse(jsonMatch[0]) : { sugerencias: [], resumen: text };
       } catch (e) {
-        console.warn('Ollama no disponible, usando sugerencias rápidas:', e.message);
-        const resp = fallbackQuick();
-        return res.json(resp);
+        console.warn('IA local no disponible, usando sugerencias rápidas:', e.message);
+        return res.json(fallbackQuick());
       }
 
-      // Localizar nombres/porciones si lang=en
       if (req.body?.lang === 'en' && sugerencias?.sugerencias?.length) {
         sugerencias.sugerencias = sugerencias.sugerencias.map((s) => ({
           ...s,
@@ -298,7 +273,6 @@ Devuelve SIEMPRE un JSON con esta estructura mínima:
           razon: aiController._translateReason(s.razon, 'en'),
         }));
       }
-      // Asegurar inclusión del sistema de sustitutos en respuesta con IA
       if (sugerencias && !sugerencias.equivalentes_por_grupo) {
         sugerencias.equivalentes_por_grupo = EQUIVALENTES.categorias_equivalentes;
       }

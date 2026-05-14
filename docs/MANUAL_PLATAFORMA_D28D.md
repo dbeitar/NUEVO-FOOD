@@ -1,7 +1,13 @@
 # Manual de la Plataforma D28D GYM Virtual
 
-**Versión:** 1.0 — Mayo 2026
+**Versión:** 1.1 — Consolidación documental (Mayo 2026)
 **Repositorio:** github.com/cesargomez-food/NUEVO-FOOD
+
+---
+
+> **Cómo leer este manual.** Este documento describe **qué hace** la plataforma y **cómo se opera** hoy. La estrategia, ICP y narrativa comercial viven en `VISION_Y_POSICIONAMIENTO_ECOSISTEMA.md`. La hoja de ruta y lo que **no** está disponible aún se describe en `ROADMAP_REALISTA_ECOSISTEMA.md`. La experiencia por rol está en `ARQUITECTURA_VISIBLE_EXPERIENCIA.md`.
+
+> **Sobre la IA en esta plataforma.** La IA actúa como **asistencia operativa** (sugerencias nutricionales y sustituciones simples). No es un coach autónomo, no analiza biomecánica avanzada y no toma decisiones por el usuario. Si la IA falla o no está configurada, el sistema sigue funcionando con cálculos determinísticos. Ver `ROADMAP_REALISTA_ECOSISTEMA.md` para capacidades futuras.
 
 ---
 
@@ -29,18 +35,45 @@ Esto levanta frontend (Vite) y backend (Express) simultáneamente.
 
 ---
 
-### 2. Pantalla de Inicio — Servicios Principales
+### 2. Pantalla de Inicio — Tus servicios
 
-Al iniciar sesión, el Dashboard muestra **4 servicios** como tarjetas visuales:
+D28D Gimnasio Virtual es una **plataforma modular con un único registro**.
+Un usuario hace una sola cuenta y puede tener uno o varios servicios activos
+(por ejemplo: solo Food Plan, o Food Plan + Entrenamiento, o todos).
 
-| Servicio | Descripción | Quién lo ve |
-|----------|-------------|-------------|
-| 🍽️ **Food Plan** | Alimentación inteligente: calculadora, recetas, registro diario | Todos |
-| 💪 **D28D** | Programas de entrenamiento en ciclos de 28 días con clases en vivo | Todos |
-| 🏋️ **Entrenadores** | Módulo de rutinas biomecánicas y galería de videos | Entrenadores y admins |
-| 🏷️ **Maestro Gym** | Gestión de gimnasios en modelo marca blanca | Admins de gym |
+La pantalla de **Inicio** muestra siempre el saludo + las **tarjetas visuales
+de los servicios que el usuario tiene activos**, con la marca de su gimnasio
+arriba (white-label).
 
-El **Super Admin** además tiene una barra de navegación rápida en la parte superior con acceso directo a: Usuarios, Empresas, Gyms, Rutinas, Galería, Live, Programas y Planes.
+**Servicios disponibles (cada uno es un maestro independiente):**
+
+| Servicio | Para usuario final | Para admin/coach |
+|----------|--------------------|------------------|
+| **Food Plan** | Mi plan nutricional, registro diario, equivalentes, recetas | Calculadora, configurar planes, maestro de alimentos, registro, equivalentes, recetas |
+| **Entrenamiento** | Mi rutina del día, sustituciones asistidas | Maestro de rutinas, galería de videos, usuarios asignados |
+| **D28D** | Acceso a clases en vivo de los programas Vital, Pancitas y Virtual | Programas (con sus ciclos), clases en vivo (Zoom + asistencia), galería de videos |
+| **Mi gimnasio** | Información de su centro y contacto | Marca blanca: branding, equipo, usuarios, métricas básicas |
+
+**Reglas de visibilidad de la tarjeta:**
+- Si el usuario tiene `module_access` declarado, se respeta literalmente.
+- Si no, se infiere por su rol (`super_admin` ve los 4; `entrenador` ve
+  Entrenamiento + Food Plan; `admin_gimnasio` ve Mi gimnasio + Entrenamiento +
+  Food Plan; `usuario_final` sin módulos declarados ve Food Plan + Entrenamiento).
+- Si el usuario solo tiene un servicio, la pantalla simplifica el layout y
+  muestra solo esa tarjeta (sin sensación de selector).
+
+**Comportamiento al hacer clic en una tarjeta:**
+- **Usuario final** → entra a su experiencia de consumo del servicio
+  (Food Plan → Mi Plan; Entrenamiento → Mi Rutina; D28D → Clases; Mi gimnasio → Mi cuenta).
+- **Admin / Coach** → entra al **maestro independiente** del servicio, con
+  acceso solo a lo que su rol permite. Se incluye un botón “← Inicio” para
+  regresar al hero.
+
+**Navegación reducida (≤ 6 entradas):** la barra superior se adapta al rol.
+El usuario final nunca ve la palabra “admin” ni accesos de gestión; el coach
+ve “Mis usuarios”, “Rutinas”, “Planes”, “Seguimiento”; el admin de gym ve
+“Mi marca”, “Usuarios”, “Rutinas”, “Clases”; el super_admin ve la versión
+operacional global.
 
 ---
 
@@ -68,13 +101,14 @@ El **Super Admin** además tiene una barra de navegación rápida en la parte su
 - CRUD completo + backup manual (admin)
 
 #### 3.5 Equivalentes Nutricionales
-- Sustituciones de alimentos por restricciones alimentarias
-- Cálculos determinísticos con fallback IA (Ollama)
+- Sustituciones de alimentos por restricciones o preferencias.
+- Motor **determinístico** por defecto (no requiere IA). Si hay un modelo local (Ollama) configurado, se usan sugerencias asistidas como complemento opcional.
 
-#### 3.6 Health-Bot (NutritionChat)
-- Chatbot nutricional flotante (esquina inferior derecha)
-- Genera recomendaciones, planes diarios/semanales
-- Lista de compras y exportación a PDF
+#### 3.6 Asistente Nutricional (NutritionChat)
+- Chat flotante para resolver dudas de plan y armar listas de compras.
+- Genera recomendaciones a partir de los alimentos del catálogo y del registro diario del usuario.
+- Permite exportar el plan o la lista a PDF.
+- **Alcance:** asistencia conversacional simple. No reemplaza la prescripción del nutricionista ni del coach.
 
 ---
 
@@ -150,9 +184,9 @@ El administrador puede seleccionar el ciclo activo por programa desde el **Maest
 
 | Función | Componente | Descripción |
 |---------|-----------|-------------|
-| Entrenamiento IA | `TrainingModule` | Rutinas con lógica biomecánica y configuración CV |
-| Maestro de Rutinas | `AdminTrainingManager` | Crear/editar plantillas de entrenamiento |
-| Galería de Videos | `AdminTrainingGallery` | Videos de YouTube por ejercicio |
+| Mi entrenamiento | `TrainingModule` | Vista de la rutina del usuario, prescripción por ejercicio y sustituciones asistidas. *(El seguimiento biomecánico en tiempo real está suspendido; ver Roadmap.)* |
+| Maestro de Rutinas | `AdminTrainingManager` | Crear/editar plantillas de entrenamiento por usuario |
+| Galería de Videos | `AdminTrainingGallery` | Videos de YouTube por ejercicio (referencia visual) |
 
 ---
 

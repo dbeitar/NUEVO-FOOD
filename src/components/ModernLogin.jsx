@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useAuth } from '../context/useAuth';
 import AuthLayout from './AuthLayout';
 import { useI18n } from '../context/useI18n';
+import { PUBLIC_BRAND_NAME } from '../utils/branding';
 
 export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
   const [email, setEmail] = useState('');
@@ -45,7 +46,7 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
   };
 
   return (
-    <AuthLayout title={t('auth.login', 'Iniciar Sesión')} subtitle={`${t('auth.welcome', 'Bienvenido a')} D28D GYM virtual`}>
+    <AuthLayout title={t('auth.login', 'Iniciar Sesión')} subtitle={`${t('auth.welcome', 'Bienvenido a')} ${PUBLIC_BRAND_NAME}`}>
       {error ? (
         <div className="bg-red-50 text-red-700 border border-red-200 rounded-xl p-3 text-sm">{t('auth.login_error', 'Error en el login')}: {error}</div>
       ) : null}

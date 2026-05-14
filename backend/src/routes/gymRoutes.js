@@ -4,16 +4,18 @@ const gymController = require('../controllers/gymController');
 
 const router = express.Router();
 
-// Rutas públicas
-router.get('/', gymController.getAllGyms);
-router.get('/:id', gymController.getGymById);
-router.get('/ciudad/:ciudad', gymController.getGymsByCity);
-router.get('/search', gymController.searchGyms);
+// Todas las rutas de /api/gyms requieren autenticación.
+// El controlador aplica filtro multi-tenant según el JWT.
+router.use(authenticateToken);
 
-// Rutas protegidas (admin)
-router.post('/', authenticateToken, gymController.createGym);
-router.put('/:id', authenticateToken, gymController.updateGym);
-router.put('/:id/assign-plan', authenticateToken, gymController.assignPlanToGym);
-router.delete('/:id', authenticateToken, gymController.deleteGym);
+router.get('/', gymController.getAllGyms);
+router.get('/search', gymController.searchGyms);
+router.get('/ciudad/:ciudad', gymController.getGymsByCity);
+router.get('/:id', gymController.getGymById);
+
+router.post('/', gymController.createGym);
+router.put('/:id', gymController.updateGym);
+router.put('/:id/assign-plan', gymController.assignPlanToGym);
+router.delete('/:id', gymController.deleteGym);
 
 module.exports = router;

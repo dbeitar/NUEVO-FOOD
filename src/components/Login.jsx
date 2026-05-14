@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../context/useI18n';
+import { PUBLIC_BRAND_NAME } from '../utils/branding';
 
 export default function Login({ onSwitchToRegister }) {
   const [email, setEmail] = useState('');
@@ -57,7 +58,7 @@ export default function Login({ onSwitchToRegister }) {
             {t('auth.login', 'Iniciar Sesión')}
           </h2>
           <p className="auth-subtitle">
-            {t('auth.welcome', 'Bienvenido a')} <span className="font-semibold text-lime-500">D28D GYM virtual</span>
+            {t('auth.welcome', 'Bienvenido a')} <span className="font-semibold text-lime-500">{PUBLIC_BRAND_NAME}</span>
           </p>
         </div>
 

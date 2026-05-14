@@ -1,4 +1,10 @@
-# Modulo Entrenamiento IA
+# Módulo de Entrenamiento — Esquema técnico
+
+**Versión:** 1.1 — Consolidación documental
+
+> **Alcance.** Este documento describe el contrato del endpoint que genera planes de entrenamiento. La sección `cv_tracking_logic` se mantiene en el esquema porque **prepara el terreno para una futura asistencia visual**, pero **no está activa hoy** (ver `ROADMAP_REALISTA_ECOSISTEMA.md`). Las claves se conservan para evitar migraciones cuando llegue esa capacidad.
+
+---
 
 ## Endpoint
 
@@ -15,7 +21,7 @@
 }
 ```
 
-## Salida (JSON puro)
+## Salida (JSON)
 
 ```json
 {
@@ -52,8 +58,27 @@
 }
 ```
 
+### Notas sobre `cv_tracking_logic`
+
+- Es **información declarativa**, no se ejecuta hoy en el cliente.
+- En frontend hay un componente `TrainingRealtimeCoach` **suspendido** detrás de un *feature flag*; no se renderiza al usuario final.
+- Se conserva por dos razones:
+  1. evitar romper consumidores cuando la capacidad se reactive,
+  2. permitir que coaches y diseñadores de plantillas describan intención técnica del ejercicio.
+
+---
+
 ## Fuente de datos
 
-- Biblioteca de ejercicios extraida desde `PLANTILLA HOMBRES NICO (1).xlsx` (pestaña `BIBLIOTECA`) y guardada en:
+- Biblioteca de ejercicios extraída desde `PLANTILLA HOMBRES NICO (1).xlsx` (pestaña `BIBLIOTECA`) y guardada en:
   - `backend/data/training_library.json`
 - Reglas de nivel y volumen base derivadas de `PARTE 2 jabel.docx`.
+
+---
+
+## Lo que este endpoint **no** hace
+
+- No analiza la postura del usuario.
+- No usa cámara.
+- No requiere modelos externos para responder.
+- No reemplaza la prescripción del coach: facilita un punto de partida estructurado.

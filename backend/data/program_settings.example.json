@@ -1,0 +1,29 @@
+[
+  {
+    "id": "vital",
+    "name": "Vital",
+    "zoom_email": "",
+    "color": "#ec4899",
+    "active": true,
+    "active_cycle_id": 7
+  },
+  {
+    "id": "pancitas",
+    "name": "Pancitas",
+    "zoom_email": "",
+    "color": "#8b5cf6",
+    "active": true,
+    "active_cycle_id": 7
+  },
+  {
+    "id": "virtual_d28d",
+    "name": "Virtual D28D",
+    "zoom_accounts": [
+      { "id": "virtual_d28d_1", "email": "" },
+      { "id": "virtual_d28d_2", "email": "" }
+    ],
+    "color": "#10b981",
+    "active": true,
+    "active_cycle_id": 7
+  }
+]

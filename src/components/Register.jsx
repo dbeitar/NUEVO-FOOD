@@ -4,6 +4,7 @@ import api from '../services/api';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
 import TermsOfServiceModal from './TermsOfServiceModal';
 import AuthLayout from './AuthLayout';
+import { PUBLIC_BRAND_NAME } from '../utils/branding';
 
 
 export default function Register({ onSwitchToLogin }) {
@@ -145,7 +146,7 @@ export default function Register({ onSwitchToLogin }) {
     <>
       <AuthLayout
         title={step === 1 ? 'Crear Cuenta' : 'Elige tu plan'}
-        subtitle={step === 1 ? 'Únete a D28D GYM virtual' : 'Selecciona un plan y completa tu registro'}
+        subtitle={step === 1 ? `Únete a ${PUBLIC_BRAND_NAME}` : 'Selecciona un plan y completa tu registro'}
       >
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
