@@ -6,7 +6,7 @@ import { CYCLES_DATA, formatCycleDate } from '../utils/cycleUtils';
 export default function AdminProgramsManager() {
   const [programs, setPrograms] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+  const [, setSaving] = useState(false);
   const [error, setError] = useState('');
   const [editingId, setEditingId] = useState(null);
   const [editForm, setEditForm] = useState({});
@@ -17,7 +17,7 @@ export default function AdminProgramsManager() {
       setLoading(true);
       const res = await api.get('/programs');
       setPrograms(res.data.data || []);
-    } catch (err) {
+    } catch {
       setError('Error al cargar programas');
     } finally {
       setLoading(false);
@@ -34,7 +34,7 @@ export default function AdminProgramsManager() {
       await api.put(`/programs/${id}`, updates);
       setEditingId(null);
       await fetchPrograms();
-    } catch (err) {
+    } catch {
       setError('Error al guardar cambios');
     } finally {
       setSaving(false);

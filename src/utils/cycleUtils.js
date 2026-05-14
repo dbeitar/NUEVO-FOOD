@@ -18,12 +18,10 @@ export const CYCLES_DATA = [
   { id: 13, name: 'Ciclo 13', startDate: '2026-11-16' },
 ];
 
-export const getCycleByDate = (date = new Date()) => {
-  const d = typeof date === 'string' ? new Date(date) : date;
-  // Lógica para encontrar en qué ciclo cae una fecha
-  // Por ahora devolvemos la lista para que el admin pueda elegir
-  return CYCLES_DATA;
-};
+// Devolvemos la lista para que el admin elija el ciclo manualmente. Cuando se
+// implemente cálculo automático contra CYCLES_DATA, este export aceptará una
+// fecha y devolverá el ciclo correspondiente.
+export const getCycleByDate = () => CYCLES_DATA;
 
 export const formatCycleDate = (dateStr) => {
   const d = new Date(dateStr);
