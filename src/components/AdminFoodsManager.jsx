@@ -183,7 +183,7 @@ export default function AdminFoodsManager() {
     <div className="space-y-6">
       <div className="flex items-start justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-stone-900 font-['Playfair_Display']">{t('foods.title', 'Gestión de Alimentos Maestros')}</h2>
+          <h2 className="text-2xl font-bold text-stone-900 font-['Playfair_Display']">{t('foods.title', 'Catálogo de Alimentos')}</h2>
           <p className="text-stone-600">{t('foods.subtitle', 'Administra el catálogo de alimentos con valores nutricionales.')}</p>
         </div>
         {!showForm && (

@@ -1,7 +1,7 @@
-// Maestro independiente de D28D.
-// Aquí viven los 3 programas (Vital, Pancitas, Virtual) con sus fotos, los
-// maestros operativos (clases en vivo, ciclos, galería) y los GIMNASIOS
-// MARCA BLANCA, que consumen el contenido D28D y agendan en sus plantillas.
+// Vista de administración del módulo D28D.
+// Reúne los 3 programas (Vital, Pancitas, Virtual) con sus fotos, la operación
+// (clases en vivo, ciclos, galería) y los GIMNASIOS MARCA BLANCA, que
+// consumen el contenido D28D y agendan en sus plantillas.
 const PROGRAMS = [
   {
     id: 'vital',
@@ -31,7 +31,7 @@ export default function D28DAdminView({ hasAnyRole, onNavigate, onPickProgram, o
     <div className="dashboard-main-view">
       <header className="dashboard-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
         <div>
-          <h2>Maestro D28D</h2>
+          <h2>D28D · Programas</h2>
           <p style={{ color: '#475569' }}>Programas, clases en vivo y galería de videos.</p>
         </div>
         <button className="btn-secondary" onClick={onBack} aria-label="Volver a Servicios">
@@ -71,15 +71,15 @@ export default function D28DAdminView({ hasAnyRole, onNavigate, onPickProgram, o
           <div className="card" onClick={() => onNavigate('liveclasses')}>
             <h3>Clases en vivo y reuniones</h3>
             <p>Programa plantillas y revisa el calendario con links de Zoom.</p>
-            <button className="btn-card">Gestionar</button>
+            <button className="btn-card">Abrir</button>
           </div>
         )}
 
         {hasAnyRole(['super_admin', 'admin_d28d']) && (
           <div className="card" onClick={() => onNavigate('programs')}>
-            <h3>Maestro de programas</h3>
+            <h3>Programas D28D</h3>
             <p>Ciclos y configuración de los 3 programas principales.</p>
-            <button className="btn-card">Administrar</button>
+            <button className="btn-card">Abrir</button>
           </div>
         )}
 
@@ -87,7 +87,7 @@ export default function D28DAdminView({ hasAnyRole, onNavigate, onPickProgram, o
           <div className="card" onClick={() => onNavigate('admingallery')}>
             <h3>Galería de videos</h3>
             <p>Videos por ejercicio para rutinas y clases.</p>
-            <button className="btn-card">Abrir galería</button>
+            <button className="btn-card">Abrir</button>
           </div>
         )}
       </div>
@@ -103,12 +103,12 @@ export default function D28DAdminView({ hasAnyRole, onNavigate, onPickProgram, o
             <div className="card" onClick={() => onNavigate('admingyms')}>
               <h3>Mi gimnasio</h3>
               <p>Branding, equipo y configuración de marca blanca.</p>
-              <button className="btn-card">Administrar</button>
+              <button className="btn-card">Abrir</button>
             </div>
             <div className="card" onClick={() => onNavigate('adminusers')}>
               <h3>Usuarios del gimnasio</h3>
               <p>Listado y gestión de personas afiliadas.</p>
-              <button className="btn-card">Ver usuarios</button>
+              <button className="btn-card">Abrir</button>
             </div>
             {hasAnyRole(['super_admin', 'admin_gym']) && (
               <div className="card" onClick={() => onNavigate('admincompanies')}>

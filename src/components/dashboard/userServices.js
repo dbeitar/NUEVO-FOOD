@@ -39,7 +39,7 @@ const SERVICE_DEFS = [
     id: 'training',
     title: 'Entrenadores',
     desc: 'Tu rutina del día y seguimiento con tu coach.',
-    descAdmin: 'Maestro de rutinas, galería y usuarios asignados.',
+    descAdmin: 'Rutinas, galería y usuarios asignados.',
     img: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80',
     alt: 'Entrenamiento personalizado',
   },

@@ -162,8 +162,8 @@ export default function Dashboard() {
       if (hasAnyRole(['admin_food', 'admin_food_plan']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
         return [
           { id: 'home', label: 'Inicio' },
-          { id: 'foodsmanager', label: 'Maestro alimentos' },
-          { id: 'admin', label: 'Conceptos calculadora' },
+          { id: 'foodsmanager', label: 'Alimentos' },
+          { id: 'admin', label: 'Calculadora' },
           { id: 'recipes', label: 'Recetas' },
           { id: 'myaccount', label: 'Mi cuenta' },
         ];
@@ -340,8 +340,8 @@ export default function Dashboard() {
         {renderContent()}
       </div>
 
-      {/* Asistente nutricional flotante. Para todos excepto super_admin */}
-      {!hasAnyRole(['super_admin']) && (
+      {/* Asistente nutricional flotante. Solo para el usuario final con plan. */}
+      {isFinal && services.find((s) => s.id === 'food-plan') && (
         <div className="fixed bottom-4 right-4 z-40">
           {!chatOpen && (
             <button
@@ -357,7 +357,7 @@ export default function Dashboard() {
       {chatOpen && (
         <div onClick={() => setChatOpen(false)} className="fixed inset-0 pointer-events-none" />
       )}
-      {chatOpen && <NutritionChat />}
+      {chatOpen && isFinal && <NutritionChat />}
     </div>
   );
 }

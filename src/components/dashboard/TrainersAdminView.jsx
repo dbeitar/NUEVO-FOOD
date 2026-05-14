@@ -1,4 +1,4 @@
-// Maestro independiente de ENTRENADORES.
+// Vista de administración del módulo de ENTRENADORES.
 // Foco operativo: rutinas, asignación a usuarios y galería de videos.
 
 export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack }) {
@@ -6,7 +6,7 @@ export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack }) {
     <div className="dashboard-main-view">
       <header className="dashboard-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
         <div>
-          <h2>Maestro de Entrenadores</h2>
+          <h2>Entrenadores</h2>
           <p style={{ color: '#475569' }}>Rutinas, asignación a usuarios y seguimiento.</p>
         </div>
         <button className="btn-secondary" onClick={onBack} aria-label="Volver a Servicios">
@@ -23,7 +23,7 @@ export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack }) {
 
         {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'admin_training', 'admin_entrenador']) && (
           <div className="card" onClick={() => onNavigate('admintraining')}>
-            <h3>Maestro de rutinas</h3>
+            <h3>Rutinas</h3>
             <p>Plantillas, asignaciones y diario de entrenamiento.</p>
             <button className="btn-card">Abrir</button>
           </div>
@@ -31,7 +31,7 @@ export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack }) {
 
         {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training', 'admin_entrenador']) && (
           <div className="card" onClick={() => onNavigate('admingallery')}>
-            <h3>Galería de entrenamientos</h3>
+            <h3>Galería de videos</h3>
             <p>Videos por ejercicio (referencia visual).</p>
             <button className="btn-card">Abrir</button>
           </div>
@@ -41,7 +41,7 @@ export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack }) {
           <div className="card" onClick={() => onNavigate('adminusers')}>
             <h3>Usuarios asignados</h3>
             <p>Listado de personas y sus rutinas asignadas.</p>
-            <button className="btn-card">Ver usuarios</button>
+            <button className="btn-card">Abrir</button>
           </div>
         )}
       </div>

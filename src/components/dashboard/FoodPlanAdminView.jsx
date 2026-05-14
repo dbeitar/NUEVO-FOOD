@@ -1,15 +1,14 @@
-// Maestro independiente de FOOD PLAN.
-// Aquí vive todo lo que pertenece a alimentación: calculadora, equivalentes,
-// recetas, registro y, para roles autorizados, los maestros de catálogo y
-// configuración nutricional.
+// Vista de administración del módulo de PLAN DE ALIMENTACIÓN.
+// Reúne las herramientas nutricionales: calculadora, planes, alimentos,
+// equivalentes, recetas y registro diario.
 
 export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack }) {
   return (
     <div className="dashboard-main-view">
       <header className="dashboard-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}>
         <div>
-          <h2>Maestro Food Plan</h2>
-          <p style={{ color: '#475569' }}>Catálogo, planes y herramientas nutricionales.</p>
+          <h2>Plan de Alimentación</h2>
+          <p style={{ color: '#475569' }}>Planes, alimentos y herramientas nutricionales.</p>
         </div>
         <button className="btn-secondary" onClick={onBack} aria-label="Volver a Servicios">
           ← Servicios
@@ -33,8 +32,8 @@ export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack }) {
 
         {hasAnyRole(['super_admin', 'admin_food_plan', 'admin_food']) && (
           <div className="card" onClick={() => onNavigate('foodsmanager')}>
-            <h3>Maestro de alimentos</h3>
-            <p>Catálogo, macros y porciones de referencia.</p>
+            <h3>Alimentos (catálogo)</h3>
+            <p>Lista de alimentos, macros y porciones de referencia.</p>
             <button className="btn-card">Abrir</button>
           </div>
         )}

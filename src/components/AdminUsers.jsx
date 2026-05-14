@@ -268,7 +268,7 @@ export default function AdminUsers() {
                 { value: 'admin_food_plan', label: 'Admin Food Plan' },
                 { value: 'admin_d28d', label: 'Admin D28D' },
                 { value: 'admin_training', label: 'Admin Entrenadores' },
-                { value: 'admin_gym', label: 'Admin Maestro Gym' },
+                { value: 'admin_gym', label: 'Admin Gym (multi-gimnasio)' },
                 { value: 'super_admin', label: 'Super Admin' }
               ].map(role => (
                 <label key={role.value} className="flex items-center gap-2 text-sm text-stone-700 bg-stone-50 p-2 rounded-lg border border-stone-200 cursor-pointer hover:bg-stone-100">
