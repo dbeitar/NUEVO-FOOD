@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
+import { useAuth } from '../context/useAuth';
 
 function toEmbedUrl(url) {
   if (!url) return '';
@@ -20,6 +21,8 @@ function toEmbedUrl(url) {
 }
 
 export default function TrainingModule() {
+  const { user } = useAuth();
+
   const [level, setLevel] = useState('principiante');
   const [method, setMethod] = useState('hipertrofia');
   const [daysAvailable, setDaysAvailable] = useState(4);
@@ -28,6 +31,10 @@ export default function TrainingModule() {
   const [plan, setPlan] = useState(null);
   const [selectedDayIndex, setSelectedDayIndex] = useState(0);
   const [selectedExerciseIndex, setSelectedExerciseIndex] = useState(0);
+
+  // Entrenador asignado (si el usuario tiene trainer_id).
+  const [trainer, setTrainer] = useState(null);
+  const [showTrainer, setShowTrainer] = useState(false);
 
   const [assistantExercise, setAssistantExercise] = useState(null);
   const [assistantReason, setAssistantReason] = useState('');
@@ -62,6 +69,22 @@ export default function TrainingModule() {
     };
     fetchCurrentPlan();
   }, []);
+
+  // Carga del entrenador asignado para el botón "Ver entrenador".
+  useEffect(() => {
+    const trainerId = user?.trainer_id;
+    if (!trainerId) { setTrainer(null); return; }
+    let active = true;
+    (async () => {
+      try {
+        const r = await api.get(`/trainers/${trainerId}`);
+        if (active) setTrainer(r.data?.data || r.data || null);
+      } catch {
+        if (active) setTrainer(null);
+      }
+    })();
+    return () => { active = false; };
+  }, [user?.trainer_id]);
 
   const generateDailyPlan = async () => {
     try {
@@ -223,9 +246,9 @@ export default function TrainingModule() {
 
   return (
     <div className="card max-w-7xl mx-auto relative min-h-[80vh]">
-      <h2 className="text-3xl font-bold text-stone-900 mb-2">Mi entrenamiento</h2>
+      <h2 className="text-3xl font-bold text-stone-900 mb-2">Mi Dashboard de Entrenamiento</h2>
       <p className="text-stone-600 mb-6 font-medium">
-        Tu rutina del día y los videos de referencia de cada ejercicio.
+        Tu plan por días con sustitución guiada por tu coach y video de ejecución por ejercicio.
       </p>
 
       <div className="bg-stone-50 border border-stone-200 p-5 rounded-2xl mb-8">
@@ -259,7 +282,7 @@ export default function TrainingModule() {
           </div>
           <div className="flex items-end">
             <button className="btn-primary w-full" onClick={generateDailyPlan} disabled={loading}>
-              {loading ? 'Generando...' : 'Generar Plan'}
+              {loading ? 'Generando…' : 'Plan generador'}
             </button>
           </div>
         </div>
@@ -296,9 +319,10 @@ export default function TrainingModule() {
                 <button
                   onClick={saveLog}
                   disabled={savingLog}
-                  className="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-stone-800 transition-colors"
+                  className="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-stone-800 transition-colors inline-flex items-center gap-2"
                 >
-                  {savingLog ? 'Guardando...' : 'Guardar registro'}
+                  <span aria-hidden="true">📒</span>
+                  {savingLog ? 'Guardando…' : 'Guardar Diario Oficial'}
                 </button>
                 <label className="flex items-center gap-2 text-sm text-stone-700 font-semibold cursor-pointer p-2 bg-stone-100 rounded-lg hover:bg-stone-200 transition-colors">
                   <input
@@ -428,35 +452,50 @@ export default function TrainingModule() {
                   className={`rounded-xl border p-4 ${selectedExerciseIndex === i ? 'border-lime-400 bg-lime-50/40' : 'border-stone-200 bg-stone-50'
                     }`}
                 >
-                  <div className="flex items-center justify-between gap-2">
-                    <p className="font-bold text-stone-900 text-sm">{ex.exercise_name}</p>
-                    <button
-                      className="text-xs px-2 py-1 rounded bg-stone-200 text-stone-800"
+                  <div className="flex items-start justify-between gap-2">
+                    <p
+                      className="font-bold text-stone-900 text-sm uppercase tracking-tight cursor-pointer"
                       onClick={() => setSelectedExerciseIndex(i)}
+                      title="Marcar como ejercicio activo"
                     >
-                      Ver
-                    </button>
+                      {ex.exercise_name}
+                    </p>
+                    {trainer && (
+                      <button
+                        type="button"
+                        className="text-xs px-2 py-1 rounded-lg border border-stone-300 bg-white text-stone-700 hover:bg-stone-100 whitespace-nowrap"
+                        onClick={() => setShowTrainer(true)}
+                        title="Ver datos del entrenador asignado"
+                      >
+                        Ver entrenador
+                      </button>
+                    )}
                   </div>
                   <p className="text-xs text-stone-600 mt-2">
-                    {ex.prescription?.sets || 3} series x {ex.prescription?.reps || 10} reps | RPE {ex.prescription?.target_rpe || 8}
+                    {ex.prescription?.sets || 3} series x {ex.prescription?.reps || 10} repeticiones | RPE {ex.prescription?.target_rpe || 8}
                   </p>
-                  <div className="mt-3 flex gap-2">
+                  <div className="mt-3 flex flex-wrap gap-2">
                     {ex.youtube_url ? (
-                      <a href={ex.youtube_url} target="_blank" rel="noreferrer" className="text-xs px-3 py-1 rounded bg-blue-100 text-blue-700 font-semibold">
-                        Ver video
+                      <a
+                        href={ex.youtube_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-xs px-3 py-1 rounded-lg bg-stone-200 text-stone-800 font-semibold hover:bg-stone-300"
+                      >
+                        Video de ejecución
                       </a>
                     ) : (
-                      <span className="text-xs px-3 py-1 rounded bg-stone-200 text-stone-600">Sin video</span>
+                      <span className="text-xs px-3 py-1 rounded-lg bg-stone-100 text-stone-500">Sin video</span>
                     )}
                     <button
                       onClick={() => askAssistant(ex.exercise_name)}
-                      className="text-xs px-3 py-1 rounded bg-stone-200 text-stone-800 font-semibold"
+                      className="text-xs px-3 py-1 rounded-lg bg-stone-200 text-stone-800 font-semibold hover:bg-stone-300"
                     >
                       Sustituir
                     </button>
                   </div>
                   <div className="mt-4 p-3 bg-white border border-stone-200 rounded-lg shadow-sm">
-                    <p className="text-[10px] font-bold text-stone-500 mb-2 uppercase tracking-wide">Tu registro</p>
+                    <p className="text-[10px] font-bold text-stone-500 mb-2 uppercase tracking-wide">Registro de ejecución</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-[10px] text-stone-400 uppercase tracking-wide">Series hechas</label>
@@ -489,7 +528,7 @@ export default function TrainingModule() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-stone-400 uppercase tracking-wide">{ex.intensity_type || 'RPE'} Sentido</label>
+                        <label className="block text-[10px] text-stone-400 uppercase tracking-wide">{ex.intensity_type || 'RPE'} sentido</label>
                         <input
                           type="text"
                           className="w-full bg-stone-50 border border-stone-200 rounded px-2 py-1 text-sm outline-none focus:border-lime-400"
@@ -535,8 +574,8 @@ export default function TrainingModule() {
       {assistantExercise && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm p-4">
           <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative">
-            <button onClick={closeModal} className="absolute top-4 right-4 text-stone-400 hover:text-stone-800 font-bold text-xl">x</button>
-            <h3 className="text-xl font-bold text-stone-900 mb-2">Asistente de Sustitución</h3>
+            <button onClick={closeModal} className="absolute top-4 right-4 text-stone-400 hover:text-stone-800 font-bold text-xl">×</button>
+            <h3 className="text-xl font-bold text-stone-900 mb-2">Sustituir ejercicio</h3>
             <p className="text-stone-600 text-sm mb-4">
               ¿Por qué quieres reemplazar <strong>{assistantExercise}</strong>?
             </p>
@@ -548,7 +587,7 @@ export default function TrainingModule() {
             />
             {!assistantResult ? (
               <button className="btn-primary w-full" onClick={submitSubstitution} disabled={assistantLoading}>
-                {assistantLoading ? 'Calculando...' : 'Sugerir sustitución'}
+                {assistantLoading ? 'Buscando alternativa…' : 'Buscar sustitución'}
               </button>
             ) : (
               <div className="bg-green-50 border border-green-200 rounded-xl p-4 mt-2">
@@ -567,6 +606,42 @@ export default function TrainingModule() {
                 )}
               </div>
             )}
+          </div>
+        </div>
+      )}
+
+      {showTrainer && trainer && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative">
+            <button
+              onClick={() => setShowTrainer(false)}
+              className="absolute top-4 right-4 text-stone-400 hover:text-stone-800 font-bold text-xl"
+              aria-label="Cerrar"
+            >×</button>
+            <h3 className="text-xl font-bold text-stone-900 mb-1">Tu entrenador</h3>
+            <p className="text-stone-500 text-xs mb-4">Datos de contacto del coach asignado a tu plan.</p>
+            <div className="space-y-2 text-sm">
+              <p><span className="text-stone-500 text-xs uppercase tracking-wide block">Nombre</span><strong>{trainer.nombre || '—'}</strong></p>
+              {trainer.especialidad && (
+                <p><span className="text-stone-500 text-xs uppercase tracking-wide block">Especialidad</span>{trainer.especialidad}</p>
+              )}
+              {trainer.email && (
+                <p>
+                  <span className="text-stone-500 text-xs uppercase tracking-wide block">Email</span>
+                  <a href={`mailto:${trainer.email}`} className="text-lime-700 hover:underline">{trainer.email}</a>
+                </p>
+              )}
+              {trainer.telefono && (
+                <p>
+                  <span className="text-stone-500 text-xs uppercase tracking-wide block">Teléfono</span>
+                  <a href={`tel:${trainer.telefono}`} className="text-lime-700 hover:underline">{trainer.telefono}</a>
+                </p>
+              )}
+            </div>
+            <button
+              onClick={() => setShowTrainer(false)}
+              className="btn-primary w-full mt-5"
+            >Cerrar</button>
           </div>
         </div>
       )}
