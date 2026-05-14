@@ -46,9 +46,9 @@ export default function AdminTrainingGallery() {
 
   return (
     <div className="card">
-      <h2 className="text-2xl font-bold text-stone-900 mb-4">Training Video Gallery</h2>
+      <h2 className="text-2xl font-bold text-stone-900 mb-4">Galería de videos</h2>
       <p className="text-stone-600 mb-6 text-sm">
-        Sube URLs de YouTube por ejercicio. Esta base alimenta el Coach Virtual en pantalla dividida.
+        Sube URLs de YouTube por ejercicio. Los videos aparecen junto a la rutina del usuario.
       </p>
 
       <form

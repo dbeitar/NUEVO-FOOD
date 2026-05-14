@@ -158,8 +158,8 @@ export default function AdminTrainingManager() {
 
     return (
         <div className="card max-w-7xl mx-auto min-h-[80vh]">
-            <h2 className="text-3xl font-bold text-stone-900 mb-2">Maestro de Administración de Entrenamientos</h2>
-            <p className="text-stone-600 mb-6 font-medium">Asignación, edición de rutinas (RPE/RIR) y diario de seguimiento por usuario.</p>
+            <h2 className="text-3xl font-bold text-stone-900 mb-2">Rutinas</h2>
+            <p className="text-stone-600 mb-6 font-medium">Asignación y edición de rutinas + diario de seguimiento por usuario.</p>
 
             <div className="flex gap-4 border-b border-stone-200 mb-6">
                 <button
@@ -180,12 +180,6 @@ export default function AdminTrainingManager() {
                 >
                     Diario Global
                 </button>
-                <button
-                    className={`pb-2 px-1 font-semibold ${activeTab === 'stats' ? 'border-b-2 border-lime-500 text-stone-900' : 'text-stone-500'}`}
-                    onClick={() => setActiveTab('stats')}
-                >
-                    📈 Evolución & Stats
-                </button>
             </div>
 
             {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-4 text-sm">{error}</div>}
@@ -196,7 +190,7 @@ export default function AdminTrainingManager() {
                     <div className="flex justify-between items-center mb-4">
                         <h3 className="text-lg font-bold">Planes Asignados</h3>
                         <button className="btn-primary" onClick={() => setShowGenerator(!showGenerator)}>
-                            {showGenerator ? 'Cerrar Generador' : '+ Asignar Nuevo Plan (IA)'}
+                            {showGenerator ? 'Cerrar' : '+ Asignar nuevo plan'}
                         </button>
                     </div>
 

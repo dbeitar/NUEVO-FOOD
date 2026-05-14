@@ -81,7 +81,7 @@ export default function TrainingModule() {
       }
     } catch (e) {
       console.error(e);
-      setError('No se pudo contactar con la IA para generar el plan.');
+      setError('No pudimos generar el plan en este momento. Intenta nuevamente o avisa a tu coach.');
     } finally {
       setLoading(false);
     }
@@ -223,9 +223,9 @@ export default function TrainingModule() {
 
   return (
     <div className="card max-w-7xl mx-auto relative min-h-[80vh]">
-      <h2 className="text-3xl font-bold text-stone-900 mb-2">Mi Dashboard de Entrenamiento</h2>
+      <h2 className="text-3xl font-bold text-stone-900 mb-2">Mi entrenamiento</h2>
       <p className="text-stone-600 mb-6 font-medium">
-        Plan por días + sustitución inteligente + coach virtual en pantalla dividida (video y cámara).
+        Tu rutina del día y los videos de referencia de cada ejercicio.
       </p>
 
       <div className="bg-stone-50 border border-stone-200 p-5 rounded-2xl mb-8">
@@ -298,7 +298,7 @@ export default function TrainingModule() {
                   disabled={savingLog}
                   className="bg-stone-900 text-white px-4 py-2 rounded-lg text-sm font-bold shadow hover:bg-stone-800 transition-colors"
                 >
-                  {savingLog ? 'Guardando...' : '💾 Guardar Diario Oficial'}
+                  {savingLog ? 'Guardando...' : 'Guardar registro'}
                 </button>
                 <label className="flex items-center gap-2 text-sm text-stone-700 font-semibold cursor-pointer p-2 bg-stone-100 rounded-lg hover:bg-stone-200 transition-colors">
                   <input
@@ -368,7 +368,7 @@ export default function TrainingModule() {
             <div className="bg-stone-900 text-white p-5 rounded-2xl mb-6 shadow-xl">
               <h5 className="font-bold text-lime-400 text-sm mb-4 uppercase tracking-widest flex items-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z" /></svg>
-                Factores Clave de Rendimiento (Wellness)
+                ¿Cómo te sentiste hoy?
               </h5>
               <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
                 <div className="space-y-1">
@@ -434,7 +434,7 @@ export default function TrainingModule() {
                       className="text-xs px-2 py-1 rounded bg-stone-200 text-stone-800"
                       onClick={() => setSelectedExerciseIndex(i)}
                     >
-                      Ver coach
+                      Ver
                     </button>
                   </div>
                   <p className="text-xs text-stone-600 mt-2">
@@ -456,7 +456,7 @@ export default function TrainingModule() {
                     </button>
                   </div>
                   <div className="mt-4 p-3 bg-white border border-stone-200 rounded-lg shadow-sm">
-                    <p className="text-[10px] font-bold text-stone-500 mb-2 uppercase tracking-wide">Registro de Ejecución</p>
+                    <p className="text-[10px] font-bold text-stone-500 mb-2 uppercase tracking-wide">Tu registro</p>
                     <div className="grid grid-cols-2 gap-2">
                       <div>
                         <label className="block text-[10px] text-stone-400 uppercase tracking-wide">Series hechas</label>
@@ -507,7 +507,7 @@ export default function TrainingModule() {
 
           <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
             <div className="card">
-              <h4 className="text-lg font-bold text-stone-900 mb-3">Coach Virtual - Video Referencia</h4>
+              <h4 className="text-lg font-bold text-stone-900 mb-3">Video del ejercicio</h4>
               <p className="text-sm text-stone-600 mb-4">
                 Ejercicio activo: <strong>{currentExercise?.exercise_name || 'Sin ejercicio'}</strong>
               </p>
@@ -523,7 +523,7 @@ export default function TrainingModule() {
                 </div>
               ) : (
                 <div className="rounded-xl border border-dashed border-stone-300 p-8 text-stone-600 text-sm">
-                  Este ejercicio aún no tiene URL en la galería. Cárgala en admin para habilitar el split-screen completo.
+                  Video disponible próximamente. Mientras tanto, sigue las pautas de tu coach.
                 </div>
               )}
             </div>

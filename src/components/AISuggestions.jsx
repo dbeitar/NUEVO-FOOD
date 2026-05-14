@@ -132,7 +132,7 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
             lang,
           });
           setSuggestions(quickResponse.data.sugerencias || []);
-          setMensaje(t('ai.message_quick', '🤖 Sugerencias basadas en análisis (modo rápido)'));
+          setMensaje(t('ai.message_quick', 'Sugerencias basadas en tu día'));
         }
       } else {
         // Si no usar IA, usar sugerencias rápidas
@@ -153,11 +153,11 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
           lang,
         });
         setSuggestions(quickResponse.data.sugerencias || []);
-        setMensaje(t('ai.message_generic', '📋 Sugerencias personalizadas'));
+        setMensaje(t('ai.message_generic', 'Sugerencias personalizadas'));
       }
     } catch (error) {
       console.error('Error cargando sugerencias:', error);
-      setMensaje(t('ai.error_loading', '❌ Error al cargar sugerencias'));
+      setMensaje(t('ai.error_loading', 'No pudimos cargar sugerencias en este momento.'));
     } finally {
       setLoading(false);
     }
@@ -172,21 +172,14 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
   return (
     <div className="ai-suggestions-section">
       <div className="flex items-center justify-between mb-3">
-        <h2>{t('ai.title', '🤖 Asistente Nutricional IA')}</h2>
-        <button 
-          onClick={() => setUseAI(!useAI)}
-          className="btn-secondary"
-          disabled={loading}
-        >
-          {useAI ? t('ai.toggle_on', '🔴 IA Activada') : t('ai.toggle_off', '⚪ Modo Rápido')}
-        </button>
+        <h2>{t('ai.title', 'Sugerencias para tu día')}</h2>
       </div>
 
       {mensaje && <div className="ai-mensaje">{mensaje}</div>}
 
       {/* Análisis de Balance */}
       <div>
-        <h3>{t('ai.analysis_title', '📊 Análisis de tu día')}</h3>
+          <h3>{t('ai.analysis_title', 'Tu día en números')}</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div className="stat-box">
             <label>{t('ai.calories', 'Calorías')}</label>
@@ -248,11 +241,11 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
 
       {/* Sugerencias */}
       {loading ? (
-        <div className="loading">{t('ai.loading', 'Generando sugerencias personalizadas...')}</div>
+        <div className="loading">{t('ai.loading', 'Preparando tus sugerencias...')}</div>
       ) : (
         suggestions && suggestions.length > 0 && (
           <div>
-            <h3>{t('ai.recommendations', '💡 Recomendaciones para Completar tu Meta')}</h3>
+            <h3>{t('ai.recommendations', 'Recomendaciones para cerrar tu meta')}</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {suggestions.map((sugerencia, idx) => (
                 <div key={idx} className="stat-box">
@@ -281,7 +274,7 @@ export default function AISuggestions({ dayTotals, targetGoals, objetivo }) {
       {/* Botón para refrescar */}
       <div className="mt-4">
         <button onClick={loadSuggestions} disabled={loading} className="btn-primary">
-        {t('ai.refresh', '🔄 Actualizar Sugerencias')}
+        {t('ai.refresh', 'Actualizar sugerencias')}
         </button>
       </div>
     </div>

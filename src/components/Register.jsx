@@ -25,9 +25,6 @@ export default function Register({ onSwitchToLogin }) {
     metodoPago: 'tarjeta_credito',
     tiene_restricciones: false,
     restricciones_detalles: '',
-    longitud_tronco: '',
-    longitud_femur: '',
-    envergadura_brazos: '',
   });
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [error, setError] = useState('');
@@ -106,11 +103,6 @@ export default function Register({ onSwitchToLogin }) {
         objetivo: formData.objetivo,
         tiene_restricciones: formData.tiene_restricciones,
         restricciones_detalles: formData.restricciones_detalles,
-        medidas_biomecanicas: {
-          longitud_tronco: formData.longitud_tronco,
-          longitud_femur: formData.longitud_femur,
-          envergadura_brazos: formData.envergadura_brazos
-        }
       });
       await login(formData.email, formData.password);
       if (selectedPlan) {
@@ -199,25 +191,6 @@ export default function Register({ onSwitchToLogin }) {
                   <option value="masculino">Masculino</option>
                   <option value="femenino">Femenino</option>
                 </select>
-              </div>
-            </div>
-            {/* Medidas Biomecánicas (Teoría de Palancas) */}
-            <div className="bg-stone-50 border border-stone-200 p-4 rounded-xl space-y-4">
-              <h4 className="text-sm font-bold text-stone-900 border-b border-stone-200 pb-2">Biomecánica Inteligente (Opcional pero Recomendado)</h4>
-              <p className="text-xs text-stone-500 mb-2">Usaremos la teoría de palancas para sugerirte mejores variantes de ejercicios (ej: fémur largo = mejor en Hack Squat vs Libre).</p>
-              <div className="auth-form-row">
-                <div className="form-group pb-0 mb-0">
-                  <label htmlFor="longitud_tronco" className="label text-xs">Longitud Tronco (cm)</label>
-                  <input type="number" id="longitud_tronco" name="longitud_tronco" value={formData.longitud_tronco} onChange={handleChange} placeholder="Ej: 50" step="0.1" className="input py-2 text-sm" />
-                </div>
-                <div className="form-group pb-0 mb-0">
-                  <label htmlFor="longitud_femur" className="label text-xs">Longitud Fémur (cm)</label>
-                  <input type="number" id="longitud_femur" name="longitud_femur" value={formData.longitud_femur} onChange={handleChange} placeholder="Ej: 45" step="0.1" className="input py-2 text-sm" />
-                </div>
-                <div className="form-group pb-0 mb-0">
-                  <label htmlFor="envergadura_brazos" className="label text-xs">Envergadura Brazos (cm)</label>
-                  <input type="number" id="envergadura_brazos" name="envergadura_brazos" value={formData.envergadura_brazos} onChange={handleChange} placeholder="Punta a punta" step="0.1" className="input py-2 text-sm" />
-                </div>
               </div>
             </div>
             <div className="form-group">
