@@ -98,9 +98,12 @@ export default function Dashboard() {
   }, [user?.gym_id]);
 
   // === Branding (white-label) =============================================
-  // Si el usuario pertenece a un gym con brand_name → ese.
-  // Si no → "D28D Gimnasio Virtual" (default del producto).
-  const brandName = gymBrand?.brand_name || gymBrand?.nombre || PUBLIC_BRAND_NAME;
+  // Regla: solo se aplica white-label si el gym tiene `brand_name` configurado
+  // EXPLÍCITAMENTE. El `nombre` interno del gym (p.ej. "Gym Pro Fitness") es
+  // su razón social, no su brand pública: el default del sistema siempre es
+  // "D28D Gimnasio Virtual" hasta que un gym defina su propio brand_name.
+  const brandName = (gymBrand?.brand_name && gymBrand.brand_name.trim())
+    || PUBLIC_BRAND_NAME;
   const brandLogo = gymBrand?.logo_url || '';
 
   // === Handlers ============================================================

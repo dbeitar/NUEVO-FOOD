@@ -121,7 +121,7 @@ export default function AdminGyms() {
       capacidad_usuarios: gym.capacidad_usuarios || 50,
       plan_id: gym.plan_id || '',
       logo_url: gym.logo_url || '',
-      brand_name: gym.brand_name || gym.nombre || '',
+      brand_name: gym.brand_name || '',
       brand_slug: gym.brand_slug || '',
       white_label_enabled: gym.white_label_enabled !== false,
       welcome_message: gym.welcome_message || '',
