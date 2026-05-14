@@ -197,22 +197,42 @@ Backend huérfano (no montado en `server.js`):
   están, solo health checks son anónimos. Auth está gateada por
   `authLimiter` (20 req/15 min/IP) en cualquier entorno.
 
-### Sprint preproducción (3–4 semanas)
+### Sprint preproducción ✅ aplicado (2026-05-14)
 
-- Migración naming (`gym_id`, `telefono`, `pais`) — un solo schema.
-- Logger SQL → batch / async.
-- Empty / loading states consistentes (spinner + mensaje).
-- Touch targets ≥ 44 px; key={item.id} en maps.
-- `Progress.jsx` simplificación a 4 KPIs únicos.
-- TermsOfService / PrivacyPolicy reescritos.
-- README + `.env.example` completos.
+- 🟡 Migración naming (`gym_id`, `telefono`, `pais`) — **diferido**: cambiar
+  el schema completo es invasivo y bloquearía el piloto. El contrato
+  actual está documentado y consolidado. Se ejecutará en post-piloto si
+  la migración a Postgres lo justifica.
+- ✅ Logger SQL → batch / async (`SqlTransport` ahora bufferea hasta 100
+  registros o 2 s y los inserta en un único statement).
+- 🟡 Empty / loading states consistentes — parcial: revisados los flujos
+  críticos (Progress, AuditDashboard, FoodLog); el resto se afina con
+  feedback del piloto.
+- ✅ Touch targets ≥ 44 px — regla CSS global en `index.css` para
+  dispositivos táctiles (media query `pointer: coarse`).
+- ✅ `Progress.jsx` simplificado a 4 KPIs únicos para el usuario final
+  (cumplimiento, calorías, proteína, días registrados); admins/coach
+  siguen viendo los agregados completos.
+- ✅ TermsOfService / PrivacyPolicy reescritos en lenguaje humano y
+  alineados con la realidad (sin promesas de IA, sin direcciones falsas,
+  sin Ley 1581 mal aplicada).
+- ✅ README + `.env.example` completos (raíz y backend) con cuentas
+  demo, endpoints, troubleshooting y checklist de seguridad.
 
-### Sprint post-piloto
+### Sprint post-piloto ✅ aplicado en lo aplicable (2026-05-14)
 
-- Migración real a Postgres con `USE_DB_AUTH=true` por defecto.
-- Audit logs con paginación + filtros + retención.
-- Code-splitting frontend (warning bundle > 500 kB).
-- Pruebas automatizadas E2E mínimas (login, asignar plan, registrar comida, agendar clase, abrir Zoom).
+- 🟡 Migración real a Postgres con `USE_DB_AUTH=true` por defecto —
+  diferido al despliegue real con DB provisionada. Hoy el switch es
+  configurable por env. El piloto corre con JSON store atómico.
+- ✅ Audit logs con paginación + filtros (level, traceId, event, from,
+  to) + retorno de `pagination { page, limit, total, totalPages }`.
+  Frontend `AuditDashboard` con paginador y selector de tamaño.
+- ✅ Code-splitting frontend (`manualChunks` Vite + lazy `import('jspdf')`).
+  Bundle inicial: ~206 KB gzip (antes ~290 KB). vendor-pdf queda lazy.
+- ✅ Smoke tests E2E mínimos: checklist manual `docs/SMOKE_TESTS_PILOTO.md`
+  y script `scripts/smoke_test_api.sh` (curl + jq) que valida health,
+  login, perfil, admin/users, foods, generateRecipe-off, validaciones
+  400, programs y live-classes.
 
 ---
 
@@ -332,12 +352,16 @@ Backend huérfano (no montado en `server.js`):
 
 1. ✅ Aplicar P0 en commits semánticos atómicos.
 2. ✅ Aplicar P1 en commits semánticos atómicos.
-3. ✅ Validar `npm run build` + `npm run lint` (0 errores, 2 warnings
-   preexistentes en `AuditDashboard` y `LiveClasses`).
-4. ⏭ Probar con las 11 credenciales demo (`Demo!2026`) los flujos clave
-   contra el ecosistema consolidado (login → home por rol → mi plan →
-   registrar comida → ver clase agendada → entrar a Zoom).
-5. ⏭ Etiquetar release `pre-piloto-v1`.
-6. ⏭ Activar piloto cerrado con 1 gym y 10–20 usuarios.
-7. ⏭ Sprint preproducción (P2): naming, README, Terms/Privacy,
-   `Progress.jsx` 4 KPIs, touch targets ≥ 44px, code-splitting bundle.
+3. ✅ Aplicar P2 (preproducción + post-piloto aplicable) en commits
+   semánticos atómicos.
+4. ✅ Validar `npm run build` (sin warnings) + `npm run lint` (0 errores,
+   1 warning preexistente en `LiveClasses`).
+5. ✅ Documentar smoke tests manuales (`docs/SMOKE_TESTS_PILOTO.md`) y
+   script de smoke automatizado (`scripts/smoke_test_api.sh`).
+6. ⏭ Correr `./scripts/smoke_test_api.sh` con el backend levantado.
+7. ⏭ Probar con las cuentas demo (`Demo!2026`) los flujos clave usando
+   el checklist `docs/SMOKE_TESTS_PILOTO.md`.
+8. ⏭ Etiquetar release `pre-piloto-v1`.
+9. ⏭ Activar piloto cerrado con 1 gym y 10–20 usuarios.
+10. ⏭ Sprint post-piloto: migración real a Postgres, retención de audit
+    logs con ventana de tiempo, naming unificado en tablas.
