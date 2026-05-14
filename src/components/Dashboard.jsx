@@ -31,6 +31,7 @@ import ServicesHero from './dashboard/ServicesHero';
 import FoodPlanAdminView from './dashboard/FoodPlanAdminView';
 import D28DAdminView from './dashboard/D28DAdminView';
 import TrainersAdminView from './dashboard/TrainersAdminView';
+import MastersHub from './dashboard/MastersHub';
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { t, lang, setLang } = useI18n();
@@ -212,10 +213,18 @@ export default function Dashboard() {
       }
     }
 
-    // super_admin: única navegación que ve Auditoría.
+    // super_admin: navegación operativa completa.
+    //   - Empresas (gimnasios marca blanca): CRUD de clientes B2B.
+    //   - Usuarios: alta/edición con multi-rol (un usuario puede tener
+    //     varios roles a la vez: ej. coach + admin_food).
+    //   - Maestros: hub que abre los catálogos de los 3 servicios.
+    //   - Auditoría: trazabilidad completa del sistema (exclusivo super_admin).
     if (hasAnyRole(['super_admin'])) {
       return [
         { id: 'home', label: 'Inicio' },
+        { id: 'admingyms', label: 'Empresas' },
+        { id: 'adminusers', label: 'Usuarios' },
+        { id: 'masters', label: 'Maestros' },
         { id: 'audit', label: 'Auditoría' },
         { id: 'myaccount', label: 'Mi cuenta' },
       ];
@@ -294,6 +303,15 @@ export default function Dashboard() {
         return <LiveClassesPanel user={user} canProgram={canProgram} programId={selectedProgram} />;
       }
       case 'programs': return <AdminProgramsManager />;
+      case 'masters':
+        return (
+          <MastersHub
+            onOpenMaster={(moduleId) => {
+              setOpenServicePanel(moduleId);
+              setCurrentView('servicePanel');
+            }}
+          />
+        );
       case 'myplan':
         return (
           <MyPlanView

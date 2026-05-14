@@ -141,8 +141,16 @@ export default function AdminUsers() {
   const getRoleBadgeClass = (rol) => {
     switch (rol) {
       case 'super_admin': return 'badge-purple';
+      case 'admin_marca':
+      case 'admin_gym':
       case 'admin_gimnasio': return 'badge-blue';
+      case 'admin_d28d': return 'badge-orange';
+      case 'admin_food':
+      case 'admin_food_plan': return 'badge-lime';
+      case 'admin_training':
+      case 'admin_entrenador': return 'badge-amber';
       case 'entrenador': return 'badge-green';
+      case 'nutricionista': return 'badge-teal';
       default: return 'badge-slate';
     }
   };
@@ -279,7 +287,21 @@ export default function AdminUsers() {
             </select>
           </div>
           <div className="md:col-span-2">
-            <label className="label">{t('common.roles', 'Roles')}</label>
+            <div className="flex items-baseline justify-between flex-wrap gap-2">
+              <label className="label">{t('common.roles', 'Roles')}</label>
+              <p className="text-xs text-stone-500">
+                {t('users.multi_role_hint', 'Puedes asignar varios roles a la misma persona (ej: Entrenador + Admin Food).')}
+              </p>
+            </div>
+            {formData.roles.length > 0 && (
+              <div className="mb-2 flex flex-wrap gap-1">
+                {formData.roles.map((r) => (
+                  <span key={r} className="badge badge-blue text-xs px-2 py-0.5 whitespace-nowrap">
+                    {formatRole(r)}
+                  </span>
+                ))}
+              </div>
+            )}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
               {[
                 { value: 'usuario_final', label: 'Usuario Final' },
@@ -336,7 +358,7 @@ export default function AdminUsers() {
                   className="input"
                 >
                   <option value="">{t('common.none', 'Ninguno')}</option>
-                  {trainers.map(t => <option key={t.id} value={t.id}>{t.nombre}</option>)}
+                  {trainers.map(tr => <option key={tr.id} value={tr.id}>{tr.nombre}</option>)}
                 </select>
               </div>
             </>
@@ -426,18 +448,18 @@ export default function AdminUsers() {
                 </tr>
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
-                {trainers.map(t => (
-                  <tr key={t.id} className="hover:bg-stone-100 transition-colors">
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">#{t.id}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">{t.nombre}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{t.especialidad || '-'}</td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-stone-600">{t.capacidad_usuarios ?? 50}</td>
+                {trainers.map(tr => (
+                  <tr key={tr.id} className="hover:bg-stone-100 transition-colors">
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">#{tr.id}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">{tr.nombre}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{tr.especialidad || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-stone-600">{tr.capacidad_usuarios ?? 50}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button
                         className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-stone-300 text-stone-700 bg-white hover:bg-stone-100 transition-colors"
                         onClick={() => {
-                          const list = users.filter(u => u.trainer_id === t.id);
-                          setAssignedTitle(t('companies.users_of_trainer', 'Usuarios del Entrenador: {name}').replace('{name}', t.nombre));
+                          const list = users.filter(u => u.trainer_id === tr.id);
+                          setAssignedTitle(t('companies.users_of_trainer', 'Usuarios del Entrenador: {name}').replace('{name}', tr.nombre));
                           setAssignedList(list);
                           setShowAssignedModal(true);
                         }}
