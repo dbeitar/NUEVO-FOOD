@@ -1,12 +1,17 @@
-import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
 import { useAuth } from '../context/useAuth';
 import api from '../services/api';
 import AISuggestions from './AISuggestions';
 import './FoodLog.css';
 import { useI18n } from '../context/useI18n';
+import { userRoles, makeHasAnyRole } from './dashboard/roles';
 
 export default function FoodLog() {
-  const { token } = useAuth();
+  const { token, user } = useAuth();
+  const canCreateFood = useMemo(() => {
+    const roles = userRoles(user);
+    return makeHasAnyRole(roles)(['super_admin', 'admin_food', 'admin_food_plan']);
+  }, [user]);
   const today = new Date().toISOString().split('T')[0];
   const { t } = useI18n();
   const mealLabel = (meal) => {
@@ -219,9 +224,13 @@ export default function FoodLog() {
       setMessage(t('foodlog.barcode_found', '✅ Producto encontrado por código de barras'));
       setTimeout(() => setMessage(''), 2500);
     } catch {
-      setMessage(t('foodlog.barcode_not_found', '❌ No se encontró el producto. Puedes crearlo rápidamente aquí.'));
-      setShowQuickCreate(true);
-      setQuickForm((prev) => ({ ...prev, barcode: barcode.trim() }));
+      if (canCreateFood) {
+        setMessage(t('foodlog.barcode_not_found_admin', 'No encontramos el producto. Puedes crearlo aquí.'));
+        setShowQuickCreate(true);
+        setQuickForm((prev) => ({ ...prev, barcode: barcode.trim() }));
+      } else {
+        setMessage(t('foodlog.barcode_not_found_user', 'No encontramos el producto. Avisa a tu coach para añadirlo al catálogo.'));
+      }
       setTimeout(() => setMessage(''), 3500);
     }
   };
@@ -536,7 +545,7 @@ export default function FoodLog() {
             {scanError && <div className="scan-error">{scanError}</div>}
           </div>
         )}
-        {showQuickCreate && (
+        {canCreateFood && showQuickCreate && (
           <div className="selected-food-detail" style={{marginTop:12}}>
             <div className="detail-info">
               <h3>{t('foods.quick_create', 'Crear alimento')}</h3>

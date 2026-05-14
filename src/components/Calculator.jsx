@@ -287,8 +287,18 @@ export default function Calculator() {
             </div>
 
             <div className="info-box">
-              <p><strong>{t('calculator.tmb', 'TMB')}:</strong> {resultado.tmb} kcal</p>
-              <p><strong>{t('calculator.tdee', 'TDEE')}:</strong> {resultado.tdee} kcal</p>
+              <p>
+                <strong>{t('calculator.tmb', 'Gasto en reposo')}:</strong> {resultado.tmb} kcal
+                <span style={{ color: '#64748b', marginLeft: 6, fontSize: '0.85em' }}>
+                  (lo que tu cuerpo consume solo manteniéndose en reposo)
+                </span>
+              </p>
+              <p>
+                <strong>{t('calculator.tdee', 'Gasto diario estimado')}:</strong> {resultado.tdee} kcal
+                <span style={{ color: '#64748b', marginLeft: 6, fontSize: '0.85em' }}>
+                  (incluye tu actividad habitual)
+                </span>
+              </p>
             </div>
           </div>
         )}
