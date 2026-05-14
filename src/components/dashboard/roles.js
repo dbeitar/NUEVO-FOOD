@@ -14,7 +14,9 @@ const ADMIN_ROLES = new Set([
   'admin_gym',
   'admin_d28d',
   'admin_food_plan',
+  'admin_food',
   'admin_training',
+  'admin_entrenador',
   'entrenador',
   'nutricionista',
 ]);

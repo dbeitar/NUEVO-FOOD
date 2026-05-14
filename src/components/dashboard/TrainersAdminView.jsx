@@ -21,7 +21,7 @@ export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack }) {
           <button className="btn-card">Abrir</button>
         </div>
 
-        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'admin_training']) && (
+        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'admin_training', 'admin_entrenador']) && (
           <div className="card" onClick={() => onNavigate('admintraining')}>
             <h3>Maestro de rutinas</h3>
             <p>Plantillas, asignaciones y diario de entrenamiento.</p>
@@ -29,7 +29,7 @@ export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack }) {
           </div>
         )}
 
-        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training']) && (
+        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training', 'admin_entrenador']) && (
           <div className="card" onClick={() => onNavigate('admingallery')}>
             <h3>Galería de entrenamientos</h3>
             <p>Videos por ejercicio (referencia visual).</p>
@@ -37,7 +37,7 @@ export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack }) {
           </div>
         )}
 
-        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio']) && (
+        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_training', 'admin_entrenador', 'entrenador']) && (
           <div className="card" onClick={() => onNavigate('adminusers')}>
             <h3>Usuarios asignados</h3>
             <p>Listado de personas y sus rutinas asignadas.</p>

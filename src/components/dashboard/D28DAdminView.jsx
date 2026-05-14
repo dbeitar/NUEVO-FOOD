@@ -82,7 +82,7 @@ export default function D28DAdminView({ hasAnyRole, onNavigate, onPickProgram, o
           </div>
         )}
 
-        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training']) && (
+        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training', 'admin_entrenador']) && (
           <div className="card" onClick={() => onNavigate('admingallery')}>
             <h3>Galería de videos</h3>
             <p>Videos por ejercicio para rutinas y clases.</p>

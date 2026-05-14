@@ -49,7 +49,19 @@ const ROLE_PERMISSIONS = {
     'nutrition.manage_assigned',
     'users.manage_assigned',
   ],
+  // Alias corto: admin_food == admin_food_plan
+  admin_food: [
+    'nutrition.manage',
+    'nutrition.manage_assigned',
+    'users.manage_assigned',
+  ],
   admin_training: [
+    'training.manage',
+    'trainers.manage',
+    'users.manage_assigned',
+  ],
+  // Alias en español: admin_entrenador == admin_training
+  admin_entrenador: [
     'training.manage',
     'trainers.manage',
     'users.manage_assigned',

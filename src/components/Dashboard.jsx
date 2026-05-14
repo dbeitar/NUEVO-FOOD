@@ -158,30 +158,64 @@ export default function Dashboard() {
       if (services.find((s) => s.id === 'food-plan')) items.push({ id: 'myplan', label: 'Mi Plan' });
       if (services.find((s) => s.id === 'training')) items.push({ id: 'training', label: 'Entrenamiento' });
       items.push({ id: 'progress', label: 'Progreso' });
-      if (services.find((s) => s.id === 'd28d')) items.push({ id: 'liveclasses', label: 'Clases' });
+      if (services.find((s) => s.id === 'd28d') || services.find((s) => s.id === 'live-classes')) {
+        items.push({ id: 'liveclasses', label: 'Clases' });
+      }
       items.push({ id: 'myaccount', label: 'Mi cuenta' });
       return items.slice(0, 6);
     }
-    if (roles.includes('entrenador') && !hasAnyRole(['super_admin'])) {
-      return [
-        { id: 'home', label: 'Inicio' },
-        { id: 'adminusers', label: 'Mis usuarios' },
-        { id: 'admintraining', label: 'Rutinas' },
-        { id: 'admin', label: 'Planes nutricionales' },
-        { id: 'progress', label: 'Seguimiento' },
-        { id: 'myaccount', label: 'Mi cuenta' },
-      ];
+
+    // === Admins específicos: solo navegación de su servicio ===============
+    if (!hasAnyRole(['super_admin'])) {
+      if (hasAnyRole(['admin_d28d']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
+        return [
+          { id: 'home', label: 'Inicio' },
+          { id: 'programs', label: 'Programas D28D' },
+          { id: 'adminliveclasses', label: 'Clases en Vivo' },
+          { id: 'admingallery', label: 'Galería' },
+          { id: 'myaccount', label: 'Mi cuenta' },
+        ];
+      }
+      if (hasAnyRole(['admin_food', 'admin_food_plan']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
+        return [
+          { id: 'home', label: 'Inicio' },
+          { id: 'foodsmanager', label: 'Maestro alimentos' },
+          { id: 'admin', label: 'Conceptos calculadora' },
+          { id: 'recipes', label: 'Recetas' },
+          { id: 'myaccount', label: 'Mi cuenta' },
+        ];
+      }
+      if (hasAnyRole(['admin_entrenador', 'admin_training']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
+        return [
+          { id: 'home', label: 'Inicio' },
+          { id: 'admintraining', label: 'Rutinas' },
+          { id: 'admingallery', label: 'Galería' },
+          { id: 'adminusers', label: 'Mis usuarios' },
+          { id: 'myaccount', label: 'Mi cuenta' },
+        ];
+      }
+      if (roles.includes('entrenador')) {
+        return [
+          { id: 'home', label: 'Inicio' },
+          { id: 'adminusers', label: 'Mis usuarios' },
+          { id: 'admintraining', label: 'Rutinas' },
+          { id: 'admin', label: 'Planes nutricionales' },
+          { id: 'progress', label: 'Seguimiento' },
+          { id: 'myaccount', label: 'Mi cuenta' },
+        ];
+      }
+      if (hasAnyRole(['admin_gimnasio', 'admin_gym', 'admin_marca'])) {
+        return [
+          { id: 'home', label: 'Inicio' },
+          { id: 'admingyms', label: 'Mi marca' },
+          { id: 'adminusers', label: 'Usuarios' },
+          { id: 'admintraining', label: 'Rutinas' },
+          { id: 'adminliveclasses', label: 'Clases' },
+          { id: 'myaccount', label: 'Mi cuenta' },
+        ];
+      }
     }
-    if (hasAnyRole(['admin_gimnasio', 'admin_gym', 'admin_marca']) && !hasAnyRole(['super_admin'])) {
-      return [
-        { id: 'home', label: 'Inicio' },
-        { id: 'admingyms', label: 'Mi marca' },
-        { id: 'adminusers', label: 'Usuarios' },
-        { id: 'admintraining', label: 'Rutinas' },
-        { id: 'adminliveclasses', label: 'Clases' },
-        { id: 'myaccount', label: 'Mi cuenta' },
-      ];
-    }
+
     // super_admin: barra principal corta; el resto va en la barra rápida.
     return [
       { id: 'home', label: 'Inicio' },
@@ -191,8 +225,9 @@ export default function Dashboard() {
   }, [isFinal, roles, hasAnyRole, services]);
 
   // === Barra rápida de administración ======================================
-  // Restaura el acceso directo que ya existía en la versión original
-  // (multi-rol). Solo se muestra si el usuario tiene roles administrativos.
+  // Reglas: cada admin específico solo ve los maestros de SU servicio.
+  // Solo super_admin ve todos los maestros. Admins de gym (marca blanca) ven
+  // los maestros operativos de su gym.
   const quickAdminItems = useMemo(() => {
     if (isFinal) return [];
     const items = [];
@@ -205,22 +240,22 @@ export default function Dashboard() {
     if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym'])) {
       items.push({ id: 'admingyms', label: 'Gyms' });
     }
-    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'admin_training'])) {
+    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'admin_training', 'admin_entrenador'])) {
       items.push({ id: 'admintraining', label: 'Rutinas' });
     }
-    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training'])) {
+    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training', 'admin_entrenador'])) {
       items.push({ id: 'admingallery', label: 'Galería' });
     }
     if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d'])) {
-      items.push({ id: 'adminliveclasses', label: 'Live' });
+      items.push({ id: 'adminliveclasses', label: 'Clases en Vivo' });
     }
     if (hasAnyRole(['super_admin', 'admin_d28d'])) {
-      items.push({ id: 'programs', label: 'Programas' });
+      items.push({ id: 'programs', label: 'Programas D28D' });
     }
-    if (hasAnyRole(['super_admin', 'admin_food_plan'])) {
+    if (hasAnyRole(['super_admin', 'admin_food_plan', 'admin_food'])) {
       items.push({ id: 'foodsmanager', label: 'Maestro alimentos' });
     }
-    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista', 'admin_food_plan'])) {
+    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista', 'admin_food_plan', 'admin_food'])) {
       items.push({ id: 'admin', label: 'Conceptos calculadora' });
     }
     if (hasAnyRole(['super_admin'])) {
@@ -257,6 +292,10 @@ export default function Dashboard() {
     if (openServicePanel === 'training') {
       return <TrainersAdminView hasAnyRole={hasAnyRole} onNavigate={navigate} onBack={onBackToHome} />;
     }
+    if (openServicePanel === 'live-classes') {
+      // Panel admin de clases en vivo: directo al maestro de live classes.
+      return <AdminLiveClasses />;
+    }
     if (openServicePanel === 'gym') {
       return (
         <GymAdminView
@@ -278,7 +317,7 @@ export default function Dashboard() {
       case 'admin': return <AdminCalculator />;
       case 'foodlog': return <FoodLog />;
       case 'recipes': return <Recipes />;
-      case 'foodsmanager': return hasAnyRole(['super_admin', 'admin_food_plan']) ? <AdminFoodsManager /> : null;
+      case 'foodsmanager': return hasAnyRole(['super_admin', 'admin_food_plan', 'admin_food']) ? <AdminFoodsManager /> : null;
       case 'adminusers': return <AdminUsers />;
       case 'adminplans': return hasAnyRole(['super_admin']) ? <AdminPlans /> : null;
       case 'admincompanies': return <AdminCompanies />;

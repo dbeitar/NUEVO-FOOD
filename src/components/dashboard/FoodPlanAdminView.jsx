@@ -23,7 +23,7 @@ export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack }) {
           <button className="btn-card">Abrir</button>
         </div>
 
-        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista', 'admin_food_plan']) && (
+        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista', 'admin_food_plan', 'admin_food']) && (
           <div className="card" onClick={() => onNavigate('admin')}>
             <h3>Configurar planes</h3>
             <p>Define o ajusta el plan de cada usuario.</p>
@@ -31,7 +31,7 @@ export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack }) {
           </div>
         )}
 
-        {hasAnyRole(['super_admin', 'admin_food_plan']) && (
+        {hasAnyRole(['super_admin', 'admin_food_plan', 'admin_food']) && (
           <div className="card" onClick={() => onNavigate('foodsmanager')}>
             <h3>Maestro de alimentos</h3>
             <p>Catálogo, macros y porciones de referencia.</p>
