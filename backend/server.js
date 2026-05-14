@@ -8,7 +8,6 @@ const jwt = require('jsonwebtoken');
 const userDB = require('./src/models/UserDatabase');
 const db = require('./src/config/dbClient');
 const authRoutes = require('./src/routes/authRoutes');
-const { adminResetPassword } = require('./src/controllers/authController');
 const calculatorRoutes = require('./src/routes/calculatorRoutes');
 const foodRoutes = require('./src/routes/foodRoutes');
 const foodLogRoutes = require('./src/routes/foodLogRoutes');
@@ -364,40 +363,71 @@ if (USE_DB_AUTH) {
   });
 }
 
-// Admin: reset de contraseña universal (funciona en ambos modos)
-app.post('/api/auth/admin/reset-password', authMiddleware, async (req, res) => {
-  try {
-    const role = req.user?.rol;
-    if (!['admin', 'super_admin', 'admin_gimnasio'].includes(role)) {
-      return res.status(403).json({ error: 'Acceso denegado' });
+// Admin: reset de contraseña en modo JSON.
+// En modo Postgres, este endpoint lo expone `authRoutes.js` con el handler
+// `authController.adminResetPassword`. Aquí se registra solo cuando `USE_DB_AUTH`
+// es false para evitar dos handlers shadow-eando la misma ruta.
+if (!USE_DB_AUTH) {
+  app.post('/api/auth/admin/reset-password', authMiddleware, async (req, res) => {
+    try {
+      const { hasRole } = require('./src/utils/accessControl');
+      if (!hasRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
+        return res.status(403).json({ error: 'Acceso denegado' });
+      }
+      const { email, password } = req.body || {};
+      if (!email || !password || String(password).length < 6) {
+        return res.status(400).json({ error: 'Email y nueva contraseña (≥6) son requeridos' });
+      }
+      const target = userDB.getByEmail(email);
+      if (!target) {
+        return res.status(404).json({ error: 'Usuario no encontrado' });
+      }
+      const hash = await bcryptjs.hash(password, 10);
+      userDB.update(target.id, { clave_hash: hash });
+      return res.json({ success: true, message: 'Contraseña actualizada' });
+    } catch (e) {
+      console.error('Error reset-password (modo JSON):', e);
+      return res.status(500).json({ error: 'Error interno del servidor' });
     }
-    if (USE_DB_AUTH) {
-      return adminResetPassword(req, res);
-    }
-    const { email, password } = req.body || {};
-    if (!email || !password || String(password).length < 6) {
-      return res.status(400).json({ error: 'Email y nueva contraseña (≥6) son requeridos' });
-    }
-    const target = userDB.getByEmail(email);
-    if (!target) {
-      return res.status(404).json({ error: 'Usuario no encontrado' });
-    }
-    const hash = await bcryptjs.hash(password, 10);
-    userDB.update(target.id, { clave_hash: hash });
-    return res.json({ success: true, message: 'Contraseña actualizada' });
-  } catch (e) {
-    console.error('Error universal reset-password:', e);
-    return res.status(500).json({ error: 'Error interno del servidor' });
-  }
-});
+  });
+}
 
 // Admin: Usuarios y Roles (modo memoria)
+const { hasRole: hasUserRole } = require('./src/utils/accessControl');
+
+// Helpers admin/users: limitan visibilidad / acción al gym del JWT cuando el
+// llamante no es super_admin.
+const tokenGymId = (user) => {
+  const raw = user?.gym_id ?? user?.gymId ?? null;
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+};
+
+const ADMIN_ROLES_ASSIGNABLE_ONLY_BY_SUPER = [
+  'super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d',
+  'admin_food_plan', 'admin_food', 'admin_training', 'admin_entrenador', 'admin_gym',
+];
+const ALLOWED_ROLES_FOR_ADMIN = [
+  ...ADMIN_ROLES_ASSIGNABLE_ONLY_BY_SUPER,
+  'entrenador', 'nutricionista', 'usuario_final',
+];
+
 app.get('/api/admin/users', authMiddleware, (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
       return res.status(403).json({ error: 'No tienes permiso para ver usuarios' });
     }
-    const list = userDB.getAll().map(u => ({
+    const ownGym = tokenGymId(req.user);
+    const isSuper = hasUserRole(req.user, ['super_admin']);
+    let users = userDB.getAll();
+    if (!isSuper && ownGym) {
+      users = users.filter((u) => {
+        const g = u.gym_id ?? u.gymId ?? null;
+        return g !== null && Number(g) === ownGym;
+      });
+    }
+    const list = users.map(u => ({
       id: u.id,
       nombre: u.nombre,
       email: u.email,
@@ -417,7 +447,7 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
 
 app.post('/api/admin/users', authMiddleware, async (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
       return res.status(403).json({ error: 'No tienes permiso para crear usuarios' });
     }
     const { nombre, email, password, rol = 'usuario_final', roles, permissions, module_access, gym_id, trainer_id, planId, telefono, fecha_nacimiento, peso, altura, objetivo } = req.body || {};
@@ -427,6 +457,28 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
     if (userDB.getByEmail(email)) {
       return res.status(409).json({ error: 'El email ya está registrado' });
     }
+
+    const nextRoles = Array.isArray(roles) && roles.length ? roles : [rol];
+    if (!nextRoles.every((r) => ALLOWED_ROLES_FOR_ADMIN.includes(r))) {
+      return res.status(400).json({ error: 'Rol no válido' });
+    }
+    const isSuper = hasUserRole(req.user, ['super_admin']);
+    // Solo super_admin puede crear usuarios con roles administrativos.
+    if (!isSuper && nextRoles.some((r) => ADMIN_ROLES_ASSIGNABLE_ONLY_BY_SUPER.includes(r))) {
+      return res.status(403).json({ error: 'Solo super_admin puede crear administradores' });
+    }
+    // Admin de gimnasio fuerza gym_id al SUYO.
+    const ownGym = tokenGymId(req.user);
+    let finalGymId;
+    if (isSuper) {
+      finalGymId = gym_id ?? null;
+    } else {
+      if (!ownGym) {
+        return res.status(403).json({ error: 'Tu usuario no tiene gimnasio asignado para crear usuarios' });
+      }
+      finalGymId = ownGym;
+    }
+
     const pwd = password && String(password).length >= 6 ? password : Math.random().toString(36).slice(-8);
     const hashedPassword = await bcryptjs.hash(pwd, 10);
     const created = userDB.create({
@@ -434,7 +486,7 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
       email,
       clave_hash: hashedPassword,
       rol,
-      roles: Array.isArray(roles) && roles.length ? roles : [rol],
+      roles: nextRoles,
       permissions: Array.isArray(permissions) ? permissions : [],
       module_access: module_access || {},
       telefono: telefono || null,
@@ -442,9 +494,9 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
       peso: peso ?? null,
       altura: altura ?? null,
       objetivo: objetivo || null,
-      gym_id: gym_id ?? null,
+      gym_id: finalGymId,
       trainer_id: trainer_id ?? null,
-      gymId: gym_id ?? null,
+      gymId: finalGymId,
       planId: planId || null,
     });
     res.status(201).json({ success: true, data: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol } });
@@ -455,21 +507,30 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
 
 app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
   try {
+    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
+      return res.status(403).json({ error: 'No tienes permiso para cambiar roles' });
+    }
     const { id } = req.params;
     const { rol, roles, permissions, module_access } = req.body || {};
-    const allowedRoles = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'admin_food_plan', 'admin_training', 'admin_gym', 'entrenador', 'nutricionista', 'usuario_final'];
     const nextRoles = Array.isArray(roles) && roles.length ? roles : [rol];
-    if (!nextRoles.every((role) => allowedRoles.includes(role))) {
+    if (!nextRoles.every((role) => ALLOWED_ROLES_FOR_ADMIN.includes(role))) {
       return res.status(400).json({ error: 'Rol no válido' });
     }
-    // Permisos: solo super_admin puede asignar roles admin
-    if (nextRoles.some((role) => ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'admin_food_plan', 'admin_training', 'admin_gym'].includes(role)) && req.user.rol !== 'super_admin') {
+    const isSuper = hasUserRole(req.user, ['super_admin']);
+    if (!isSuper && nextRoles.some((role) => ADMIN_ROLES_ASSIGNABLE_ONLY_BY_SUPER.includes(role))) {
       return res.status(403).json({ error: 'Solo super_admin puede asignar roles administrativos' });
     }
-    // Buscar usuario
     const target = userDB.getById(parseInt(id, 10));
     if (!target) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    // Tenant: admin gym solo puede tocar usuarios de su mismo gym.
+    if (!isSuper) {
+      const ownGym = tokenGymId(req.user);
+      const targetGym = Number(target.gym_id ?? target.gymId ?? 0);
+      if (!ownGym || ownGym !== targetGym) {
+        return res.status(403).json({ error: 'No puedes modificar usuarios de otro gimnasio' });
+      }
     }
     userDB.update(target.id, { rol: rol || nextRoles[0], roles: nextRoles, permissions: Array.isArray(permissions) ? permissions : target.permissions, module_access: module_access || target.module_access || {} });
     const updated = userDB.getById(target.id);
@@ -479,9 +540,22 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
   }
 });
 
+// Guard tenant para acciones admin sobre /users/:id.
+// - super_admin: sin restricción.
+// - admin_gimnasio / admin_marca: solo usuarios de su gym y sin escalar gym destino.
+const enforceTenantOnUserUpdate = (req, target) => {
+  if (hasUserRole(req.user, ['super_admin'])) return { ok: true, gym: null };
+  const ownGym = tokenGymId(req.user);
+  const targetGym = Number(target.gym_id ?? target.gymId ?? 0);
+  if (!ownGym || ownGym !== targetGym) {
+    return { ok: false, status: 403, error: 'No puedes modificar usuarios de otro gimnasio' };
+  }
+  return { ok: true, gym: ownGym };
+};
+
 app.put('/api/admin/users/:id/assign', authMiddleware, (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
       return res.status(403).json({ error: 'No tienes permiso para asignar' });
     }
     const { id } = req.params;
@@ -490,7 +564,12 @@ app.put('/api/admin/users/:id/assign', authMiddleware, (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    const updates = { gym_id, trainer_id, gymId: gym_id, ...(planId !== undefined ? { planId } : {}) };
+    const guard = enforceTenantOnUserUpdate(req, user);
+    if (!guard.ok) return res.status(guard.status).json({ error: guard.error });
+    const isSuper = hasUserRole(req.user, ['super_admin']);
+    // Admin gym NO puede mover el usuario a otro gym.
+    const finalGymId = isSuper ? gym_id : (guard.gym ?? user.gym_id ?? null);
+    const updates = { gym_id: finalGymId, trainer_id, gymId: finalGymId, ...(planId !== undefined ? { planId } : {}) };
     const updated = userDB.update(user.id, updates);
     res.json({ success: true, data: { id: updated.id, gym_id: updated.gym_id || updated.gymId || null, trainer_id: updated.trainer_id || null, planId: updated.planId || null } });
   } catch (e) {
@@ -500,7 +579,7 @@ app.put('/api/admin/users/:id/assign', authMiddleware, (req, res) => {
 
 app.put('/api/admin/users/:id/password', authMiddleware, async (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
       return res.status(403).json({ error: 'No tienes permiso para cambiar contraseñas' });
     }
     const { id } = req.params;
@@ -512,6 +591,8 @@ app.put('/api/admin/users/:id/password', authMiddleware, async (req, res) => {
     if (!user) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
+    const guard = enforceTenantOnUserUpdate(req, user);
+    if (!guard.ok) return res.status(guard.status).json({ error: guard.error });
     const hash = await bcryptjs.hash(password, 10);
     userDB.update(user.id, { clave_hash: hash });
     res.json({ success: true, message: 'Contraseña actualizada' });
@@ -522,7 +603,7 @@ app.put('/api/admin/users/:id/password', authMiddleware, async (req, res) => {
 
 app.delete('/api/admin/users/:id', authMiddleware, (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
       return res.status(403).json({ error: 'No tienes permiso para eliminar' });
     }
     const { id } = req.params;
@@ -530,6 +611,12 @@ app.delete('/api/admin/users/:id', authMiddleware, (req, res) => {
     if (req.user.id === targetId) {
       return res.status(400).json({ error: 'No puedes eliminar tu propio usuario' });
     }
+    const target = userDB.getById(targetId);
+    if (!target) {
+      return res.status(404).json({ error: 'Usuario no encontrado' });
+    }
+    const guard = enforceTenantOnUserUpdate(req, target);
+    if (!guard.ok) return res.status(guard.status).json({ error: guard.error });
     const ok = userDB.delete(targetId);
     if (!ok) {
       return res.status(404).json({ error: 'Usuario no encontrado' });

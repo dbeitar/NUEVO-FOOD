@@ -1,9 +1,18 @@
 const AccountsDatabase = require('../models/AccountsDatabase');
+const { hasRole } = require('../utils/accessControl');
+
+const tokenGymId = (user) => {
+  if (!user) return null;
+  const raw = user.gym_id ?? user.gymId ?? null;
+  if (raw === null || raw === undefined || raw === '') return null;
+  const n = Number(raw);
+  return Number.isFinite(n) ? n : null;
+};
 
 // Obtener todas las cuentas (solo super_admin)
 const getAllAccounts = (req, res) => {
   try {
-    if (!req.user || req.user.rol !== 'super_admin') {
+    if (!hasRole(req.user, ['super_admin'])) {
       return res.status(403).json({ error: 'Solo super admin puede ver todas las cuentas' });
     }
 
@@ -34,12 +43,24 @@ const getMyAccount = (req, res) => {
 // Obtener cuentas por gimnasio (admin_gimnasio)
 const getAccountsByGym = (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!hasRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
       return res.status(403).json({ error: 'No tienes permiso para esta acción' });
     }
 
-    const { gymId } = req.params;
-    const accounts = AccountsDatabase.getByGymId(parseInt(gymId));
+    const requestedGym = Number(req.params.gymId);
+    if (!Number.isFinite(requestedGym)) {
+      return res.status(400).json({ error: 'gymId inválido' });
+    }
+
+    // Admin de gimnasio solo puede consultar SU gimnasio.
+    if (!hasRole(req.user, ['super_admin'])) {
+      const ownGym = tokenGymId(req.user);
+      if (ownGym && ownGym !== requestedGym) {
+        return res.status(403).json({ error: 'No puedes consultar cuentas de otro gimnasio' });
+      }
+    }
+
+    const accounts = AccountsDatabase.getByGymId(requestedGym);
     res.json(accounts);
   } catch (error) {
     console.error('Error obteniendo cuentas del gimnasio:', error);
@@ -61,7 +82,7 @@ const getPlans = (req, res) => {
 // Crear nuevo plan (solo super_admin)
 const createPlan = (req, res) => {
   try {
-    if (!req.user || req.user.rol !== 'super_admin') {
+    if (!hasRole(req.user, ['super_admin'])) {
       return res.status(403).json({ error: 'Solo super admin puede crear planes' });
     }
     const { nombre, descripcion, precio_mensual, features } = req.body || {};
@@ -82,7 +103,7 @@ const createPlan = (req, res) => {
 // Actualizar plan (solo super_admin)
 const updatePlan = (req, res) => {
   try {
-    if (!req.user || req.user.rol !== 'super_admin') {
+    if (!hasRole(req.user, ['super_admin'])) {
       return res.status(403).json({ error: 'Solo super admin puede actualizar planes' });
     }
     const { nombre } = req.params;
@@ -100,7 +121,7 @@ const updatePlan = (req, res) => {
 // Eliminar plan (solo super_admin)
 const deletePlan = (req, res) => {
   try {
-    if (!req.user || req.user.rol !== 'super_admin') {
+    if (!hasRole(req.user, ['super_admin'])) {
       return res.status(403).json({ error: 'Solo super admin puede eliminar planes' });
     }
     const { nombre } = req.params;
@@ -118,9 +139,8 @@ const deletePlan = (req, res) => {
 // Crear nueva suscripción
 const createAccount = (req, res) => {
   try {
-    const { plan, gym_id, trainer_id } = req.body;
-    
-    // Validaciones: plan requerido; gym_id opcional
+    const { plan, gym_id: bodyGymId, trainer_id: bodyTrainerId } = req.body;
+
     if (!plan) {
       return res.status(400).json({ error: 'Plan es requerido' });
     }
@@ -135,20 +155,32 @@ const createAccount = (req, res) => {
       }
     }
 
-    // Verificar si el usuario ya tiene una suscripción activa
     const existingAccount = AccountsDatabase.getByUserId(req.user.id);
     if (existingAccount) {
       return res.status(409).json({ error: 'Ya tienes una suscripción activa' });
     }
 
-    // Crear la nueva cuenta
+    // Reglas de tenant:
+    // - usuario_final / coach NO pueden elegir gym/trainer arbitrarios; quedan
+    //   amarrados al gym del JWT (o null si no tienen gym asignado).
+    // - super_admin sí puede asignar manualmente cualquier gym/trainer.
+    const jwtGymId = tokenGymId(req.user);
+    const jwtTrainerId = req.user?.trainer_id || null;
+    let finalGymId = jwtGymId;
+    let finalTrainerId = jwtTrainerId;
+    if (hasRole(req.user, ['super_admin'])) {
+      const parsedGym = (bodyGymId === '' || bodyGymId === null || bodyGymId === undefined)
+        ? null
+        : Number(bodyGymId);
+      finalGymId = Number.isFinite(parsedGym) ? parsedGym : null;
+      finalTrainerId = bodyTrainerId || null;
+    }
+
     const newAccount = AccountsDatabase.create({
       user_id: req.user.id,
       plan,
-      gym_id: typeof gym_id === 'string' || typeof gym_id === 'number'
-        ? (gym_id === '' ? null : parseInt(gym_id, 10))
-        : null,
-      trainer_id: trainer_id || null,
+      gym_id: finalGymId,
+      trainer_id: finalTrainerId,
       estado: 'activo',
       sesiones_restantes: plan === 'premium' ? 24 : plan === 'elite' ? 48 : 0,
       sesiones_totales: plan === 'premium' ? 24 : plan === 'elite' ? 48 : 0,
@@ -172,14 +204,35 @@ const createAccount = (req, res) => {
 // Actualizar suscripción
 const updateAccount = (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!hasRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
       return res.status(403).json({ error: 'No tienes permiso para esta acción' });
     }
 
-    const { id } = req.params;
-    const updates = req.body;
+    const accountId = Number(req.params.id);
+    if (!Number.isFinite(accountId)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
+    const account = AccountsDatabase.getById(accountId);
+    if (!account) {
+      return res.status(404).json({ error: 'Cuenta no encontrada' });
+    }
 
-    const updatedAccount = AccountsDatabase.update(parseInt(id), updates);
+    // Admin gym solo puede modificar cuentas de SU gym.
+    if (!hasRole(req.user, ['super_admin'])) {
+      const ownGym = tokenGymId(req.user);
+      if (ownGym && Number(account.gym_id) !== ownGym) {
+        return res.status(403).json({ error: 'No puedes modificar cuentas de otro gimnasio' });
+      }
+    }
+
+    // No permitimos saltar de gym o de usuario desde este endpoint si no eres super_admin.
+    const updates = { ...req.body };
+    if (!hasRole(req.user, ['super_admin'])) {
+      delete updates.gym_id;
+      delete updates.user_id;
+    }
+
+    const updatedAccount = AccountsDatabase.update(accountId, updates);
 
     if (!updatedAccount) {
       return res.status(404).json({ error: 'Cuenta no encontrada' });
@@ -203,7 +256,7 @@ const cancelAccount = (req, res) => {
       return res.status(404).json({ error: 'Cuenta no encontrada' });
     }
 
-    if (req.user.id !== account.user_id && req.user.rol !== 'super_admin') {
+    if (req.user.id !== account.user_id && !hasRole(req.user, ['super_admin'])) {
       return res.status(403).json({ error: 'No tienes permiso para cancelar esta cuenta' });
     }
 
@@ -238,7 +291,7 @@ const renewPlan = (req, res) => {
       return res.status(404).json({ error: 'Cuenta no encontrada' });
     }
 
-    if (req.user.id !== account.user_id && req.user.rol !== 'super_admin') {
+    if (req.user.id !== account.user_id && !hasRole(req.user, ['super_admin'])) {
       return res.status(403).json({ error: 'No tienes permiso para renovar esta cuenta' });
     }
 
@@ -274,7 +327,7 @@ const renewPlan = (req, res) => {
 // Obtener cuentas próximas a vencer
 const getExpiringAccounts = (req, res) => {
   try {
-    if (!req.user || req.user.rol !== 'super_admin') {
+    if (!hasRole(req.user, ['super_admin'])) {
       return res.status(403).json({ error: 'Solo super admin puede ver esta información' });
     }
 
@@ -289,18 +342,26 @@ const getExpiringAccounts = (req, res) => {
 // Usar sesión (decrementar sesiones restantes)
 const useSession = (req, res) => {
   try {
-    const { id } = req.params;
+    const accountId = Number(req.params.id);
+    if (!Number.isFinite(accountId)) {
+      return res.status(400).json({ error: 'id inválido' });
+    }
 
-    const account = AccountsDatabase.getById(parseInt(id));
+    const account = AccountsDatabase.getById(accountId);
     if (!account) {
       return res.status(404).json({ error: 'Cuenta no encontrada' });
+    }
+
+    // Solo el dueño o super_admin puede consumir una sesión.
+    if (req.user.id !== account.user_id && !hasRole(req.user, ['super_admin'])) {
+      return res.status(403).json({ error: 'No puedes consumir sesiones de otra cuenta' });
     }
 
     if (account.sesiones_restantes <= 0) {
       return res.status(400).json({ error: 'No tienes sesiones disponibles' });
     }
 
-    const updated = AccountsDatabase.update(parseInt(id), {
+    const updated = AccountsDatabase.update(accountId, {
       sesiones_restantes: account.sesiones_restantes - 1,
     });
 

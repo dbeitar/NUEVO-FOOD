@@ -1,4 +1,5 @@
 const ProgramSettingsDatabase = require('../models/ProgramSettingsDatabase');
+const { hasRole } = require('../utils/accessControl');
 
 exports.getAllPrograms = (req, res) => {
   try {
@@ -21,6 +22,9 @@ exports.getProgramById = (req, res) => {
 
 exports.updateProgram = (req, res) => {
   try {
+    if (!hasRole(req.user, ['super_admin', 'admin_d28d'])) {
+      return res.status(403).json({ error: 'Solo administradores D28D pueden modificar programas' });
+    }
     const updated = ProgramSettingsDatabase.update(req.params.id, req.body);
     if (!updated) return res.status(404).json({ error: 'Programa no encontrado' });
     res.json({ success: true, data: updated });

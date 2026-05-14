@@ -1,10 +1,21 @@
 const RecipeDatabase = require('../models/RecipeDatabase');
+const { hasRole } = require('../utils/accessControl');
+
+// Filtra recetas marcadas como `incompleta:true` cuando el solicitante no es
+// admin. Mantiene el catálogo limpio frente al usuario final mientras seguimos
+// poblando ingredientes y pasos reales.
+const filterByAudience = (recipes, user) => {
+  if (hasRole(user, ['super_admin', 'admin_gimnasio', 'admin_marca', 'admin_food', 'admin_food_plan'])) {
+    return recipes;
+  }
+  return recipes.filter((r) => !r.incompleta);
+};
 
 const recipeController = {
   // Obtener todas las recetas
   getAllRecipes: (req, res) => {
     try {
-      const recipes = RecipeDatabase.getAll();
+      const recipes = filterByAudience(RecipeDatabase.getAll(), req.user);
       res.json({
         success: true,
         count: recipes.length,
@@ -23,6 +34,9 @@ const recipeController = {
       if (!recipe) {
         return res.status(404).json({ success: false, error: 'Receta no encontrada' });
       }
+      if (recipe.incompleta && !hasRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca', 'admin_food', 'admin_food_plan'])) {
+        return res.status(404).json({ success: false, error: 'Receta no disponible' });
+      }
       res.json({ success: true, data: recipe });
     } catch (error) {
       res.status(500).json({ success: false, error: 'Error al obtener receta' });
@@ -33,7 +47,7 @@ const recipeController = {
   searchRecipes: (req, res) => {
     try {
       const { query } = req.query;
-      const recipes = RecipeDatabase.search(query || '');
+      const recipes = filterByAudience(RecipeDatabase.search(query || ''), req.user);
       res.json({ success: true, count: recipes.length, data: recipes });
     } catch (error) {
       res.status(500).json({ success: false, error: 'Error en búsqueda' });
@@ -80,8 +94,7 @@ const recipeController = {
 
   importRecipes: (req, res) => {
     try {
-      const role = req.user?.rol || null;
-      if (!['super_admin', 'admin_gimnasio', 'admin'].includes(role)) {
+      if (!hasRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_food', 'admin_food_plan'])) {
         return res.status(403).json({ success: false, error: 'No tienes permisos para importar recetas' });
       }
       const { items, mode = 'add' } = req.body || {};

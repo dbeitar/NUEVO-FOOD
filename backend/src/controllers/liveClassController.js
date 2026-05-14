@@ -14,8 +14,11 @@ const canEditClass = (req, classItem = null) => {
 };
 const canAccessClass = (classItem, user) => {
   if (!classItem || !classItem.active) return false;
-  if (classItem.gym_id === null) return true;
-  return user && (user.gym_id === classItem.gym_id || user.gymId === classItem.gym_id);
+  if (classItem.gym_id === null || classItem.gym_id === undefined) return true;
+  if (!user) return false;
+  const userGym = user.gym_id ?? user.gymId ?? null;
+  // Comparación tolerante a string/number (JWT puede traer string, JSON number).
+  return userGym !== null && String(userGym) === String(classItem.gym_id);
 };
 
 const matchesProgram = (item, programId) => {
@@ -104,20 +107,34 @@ const createClass = (req, res) => {
     if (!isAdmin(req)) {
       return res.status(403).json({ error: 'No tienes permiso para crear clases' });
     }
-    const { title, description = '', zoom_link, start_time, end_time, gym_id = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40, source_module = 'gym' } = req.body || {};
+    const { title, description = '', zoom_link, start_time, end_time, gym_id: bodyGymId = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40, source_module = 'gym' } = req.body || {};
     if (!title || !zoom_link || !start_time || !end_time) {
       return res.status(400).json({ error: 'title, zoom_link, start_time y end_time son requeridos' });
     }
     if (source_module === 'd28d' && !hasRole(req.user, ['super_admin', 'admin_d28d'])) {
-      return res.status(403).json({ error: 'Solo D28D puede crear clases D28D bloqueadas' });
+      return res.status(403).json({ error: 'Solo D28D puede crear clases globales' });
     }
+
+    // Tenant: admin de gym solo puede crear clases para SU gym.
+    // super_admin y admin_d28d pueden indicar gym arbitrario (incl. null=global).
+    const jwtGym = req.user?.gym_id ?? req.user?.gymId ?? null;
+    let finalGymId;
+    if (hasRole(req.user, ['super_admin', 'admin_d28d'])) {
+      finalGymId = bodyGymId === '' || bodyGymId === undefined ? null : bodyGymId;
+    } else {
+      if (!jwtGym) {
+        return res.status(403).json({ error: 'Tu usuario no tiene gimnasio asociado para crear clases' });
+      }
+      finalGymId = jwtGym;
+    }
+
     const created = LiveClassDatabase.create({
       title,
       description,
       zoom_link,
       start_time,
       end_time,
-      gym_id: gym_id || null,
+      gym_id: finalGymId,
       active,
       is_global,
       day_label,
