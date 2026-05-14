@@ -1,4 +1,15 @@
 const FoodDatabase = require("../models/FoodDatabase");
+const { hasRole } = require("../utils/accessControl");
+
+const FOOD_ADMIN_ROLES = [
+  "super_admin",
+  "admin_food",
+  "admin_food_plan",
+  "admin_gimnasio",
+  "admin_marca",
+];
+
+const canManageFoods = (user) => hasRole(user, FOOD_ADMIN_ROLES);
 
 const foodController = {
   // Obtener todos los alimentos (con soporte de paginación opcional)
@@ -158,7 +169,7 @@ const foodController = {
 
   importFoods: (req, res) => {
     try {
-      if (req.user.rol !== "super_admin" && req.user.rol !== "admin_gimnasio") {
+      if (!canManageFoods(req.user)) {
         return res.status(403).json({
           success: false,
           error: "No tienes permisos para importar alimentos",
@@ -238,8 +249,7 @@ const foodController = {
   // ADMIN: Crear nuevo alimento
   createFood: (req, res) => {
     try {
-      // Verificar que sea admin
-      if (req.user.rol !== "super_admin" && req.user.rol !== "admin_gimnasio") {
+      if (!canManageFoods(req.user)) {
         return res.status(403).json({
           success: false,
           error: "No tienes permisos para crear alimentos",
@@ -305,8 +315,7 @@ const foodController = {
   // ADMIN: Actualizar alimento
   updateFood: (req, res) => {
     try {
-      // Verificar que sea admin
-      if (req.user.rol !== "super_admin" && req.user.rol !== "admin_gimnasio") {
+      if (!canManageFoods(req.user)) {
         return res.status(403).json({
           success: false,
           error: "No tienes permisos para editar alimentos",
@@ -314,9 +323,16 @@ const foodController = {
       }
 
       const { foodId } = req.params;
-      const updates = req.body;
+      const updates = req.body || {};
+      const parsedId = parseInt(foodId, 10);
+      if (!Number.isInteger(parsedId) || parsedId <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: "El parámetro foodId no es válido",
+        });
+      }
 
-      const updated = FoodDatabase.update(parseInt(foodId), {
+      const updated = FoodDatabase.update(parsedId, {
         ...updates,
         cantidad: updates.cantidad ? parseFloat(updates.cantidad) : undefined,
         calorias: updates.calorias ? parseFloat(updates.calorias) : undefined,
@@ -350,8 +366,7 @@ const foodController = {
   // ADMIN: Eliminar alimento (soft delete)
   deleteFood: (req, res) => {
     try {
-      // Verificar que sea admin
-      if (req.user.rol !== "super_admin" && req.user.rol !== "admin_gimnasio") {
+      if (!canManageFoods(req.user)) {
         return res.status(403).json({
           success: false,
           error: "No tienes permisos para eliminar alimentos",
@@ -359,8 +374,15 @@ const foodController = {
       }
 
       const { foodId } = req.params;
+      const parsedId = parseInt(foodId, 10);
+      if (!Number.isInteger(parsedId) || parsedId <= 0) {
+        return res.status(400).json({
+          success: false,
+          error: "El parámetro foodId no es válido",
+        });
+      }
 
-      const deleted = FoodDatabase.delete(parseInt(foodId));
+      const deleted = FoodDatabase.delete(parsedId);
 
       if (!deleted) {
         return res.status(404).json({
@@ -384,7 +406,7 @@ const foodController = {
   // ADMIN: Crear respaldo manual del archivo de alimentos
   backupFoods: (req, res) => {
     try {
-      if (req.user.rol !== "super_admin" && req.user.rol !== "admin_gimnasio") {
+      if (!canManageFoods(req.user)) {
         return res.status(403).json({
           success: false,
           error: "No tienes permisos para crear respaldos",

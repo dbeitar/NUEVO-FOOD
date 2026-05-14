@@ -295,13 +295,29 @@ Devuelve SOLO un JSON válido con esta estructura:
   // Análisis de balance nutricional del día
   analyzeDayBalance: async (req, res) => {
     try {
-      const { currentIntake, targetGoals } = req.body;
+      const { currentIntake, targetGoals } = req.body || {};
 
-      if (!currentIntake || !targetGoals) {
+      if (!currentIntake || typeof currentIntake !== 'object'
+          || !targetGoals || typeof targetGoals !== 'object') {
         return res.status(400).json({
           success: false,
-          error: 'Se requiere currentIntake y targetGoals',
+          error: 'Se requiere currentIntake y targetGoals (objetos)',
         });
+      }
+      const requiredKeys = ['calorias', 'proteina', 'carbohidratos', 'grasas'];
+      for (const k of requiredKeys) {
+        if (typeof currentIntake[k] !== 'number' || typeof targetGoals[k] !== 'number') {
+          return res.status(400).json({
+            success: false,
+            error: `currentIntake.${k} y targetGoals.${k} deben ser numéricos`,
+          });
+        }
+        if (targetGoals[k] <= 0) {
+          return res.status(400).json({
+            success: false,
+            error: `targetGoals.${k} debe ser mayor a 0`,
+          });
+        }
       }
 
       // Calcular porcentajes
@@ -364,9 +380,25 @@ Devuelve SOLO un JSON válido con esta estructura:
         currentIntake,
         targetGoals,
         objetivo
-      } = req.body;
+      } = req.body || {};
 
-      // Determinar qué nutriente falta más
+      if (!currentIntake || typeof currentIntake !== 'object'
+          || !targetGoals || typeof targetGoals !== 'object') {
+        return res.status(400).json({
+          success: false,
+          error: 'Se requiere currentIntake y targetGoals (objetos)',
+        });
+      }
+      const requiredKeys = ['calorias', 'proteina', 'carbohidratos', 'grasas'];
+      for (const k of requiredKeys) {
+        if (typeof currentIntake[k] !== 'number' || typeof targetGoals[k] !== 'number') {
+          return res.status(400).json({
+            success: false,
+            error: `currentIntake.${k} y targetGoals.${k} deben ser numéricos`,
+          });
+        }
+      }
+
       const faltantes = {
         calorias: targetGoals.calorias - currentIntake.calorias,
         proteina: targetGoals.proteina - currentIntake.proteina,
@@ -406,8 +438,16 @@ Devuelve SOLO un JSON válido con esta estructura:
     }
   },
 
-  // Generar receta (IA o simulada por fallback)
+  // Generar receta (mock).
+  // Deshabilitado por defecto: el módulo de recetas usa el catálogo curado.
+  // Para reactivar en pruebas internas, exportar ENABLE_RECIPE_MOCK=true.
   generateRecipe: async (req, res) => {
+    if (String(process.env.ENABLE_RECIPE_MOCK || '').toLowerCase() !== 'true') {
+      return res.status(404).json({
+        success: false,
+        error: 'Endpoint no disponible. Usa el catálogo de recetas.',
+      });
+    }
     const { mealType = 'Almuerzo', ingredients = [], preferences = '' } = req.body || {};
     const buildMock = () => ({
       success: true,
@@ -430,7 +470,6 @@ Devuelve SOLO un JSON válido con esta estructura:
       },
     });
     try {
-      // Por ahora la receta se mantiene en mock/fallback para evitar dependencias externas.
       return res.json(buildMock());
     } catch {
       return res.json(buildMock());

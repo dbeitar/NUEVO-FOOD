@@ -667,13 +667,20 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-// Seed/sync controlados por env
+// Seed/sync controlados por env.
+// El seed D28D solo corre cuando SEED_DEMO=true (por defecto: false en piloto/prod).
 syncDemoAndCoreAccounts();
-try {
-  const seeded = seedD28DData();
-  console.log(`[D28D] Datos demo listos (gym ${seeded.gym_id})`);
-} catch (error) {
-  console.error('Error preparando datos demo D28D:', error.message);
+const shouldSeedDemo = String(process.env.SEED_DEMO || '').toLowerCase() === 'true'
+  || (NODE_ENV === 'development' && process.env.SEED_DEMO === undefined);
+if (shouldSeedDemo) {
+  try {
+    const seeded = seedD28DData();
+    console.log(`[D28D] Datos demo listos (gym ${seeded.gym_id})`);
+  } catch (error) {
+    console.error('Error preparando datos demo D28D:', error.message);
+  }
+} else {
+  console.log('[D28D] Seed demo deshabilitado (SEED_DEMO!=true).');
 }
 
 app.listen(PORT, () => {
