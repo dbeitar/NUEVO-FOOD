@@ -24,6 +24,7 @@ const fitnessTestRoutes = require('./src/routes/fitnessTestRoutes');
 const ecosystemRoutes = require('./src/routes/ecosystemRoutes');
 const trainerMastersRoutes = require('./src/routes/trainerMastersRoutes');
 const programRoutes = require('./src/routes/programRoutes');
+const cycleRoutes = require('./src/routes/cycleRoutes');
 const seedD28DData = require('./src/seedD28DData');
 const authMiddleware = require('./src/middleware/auth');
 const { hydrateAccess } = require('./src/utils/accessControl');
@@ -714,6 +715,7 @@ app.use('/api/fitness-tests', fitnessTestRoutes);
 app.use('/api/ecosystem', ecosystemRoutes);
 app.use('/api/trainer-masters', trainerMastersRoutes);
 app.use('/api/programs', programRoutes);
+app.use('/api/cycles', cycleRoutes);
 
 // Manejo de errores final (incluye CORS rechazado)
 // eslint-disable-next-line no-unused-vars

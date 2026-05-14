@@ -101,6 +101,49 @@ class ProgramSettingsDatabase {
     return this._stripSecrets(programs[index]);
   }
 
+  // Crea un nuevo programa. El `id` se deriva del `name` (slug) si no se
+  // pasa. Nunca se persisten contraseñas: las credenciales Zoom viven
+  // en variables de entorno y se inyectan solo cuando un endpoint
+  // interno arranca una sesión.
+  create(payload) {
+    const programs = this._readRaw();
+    const safe = this._stripSecretFields(payload || {});
+    const baseId = safe.id || this._slugify(safe.name || '');
+    if (!baseId) return { error: 'name (o id) es requerido' };
+    if (programs.find((p) => p.id === baseId)) {
+      return { error: `Ya existe un programa con id "${baseId}"` };
+    }
+    const program = {
+      id: baseId,
+      name: safe.name || baseId,
+      color: safe.color || '#64748b',
+      active: safe.active !== false,
+      active_cycle_id: Number(safe.active_cycle_id) || 1,
+      zoom_email: safe.zoom_email || '',
+      ...(Array.isArray(safe.zoom_accounts) ? { zoom_accounts: safe.zoom_accounts } : {}),
+    };
+    programs.push(program);
+    fs.writeFileSync(DATA_FILE, JSON.stringify(programs, null, 2));
+    return { data: this._stripSecrets(program) };
+  }
+
+  delete(id) {
+    const programs = this._readRaw();
+    const index = programs.findIndex((p) => p.id === id);
+    if (index === -1) return { error: 'Programa no encontrado', status: 404 };
+    const removed = programs.splice(index, 1)[0];
+    fs.writeFileSync(DATA_FILE, JSON.stringify(programs, null, 2));
+    return { data: this._stripSecrets(removed) };
+  }
+
+  _slugify(s) {
+    return String(s).toLowerCase()
+      .normalize('NFD').replace(/[\u0300-\u036f]/g, '')
+      .replace(/[^a-z0-9]+/g, '_')
+      .replace(/^_+|_+$/g, '')
+      .slice(0, 40);
+  }
+
   _readRaw() {
     try {
       const data = fs.readFileSync(DATA_FILE, 'utf8');
