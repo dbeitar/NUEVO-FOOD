@@ -6,7 +6,7 @@ const viewOptions = [
   { id: 'month', label: 'Mensual' },
   { id: 'week', label: 'Semanal' },
   { id: 'day', label: 'Diaria' },
-  { id: 'upcoming', label: 'Proximas' },
+  { id: 'upcoming', label: 'Próximas' },
   { id: 'graphic', label: 'Horario Gráfico' },
 ];
 
@@ -37,7 +37,7 @@ function getClassStatus(item) {
   const start = new Date(item.start_time);
   const end = new Date(item.end_time);
   if (now >= start && now <= end) return 'En curso';
-  if (now >= new Date(start.getTime() - 5 * 60000) && now < start) return 'Proxima';
+  if (now >= new Date(start.getTime() - 5 * 60000) && now < start) return 'Próxima';
   if (now > end) return 'Completada';
   return 'Programada';
 }
@@ -140,7 +140,7 @@ export default function LiveClasses({ programId }) {
         <div className="flex items-start justify-between gap-3">
           <div>
             <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500 font-semibold">
-              {item.source_module === 'd28d' || item.is_global ? 'D28D bloqueado' : item.gym_id ? `Gym ${item.gym_id}` : 'Privado'}
+              {item.source_module === 'd28d' || item.is_global ? 'Programa D28D' : item.gym_id ? 'Tu gimnasio' : 'Clase'}
             </div>
             <h3 className={`${compact ? 'text-sm' : 'text-xl'} font-semibold text-stone-900 mt-1`}>{item.title}</h3>
             {!compact && <p className="text-sm text-stone-600 mt-2">{item.description || 'Clase en vivo de entrenamiento guiado.'}</p>}
@@ -209,8 +209,8 @@ export default function LiveClasses({ programId }) {
   return (
     <div className="max-w-7xl mx-auto space-y-6">
       <div className="bg-white border border-slate-200 rounded-lg p-5">
-        <h2 className="text-3xl font-bold text-stone-900">Clases en Vivo</h2>
-        <p className="text-stone-600 mt-2">Calendario D28D bloqueado para consumo de marcas blancas. La asistencia se marca al entrar al Zoom.</p>
+        <h2 className="text-3xl font-bold text-stone-900">Clases en vivo</h2>
+        <p className="text-stone-600 mt-2">Agenda y reserva tus clases. La asistencia se confirma al entrar al Zoom.</p>
         <div className="mt-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex flex-wrap gap-2">
             {viewOptions.map((option) => (

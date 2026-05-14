@@ -1,13 +1,13 @@
 import { useState, useEffect } from 'react';
 import api from '../services/api';
-import { Calendar, Clock, User, ExternalLink, CheckCircle, Users, Info } from 'lucide-react';
+import { Calendar, User, ExternalLink, CheckCircle, Users, Info } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 
 export default function LiveClassSchedule({ programId }) {
   const { user } = useAuth();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [, setError] = useState('');
   const [enrolling, setEnrolling] = useState(null);
 
   const days = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
@@ -27,7 +27,7 @@ export default function LiveClassSchedule({ programId }) {
       const params = programId ? { program_id: programId } : {};
       const res = await api.get('/live-classes', { params });
       setClasses(res.data.data || []);
-    } catch (err) {
+    } catch {
       setError('Error al cargar el horario');
     } finally {
       setLoading(false);
@@ -36,6 +36,8 @@ export default function LiveClassSchedule({ programId }) {
 
   useEffect(() => {
     fetchClasses();
+    // fetchClasses se redefine en cada render; el efecto reacciona solo al programId.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [programId]);
 
   const handleEnroll = async (classId) => {
@@ -91,13 +93,9 @@ export default function LiveClassSchedule({ programId }) {
             <Calendar className="w-8 h-8 text-lime-400" />
           </div>
           <div>
-            <h2 className="text-3xl font-black tracking-tight uppercase leading-none">Horario de Clases</h2>
-            <p className="text-indigo-200 font-bold mt-1 text-xs uppercase tracking-widest italic">Semana I - Programación Modular</p>
+            <h2 className="text-3xl font-black tracking-tight uppercase leading-none">Horario de clases</h2>
+            <p className="text-indigo-200 font-bold mt-1 text-xs uppercase tracking-widest italic">Programación semanal</p>
           </div>
-        </div>
-        <div className="text-right hidden sm:block">
-          <div className="text-[10px] font-black uppercase tracking-[0.3em] text-lime-400">D28D GLOBAL</div>
-          <div className="text-xl font-black italic">METODO D28D</div>
         </div>
       </div>
 

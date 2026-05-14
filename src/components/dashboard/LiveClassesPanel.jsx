@@ -193,7 +193,7 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
                 color: '#78350f',
               }}
             >
-              Aún no tienes un programa asignado. Hablá con tu coach para que te lo asigne.
+              Aún no tienes un programa asignado. Habla con tu coach para que te asigne uno.
             </div>
           )}
         </div>

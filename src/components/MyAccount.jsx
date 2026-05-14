@@ -199,16 +199,23 @@ export default function MyAccount() {
               <p className="text-stone-400 text-sm uppercase tracking-wider">{t('common.email', 'Email')}</p>
               <p className="font-medium text-lg">{user?.email}</p>
             </div>
-            <div className="md:col-span-2 mt-2">
-              <p className="text-stone-400 text-sm uppercase tracking-wider mb-2">{t('common.roles', 'Roles Asignados')}</p>
-              <div className="flex flex-wrap gap-2">
-                {(user?.roles && user.roles.length ? user.roles : [user?.rol || 'usuario_final']).map(r => (
-                  <span key={r} className="px-3 py-1 bg-lime-500/20 text-lime-300 border border-lime-500/30 rounded-full text-xs font-semibold tracking-wide uppercase">
-                    {r.replace(/_/g, ' ')}
-                  </span>
-                ))}
-              </div>
-            </div>
+            {(() => {
+              const roles = user?.roles && user.roles.length ? user.roles : [user?.rol || 'usuario_final'];
+              const adminLike = roles.some((r) => r !== 'usuario_final');
+              if (!adminLike) return null;
+              return (
+                <div className="md:col-span-2 mt-2">
+                  <p className="text-stone-400 text-sm uppercase tracking-wider mb-2">{t('common.roles', 'Permisos')}</p>
+                  <div className="flex flex-wrap gap-2">
+                    {roles.map((r) => (
+                      <span key={r} className="px-3 py-1 bg-lime-500/20 text-lime-300 border border-lime-500/30 rounded-full text-xs font-semibold tracking-wide uppercase">
+                        {r.replace(/_/g, ' ')}
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </div>
       </header>
