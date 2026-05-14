@@ -170,19 +170,32 @@ Backend huérfano (no montado en `server.js`):
 9. **Programas**: `updateProgram` exige `super_admin`.
 10. **Secretos**: borrar `.env.bak`, añadir `.env*.bak`, `*.env.bak` al `.gitignore`. Documentar rotación de JWT.
 
-### Sprint piloto (1–2 semanas) — fixes P1
+### Sprint piloto (1–2 semanas) — fixes P1 ✅ aplicados (2026-05-14)
 
-- Unificar handler de reset-password (eliminar duplicado en `server.js`).
-- Eliminar `generateRecipe` mock o esconder el botón.
-- Consolidar verbos de cards (1 verbo: "Abrir").
-- Reemplazar "Maestro X" en headers admin.
-- Reemplazar `req.user.rol` directo por `hasRole` en `accountsController`, `foodController`, `recipeController`.
-- Gated `seedD28DData()` con `SEED_DEMO=true`.
-- Endpoints públicos: decidir y documentar.
-- Validaciones 400 explícitas en `aiController.analyzeDayBalance` + `getQuickSuggestions` + `accountsController.*`.
-- `AdminTrainingManager`: 2 tabs (Planes, Editor); diferir Stats post-piloto.
-- Bloque "Plan + Avance" → componente compartido.
-- FAB "Asistente" estado centralizado (Dashboard).
+- ✅ Unificar handler de reset-password (eliminar duplicado en `server.js`).
+- ✅ `generateRecipe` mock deshabilitado por defecto (404 salvo flag
+  `ENABLE_RECIPE_MOCK=true`) y botón "Chef IA" en frontend oculto detrás
+  de `VITE_ENABLE_RECIPE_MOCK`.
+- ✅ Cards de admin consolidadas con un único verbo "Abrir".
+- ✅ Headers admin: "Maestro X" → "Plan de Alimentación",
+  "D28D · Programas", "Entrenadores", "Alimentos (catálogo)",
+  "Calculadora".
+- ✅ `req.user.rol` directo reemplazado por `hasRole` en
+  `accountsController`, `foodController` (5 puntos) y `recipeController`.
+- ✅ `seedD28DData()` gated por `SEED_DEMO=true` (con fallback en dev).
+- ✅ Validaciones 400 explícitas en `aiController.analyzeDayBalance` y
+  `getQuickSuggestions` + foodId en `foodController`. `accountsController`
+  ya las tenía desde el P0.
+- ✅ `AdminTrainingManager` con 2 tabs (Planes, Editor); Stats diferido.
+- ✅ FAB "Asistente" restringido al usuario final con módulo food-plan
+  activo (antes lo veían coach/admins).
+- 🟡 Bloque "Plan + Avance" como componente compartido → diferido al
+  sprint preproducción (no bloquea piloto; `MyPlanView` ya factoriza la
+  vista del usuario final).
+- 🟡 Endpoints públicos (`/api/health`, login/register/reset si
+  `USE_DB_AUTH=false`): documentados aquí. Decisión: se mantienen como
+  están, solo health checks son anónimos. Auth está gateada por
+  `authLimiter` (20 req/15 min/IP) en cualquier entorno.
 
 ### Sprint preproducción (3–4 semanas)
 
@@ -317,8 +330,14 @@ Backend huérfano (no montado en `server.js`):
 
 ## 6. Próximos pasos
 
-1. Aplicar P0 en commits semánticos atómicos.
-2. Validar `npm run build` + arranque del backend en `:3001`.
-3. Probar con las 11 credenciales demo (`Demo!2026`) los flujos clave.
-4. Etiquetar release `pre-piloto-v1`.
-5. Activar piloto cerrado con 1 gym y 10–20 usuarios.
+1. ✅ Aplicar P0 en commits semánticos atómicos.
+2. ✅ Aplicar P1 en commits semánticos atómicos.
+3. ✅ Validar `npm run build` + `npm run lint` (0 errores, 2 warnings
+   preexistentes en `AuditDashboard` y `LiveClasses`).
+4. ⏭ Probar con las 11 credenciales demo (`Demo!2026`) los flujos clave
+   contra el ecosistema consolidado (login → home por rol → mi plan →
+   registrar comida → ver clase agendada → entrar a Zoom).
+5. ⏭ Etiquetar release `pre-piloto-v1`.
+6. ⏭ Activar piloto cerrado con 1 gym y 10–20 usuarios.
+7. ⏭ Sprint preproducción (P2): naming, README, Terms/Privacy,
+   `Progress.jsx` 4 KPIs, touch targets ≥ 44px, code-splitting bundle.
