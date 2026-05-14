@@ -79,6 +79,20 @@ const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true';
 const ENABLE_DEV_ROUTES = !IS_PROD && String(process.env.ENABLE_DEV_ROUTES || '').toLowerCase() === 'true';
 const SEED_DEMO = String(process.env.SEED_DEMO || '').toLowerCase() === 'true';
 
+// Matriz de cuentas piloto. Cada entrada se sincroniza al arrancar
+// cuando SEED_DEMO=true (crea o actualiza la contraseña). El email
+// `demo` (público) usa DEMO_PASSWORD; el resto, CORE_PASSWORD.
+const PILOT_ACCOUNTS = [
+  { email: 'admin@foodplan.local',           nombre: 'Super Admin',         rol: 'super_admin',     bucket: 'core' },
+  { email: 'admin.d28d@foodplan.local',      nombre: 'Admin D28D',          rol: 'admin_d28d',      bucket: 'core' },
+  { email: 'admin.food@foodplan.local',      nombre: 'Admin Plan Alim.',    rol: 'admin_food_plan', bucket: 'core' },
+  { email: 'admin.entrenador@foodplan.local',nombre: 'Admin Entrenadores',  rol: 'admin_training',  bucket: 'core' },
+  { email: 'gym.demo@foodplan.local',        nombre: 'Admin Gym Demo',      rol: 'admin_gimnasio',  bucket: 'core' },
+  { email: 'coach.demo@foodplan.local',      nombre: 'Coach Demo',          rol: 'entrenador',      bucket: 'core' },
+  { email: 'usuario.demo@foodplan.local',    nombre: 'Usuario Demo',        rol: 'usuario_final',   bucket: 'core' },
+  { email: 'demo+20260302@foodplan.local',   nombre: 'Demo Público',        rol: 'usuario_final',   bucket: 'demo' },
+];
+
 async function syncDemoAndCoreAccounts() {
   // Opt-in. Sin SEED_DEMO=true este bloque no toca usuarios.
   if (!SEED_DEMO) return;
@@ -90,38 +104,47 @@ async function syncDemoAndCoreAccounts() {
     return;
   }
   try {
-    const demoEmail = (process.env.DEMO_USER_EMAIL || 'demo+20260302@foodplan.local').trim();
-    const coreEmails = (process.env.CORE_ACCOUNT_EMAILS || '')
+    // Cuentas extra opcionales heredadas de CORE_ACCOUNT_EMAILS.
+    const extraCore = (process.env.CORE_ACCOUNT_EMAILS || '')
       .split(',')
       .map((s) => s.trim())
-      .filter(Boolean);
+      .filter(Boolean)
+      .filter((e) => !PILOT_ACCOUNTS.some((a) => a.email === e))
+      .map((e) => ({ email: e, nombre: e, rol: 'super_admin', bucket: 'core' }));
+
+    const all = [...PILOT_ACCOUNTS, ...extraCore];
     const demoHash = await bcryptjs.hash(demoPassword, 10);
     const coreHash = await bcryptjs.hash(corePassword, 10);
+
+    let created = 0, updated = 0;
     if (USE_DB_AUTH) {
-      for (const email of coreEmails) {
+      for (const acc of all) {
+        const hash = acc.bucket === 'demo' ? demoHash : coreHash;
         try {
-          await db.query('UPDATE users SET clave_hash = $1 WHERE email = $2', [coreHash, email]);
+          const r = await db.query('SELECT id FROM users WHERE email = $1', [acc.email]);
+          if (r.rows && r.rows.length > 0) {
+            await db.query('UPDATE users SET clave_hash = $1, rol = $2 WHERE email = $3', [hash, acc.rol, acc.email]);
+            updated++;
+          } else {
+            await db.query('INSERT INTO users (nombre, email, clave_hash, rol) VALUES ($1, $2, $3, $4)', [acc.nombre, acc.email, hash, acc.rol]);
+            created++;
+          }
         } catch { /* noop */ }
       }
-      try {
-        const r = await db.query('SELECT id FROM users WHERE email = $1', [demoEmail]);
-        const exists = r.rows && r.rows.length > 0;
-        if (exists) {
-          await db.query('UPDATE users SET clave_hash = $1 WHERE email = $2', [demoHash, demoEmail]);
-        } else {
-          await db.query('INSERT INTO users (nombre, email, clave_hash, rol) VALUES ($1, $2, $3, $4)', ['Demo Público', demoEmail, demoHash, 'usuario_final']);
-        }
-      } catch { /* noop */ }
     } else {
-      for (const email of coreEmails) {
-        const u = userDB.getByEmail(email);
-        if (u) userDB.update(u.id, { clave_hash: coreHash });
+      for (const acc of all) {
+        const hash = acc.bucket === 'demo' ? demoHash : coreHash;
+        const existing = userDB.getByEmail(acc.email);
+        if (existing) {
+          userDB.update(existing.id, { clave_hash: hash, rol: acc.rol, roles: [acc.rol] });
+          updated++;
+        } else {
+          userDB.create({ nombre: acc.nombre, email: acc.email, clave_hash: hash, rol: acc.rol, roles: [acc.rol] });
+          created++;
+        }
       }
-      const du = userDB.getByEmail(demoEmail);
-      if (du) userDB.update(du.id, { clave_hash: demoHash });
-      else userDB.create({ nombre: 'Demo Público', email: demoEmail, clave_hash: demoHash, rol: 'usuario_final' });
     }
-    console.log('[SEED_DEMO] Sincronización completada.');
+    console.log(`[SEED_DEMO] Cuentas piloto sincronizadas: ${created} creadas, ${updated} actualizadas.`);
   } catch (e) {
     console.error('[SEED_DEMO] Error:', e.message);
   }
