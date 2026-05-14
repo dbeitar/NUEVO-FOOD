@@ -18,9 +18,17 @@ const canAccessClass = (classItem, user) => {
   return user && (user.gym_id === classItem.gym_id || user.gymId === classItem.gym_id);
 };
 
+const matchesProgram = (item, programId) => {
+  if (!programId) return true;
+  return String(item.program_id || '') === String(programId);
+};
+
 const getPublicClasses = (req, res) => {
   try {
-    const classes = LiveClassDatabase.getAll().filter((item) => item.active && (item.gym_id === null || canAccessClass(item, req.user)));
+    const programId = req.query.program_id || null;
+    const classes = LiveClassDatabase.getAll()
+      .filter((item) => item.active && (item.gym_id === null || canAccessClass(item, req.user)))
+      .filter((item) => matchesProgram(item, programId));
     return res.json({ success: true, data: classes });
   } catch (error) {
     console.error('Error obteniendo clases en vivo:', error);
@@ -33,7 +41,9 @@ const getAdminClasses = (req, res) => {
     if (!isAdmin(req)) {
       return res.status(403).json({ error: 'No tienes permiso para ver las clases' });
     }
-    return res.json({ success: true, data: LiveClassDatabase.getAll() });
+    const programId = req.query.program_id || null;
+    const classes = LiveClassDatabase.getAll().filter((item) => matchesProgram(item, programId));
+    return res.json({ success: true, data: classes });
   } catch (error) {
     console.error('Error obteniendo clases admin:', error);
     return res.status(500).json({ error: 'Error obteniendo clases en vivo' });

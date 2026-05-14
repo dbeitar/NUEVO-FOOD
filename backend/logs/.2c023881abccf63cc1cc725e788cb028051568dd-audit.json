@@ -14,6 +14,11 @@
             "date": 1778722259004,
             "name": "/Users/cesargomez/Desktop/MVPFOOD/backend/logs/error-2026-05-13.log",
             "hash": "564167663cf2435defdd8c2b607c26b6879da435483fd2cb5ff38bb86df29753"
+        },
+        {
+            "date": 1778761139548,
+            "name": "/Users/cesargomez/Desktop/MVPFOOD/backend/logs/error-2026-05-14.log",
+            "hash": "25dde964a0f4484c5076d3803caacdaeae8aef82a66ccbfa205070c81eb32100"
         }
     ],
     "hashType": "sha256"

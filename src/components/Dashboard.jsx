@@ -198,10 +198,17 @@ export default function Dashboard() {
       }
     }
 
-    // super_admin: barra principal corta; el resto va en la barra rápida.
+    // super_admin: única navegación que ve Auditoría.
+    if (hasAnyRole(['super_admin'])) {
+      return [
+        { id: 'home', label: 'Inicio' },
+        { id: 'audit', label: 'Auditoría' },
+        { id: 'myaccount', label: 'Mi cuenta' },
+      ];
+    }
+    // Fallback defensivo (rol desconocido): solo Inicio + Mi cuenta.
     return [
       { id: 'home', label: 'Inicio' },
-      { id: 'audit', label: 'Auditoría' },
       { id: 'myaccount', label: 'Mi cuenta' },
     ];
   }, [isFinal, roles, hasAnyRole, services]);
@@ -238,6 +245,7 @@ export default function Dashboard() {
       const canProgram = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']);
       return (
         <LiveClassesPanel
+          user={user}
           canProgram={canProgram}
           programId={selectedProgram}
           onBack={onBackToHome}
@@ -269,7 +277,7 @@ export default function Dashboard() {
       case 'adminliveclasses':
       case 'liveclasses': {
         const canProgram = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']);
-        return <LiveClassesPanel canProgram={canProgram} programId={selectedProgram} />;
+        return <LiveClassesPanel user={user} canProgram={canProgram} programId={selectedProgram} />;
       }
       case 'programs': return <AdminProgramsManager />;
       case 'myplan':

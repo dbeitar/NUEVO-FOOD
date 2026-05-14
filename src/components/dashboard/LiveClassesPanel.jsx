@@ -1,9 +1,15 @@
 // Panel unificado de Clases en Vivo con dos tabs:
 //   - Programar: vista admin (crea/edita plantillas y reuniones).
 //   - Calendario: vista usuario (se inscribe y entra al Zoom desde aquí).
-// Para usuario final sin permiso de programar, solo se muestra el tab Calendario.
+//
+// Filtro por programa:
+//   - Usuario final → solo el calendario de su programa asignado
+//     (user.program_id o user.module_access.d28d_program). Si no tiene
+//     programa asignado, ve todas las clases globales.
+//   - Admin → selector de programa visible arriba del calendario.
 
-import { useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
+import api from '../../services/api';
 import AdminLiveClasses from '../AdminLiveClasses';
 import LiveClasses from '../LiveClasses';
 
@@ -12,8 +18,59 @@ const TABS = {
   CALENDAR: 'calendar',
 };
 
-export default function LiveClassesPanel({ canProgram = false, programId = null, onBack = null }) {
+// Programa asignado al usuario (si lo tiene). Es lectura defensiva: el campo
+// puede venir en distintos lados según cómo el coach lo asignó.
+function getAssignedProgramId(user) {
+  if (!user) return null;
+  return (
+    user.program_id
+    || user.programa_d28d
+    || user.module_access?.d28d_program
+    || user.module_access?.program
+    || null
+  );
+}
+
+export default function LiveClassesPanel({ user = null, canProgram = false, programId: forcedProgramId = null, onBack = null }) {
   const [tab, setTab] = useState(canProgram ? TABS.PROGRAM : TABS.CALENDAR);
+  const [programs, setPrograms] = useState([]);
+  const [selectedProgram, setSelectedProgram] = useState(forcedProgramId || '');
+
+  // Programa fijo para usuario final (no admin).
+  const assignedProgram = useMemo(() => getAssignedProgramId(user), [user]);
+
+  // Cargar catálogo de programas para el selector del admin.
+  useEffect(() => {
+    if (!canProgram) return;
+    let active = true;
+    (async () => {
+      try {
+        const r = await api.get('/programs');
+        const arr = r.data?.data || r.data || [];
+        if (active && Array.isArray(arr)) setPrograms(arr);
+      } catch {
+        if (active) setPrograms([]);
+      }
+    })();
+    return () => { active = false; };
+  }, [canProgram]);
+
+  // El programId real que pasamos al calendario.
+  // - Admin: lo que tenga seleccionado en el dropdown (vacío = todos).
+  // - Usuario final: si tiene programa asignado, ese; si no, todos.
+  const effectiveProgramId = canProgram
+    ? (selectedProgram || null)
+    : (assignedProgram || forcedProgramId || null);
+
+  const selectedProgramLabel = useMemo(() => {
+    if (canProgram) {
+      if (!selectedProgram) return 'Todos los programas';
+      const p = programs.find((x) => (x.id || x.code || x.slug) === selectedProgram);
+      return p?.name || p?.title || p?.nombre || selectedProgram;
+    }
+    if (!assignedProgram) return null;
+    return assignedProgram;
+  }, [canProgram, selectedProgram, programs, assignedProgram]);
 
   return (
     <div className="dashboard-main-view">
@@ -25,8 +82,10 @@ export default function LiveClassesPanel({ canProgram = false, programId = null,
           <h2>Clases en Vivo</h2>
           <p style={{ color: '#475569', margin: 0 }}>
             {canProgram
-              ? 'Programa las plantillas de clases o agéndate desde el calendario.'
-              : 'Agéndate en una clase y entra al Zoom desde el calendario.'}
+              ? 'Programa plantillas o revisa el calendario y filtra por programa.'
+              : assignedProgram
+                ? `Calendario de tu programa asignado.`
+                : 'Agéndate en una clase y entra al Zoom desde el calendario.'}
           </p>
         </div>
         {onBack && (
@@ -69,10 +128,83 @@ export default function LiveClassesPanel({ canProgram = false, programId = null,
         </button>
       </div>
 
+      {/* Filtro por programa visible solo en tab Calendario */}
+      {tab === TABS.CALENDAR && (
+        <div
+          style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.75rem',
+            marginBottom: '0.75rem',
+            flexWrap: 'wrap',
+          }}
+        >
+          {canProgram ? (
+            <>
+              <label htmlFor="program-filter" style={{ fontSize: '0.875rem', color: '#475569', fontWeight: 500 }}>
+                Programa:
+              </label>
+              <select
+                id="program-filter"
+                value={selectedProgram}
+                onChange={(e) => setSelectedProgram(e.target.value)}
+                className="input"
+                style={{ padding: '0.4rem 0.6rem', maxWidth: 260 }}
+                aria-label="Filtrar calendario por programa"
+              >
+                <option value="">Todos los programas</option>
+                {programs.map((p) => {
+                  const id = p.id || p.code || p.slug;
+                  const name = p.name || p.title || p.nombre || id;
+                  return (
+                    <option key={id} value={id}>{name}</option>
+                  );
+                })}
+              </select>
+              <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
+                Mostrando: {selectedProgramLabel}
+              </span>
+            </>
+          ) : assignedProgram ? (
+            <div
+              style={{
+                display: 'inline-flex',
+                alignItems: 'center',
+                gap: '0.5rem',
+                padding: '0.4rem 0.8rem',
+                background: '#f1f5f9',
+                borderRadius: 8,
+                fontSize: '0.85rem',
+                color: '#0f172a',
+              }}
+            >
+              <span aria-hidden="true">●</span>
+              <span>
+                Tu programa: <strong>{selectedProgramLabel}</strong>
+              </span>
+            </div>
+          ) : (
+            <div
+              style={{
+                padding: '0.4rem 0.8rem',
+                background: '#fef3c7',
+                borderRadius: 8,
+                fontSize: '0.85rem',
+                color: '#78350f',
+              }}
+            >
+              Aún no tienes un programa asignado. Hablá con tu coach para que te lo asigne.
+            </div>
+          )}
+        </div>
+      )}
+
       {/* Contenido */}
       <div role="tabpanel">
         {tab === TABS.PROGRAM && canProgram && <AdminLiveClasses />}
-        {tab === TABS.CALENDAR && <LiveClasses programId={programId} />}
+        {tab === TABS.CALENDAR && (
+          <LiveClasses key={effectiveProgramId || 'all'} programId={effectiveProgramId} />
+        )}
       </div>
     </div>
   );
