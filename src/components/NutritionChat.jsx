@@ -2,7 +2,9 @@ import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../context/useAuth';
 import { calcularEdad, computeNutritionPlan, findSubstitute, detectConstraint, detectFoodKeyword, pickEquivalentForConstraint, buildMealSuggestion, buildWeeklyPlan, buildShoppingList, buildDailyPlanDetailed } from '../utils/nutrition';
 import api from '../services/api';
-import jsPDF from 'jspdf';
+// jsPDF se carga bajo demanda (lazy import) para no pesar en el bundle
+// inicial, ya que sólo se necesita al exportar PDF desde el asistente.
+const loadJsPDF = () => import('jspdf').then((m) => m.default);
 import { PUBLIC_BRAND_NAME } from '../utils/branding';
 
 const slugifyBrand = (name) => (name || 'plan')
@@ -130,8 +132,9 @@ export default function NutritionChat() {
     setMessages((m) => [...m, { role: 'bot', text: 'Preferencias guardadas. ¿Generamos tu plan semanal y la lista de compras en PDF?' }]);
   };
 
-  const exportWeeklyPDF = (semana) => {
-    const doc = new jsPDF();
+  const exportWeeklyPDF = async (semana) => {
+    const JsPDF = await loadJsPDF();
+    const doc = new JsPDF();
     let y = 10;
     doc.setFontSize(14);
     doc.text('Plan semanal de comidas', 10, y);
@@ -175,36 +178,37 @@ export default function NutritionChat() {
     }
     if (low.includes('pdf diario') || low.includes('plan diario') || low.includes('receta') || low.includes('cocci') || low.includes('paso')) {
       const detalle = buildDailyPlanDetailed({ macrosObjetivo: plan.macros, restricciones: user?.restricciones_detalles || '', prefs, dayIndex: 0 });
-      const doc = new jsPDF();
-      let y = 10;
-      doc.setFontSize(14);
-      doc.text('Plan diario con recetas', 10, y);
-      y += 8;
-      doc.setFontSize(10);
-      const sections = ['desayuno','almuerzo','cena','snack'];
-      sections.forEach((sec) => {
-        if (y > 260) { doc.addPage(); y = 10; }
-        doc.setFontSize(12);
-        doc.text(sec.toUpperCase(), 10, y);
-        y += 6;
+      (async () => {
+        const JsPDF = await loadJsPDF();
+        const doc = new JsPDF();
+        let y = 10;
+        doc.setFontSize(14);
+        doc.text('Plan diario con recetas', 10, y);
+        y += 8;
         doc.setFontSize(10);
-        const ing = detalle[sec]?.items?.map(i => `- ${i.nombre}: ${i.cantidad} g`) || [];
-        const pasos = detalle[sec]?.pasos || [];
-        const t = detalle[sec]?.tiempoTotal || 0;
-        const lines = ['Ingredientes:', ...ing, `Tiempo estimado: ${t} min`, 'Pasos:', ...pasos];
-        const split = doc.splitTextToSize(lines.join('\n'), 190);
-        for (const line of split) {
-          if (y > 280) { doc.addPage(); y = 10; }
-          doc.text(line, 10, y);
+        const sections = ['desayuno','almuerzo','cena','snack'];
+        sections.forEach((sec) => {
+          if (y > 260) { doc.addPage(); y = 10; }
+          doc.setFontSize(12);
+          doc.text(sec.toUpperCase(), 10, y);
           y += 6;
-        }
-        y += 2;
-      });
-      const dailyFile = `plan-diario-${slugifyBrand(PUBLIC_BRAND_NAME)}.pdf`;
-      doc.save(dailyFile);
-      setTimeout(() => {
+          doc.setFontSize(10);
+          const ing = detalle[sec]?.items?.map(i => `- ${i.nombre}: ${i.cantidad} g`) || [];
+          const pasos = detalle[sec]?.pasos || [];
+          const t = detalle[sec]?.tiempoTotal || 0;
+          const lines = ['Ingredientes:', ...ing, `Tiempo estimado: ${t} min`, 'Pasos:', ...pasos];
+          const split = doc.splitTextToSize(lines.join('\n'), 190);
+          for (const line of split) {
+            if (y > 280) { doc.addPage(); y = 10; }
+            doc.text(line, 10, y);
+            y += 6;
+          }
+          y += 2;
+        });
+        const dailyFile = `plan-diario-${slugifyBrand(PUBLIC_BRAND_NAME)}.pdf`;
+        doc.save(dailyFile);
         setMessages((m) => [...m, { role: 'bot', text: `PDF diario con recetas y tiempos generado: ${dailyFile}` }]);
-      }, 120);
+      })();
       return;
     }
     if (low.includes('semana') || low.includes('7')) {
