@@ -413,15 +413,37 @@ const ALLOWED_ROLES_FOR_ADMIN = [
   'entrenador', 'nutricionista', 'usuario_final',
 ];
 
+// "Operadores de plataforma": ven y editan usuarios de toda la
+// plataforma (no de un gym puntual). Cada uno es responsable de su
+// módulo. Ninguno puede escalar a roles administrativos.
+//   - super_admin: full control.
+//   - admin_d28d: opera D28D + gimnasios marca blanca.
+//   - admin_food / admin_food_plan: opera el módulo de alimentación.
+//   - admin_training / admin_entrenador: opera el módulo de
+//     entrenamiento.
+const PLATFORM_ADMIN_ROLES = [
+  'super_admin', 'admin_d28d',
+  'admin_food', 'admin_food_plan',
+  'admin_training', 'admin_entrenador',
+];
+// Roles que pueden listar / crear / editar usuarios.
+const USER_MGMT_ROLES = [
+  ...PLATFORM_ADMIN_ROLES,
+  'admin_gimnasio', 'admin_marca',
+];
+
 app.get('/api/admin/users', authMiddleware, (req, res) => {
   try {
-    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
+    if (!hasUserRole(req.user, USER_MGMT_ROLES)) {
       return res.status(403).json({ error: 'No tienes permiso para ver usuarios' });
     }
     const ownGym = tokenGymId(req.user);
-    const isSuper = hasUserRole(req.user, ['super_admin']);
+    // super_admin / admin_d28d / admin_food(plan) / admin_training(entrenador)
+    // operan sobre toda la plataforma. El resto (admin_gimnasio, admin_marca)
+    // está limitado a su gym.
+    const isPlatformAdmin = hasUserRole(req.user, PLATFORM_ADMIN_ROLES);
     let users = userDB.getAll();
-    if (!isSuper && ownGym) {
+    if (!isPlatformAdmin && ownGym) {
       users = users.filter((u) => {
         const g = u.gym_id ?? u.gymId ?? null;
         return g !== null && Number(g) === ownGym;
@@ -447,7 +469,7 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
 
 app.post('/api/admin/users', authMiddleware, async (req, res) => {
   try {
-    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
+    if (!hasUserRole(req.user, USER_MGMT_ROLES)) {
       return res.status(403).json({ error: 'No tienes permiso para crear usuarios' });
     }
     const { nombre, email, password, rol = 'usuario_final', roles, permissions, module_access, gym_id, trainer_id, planId, telefono, fecha_nacimiento, peso, altura, objetivo } = req.body || {};
@@ -463,14 +485,19 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
       return res.status(400).json({ error: 'Rol no válido' });
     }
     const isSuper = hasUserRole(req.user, ['super_admin']);
+    const isPlatformAdmin = hasUserRole(req.user, PLATFORM_ADMIN_ROLES);
     // Solo super_admin puede crear usuarios con roles administrativos.
+    // admin_d28d / admin_food(plan) / admin_training(entrenador) pueden
+    // crear usuarios no-administrativos en cualquier gym.
     if (!isSuper && nextRoles.some((r) => ADMIN_ROLES_ASSIGNABLE_ONLY_BY_SUPER.includes(r))) {
       return res.status(403).json({ error: 'Solo super_admin puede crear administradores' });
     }
-    // Admin de gimnasio fuerza gym_id al SUYO.
+    // Resolución de gym_id:
+    // - operadores de plataforma: usan el gym_id del body (incluso null).
+    // - admin_gimnasio/admin_marca: fuerza el gym propio del JWT.
     const ownGym = tokenGymId(req.user);
     let finalGymId;
-    if (isSuper) {
+    if (isPlatformAdmin) {
       finalGymId = gym_id ?? null;
     } else {
       if (!ownGym) {
@@ -507,7 +534,7 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
 
 app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
   try {
-    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
+    if (!hasUserRole(req.user, USER_MGMT_ROLES)) {
       return res.status(403).json({ error: 'No tienes permiso para cambiar roles' });
     }
     const { id } = req.params;
@@ -517,6 +544,7 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
       return res.status(400).json({ error: 'Rol no válido' });
     }
     const isSuper = hasUserRole(req.user, ['super_admin']);
+    const isPlatformAdmin = hasUserRole(req.user, PLATFORM_ADMIN_ROLES);
     if (!isSuper && nextRoles.some((role) => ADMIN_ROLES_ASSIGNABLE_ONLY_BY_SUPER.includes(role))) {
       return res.status(403).json({ error: 'Solo super_admin puede asignar roles administrativos' });
     }
@@ -525,7 +553,9 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
     // Tenant: admin gym solo puede tocar usuarios de su mismo gym.
-    if (!isSuper) {
+    // Los operadores de plataforma pueden tocar cualquier usuario, pero
+    // NUNCA escalar a roles administrativos (validado arriba).
+    if (!isPlatformAdmin) {
       const ownGym = tokenGymId(req.user);
       const targetGym = Number(target.gym_id ?? target.gymId ?? 0);
       if (!ownGym || ownGym !== targetGym) {
@@ -541,10 +571,12 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
 });
 
 // Guard tenant para acciones admin sobre /users/:id.
-// - super_admin: sin restricción.
-// - admin_gimnasio / admin_marca: solo usuarios de su gym y sin escalar gym destino.
+// - operadores de plataforma (super_admin, admin_d28d, admin_food[_plan],
+//   admin_training[/entrenador]): sin restricción.
+// - admin_gimnasio / admin_marca: solo usuarios de su gym y sin escalar
+//   gym destino.
 const enforceTenantOnUserUpdate = (req, target) => {
-  if (hasUserRole(req.user, ['super_admin'])) return { ok: true, gym: null };
+  if (hasUserRole(req.user, PLATFORM_ADMIN_ROLES)) return { ok: true, gym: null };
   const ownGym = tokenGymId(req.user);
   const targetGym = Number(target.gym_id ?? target.gymId ?? 0);
   if (!ownGym || ownGym !== targetGym) {
@@ -555,7 +587,7 @@ const enforceTenantOnUserUpdate = (req, target) => {
 
 app.put('/api/admin/users/:id/assign', authMiddleware, (req, res) => {
   try {
-    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
+    if (!hasUserRole(req.user, USER_MGMT_ROLES)) {
       return res.status(403).json({ error: 'No tienes permiso para asignar' });
     }
     const { id } = req.params;
@@ -566,9 +598,10 @@ app.put('/api/admin/users/:id/assign', authMiddleware, (req, res) => {
     }
     const guard = enforceTenantOnUserUpdate(req, user);
     if (!guard.ok) return res.status(guard.status).json({ error: guard.error });
-    const isSuper = hasUserRole(req.user, ['super_admin']);
-    // Admin gym NO puede mover el usuario a otro gym.
-    const finalGymId = isSuper ? gym_id : (guard.gym ?? user.gym_id ?? null);
+    const isPlatformAdmin = hasUserRole(req.user, PLATFORM_ADMIN_ROLES);
+    // admin_gimnasio / admin_marca NO pueden mover el usuario a otro gym.
+    // Los operadores de plataforma sí pueden reasignar gimnasio.
+    const finalGymId = isPlatformAdmin ? gym_id : (guard.gym ?? user.gym_id ?? null);
     const updates = { gym_id: finalGymId, trainer_id, gymId: finalGymId, ...(planId !== undefined ? { planId } : {}) };
     const updated = userDB.update(user.id, updates);
     res.json({ success: true, data: { id: updated.id, gym_id: updated.gym_id || updated.gymId || null, trainer_id: updated.trainer_id || null, planId: updated.planId || null } });
@@ -579,7 +612,7 @@ app.put('/api/admin/users/:id/assign', authMiddleware, (req, res) => {
 
 app.put('/api/admin/users/:id/password', authMiddleware, async (req, res) => {
   try {
-    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
+    if (!hasUserRole(req.user, USER_MGMT_ROLES)) {
       return res.status(403).json({ error: 'No tienes permiso para cambiar contraseñas' });
     }
     const { id } = req.params;
@@ -603,7 +636,9 @@ app.put('/api/admin/users/:id/password', authMiddleware, async (req, res) => {
 
 app.delete('/api/admin/users/:id', authMiddleware, (req, res) => {
   try {
-    if (!hasUserRole(req.user, ['super_admin', 'admin_gimnasio', 'admin_marca'])) {
+    // Eliminación restringida (no todos los operadores de plataforma
+    // pueden borrar usuarios; admin_food/admin_training NO eliminan).
+    if (!hasUserRole(req.user, ['super_admin', 'admin_d28d', 'admin_gimnasio', 'admin_marca'])) {
       return res.status(403).json({ error: 'No tienes permiso para eliminar' });
     }
     const { id } = req.params;

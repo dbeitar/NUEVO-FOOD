@@ -1,22 +1,31 @@
 const GymDatabase = require('../models/GymDatabase');
 const {
   isSuperAdmin,
-  isGymAdmin,
+  isPlatformAdmin,
   getUserGymId,
   filterByGym,
   canAccessEntity,
 } = require('../utils/tenantScope');
 
-// Roles que pueden gestionar gyms (en su scope, salvo super_admin que ve todo).
-const GYM_MANAGE_ROLES = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym'];
+// Roles que pueden gestionar gyms en su scope.
+// - super_admin / admin_d28d: toda la plataforma.
+// - admin_marca / admin_gimnasio / admin_gym: solo su gym.
+const GYM_MANAGE_ROLES = [
+  'super_admin', 'admin_d28d',
+  'admin_marca', 'admin_gimnasio', 'admin_gym',
+];
 
-const isGymManager = (user) => Boolean(user) && GYM_MANAGE_ROLES.includes(user.rol);
+const isGymManager = (user) => {
+  if (!user) return false;
+  const arr = Array.isArray(user.roles) && user.roles.length ? user.roles : [user.rol];
+  return arr.some((r) => GYM_MANAGE_ROLES.includes(r));
+};
 
 // GET /api/gyms — lista filtrada por scope del usuario
 const getAllGyms = (req, res) => {
   try {
     const all = GymDatabase.getAll();
-    if (isSuperAdmin(req.user)) {
+    if (isPlatformAdmin(req.user)) {
       return res.json(all);
     }
     // Para cualquier otro autenticado, solo su gym (1 elemento o ninguno).
@@ -67,11 +76,12 @@ const searchGyms = (req, res) => {
   }
 };
 
-// POST /api/gyms — solo super_admin puede crear nuevos gyms
+// POST /api/gyms — super_admin y admin_d28d pueden dar de alta gimnasios
+// marca blanca dentro de la plataforma D28D.
 const createGym = (req, res) => {
   try {
-    if (!isSuperAdmin(req.user)) {
-      return res.status(403).json({ error: 'Solo super_admin puede crear gimnasios' });
+    if (!isPlatformAdmin(req.user)) {
+      return res.status(403).json({ error: 'Solo administradores de plataforma pueden crear gimnasios' });
     }
     const {
       nombre, direccion, teléfono, telefono, email, ciudad, país, pais,
@@ -113,7 +123,8 @@ const createGym = (req, res) => {
   }
 };
 
-// PUT /api/gyms/:id — admin gym/marca solo puede actualizar SU gym
+// PUT /api/gyms/:id — admin gym/marca solo puede actualizar SU gym.
+// super_admin y admin_d28d pueden actualizar cualquier gym (plataforma).
 const updateGym = (req, res) => {
   try {
     if (!isGymManager(req.user)) {
@@ -122,7 +133,7 @@ const updateGym = (req, res) => {
     const { id } = req.params;
     const target = GymDatabase.getById(parseInt(id, 10));
     if (!target) return res.status(404).json({ error: 'Gimnasio no encontrado' });
-    if (!isSuperAdmin(req.user) && !canAccessEntity(req.user, target)) {
+    if (!isPlatformAdmin(req.user) && !canAccessEntity(req.user, target)) {
       return res.status(403).json({ error: 'Solo puedes modificar tu propio gimnasio' });
     }
     const updatedGym = GymDatabase.update(parseInt(id, 10), req.body);
@@ -151,11 +162,12 @@ const assignPlanToGym = (req, res) => {
   }
 };
 
-// DELETE /api/gyms/:id — solo super_admin
+// DELETE /api/gyms/:id — super_admin y admin_d28d pueden dar de baja
+// gimnasios marca blanca de la plataforma. admin_gimnasio no.
 const deleteGym = (req, res) => {
   try {
-    if (!isSuperAdmin(req.user)) {
-      return res.status(403).json({ error: 'Solo super_admin puede eliminar gimnasios' });
+    if (!isPlatformAdmin(req.user)) {
+      return res.status(403).json({ error: 'Solo administradores de plataforma pueden eliminar gimnasios' });
     }
     const { id } = req.params;
     const deleted = GymDatabase.delete(parseInt(id, 10));

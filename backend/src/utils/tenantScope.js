@@ -3,7 +3,14 @@
 // el JWT (req.user). NUNCA ampliar permisos aquí sin justificación explícita.
 
 const SUPER_ROLES = new Set(['super_admin']);
+const PLATFORM_ROLES = new Set(['super_admin', 'admin_d28d']);
 const GYM_ADMIN_ROLES = new Set(['admin_gimnasio', 'admin_marca', 'admin_gym']);
+
+function _rolesOf(user) {
+  if (!user) return [];
+  const arr = Array.isArray(user.roles) && user.roles.length ? user.roles : [user.rol];
+  return arr.filter(Boolean);
+}
 
 function getUserGymId(user) {
   if (!user) return null;
@@ -16,20 +23,28 @@ function getUserTrainerId(user) {
 }
 
 function isSuperAdmin(user) {
-  return Boolean(user) && SUPER_ROLES.has(user.rol);
+  return _rolesOf(user).some((r) => SUPER_ROLES.has(r));
+}
+
+// Operadores de la PLATAFORMA D28D (no de un gym puntual): super_admin
+// y admin_d28d. Pueden ver/tocar TODOS los gyms y sus usuarios, pero
+// admin_d28d NO puede asignar roles administrativos (se valida en cada
+// endpoint).
+function isPlatformAdmin(user) {
+  return _rolesOf(user).some((r) => PLATFORM_ROLES.has(r));
 }
 
 function isGymAdmin(user) {
-  return Boolean(user) && GYM_ADMIN_ROLES.has(user.rol);
+  return _rolesOf(user).some((r) => GYM_ADMIN_ROLES.has(r));
 }
 
 // Filtra una lista de entidades por gym_id del usuario.
-// - super_admin: ve todo.
+// - super_admin / admin_d28d: ven toda la plataforma.
 // - admin_gimnasio/admin_marca/admin_gym: solo su gym_id.
 // - cualquier otro: solo entidades de SU gym (si tiene) o lista vacía.
 function filterByGym(entities, user) {
   if (!Array.isArray(entities)) return [];
-  if (isSuperAdmin(user)) return entities;
+  if (isPlatformAdmin(user)) return entities;
   const gymId = getUserGymId(user);
   if (gymId == null) return [];
   return entities.filter((e) => {
@@ -41,7 +56,7 @@ function filterByGym(entities, user) {
 // Verifica si el usuario puede operar sobre la entidad indicada.
 // Acepta una entidad con `gym_id` (o id, para gyms).
 function canAccessEntity(user, entity) {
-  if (isSuperAdmin(user)) return true;
+  if (isPlatformAdmin(user)) return true;
   if (!entity) return false;
   const gymId = getUserGymId(user);
   if (gymId == null) return false;
@@ -64,6 +79,7 @@ function requireAnyRole(roles = []) {
 
 module.exports = {
   isSuperAdmin,
+  isPlatformAdmin,
   isGymAdmin,
   getUserGymId,
   getUserTrainerId,
