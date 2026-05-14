@@ -151,29 +151,40 @@ export default function Dashboard() {
     // === Admins específicos: solo navegación de su servicio ===============
     if (!hasAnyRole(['super_admin'])) {
       if (hasAnyRole(['admin_d28d']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
+        // admin_d28d opera la plataforma D28D + los gimnasios marca
+        // blanca que consumen su contenido. Debe poder administrar
+        // gimnasios y usuarios además de programas/clases/galería.
         return [
           { id: 'home', label: 'Inicio' },
           { id: 'programs', label: 'Programas D28D' },
           { id: 'liveclasses', label: 'Clases en Vivo' },
+          { id: 'admingyms', label: 'Gimnasios' },
+          { id: 'adminusers', label: 'Usuarios' },
           { id: 'admingallery', label: 'Galería' },
           { id: 'myaccount', label: 'Mi cuenta' },
         ];
       }
       if (hasAnyRole(['admin_food', 'admin_food_plan']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
+        // admin_food administra el módulo de alimentación en toda la
+        // plataforma: catálogo, recetas, planes de los usuarios y
+        // seguimiento nutricional.
         return [
           { id: 'home', label: 'Inicio' },
+          { id: 'adminusers', label: 'Usuarios' },
+          { id: 'admin', label: 'Planes' },
           { id: 'foodsmanager', label: 'Alimentos' },
-          { id: 'admin', label: 'Calculadora' },
           { id: 'recipes', label: 'Recetas' },
+          { id: 'progress', label: 'Seguimiento' },
           { id: 'myaccount', label: 'Mi cuenta' },
         ];
       }
       if (hasAnyRole(['admin_entrenador', 'admin_training']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
         return [
           { id: 'home', label: 'Inicio' },
+          { id: 'adminusers', label: 'Usuarios' },
           { id: 'admintraining', label: 'Rutinas' },
           { id: 'admingallery', label: 'Galería' },
-          { id: 'adminusers', label: 'Mis usuarios' },
+          { id: 'progress', label: 'Seguimiento' },
           { id: 'myaccount', label: 'Mi cuenta' },
         ];
       }

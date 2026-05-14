@@ -16,11 +16,13 @@ export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack }) {
       </header>
 
       <div className="dashboard-grid">
-        <div className="card" onClick={() => onNavigate('calculator')}>
-          <h3>Calculadora nutricional</h3>
-          <p>Calcula una referencia inicial para el usuario.</p>
-          <button className="btn-card">Abrir</button>
-        </div>
+        {hasAnyRole(['super_admin', 'admin_food_plan', 'admin_food', 'admin_gimnasio', 'admin_marca', 'entrenador', 'nutricionista']) && (
+          <div className="card" onClick={() => onNavigate('adminusers')}>
+            <h3>Usuarios</h3>
+            <p>Personas con plan nutricional asignado.</p>
+            <button className="btn-card">Abrir</button>
+          </div>
+        )}
 
         {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista', 'admin_food_plan', 'admin_food']) && (
           <div className="card" onClick={() => onNavigate('admin')}>
@@ -29,6 +31,20 @@ export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack }) {
             <button className="btn-card">Abrir</button>
           </div>
         )}
+
+        {hasAnyRole(['super_admin', 'admin_food_plan', 'admin_food', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista']) && (
+          <div className="card" onClick={() => onNavigate('progress')}>
+            <h3>Seguimiento</h3>
+            <p>Cumplimiento y evolución nutricional de los usuarios.</p>
+            <button className="btn-card">Abrir</button>
+          </div>
+        )}
+
+        <div className="card" onClick={() => onNavigate('calculator')}>
+          <h3>Calculadora nutricional</h3>
+          <p>Calcula una referencia inicial para el usuario.</p>
+          <button className="btn-card">Abrir</button>
+        </div>
 
         {hasAnyRole(['super_admin', 'admin_food_plan', 'admin_food']) && (
           <div className="card" onClick={() => onNavigate('foodsmanager')}>

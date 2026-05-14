@@ -159,13 +159,34 @@ export default function AdminUsers() {
         <div>
           <h2 className="text-2xl font-bold text-stone-900 font-['Playfair_Display']">{t('users.title', 'Usuarios')}</h2>
           <p className="text-stone-600">{t('users.subtitle', 'Gestiona usuarios y configuraciones del sistema.')}</p>
-          {(currentUser?.rol === 'super_admin') && (
-            <div className="mt-3 inline-flex gap-2 bg-stone-100 p-1 rounded-2xl">
-              <button className={`px-3 py-1.5 rounded-2xl ${viewTab==='users'?'bg-white shadow':''}`} onClick={() => setViewTab('users')}>{t('users.tabs.users', 'Usuarios')}</button>
-              <button className={`px-3 py-1.5 rounded-2xl ${viewTab==='gyms'?'bg-white shadow':''}`} onClick={() => setViewTab('gyms')}>{t('users.tabs.gyms', 'Gimnasios')}</button>
-              <button className={`px-3 py-1.5 rounded-2xl ${viewTab==='trainers'?'bg-white shadow':''}`} onClick={() => setViewTab('trainers')}>{t('users.tabs.trainers', 'Entrenadores')}</button>
-            </div>
-          )}
+          {(() => {
+            const role = currentUser?.rol;
+            const allRoles = Array.isArray(currentUser?.roles) && currentUser.roles.length
+              ? currentUser.roles
+              : [role].filter(Boolean);
+            const isSuper = allRoles.includes('super_admin');
+            const isD28d = allRoles.includes('admin_d28d');
+            // Tabs disponibles según rol:
+            //   super_admin      → Usuarios + Gimnasios + Entrenadores
+            //   admin_d28d       → Usuarios + Gimnasios
+            //   admin_training/  → Usuarios + Entrenadores
+            //     admin_entrenador
+            //   resto            → solo Usuarios (sin tabs visibles)
+            if (!isSuper && !isD28d && !allRoles.some((r) => ['admin_training', 'admin_entrenador'].includes(r))) {
+              return null;
+            }
+            return (
+              <div className="mt-3 inline-flex gap-2 bg-stone-100 p-1 rounded-2xl">
+                <button className={`px-3 py-1.5 rounded-2xl ${viewTab==='users'?'bg-white shadow':''}`} onClick={() => setViewTab('users')}>{t('users.tabs.users', 'Usuarios')}</button>
+                {(isSuper || isD28d) && (
+                  <button className={`px-3 py-1.5 rounded-2xl ${viewTab==='gyms'?'bg-white shadow':''}`} onClick={() => setViewTab('gyms')}>{t('users.tabs.gyms', 'Gimnasios')}</button>
+                )}
+                {(isSuper || allRoles.some((r) => ['admin_training', 'admin_entrenador'].includes(r))) && (
+                  <button className={`px-3 py-1.5 rounded-2xl ${viewTab==='trainers'?'bg-white shadow':''}`} onClick={() => setViewTab('trainers')}>{t('users.tabs.trainers', 'Entrenadores')}</button>
+                )}
+              </div>
+            );
+          })()}
         </div>
         <button 
           className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black shadow-sm transition-colors"

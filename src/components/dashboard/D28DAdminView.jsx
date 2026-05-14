@@ -92,25 +92,26 @@ export default function D28DAdminView({ hasAnyRole, onNavigate, onPickProgram, o
         )}
       </div>
 
-      {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym']) && (
+      {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym', 'admin_d28d']) && (
         <>
           <h3 style={{ margin: '1.5rem 0 0.5rem' }}>Gimnasios marca blanca</h3>
           <p style={{ color: '#475569', marginTop: 0 }}>
-            Los gimnasios consumen el contenido D28D y agendan sobre las
-            plantillas de clases en vivo.
+            {hasAnyRole(['super_admin', 'admin_d28d'])
+              ? 'Los gimnasios marca blanca consumen el contenido D28D y agendan sobre las plantillas de clases en vivo. Desde aquí los administras y editas.'
+              : 'Tu gimnasio consume el contenido D28D y agenda sobre las plantillas de clases en vivo.'}
           </p>
           <div className="dashboard-grid">
             <div className="card" onClick={() => onNavigate('admingyms')}>
-              <h3>Mi gimnasio</h3>
+              <h3>{hasAnyRole(['super_admin', 'admin_d28d']) ? 'Gimnasios' : 'Mi gimnasio'}</h3>
               <p>Branding, equipo y configuración de marca blanca.</p>
               <button className="btn-card">Abrir</button>
             </div>
             <div className="card" onClick={() => onNavigate('adminusers')}>
-              <h3>Usuarios del gimnasio</h3>
+              <h3>{hasAnyRole(['super_admin', 'admin_d28d']) ? 'Usuarios de gimnasios' : 'Usuarios del gimnasio'}</h3>
               <p>Listado y gestión de personas afiliadas.</p>
               <button className="btn-card">Abrir</button>
             </div>
-            {hasAnyRole(['super_admin', 'admin_gym']) && (
+            {hasAnyRole(['super_admin', 'admin_d28d', 'admin_gym']) && (
               <div className="card" onClick={() => onNavigate('admincompanies')}>
                 <h3>Empresas y convenios</h3>
                 <p>Convenios corporativos y agrupaciones de usuarios.</p>

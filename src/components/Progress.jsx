@@ -13,7 +13,12 @@ export default function Progress() {
   const roles = useMemo(() => userRoles(user), [user]);
   const hasAnyRole = useMemo(() => makeHasAnyRole(roles), [roles]);
   const isFinal = isFinalUser(user);
-  const canSeeAggregates = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training', 'admin_entrenador']);
+  const canSeeAggregates = hasAnyRole([
+    'super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d',
+    'admin_food', 'admin_food_plan',
+    'admin_training', 'admin_entrenador',
+    'entrenador', 'nutricionista',
+  ]);
 
   const [plan, setPlan] = useState({ calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 });
   const [history, setHistory] = useState({});

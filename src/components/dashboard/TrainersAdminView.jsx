@@ -44,6 +44,14 @@ export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack }) {
             <button className="btn-card">Abrir</button>
           </div>
         )}
+
+        {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_training', 'admin_entrenador', 'entrenador']) && (
+          <div className="card" onClick={() => onNavigate('progress')}>
+            <h3>Seguimiento</h3>
+            <p>Adherencia y avance de tus usuarios.</p>
+            <button className="btn-card">Abrir</button>
+          </div>
+        )}
       </div>
     </div>
   );
