@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import api from '../services/api';
 
 export default function AuditDashboard() {
@@ -6,28 +6,39 @@ export default function AuditDashboard() {
   const [loading, setLoading] = useState(true);
   const [filterLevel, setFilterLevel] = useState('');
   const [filterTrace, setFilterTrace] = useState('');
+  const [page, setPage] = useState(1);
+  const [pageSize, setPageSize] = useState(50);
+  const [pagination, setPagination] = useState({ page: 1, totalPages: 1, total: 0 });
 
-  const fetchLogs = async () => {
+  const fetchLogs = useCallback(async () => {
     setLoading(true);
     try {
       const resp = await api.get('/admin/audit-logs', {
         params: {
           level: filterLevel || undefined,
           traceId: filterTrace || undefined,
-          limit: 100
+          limit: pageSize,
+          page,
         }
       });
-      setLogs(resp.data.data);
+      setLogs(resp.data.data || []);
+      setPagination(resp.data.pagination || { page, totalPages: 1, total: (resp.data.data || []).length });
     } catch (err) {
       console.error('Error fetching logs', err);
+      setLogs([]);
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterLevel, filterTrace, page, pageSize]);
 
   useEffect(() => {
     fetchLogs();
-  }, [filterLevel]);
+  }, [fetchLogs]);
+
+  const handleSearch = () => {
+    setPage(1);
+    fetchLogs();
+  };
 
   const getLevelColor = (level) => {
     switch (level) {
@@ -81,12 +92,25 @@ export default function AuditDashboard() {
                 className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
               />
               <button 
-                onClick={fetchLogs}
+                onClick={handleSearch}
                 className="bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition-all"
               >
                 Buscar
               </button>
             </div>
+          </div>
+          <div className="min-w-[120px]">
+            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Por página</label>
+            <select
+              value={pageSize}
+              onChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setPage(1); }}
+              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+            >
+              <option value={25}>25</option>
+              <option value={50}>50</option>
+              <option value={100}>100</option>
+              <option value={200}>200</option>
+            </select>
           </div>
         </div>
 
@@ -143,6 +167,29 @@ export default function AuditDashboard() {
               ))}
             </tbody>
           </table>
+        </div>
+        <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50 text-sm text-gray-600">
+          <div>
+            {pagination.total > 0
+              ? `Mostrando página ${pagination.page} de ${pagination.totalPages} · Total: ${pagination.total} registros`
+              : 'Sin registros'}
+          </div>
+          <div className="flex gap-2">
+            <button
+              disabled={pagination.page <= 1 || loading}
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              className="px-3 py-2 rounded-lg border border-gray-200 bg-white disabled:opacity-40"
+            >
+              ← Anterior
+            </button>
+            <button
+              disabled={pagination.page >= pagination.totalPages || loading}
+              onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
+              className="px-3 py-2 rounded-lg border border-gray-200 bg-white disabled:opacity-40"
+            >
+              Siguiente →
+            </button>
+          </div>
         </div>
       </div>
     </div>

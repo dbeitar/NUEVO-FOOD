@@ -66,23 +66,66 @@ const adminController = {
         return res.status(403).json({ error: 'Acceso exclusivo para Super Admin' });
       }
 
-      const { level, traceId, limit = 50 } = req.query;
-      let queryStr = 'SELECT * FROM audit_logs WHERE 1=1';
+      const parsePositive = (raw, fallback, max) => {
+        const n = parseInt(raw, 10);
+        if (!Number.isFinite(n) || n <= 0) return fallback;
+        if (max && n > max) return max;
+        return n;
+      };
+
+      const { level, traceId, event, from, to } = req.query;
+      const limit = parsePositive(req.query.limit, 50, 500);
+      const page = parsePositive(req.query.page, 1, 10000);
+      const offset = (page - 1) * limit;
+
+      const whereParts = ['1=1'];
       const params = [];
 
       if (level) {
-        params.push(level.toUpperCase());
-        queryStr += ` AND level = $${params.length}`;
+        params.push(String(level).toUpperCase());
+        whereParts.push(`level = $${params.length}`);
       }
       if (traceId) {
-        params.push(traceId);
-        queryStr += ` AND trace_id = $${params.length}`;
+        params.push(String(traceId));
+        whereParts.push(`trace_id = $${params.length}`);
+      }
+      if (event) {
+        params.push(String(event));
+        whereParts.push(`event = $${params.length}`);
+      }
+      if (from) {
+        params.push(String(from));
+        whereParts.push(`created_at >= $${params.length}`);
+      }
+      if (to) {
+        params.push(String(to));
+        whereParts.push(`created_at <= $${params.length}`);
       }
 
-      queryStr += ` ORDER BY created_at DESC LIMIT ${parseInt(limit)}`;
+      const whereSql = whereParts.join(' AND ');
+      const countResult = await db.query(`SELECT COUNT(*)::int AS total FROM audit_logs WHERE ${whereSql}`, params);
+      const total = countResult.rows?.[0]?.total ?? 0;
 
-      const result = await db.query(queryStr, params);
-      res.json({ success: true, data: result.rows });
+      params.push(limit);
+      const limitIdx = params.length;
+      params.push(offset);
+      const offsetIdx = params.length;
+
+      const result = await db.query(
+        `SELECT * FROM audit_logs WHERE ${whereSql} ORDER BY created_at DESC LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+        params,
+      );
+
+      res.json({
+        success: true,
+        data: result.rows,
+        pagination: {
+          page,
+          limit,
+          total,
+          totalPages: Math.max(1, Math.ceil(total / limit)),
+        },
+      });
     } catch (error) {
       console.error('Error obteniendo audit logs:', error);
       res.status(500).json({ error: 'Error interno' });
