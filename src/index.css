@@ -11,6 +11,26 @@
   p {
     @apply text-stone-700 mb-4;
   }
+
+  /* Accesibilidad: touch targets ≥ 44 px (WCAG 2.5.5).
+     Solo se aplica en pantallas táctiles para no romper diseño en
+     desktop con densidades altas. */
+  @media (hover: none) and (pointer: coarse) {
+    button,
+    [role="button"],
+    a.btn,
+    a.btn-primary,
+    a.btn-secondary,
+    a.btn-danger,
+    a.btn-success,
+    input[type="button"],
+    input[type="submit"],
+    input[type="checkbox"],
+    input[type="radio"],
+    select {
+      min-height: 44px;
+    }
+  }
 }
 
 @layer components {

@@ -4,11 +4,16 @@ import api from '../services/api';
 import AISuggestions from './AISuggestions';
 import './FoodLog.css';
 import { useI18n } from '../context/useI18n';
+import { userRoles, isFinalUser, makeHasAnyRole } from './dashboard/roles';
 
 export default function Progress() {
   const { user, token } = useAuth();
   const today = new Date().toISOString().split('T')[0];
   const { t } = useI18n();
+  const roles = useMemo(() => userRoles(user), [user]);
+  const hasAnyRole = useMemo(() => makeHasAnyRole(roles), [roles]);
+  const isFinal = isFinalUser(user);
+  const canSeeAggregates = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training', 'admin_entrenador']);
 
   const [plan, setPlan] = useState({ calorias: 2000, proteina: 150, carbohidratos: 250, grasas: 65 });
   const [history, setHistory] = useState({});
@@ -239,7 +244,7 @@ export default function Progress() {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
         <div className="left-col lg:col-span-2">
           <div className="plan-summary">
-            <h2>{t('progress.kpis', 'KPIs del Rango')}</h2>
+            <h2>{t('progress.kpis', 'Tu progreso')}</h2>
             <div className="totals-card">
               <div className="progress-item">
                 <label>{t('progress.avg_adherence', 'Cumplimiento promedio')}</label>
@@ -263,19 +268,30 @@ export default function Progress() {
                 <span>{kpis.proteína}g / {plan.proteina}g</span>
               </div>
               <div className="progress-item">
-                <label>{t('progress.avg_carbs', 'Carbohidratos promedio')}</label>
+                <label>{t('progress.days_in_range', 'Días registrados')}</label>
                 <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${Math.min((kpis.carbs / plan.carbohidratos) * 100, 100)}%` }} />
+                  <div className="progress-fill" style={{ width: `${Math.min((kpis.días / 7) * 100, 100)}%` }} />
                 </div>
-                <span>{kpis.carbs}g / {plan.carbohidratos}g</span>
+                <span>{kpis.días}</span>
               </div>
-              <div className="progress-item">
-                <label>{t('progress.avg_fats', 'Grasas promedio')}</label>
-                <div className="progress-bar">
-                  <div className="progress-fill" style={{ width: `${Math.min((kpis.grasas / plan.grasas) * 100, 100)}%` }} />
-                </div>
-                <span>{kpis.grasas}g / {plan.grasas}g</span>
-              </div>
+              {!isFinal && (
+                <>
+                  <div className="progress-item">
+                    <label>{t('progress.avg_carbs', 'Carbohidratos promedio')}</label>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${Math.min((kpis.carbs / plan.carbohidratos) * 100, 100)}%` }} />
+                    </div>
+                    <span>{kpis.carbs}g / {plan.carbohidratos}g</span>
+                  </div>
+                  <div className="progress-item">
+                    <label>{t('progress.avg_fats', 'Grasas promedio')}</label>
+                    <div className="progress-bar">
+                      <div className="progress-fill" style={{ width: `${Math.min((kpis.grasas / plan.grasas) * 100, 100)}%` }} />
+                    </div>
+                    <span>{kpis.grasas}g / {plan.grasas}g</span>
+                  </div>
+                </>
+              )}
             </div>
           </div>
 
@@ -291,7 +307,7 @@ export default function Progress() {
                 <input type="date" value={endDate} min={startDate} max={today} onChange={(e) => setEndDate(e.target.value)} className="w-full px-4 py-2 rounded-2xl border border-slate-300" />
               </div>
             </div>
-            {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
+            {canSeeAggregates && (
               <div className="range-grid" style={{ marginTop: 12 }}>
                 <div>
                   <label className="block text-sm font-semibold text-stone-700 mb-1">{t('progress.gym', 'Gimnasio')}</label>
@@ -352,18 +368,20 @@ export default function Progress() {
         </div>
 
       <div className="mt-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        <div className="plan-summary">
-          <h2>{t('progress.quick_summary', 'Resumen Rápido')}</h2>
-          <ul className="totals-card">
-            <li>{t('progress.days_in_range', 'Días en rango')}: {kpis.días}</li>
-            <li>{t('progress.avg_calories', 'Calorías promedio')}: {kpis.calorías} kcal</li>
-            <li>{t('progress.avg_protein', 'Proteína promedio')}: {kpis.proteína} g</li>
-            <li>{t('progress.avg_carbs', 'Carbs promedio')}: {kpis.carbs} g</li>
-            <li>{t('progress.avg_fats', 'Grasas promedio')}: {kpis.grasas} g</li>
-          </ul>
-        </div>
+        {!isFinal && (
+          <div className="plan-summary">
+            <h2>{t('progress.quick_summary', 'Resumen Rápido')}</h2>
+            <ul className="totals-card">
+              <li>{t('progress.days_in_range', 'Días en rango')}: {kpis.días}</li>
+              <li>{t('progress.avg_calories', 'Calorías promedio')}: {kpis.calorías} kcal</li>
+              <li>{t('progress.avg_protein', 'Proteína promedio')}: {kpis.proteína} g</li>
+              <li>{t('progress.avg_carbs', 'Carbs promedio')}: {kpis.carbs} g</li>
+              <li>{t('progress.avg_fats', 'Grasas promedio')}: {kpis.grasas} g</li>
+            </ul>
+          </div>
+        )}
 
-        {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
+        {canSeeAggregates && (
           <div className="plan-summary">
             <h2>{t('progress.agg', 'Agregados')}</h2>
             <div className="totals-card">
@@ -411,7 +429,7 @@ export default function Progress() {
           </div>
         )}
 
-        {(user?.rol === 'super_admin' || user?.rol === 'admin_gimnasio' || user?.rol === 'entrenador') && (
+        {canSeeAggregates && (
           <div className="plan-summary md:col-span-2 lg:col-span-2">
             <h2>{t('progress.analytics_groups', 'Analítica por Grupos')}</h2>
             <div className="totals-card">
