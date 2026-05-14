@@ -1,6 +1,7 @@
 // Maestro independiente de D28D.
-// Aquí viven los 3 programas (Vital, Pancitas, Virtual) con sus fotos y los
-// maestros operativos: clases en vivo, ciclos de programa y galería de videos.
+// Aquí viven los 3 programas (Vital, Pancitas, Virtual) con sus fotos, los
+// maestros operativos (clases en vivo, ciclos, galería) y los GIMNASIOS
+// MARCA BLANCA, que consumen el contenido D28D y agendan en sus plantillas.
 const PROGRAMS = [
   {
     id: 'vital',
@@ -67,9 +68,9 @@ export default function D28DAdminView({ hasAnyRole, onNavigate, onPickProgram, o
       <h3 style={{ margin: '1.5rem 0 0.5rem' }}>Operación</h3>
       <div className="dashboard-grid">
         {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']) && (
-          <div className="card" onClick={() => onNavigate('adminliveclasses')}>
+          <div className="card" onClick={() => onNavigate('liveclasses')}>
             <h3>Clases en vivo y reuniones</h3>
-            <p>Crea y gestiona enlaces (Zoom) y plantillas de las sesiones.</p>
+            <p>Programa plantillas y revisa el calendario con links de Zoom.</p>
             <button className="btn-card">Gestionar</button>
           </div>
         )}
@@ -90,6 +91,35 @@ export default function D28DAdminView({ hasAnyRole, onNavigate, onPickProgram, o
           </div>
         )}
       </div>
+
+      {hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym']) && (
+        <>
+          <h3 style={{ margin: '1.5rem 0 0.5rem' }}>Gimnasios marca blanca</h3>
+          <p style={{ color: '#475569', marginTop: 0 }}>
+            Los gimnasios consumen el contenido D28D y agendan sobre las
+            plantillas de clases en vivo.
+          </p>
+          <div className="dashboard-grid">
+            <div className="card" onClick={() => onNavigate('admingyms')}>
+              <h3>Mi gimnasio</h3>
+              <p>Branding, equipo y configuración de marca blanca.</p>
+              <button className="btn-card">Administrar</button>
+            </div>
+            <div className="card" onClick={() => onNavigate('adminusers')}>
+              <h3>Usuarios del gimnasio</h3>
+              <p>Listado y gestión de personas afiliadas.</p>
+              <button className="btn-card">Ver usuarios</button>
+            </div>
+            {hasAnyRole(['super_admin', 'admin_gym']) && (
+              <div className="card" onClick={() => onNavigate('admincompanies')}>
+                <h3>Empresas y convenios</h3>
+                <p>Convenios corporativos y agrupaciones de usuarios.</p>
+                <button className="btn-card">Abrir</button>
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   );
 }

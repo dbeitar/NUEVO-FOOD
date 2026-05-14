@@ -8,11 +8,11 @@ const TermsOfServiceModal = ({ onClose, onAccept }) => {
 
 ## 1. ACEPTACIÓN DE TÉRMINOS
 
-Al acceder y utilizar **D28D GYM virtual** ("la Aplicación", "el Servicio"), usted acepta estar vinculado por estos Términos y Condiciones. Si no está de acuerdo, por favor no utilice la Aplicación.
+Al acceder y utilizar **D28D Gimnasio Virtual** ("la Aplicación", "el Servicio"), usted acepta estar vinculado por estos Términos y Condiciones. Si no está de acuerdo, por favor no utilice la Aplicación.
 
 ## 2. DESCRIPCIÓN DEL SERVICIO
 
-D28D GYM virtual es una aplicación móvil/web que proporciona:
+D28D Gimnasio Virtual es una aplicación móvil/web que proporciona:
 - Cálculo personalizado de necesidades calóricas y nutricionales
 - Registro y seguimiento de ingesta alimentaria diaria
 - Recomendaciones automáticas de alimentos basados en IA
@@ -21,7 +21,7 @@ D28D GYM virtual es una aplicación móvil/web que proporciona:
 
 ## 3. ELEGIBILIDAD
 
-Para utilizar D28D GYM virtual, usted debe:
+Para utilizar D28D Gimnasio Virtual, usted debe:
 - Tener al menos 18 años de edad
 - Tener capacidad legal para celebrar contratos
 - Aceptar estos términos de manera voluntaria
@@ -41,7 +41,7 @@ Usted se compromete a:
 
 **DESCARGO DE RESPONSABILIDAD IMPORTANTE:**
 
-D28D GYM virtual proporciona información educativa y nutricional. **NO es un sustituto de:**
+D28D Gimnasio Virtual proporciona información educativa y nutricional. **NO es un sustituto de:**
 - Consejo médico profesional
 - Diagnóstico de condiciones médicas
 - Tratamiento médico
@@ -50,11 +50,11 @@ D28D GYM virtual proporciona información educativa y nutricional. **NO es un su
 
 ## 6. PROPIEDAD INTELECTUAL
 
-Todos los contenidos de la Aplicación (código, diseño, texto, imágenes, gráficos) son propiedad de D28D GYM virtual. Usted recibe una licencia limitada para usar la Aplicación únicamente para fines personales y no comerciales.
+Todos los contenidos de la Aplicación (código, diseño, texto, imágenes, gráficos) son propiedad de D28D Gimnasio Virtual. Usted recibe una licencia limitada para usar la Aplicación únicamente para fines personales y no comerciales.
 
 ## 7. CONTENIDO GENERADO POR IA
 
-D28D GYM virtual utiliza inteligencia artificial para generar recomendaciones. Usted entiende y acepta que:
+D28D Gimnasio Virtual utiliza inteligencia artificial para generar recomendaciones. Usted entiende y acepta que:
 - Las recomendaciones de IA pueden no ser perfectas
 - No somos responsables por decisiones basadas en IA
 - Siempre ejerza criterio profesional

@@ -11,15 +11,19 @@
 //     pero su acción cambia según el rol: usuario final entra a su experiencia
 //     de consumo; admin/coach entra al maestro de ese servicio.
 //
-// Orden visual fijo: D28D → Food Plan → Entrenadores → Clases en Vivo
-// (con "Mi gimnasio" disponible solo para admins de gym y super_admin).
+// Orden visual fijo: D28D → Plan de Alimentación → Entrenadores → Clases en Vivo
+//
+// IMPORTANTE: los GIMNASIOS NO son un servicio independiente. Viven bajo
+// D28D porque consumen el contenido D28D y agendan sobre las plantillas de
+// clases en vivo de D28D. Por eso "Mi Gimnasio" / "Marca Blanca" aparece
+// como tarjeta DENTRO del panel D28D (D28DAdminView), no como card del Hero.
 
 const SERVICE_DEFS = [
   {
     id: 'd28d',
     title: 'D28D',
-    desc: 'Programas Vital, Pancitas y Virtual D28D.',
-    descAdmin: 'Programas, ciclos y galería D28D (marca blanca).',
+    desc: 'Programas Vital, Pancitas y Virtual D28D + tu gimnasio.',
+    descAdmin: 'Programas, gimnasios marca blanca, clases en vivo y galería.',
     img: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80',
     alt: 'Sesión de entrenamiento grupal',
   },
@@ -47,14 +51,6 @@ const SERVICE_DEFS = [
     img: 'https://images.unsplash.com/photo-1549060279-7e168fcee0c2?auto=format&fit=crop&w=800&q=80',
     alt: 'Clase en vivo de fitness',
   },
-  {
-    id: 'gym',
-    title: 'Mi Gimnasio',
-    desc: 'Información de tu centro y comunicación con tu equipo.',
-    descAdmin: 'Marca blanca: branding, equipo y métricas básicas.',
-    img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
-    alt: 'Interior de gimnasio',
-  },
 ];
 
 const ADMIN_ROLES = new Set([
@@ -77,12 +73,13 @@ function isAdminish(user) {
 // Devuelve los IDs de servicios habilitados para el usuario dado.
 //
 // REGLA ESTRICTA POR ROL:
-//   - super_admin → TODOS los servicios (5).
+//   - super_admin → TODOS los servicios (4).
 //   - admin_d28d → solo d28d + live-classes (las clases en vivo viven en D28D).
 //   - admin_food / admin_food_plan → solo food-plan.
 //   - admin_entrenador / admin_training → solo training.
-//   - admin_gym / admin_marca / admin_gimnasio → gym + lo que su gym contrate
-//     (vía module_access). Sin module_access, ven Mi Gimnasio.
+//   - admin_gym / admin_marca / admin_gimnasio → entran por D28D (su gimnasio
+//     consume contenido D28D y agenda en plantillas D28D). Si su gym contrata
+//     food-plan o entrenadores, también ven esos.
 //   - entrenador (coach individual) → training + food-plan + live-classes (consumo).
 //   - nutricionista → food-plan.
 //   - usuario_final → lo que diga module_access. Sin él, food-plan + training +
@@ -96,7 +93,7 @@ export function getEnabledServiceIds(user) {
 
   // 1) super_admin SIEMPRE ve todo (regla pedida explícitamente).
   if (roles.includes('super_admin')) {
-    return ['d28d', 'food-plan', 'training', 'live-classes', 'gym'];
+    return ['d28d', 'food-plan', 'training', 'live-classes'];
   }
 
   // 2) Admin específico: solo SU servicio (override estricto sobre module_access).
@@ -118,7 +115,6 @@ export function getEnabledServiceIds(user) {
     if (access.food_plan || access['food-plan']) mapped.push('food-plan');
     if (access.training) mapped.push('training');
     if (access.live_classes || access['live-classes']) mapped.push('live-classes');
-    if (access.gym) mapped.push('gym');
     if (mapped.length > 0) return mapped;
   }
 
@@ -134,8 +130,10 @@ export function getEnabledServiceIds(user) {
   if (roles.includes('admin_entrenador') || roles.includes('admin_training')) {
     ids.add('training');
   }
+  // Gimnasios marca blanca: entran por D28D + sus clases en vivo.
   if (roles.includes('admin_marca') || roles.includes('admin_gimnasio') || roles.includes('admin_gym')) {
-    ids.add('gym');
+    ids.add('d28d');
+    ids.add('live-classes');
   }
   if (roles.includes('entrenador')) {
     ids.add('training');
@@ -152,7 +150,7 @@ export function getEnabledServiceIds(user) {
 }
 
 function orderServiceIds(ids) {
-  const order = ['d28d', 'food-plan', 'training', 'live-classes', 'gym'];
+  const order = ['d28d', 'food-plan', 'training', 'live-classes'];
   return order.filter((id) => ids.includes(id));
 }
 
@@ -180,7 +178,6 @@ function userFacingDestinationFor(serviceId) {
     case 'training': return 'training';
     case 'd28d': return 'liveclasses';
     case 'live-classes': return 'liveclasses';
-    case 'gym': return 'myaccount';
     default: return 'myplan';
   }
 }

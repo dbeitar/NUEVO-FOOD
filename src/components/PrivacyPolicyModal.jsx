@@ -8,7 +8,7 @@ const PrivacyPolicyModal = ({ onClose, onAccept }) => {
 
 ## 1. INTRODUCCIÓN
 
-En D28D GYM virtual ("nosotros", "nuestro", "nos"), respetamos su privacidad y estamos comprometidos con proteger sus datos personales. Esta Política de Privacidad explica cómo recopilamos, usamos, compartimos y protegemos su información.
+En D28D Gimnasio Virtual ("nosotros", "nuestro", "nos"), respetamos su privacidad y estamos comprometidos con proteger sus datos personales. Esta Política de Privacidad explica cómo recopilamos, usamos, compartimos y protegemos su información.
 
 **Responsable del Tratamiento de Datos:**
 JHON NICOLAS DEL RIO CASALLAS

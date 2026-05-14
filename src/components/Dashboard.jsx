@@ -19,8 +19,7 @@ import Recipes from './Recipes';
 import TrainingModule from './TrainingModule';
 import AdminTrainingGallery from './AdminTrainingGallery';
 import AdminTrainingManager from './AdminTrainingManager';
-import AdminLiveClasses from './AdminLiveClasses';
-import LiveClasses from './LiveClasses';
+import LiveClassesPanel from './dashboard/LiveClassesPanel';
 import NutritionChat from './NutritionChat';
 import AuditDashboard from './AuditDashboard';
 import AdminProgramsManager from './AdminProgramsManager';
@@ -32,8 +31,6 @@ import ServicesHero from './dashboard/ServicesHero';
 import FoodPlanAdminView from './dashboard/FoodPlanAdminView';
 import D28DAdminView from './dashboard/D28DAdminView';
 import TrainersAdminView from './dashboard/TrainersAdminView';
-import GymAdminView from './dashboard/GymAdminView';
-
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { t, lang, setLang } = useI18n();
@@ -46,7 +43,6 @@ export default function Dashboard() {
   const [openServicePanel, setOpenServicePanel] = useState(null);
   const [selectedProgram, setSelectedProgram] = useState(null);
   const [dayTotals, setDayTotals] = useState(null);
-  const [adminOverview, setAdminOverview] = useState(null);
   const [myPlan, setMyPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(true);
   const [gymBrand, setGymBrand] = useState(null);
@@ -100,22 +96,6 @@ export default function Dashboard() {
     })();
     return () => { active = false; };
   }, [user?.gym_id]);
-
-  useEffect(() => {
-    const isAdminish = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio',
-      'admin_food_plan', 'admin_training', 'admin_gym']);
-    if (!isAdminish) { setAdminOverview(null); return; }
-    let active = true;
-    (async () => {
-      try {
-        const r = await api.get('/admin/overview');
-        if (active) setAdminOverview(r?.data?.data || null);
-      } catch {
-        if (active) setAdminOverview(null);
-      }
-    })();
-    return () => { active = false; };
-  }, [hasAnyRole]);
 
   // === Branding (white-label) =============================================
   // Si el usuario pertenece a un gym con brand_name → ese.
@@ -171,7 +151,7 @@ export default function Dashboard() {
         return [
           { id: 'home', label: 'Inicio' },
           { id: 'programs', label: 'Programas D28D' },
-          { id: 'adminliveclasses', label: 'Clases en Vivo' },
+          { id: 'liveclasses', label: 'Clases en Vivo' },
           { id: 'admingallery', label: 'Galería' },
           { id: 'myaccount', label: 'Mi cuenta' },
         ];
@@ -205,12 +185,14 @@ export default function Dashboard() {
         ];
       }
       if (hasAnyRole(['admin_gimnasio', 'admin_gym', 'admin_marca'])) {
+        // Gimnasios marca blanca operan dentro de D28D (consumen contenido y
+        // agendan en plantillas de clases en vivo D28D).
         return [
           { id: 'home', label: 'Inicio' },
           { id: 'admingyms', label: 'Mi marca' },
           { id: 'adminusers', label: 'Usuarios' },
-          { id: 'admintraining', label: 'Rutinas' },
-          { id: 'adminliveclasses', label: 'Clases' },
+          { id: 'liveclasses', label: 'Clases en Vivo' },
+          { id: 'admingallery', label: 'Galería' },
           { id: 'myaccount', label: 'Mi cuenta' },
         ];
       }
@@ -223,46 +205,6 @@ export default function Dashboard() {
       { id: 'myaccount', label: 'Mi cuenta' },
     ];
   }, [isFinal, roles, hasAnyRole, services]);
-
-  // === Barra rápida de administración ======================================
-  // Reglas: cada admin específico solo ve los maestros de SU servicio.
-  // Solo super_admin ve todos los maestros. Admins de gym (marca blanca) ven
-  // los maestros operativos de su gym.
-  const quickAdminItems = useMemo(() => {
-    if (isFinal) return [];
-    const items = [];
-    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym'])) {
-      items.push({ id: 'adminusers', label: 'Usuarios' });
-    }
-    if (hasAnyRole(['super_admin', 'admin_gym'])) {
-      items.push({ id: 'admincompanies', label: 'Empresas' });
-    }
-    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym'])) {
-      items.push({ id: 'admingyms', label: 'Gyms' });
-    }
-    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'admin_training', 'admin_entrenador'])) {
-      items.push({ id: 'admintraining', label: 'Rutinas' });
-    }
-    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training', 'admin_entrenador'])) {
-      items.push({ id: 'admingallery', label: 'Galería' });
-    }
-    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d'])) {
-      items.push({ id: 'adminliveclasses', label: 'Clases en Vivo' });
-    }
-    if (hasAnyRole(['super_admin', 'admin_d28d'])) {
-      items.push({ id: 'programs', label: 'Programas D28D' });
-    }
-    if (hasAnyRole(['super_admin', 'admin_food_plan', 'admin_food'])) {
-      items.push({ id: 'foodsmanager', label: 'Maestro alimentos' });
-    }
-    if (hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista', 'admin_food_plan', 'admin_food'])) {
-      items.push({ id: 'admin', label: 'Conceptos calculadora' });
-    }
-    if (hasAnyRole(['super_admin'])) {
-      items.push({ id: 'adminplans', label: 'Planes suscripción' });
-    }
-    return items;
-  }, [isFinal, hasAnyRole]);
 
   // === Vistas =============================================================
   const renderHome = () => (
@@ -293,16 +235,11 @@ export default function Dashboard() {
       return <TrainersAdminView hasAnyRole={hasAnyRole} onNavigate={navigate} onBack={onBackToHome} />;
     }
     if (openServicePanel === 'live-classes') {
-      // Panel admin de clases en vivo: directo al maestro de live classes.
-      return <AdminLiveClasses />;
-    }
-    if (openServicePanel === 'gym') {
+      const canProgram = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']);
       return (
-        <GymAdminView
-          brandName={brandName}
-          adminOverview={adminOverview}
-          hasAnyRole={hasAnyRole}
-          onNavigate={navigate}
+        <LiveClassesPanel
+          canProgram={canProgram}
+          programId={selectedProgram}
           onBack={onBackToHome}
         />
       );
@@ -329,8 +266,11 @@ export default function Dashboard() {
       case 'training': return <TrainingModule />;
       case 'admintraining': return <AdminTrainingManager />;
       case 'admingallery': return <AdminTrainingGallery />;
-      case 'adminliveclasses': return <AdminLiveClasses />;
-      case 'liveclasses': return <LiveClasses programId={selectedProgram} />;
+      case 'adminliveclasses':
+      case 'liveclasses': {
+        const canProgram = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']);
+        return <LiveClassesPanel canProgram={canProgram} programId={selectedProgram} />;
+      }
       case 'programs': return <AdminProgramsManager />;
       case 'myplan':
         return (
@@ -384,30 +324,6 @@ export default function Dashboard() {
           <button onClick={logout} className="btn-logout">Cerrar sesión</button>
         </div>
       </nav>
-
-      {quickAdminItems.length > 0 && (
-        <div
-          className="bg-slate-50 border-b border-slate-200 px-4 py-2 flex flex-wrap items-center gap-1 overflow-x-auto"
-          aria-label="Acceso rápido a maestros"
-        >
-          <span className="text-xs uppercase tracking-wider text-slate-500 mr-2 font-semibold">
-            Maestros
-          </span>
-          {quickAdminItems.map((item) => (
-            <button
-              key={item.id}
-              onClick={() => navigate(item.id)}
-              className={`text-xs px-2 py-1 rounded transition-colors ${
-                currentView === item.id
-                  ? 'bg-slate-800 text-white'
-                  : 'text-slate-700 hover:bg-slate-200'
-              }`}
-            >
-              {item.label}
-            </button>
-          ))}
-        </div>
-      )}
 
       <div className="dashboard-content">
         {renderContent()}
