@@ -1,5 +1,6 @@
 const fs = require('fs');
 const path = require('path');
+const JsonStore = require('../utils/JsonStore');
 
 const DATA_FILE = path.join(__dirname, '../../data/program_settings.json');
 
@@ -45,9 +46,15 @@ const INITIAL_DATA = [
   },
 ];
 
+const programStore = new JsonStore('program_settings.json', INITIAL_DATA);
+
 class ProgramSettingsDatabase {
   constructor() {
     this.ensureFile();
+    const current = programStore.getAll();
+    if (!current || !Array.isArray(current) || current.length === 0) {
+      programStore.setAll(INITIAL_DATA);
+    }
   }
 
   ensureFile() {
@@ -59,8 +66,7 @@ class ProgramSettingsDatabase {
   // Devuelve los programas SIN contraseñas. Apto para enviar al frontend.
   getAll() {
     try {
-      const data = fs.readFileSync(DATA_FILE, 'utf8');
-      const programs = JSON.parse(data);
+      const programs = this._readRaw();
       return programs.map((p) => this._stripSecrets(p));
     } catch (error) {
       return [];
@@ -97,7 +103,7 @@ class ProgramSettingsDatabase {
     // Defensa: no permitir nunca persistir contraseñas en el JSON.
     const safeUpdates = this._stripSecretFields(updates);
     programs[index] = { ...programs[index], ...safeUpdates };
-    fs.writeFileSync(DATA_FILE, JSON.stringify(programs, null, 2));
+    this._writeRaw(programs);
     return this._stripSecrets(programs[index]);
   }
 
@@ -123,7 +129,7 @@ class ProgramSettingsDatabase {
       ...(Array.isArray(safe.zoom_accounts) ? { zoom_accounts: safe.zoom_accounts } : {}),
     };
     programs.push(program);
-    fs.writeFileSync(DATA_FILE, JSON.stringify(programs, null, 2));
+    this._writeRaw(programs);
     return { data: this._stripSecrets(program) };
   }
 
@@ -132,7 +138,7 @@ class ProgramSettingsDatabase {
     const index = programs.findIndex((p) => p.id === id);
     if (index === -1) return { error: 'Programa no encontrado', status: 404 };
     const removed = programs.splice(index, 1)[0];
-    fs.writeFileSync(DATA_FILE, JSON.stringify(programs, null, 2));
+    this._writeRaw(programs);
     return { data: this._stripSecrets(removed) };
   }
 
@@ -146,11 +152,24 @@ class ProgramSettingsDatabase {
 
   _readRaw() {
     try {
-      const data = fs.readFileSync(DATA_FILE, 'utf8');
-      return JSON.parse(data);
+      let data = programStore.getAll();
+      if (!data || !Array.isArray(data) || data.length === 0) {
+        if (fs.existsSync(DATA_FILE)) {
+          data = JSON.parse(fs.readFileSync(DATA_FILE, 'utf8'));
+          programStore.setAll(data);
+        } else {
+          data = INITIAL_DATA;
+          programStore.setAll(data);
+        }
+      }
+      return data;
     } catch (error) {
       return [];
     }
+  }
+
+  _writeRaw(programs) {
+    programStore.setAll(programs);
   }
 
   _stripSecrets(program) {

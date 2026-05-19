@@ -9,22 +9,22 @@
 
 | Tecnología | ¿Está en el repo? | ¿Listo para prod hoy? |
 |------------|-------------------|------------------------|
-| **PostgreSQL (`pg`)** | Sí (`backend/src/config/dbClient.js`) | **Parcial** — solo auth (opcional), food-log parcial, audit logs |
-| **Prisma** | **No** — no hay `schema.prisma`, ni dependencia | **No** — requiere proyecto de migración (días/semanas) |
-| **JsonStore (JSON en disco)** | Sí — **~95 % del dominio** | **Sí** — es lo que validaste en piloto |
+| **PostgreSQL (`pg`)** | Sí — modo `USE_PG_STORAGE` (tabla `json_collections`) | **Sí** — recomendado en producción (sin Prisma) |
+| **Prisma** | **No** — no hay `schema.prisma`, ni dependencia | **No** — no necesario para prod |
+| **JsonStore (JSON en disco)** | Sí — desarrollo local / fallback | **Sí** — si no hay Postgres configurado |
 | **Knex** | Config en `knexfile.js` | **No** — carpeta `migrations/` vacía |
 | **MySQL (`mysql2`)** | Sí en `dbClient.js` | Evitar en prod — mezcla tecnologías |
 
 ### Conclusión
 
-**No activar `USE_DB_AUTH=true` en producción hoy** salvo que migres **todo** el dominio a tablas PostgreSQL.  
-Si lo activas solo para “usar Postgres”:
+**Producción recomendada:** `USE_PG_STORAGE=true` + `DATABASE_URL` (o `DB_*`).  
+Todo el dominio se guarda en PostgreSQL (`json_collections`), **sin cambiar** endpoints ni pantallas.
 
-- Login/registro irían a tabla `users` en PG.
-- Usuarios, gimnasios, programas, ciclos, alimentos, rutinas, clases, etc. **siguen en JSON** (`backend/data/*.json`).
-- Resultado: **dos fuentes de verdad** → errores difíciles de depurar.
+**No usar** `USE_DB_AUTH=true` junto con `USE_PG_STORAGE` (queda obsoleto).
 
-**Salida segura hoy:** producción con **JsonStore + volumen persistente** en el servidor del backend, y PostgreSQL **opcional** solo para `audit_logs` (super admin).
+Guía detallada: [`docs/POSTGRES_PRODUCCION.md`](POSTGRES_PRODUCCION.md).
+
+**Fallback:** sin Postgres, el backend sigue usando archivos en `backend/data/` (volumen persistente).
 
 ---
 
@@ -60,8 +60,10 @@ PORT=3001
 JWT_SECRET=<generar 48+ bytes aleatorios>
 JWT_EXPIRES_IN=7d
 
-# Persistencia principal — MANTENER JSON hasta migración completa
+# Persistencia — PostgreSQL (recomendado)
+USE_PG_STORAGE=true
 USE_DB_AUTH=false
+DATABASE_URL=postgresql://user:pass@host:5432/dbname
 
 # CORS — dominio real del frontend (Vercel)
 CORS_ORIGIN=https://tu-app.vercel.app

@@ -39,8 +39,9 @@ Persistencia:
 - **Desarrollo / piloto / producción hoy (recomendado)**: JSON local en
   `backend/data/*.json` (JsonStore). En el servidor de prod necesitas
   **disco persistente** montado en `backend/data/`.
-- **PostgreSQL (`pg`)**: uso **parcial** hoy — auth opcional (`USE_DB_AUTH=true`,
-  no recomendado en prod), food-log parcial, tabla `audit_logs`. Ver
+- **PostgreSQL (`pg`)**: producción con `USE_PG_STORAGE=true` — todo el dominio
+  en tabla `json_collections` (sin Prisma). Ver
+  [`docs/POSTGRES_PRODUCCION.md`](docs/POSTGRES_PRODUCCION.md) y
   [`docs/PRODUCCION_HOY.md`](docs/PRODUCCION_HOY.md).
 - **Semilla post-deploy** (códigos invite + usuarios de prueba):
   `npm run seed:verify` — manifiesto en

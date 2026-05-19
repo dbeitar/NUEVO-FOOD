@@ -1,7 +1,6 @@
-// Base de datos en memoria para cuentas/suscripciones
-class AccountsDatabase {
-  constructor() {
-    this.accounts = [
+const JsonStore = require('../utils/JsonStore');
+
+const DEFAULT_ACCOUNTS = [
       {
         id: 1,
         user_id: 1,
@@ -32,11 +31,9 @@ class AccountsDatabase {
         metodoPago: 'transferencia',
         activo: true,
       },
-    ];
-    this.nextId = 3;
-    
-    // Planes disponibles por programa
-    this.planes = [
+];
+
+const DEFAULT_PLANES = [
       {
         nombre: 'D28D Virtual - Básico',
         program_id: 'virtual_d28d',
@@ -72,12 +69,41 @@ class AccountsDatabase {
         features: ['Yoga y Movilidad', 'Mindfulness', 'Webinars de salud'],
         max_usuarios: 300,
         usuarios_activos: 0,
-      }
-    ];
-    // Recalcular usuarios activos por plan según cuentas iniciales
-    this.accounts.forEach(a => {
-      const p = this.planes.find(pl => pl.nombre === a.plan);
-      if (p) p.usuarios_activos = (p.usuarios_activos || 0) + 1;
+      },
+];
+
+const DEFAULT_STATE = {
+  accounts: DEFAULT_ACCOUNTS,
+  planes: DEFAULT_PLANES,
+  nextId: 3,
+};
+
+// Cuentas y planes de suscripción (persistidos vía JsonStore / PostgreSQL)
+class AccountsDatabase {
+  constructor() {
+    this.store = new JsonStore('accounts_state.json', DEFAULT_STATE);
+    const state = this.store.getAll();
+    if (state && typeof state === 'object' && !Array.isArray(state) && state.accounts) {
+      this.accounts = state.accounts;
+      this.planes = state.planes || DEFAULT_PLANES;
+      this.nextId = state.nextId || 3;
+    } else {
+      this.accounts = [...DEFAULT_ACCOUNTS];
+      this.planes = [...DEFAULT_PLANES];
+      this.nextId = 3;
+      this.accounts.forEach((a) => {
+        const p = this.planes.find((pl) => pl.nombre === a.plan);
+        if (p) p.usuarios_activos = (p.usuarios_activos || 0) + 1;
+      });
+      this._persist();
+    }
+  }
+
+  _persist() {
+    this.store.setAll({
+      accounts: this.accounts,
+      planes: this.planes,
+      nextId: this.nextId,
     });
   }
 
@@ -101,6 +127,7 @@ class AccountsDatabase {
       fecha_inicio: new Date(),
     };
     this.accounts.push(newAccount);
+    this._persist();
     return newAccount;
   }
 
@@ -109,6 +136,7 @@ class AccountsDatabase {
     if (!account) return null;
     
     Object.assign(account, accountData, { activo: account.activo });
+    this._persist();
     return account;
   }
 
@@ -117,6 +145,7 @@ class AccountsDatabase {
     if (!account) return false;
     
     account.activo = false;
+    this._persist();
     return true;
   }
 
@@ -140,6 +169,7 @@ class AccountsDatabase {
       max_usuarios: typeof plan.max_usuarios === 'number' ? plan.max_usuarios : 0,
       usuarios_activos: 0,
     });
+    this._persist();
     return this.getPlanByNombre(plan.nombre);
   }
 
@@ -156,6 +186,7 @@ class AccountsDatabase {
     if (Array.isArray(updates.features)) plan.features = updates.features;
     if (typeof updates.max_usuarios === 'number') plan.max_usuarios = updates.max_usuarios;
     if (updates.program_id) plan.program_id = updates.program_id;
+    this._persist();
     return plan;
   }
 
@@ -163,6 +194,7 @@ class AccountsDatabase {
     const idx = this.planes.findIndex(p => p.nombre === nombre);
     if (idx === -1) return false;
     this.planes.splice(idx, 1);
+    this._persist();
     return true;
   }
 
@@ -194,7 +226,7 @@ class AccountsDatabase {
     account.fecha_inicio = new Date();
     account.fecha_vencimiento = new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000);
     account.estado = 'activo';
-    
+    this._persist();
     return account;
   }
 
@@ -202,13 +234,15 @@ class AccountsDatabase {
     const plan = this.getPlanByNombre(nombre);
     if (!plan) return false;
     plan.usuarios_activos = (plan.usuarios_activos || 0) + 1;
+    this._persist();
     return true;
-    }
+  }
 
   decPlanUsers(nombre) {
     const plan = this.getPlanByNombre(nombre);
     if (!plan) return false;
     plan.usuarios_activos = Math.max(0, (plan.usuarios_activos || 0) - 1);
+    this._persist();
     return true;
   }
 }
