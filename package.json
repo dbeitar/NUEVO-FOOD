@@ -18,7 +18,8 @@
     "seed:verify": "node scripts/seed_production_verify.cjs",
     "seed:invites": "node scripts/seed_invite_codes.cjs",
     "seed:pilot": "node scripts/reset_pilot_passwords.cjs",
-    "db:migrate-json": "node scripts/migrate_json_to_postgres.cjs"
+    "db:migrate-json": "node scripts/migrate_json_to_postgres.cjs",
+    "db:prisma-deploy": "node scripts/prisma_deploy.cjs"
   },
   "keywords": [],
   "author": "",

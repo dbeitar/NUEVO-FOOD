@@ -1,6 +1,7 @@
 const fs = require('fs');
 const path = require('path');
 const db = require('../config/dbClient');
+const { usePrisma } = require('./storageMode');
 
 const DATA_DIR = process.env.JSON_DATA_DIR
   ? path.resolve(process.env.JSON_DATA_DIR)
@@ -50,40 +51,81 @@ function readDisk(collectionName) {
   try {
     return JSON.parse(fs.readFileSync(fp, 'utf8'));
   } catch (e) {
-    console.warn(`[pg-storage] No se pudo leer ${fp}:`, e.message);
+    console.warn(`[storage] No se pudo leer ${fp}:`, e.message);
     return null;
   }
 }
 
 async function ensureTable() {
+  if (usePrisma()) {
+    const { getPrisma } = require('../lib/prisma');
+    const prisma = getPrisma();
+    await prisma.$executeRawUnsafe(`
+      CREATE TABLE IF NOT EXISTS json_collections (
+        name VARCHAR(255) PRIMARY KEY,
+        payload JSONB NOT NULL,
+        updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
+      );
+    `);
+    await prisma.$executeRawUnsafe(`
+      CREATE INDEX IF NOT EXISTS idx_json_collections_updated ON json_collections(updated_at);
+    `);
+    return;
+  }
   await db.query(CREATE_TABLE_SQL);
 }
 
-async function loadCollection(name, fallbackDefault) {
-  const res = await db.query(
-    'SELECT payload FROM json_collections WHERE name = $1',
-    [name],
-  );
-  if (res.rows && res.rows.length > 0) {
-    return res.rows[0].payload;
+async function readFromDb(name) {
+  if (usePrisma()) {
+    const { getPrisma } = require('../lib/prisma');
+    const row = await getPrisma().jsonCollection.findUnique({ where: { name } });
+    return row ? row.payload : null;
   }
+  const res = await db.query('SELECT payload FROM json_collections WHERE name = $1', [name]);
+  return res.rows?.length ? res.rows[0].payload : null;
+}
 
-  const fromDisk = readDisk(name);
-  const payload = fromDisk !== null ? fromDisk : fallbackDefault;
+async function writeToDb(name, payload) {
+  if (usePrisma()) {
+    const { getPrisma } = require('../lib/prisma');
+    await getPrisma().jsonCollection.upsert({
+      where: { name },
+      create: { name, payload },
+      update: { payload },
+    });
+    return;
+  }
   await db.query(
     `INSERT INTO json_collections (name, payload, updated_at)
      VALUES ($1, $2::jsonb, NOW())
      ON CONFLICT (name) DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
     [name, JSON.stringify(payload)],
   );
+}
+
+async function loadCollection(name, fallbackDefault) {
+  const existing = await readFromDb(name);
+  if (existing !== null && existing !== undefined) {
+    return existing;
+  }
+
+  const fromDisk = readDisk(name);
+  const payload = fromDisk !== null ? fromDisk : fallbackDefault;
+  await writeToDb(name, payload);
   if (fromDisk !== null) {
-    console.log(`[pg-storage] Importado desde disco: ${name}`);
+    console.log(`[storage] Importado desde disco: ${name}`);
   }
   return payload;
 }
 
 async function init(overrides = {}) {
   if (initialized) return;
+
+  if (usePrisma()) {
+    const { connectPrisma } = require('../lib/prisma');
+    await connectPrisma();
+  }
+
   await ensureTable();
 
   const names = new Set([...KNOWN_COLLECTIONS, ...Object.keys(overrides)]);
@@ -96,7 +138,8 @@ async function init(overrides = {}) {
   }
 
   initialized = true;
-  console.log(`[pg-storage] ${cache.size} colecciones listas en PostgreSQL`);
+  const via = usePrisma() ? 'Prisma' : 'PostgreSQL (pg)';
+  console.log(`[storage] ${cache.size} colecciones listas — ${via}`);
 }
 
 function isReady() {
@@ -114,18 +157,13 @@ function set(collectionName, data) {
   flushChain = flushChain
     .then(() => persist(collectionName, data))
     .catch((err) => {
-      console.error(`[pg-storage] Error guardando ${collectionName}:`, err.message);
+      console.error(`[storage] Error guardando ${collectionName}:`, err.message);
     });
   return data;
 }
 
 async function persist(collectionName, data) {
-  await db.query(
-    `INSERT INTO json_collections (name, payload, updated_at)
-     VALUES ($1, $2::jsonb, NOW())
-     ON CONFLICT (name) DO UPDATE SET payload = EXCLUDED.payload, updated_at = NOW()`,
-    [collectionName, JSON.stringify(data)],
-  );
+  await writeToDb(collectionName, data);
 }
 
 async function flushAll() {

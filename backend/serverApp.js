@@ -79,9 +79,10 @@ if (NODE_ENV !== 'test') {
   app.use(morgan(IS_PROD ? 'combined' : 'dev'));
 }
 
-const { useDbAuth, usePgStorage } = require('./src/utils/storageMode');
+const { useDbAuth, usePgStorage, usePrisma } = require('./src/utils/storageMode');
 const USE_DB_AUTH = useDbAuth();
 const USE_PG_STORAGE = usePgStorage();
+const USE_PRISMA = usePrisma();
 const ENABLE_DEV_ROUTES = !IS_PROD && String(process.env.ENABLE_DEV_ROUTES || '').toLowerCase() === 'true';
 const SEED_DEMO = String(process.env.SEED_DEMO || '').toLowerCase() === 'true';
 
@@ -780,7 +781,9 @@ const server = app.listen(PORT, () => {
   console.log(`[server] CORS allow: ${corsAllowList.join(', ') || '(ninguno; bloqueado)'}`);
   if (ENABLE_DEV_ROUTES) console.log('[server] /api/dev/* habilitados');
   if (USE_PG_STORAGE) {
-    console.log('[server] Persistencia: PostgreSQL (json_collections) — dominio completo');
+    console.log(
+      `[server] Persistencia: PostgreSQL${USE_PRISMA ? ' + Prisma' : ''} (json_collections) — dominio completo`,
+    );
   } else {
     console.log(`[server] Persistencia: archivos JSON${USE_DB_AUTH ? ' + auth parcial en PG' : ''}`);
     if (USE_DB_AUTH) {
@@ -797,8 +800,12 @@ if (USE_PG_STORAGE) {
     console.log(`[server] ${signal}: guardando colecciones en PostgreSQL…`);
     try {
       await pgCollectionCache.flushAll();
+      if (USE_PRISMA) {
+        const { disconnectPrisma } = require('./src/lib/prisma');
+        await disconnectPrisma();
+      }
     } catch (e) {
-      console.error('[server] Error en flush PG:', e.message);
+      console.error('[server] Error en flush:', e.message);
     }
     server.close(() => process.exit(0));
   };

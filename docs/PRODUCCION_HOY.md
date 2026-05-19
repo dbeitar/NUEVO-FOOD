@@ -10,7 +10,7 @@
 | Tecnología | ¿Está en el repo? | ¿Listo para prod hoy? |
 |------------|-------------------|------------------------|
 | **PostgreSQL (`pg`)** | Sí — modo `USE_PG_STORAGE` (tabla `json_collections`) | **Sí** — recomendado en producción (sin Prisma) |
-| **Prisma** | **No** — no hay `schema.prisma`, ni dependencia | **No** — no necesario para prod |
+| **Prisma** | Sí (`backend/prisma/schema.prisma`) | **Sí** — `USE_PRISMA=true` con `json_collections` |
 | **JsonStore (JSON en disco)** | Sí — desarrollo local / fallback | **Sí** — si no hay Postgres configurado |
 | **Knex** | Config en `knexfile.js` | **No** — carpeta `migrations/` vacía |
 | **MySQL (`mysql2`)** | Sí en `dbClient.js` | Evitar en prod — mezcla tecnologías |
@@ -22,7 +22,7 @@ Todo el dominio se guarda en PostgreSQL (`json_collections`), **sin cambiar** en
 
 **No usar** `USE_DB_AUTH=true` junto con `USE_PG_STORAGE` (queda obsoleto).
 
-Guía detallada: [`docs/POSTGRES_PRODUCCION.md`](POSTGRES_PRODUCCION.md).
+Guías: [`docs/PRISMA_PRODUCCION.md`](PRISMA_PRODUCCION.md), [`docs/POSTGRES_PRODUCCION.md`](POSTGRES_PRODUCCION.md).
 
 **Fallback:** sin Postgres, el backend sigue usando archivos en `backend/data/` (volumen persistente).
 
@@ -60,10 +60,11 @@ PORT=3001
 JWT_SECRET=<generar 48+ bytes aleatorios>
 JWT_EXPIRES_IN=7d
 
-# Persistencia — PostgreSQL (recomendado)
+# Persistencia — PostgreSQL + Prisma
 USE_PG_STORAGE=true
+USE_PRISMA=true
 USE_DB_AUTH=false
-DATABASE_URL=postgresql://user:pass@host:5432/dbname
+DATABASE_URL=postgresql://user:pass@host:5432/dbname?sslmode=require
 
 # CORS — dominio real del frontend (Vercel)
 CORS_ORIGIN=https://tu-app.vercel.app
@@ -144,8 +145,11 @@ Reset local: `node scripts/reset_pilot_passwords.cjs 'Demo!2026'`
 ### Semilla de verificación (obligatorio en servidor nuevo)
 
 ```bash
-node scripts/seed_production_verify.cjs 'Demo!2026'
-# Reiniciar backend después
+cd backend && npm install
+node ../scripts/prisma_deploy.cjs
+node ../scripts/migrate_json_to_postgres.cjs   # si tienes backend/data/*.json
+node ../scripts/seed_production_verify.cjs 'Demo!2026'
+cd backend && npm start
 ```
 
 Manifiesto: `scripts/seeds/production-verify.manifest.json`  

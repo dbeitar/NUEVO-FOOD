@@ -1,0 +1,39 @@
+// Prisma — persistencia de producción (sin reescribir modelos de dominio).
+// El dominio sigue en documentos JSON por colección (users.json, gyms.json, …).
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+/// Una fila por archivo JSON histórico (users, gyms, cycles, foods, …).
+model JsonCollection {
+  name      String   @id @db.VarChar(255)
+  payload   Json     @db.JsonB
+  updatedAt DateTime @default(now()) @updatedAt @map("updated_at")
+
+  @@index([updatedAt], map: "idx_json_collections_updated")
+  @@map("json_collections")
+}
+
+/// Auditoría (super admin). Compatible con logger.js existente.
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  level     String?  @db.VarChar(20)
+  event     String?  @db.VarChar(255)
+  traceId   String?  @map("trace_id") @db.VarChar(100)
+  metadata  Json?    @db.JsonB
+  message   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([traceId], map: "idx_audit_logs_trace")
+  @@index([userId], map: "idx_audit_logs_user")
+  @@index([level], map: "idx_audit_logs_level")
+  @@index([createdAt], map: "idx_audit_logs_created")
+  @@map("audit_logs")
+}

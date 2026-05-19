@@ -1,4 +1,4 @@
-const { usePgStorage, useDbAuth } = require('../utils/storageMode');
+const { usePgStorage, useDbAuth, usePrisma } = require('../utils/storageMode');
 
 async function initStorage() {
   if (useDbAuth() && usePgStorage()) {
@@ -9,7 +9,7 @@ async function initStorage() {
 
   if (!usePgStorage()) {
     console.log('[storage] Modo archivos JSON (backend/data/)');
-    return { mode: 'json' };
+    return { mode: 'json', orm: null };
   }
 
   if (!process.env.DATABASE_URL && !process.env.DB_HOST && !process.env.DB_NAME) {
@@ -20,8 +20,10 @@ async function initStorage() {
 
   const pgCollectionCache = require('../utils/pgCollectionCache');
   await pgCollectionCache.init();
-  console.log('[storage] Modo PostgreSQL (json_collections)');
-  return { mode: 'postgres' };
+
+  const mode = usePrisma() ? 'postgres+prisma' : 'postgres';
+  console.log(`[storage] Persistencia: ${mode} (json_collections)`);
+  return { mode, orm: usePrisma() ? 'prisma' : 'pg' };
 }
 
 module.exports = { initStorage };

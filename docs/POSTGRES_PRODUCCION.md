@@ -1,8 +1,9 @@
-# PostgreSQL en producción (sin Prisma, sin romper la app)
+# PostgreSQL en producción (con Prisma, sin romper la app)
 
 ## Cómo funciona
 
-- **No hace falta Prisma.** Se usa el cliente `pg` que ya está en el proyecto.
+- **Prisma** es el ORM recomendado (`USE_PRISMA=true`). Guía: [`PRISMA_PRODUCCION.md`](PRISMA_PRODUCCION.md).
+- Alternativa: `USE_PRISMA=false` usa solo el cliente `pg`.
 - **No se reescribieron rutas ni controladores.** Los modelos siguen usando `JsonStore`; en producción ese store guarda en la tabla `json_collections` de PostgreSQL (un documento JSON por colección: `users.json`, `gyms.json`, etc.).
 - **Una sola fuente de verdad:** usuarios, gimnasios, ciclos, food, training… todo en Postgres.
 - **`USE_DB_AUTH` debe quedar en `false`** (el login usa la misma colección `users` en Postgres).

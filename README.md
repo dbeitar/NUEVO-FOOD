@@ -39,10 +39,9 @@ Persistencia:
 - **Desarrollo / piloto / producción hoy (recomendado)**: JSON local en
   `backend/data/*.json` (JsonStore). En el servidor de prod necesitas
   **disco persistente** montado en `backend/data/`.
-- **PostgreSQL (`pg`)**: producción con `USE_PG_STORAGE=true` — todo el dominio
-  en tabla `json_collections` (sin Prisma). Ver
-  [`docs/POSTGRES_PRODUCCION.md`](docs/POSTGRES_PRODUCCION.md) y
-  [`docs/PRODUCCION_HOY.md`](docs/PRODUCCION_HOY.md).
+- **PostgreSQL + Prisma**: producción con `USE_PG_STORAGE=true` — dominio en
+  `json_collections`. Ver [`docs/PRISMA_PRODUCCION.md`](docs/PRISMA_PRODUCCION.md),
+  [`docs/POSTGRES_PRODUCCION.md`](docs/POSTGRES_PRODUCCION.md).
 - **Semilla post-deploy** (códigos invite + usuarios de prueba):
   `npm run seed:verify` — manifiesto en
   `scripts/seeds/production-verify.manifest.json`, guía en

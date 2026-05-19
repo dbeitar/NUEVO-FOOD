@@ -1,11 +1,12 @@
 /**
  * Modo de persistencia del dominio (gimnasios, usuarios, ciclos, etc.).
  *
- * USE_PG_STORAGE=true  → colecciones JSON en PostgreSQL (tabla json_collections).
+ * USE_PG_STORAGE=true  → PostgreSQL (Prisma → json_collections).
  * USE_PG_STORAGE=false → archivos en backend/data/*.json
  *
- * En producción, si hay DB_HOST o DATABASE_URL y no se desactiva explícitamente,
- * se usa PostgreSQL por defecto.
+ * USE_PRISMA=false     → SQL crudo (pg) en lugar de Prisma (solo si PG activo).
+ *
+ * En producción, si hay DATABASE_URL o DB_* y no se desactiva, se usa PostgreSQL + Prisma.
  */
 function usePgStorage() {
   const explicit = String(process.env.USE_PG_STORAGE || '').trim().toLowerCase();
@@ -26,4 +27,13 @@ function useDbAuth() {
   return String(process.env.USE_DB_AUTH || '').toLowerCase() === 'true';
 }
 
-module.exports = { usePgStorage, useDbAuth };
+/** Prisma ORM para json_collections (recomendado en producción). */
+function usePrisma() {
+  if (!usePgStorage()) return false;
+  const explicit = String(process.env.USE_PRISMA || '').trim().toLowerCase();
+  if (explicit === 'false' || explicit === '0' || explicit === 'no') return false;
+  if (explicit === 'true' || explicit === '1' || explicit === 'yes') return true;
+  return true;
+}
+
+module.exports = { usePgStorage, useDbAuth, usePrisma };
