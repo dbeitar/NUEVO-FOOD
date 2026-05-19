@@ -78,6 +78,14 @@ class GymDatabase {
     return this.gyms.find(g => g.id === id && g.activo && g.status !== 'inactive');
   }
 
+  getByInviteCode(code) {
+    const c = String(code || '').trim().toUpperCase();
+    if (!c) return null;
+    return this.gyms.find(
+      (g) => g.activo && g.status !== 'inactive' && String(g.invite_code || '').trim().toUpperCase() === c,
+    ) || null;
+  }
+
   create(gymData) {
     const newGym = {
       id: this.nextId++,

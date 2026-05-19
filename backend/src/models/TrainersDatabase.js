@@ -75,6 +75,14 @@ class TrainersDatabase {
     return this.trainers.find(t => t.id === id && t.activo);
   }
 
+  getByInviteCode(code) {
+    const c = String(code || '').trim().toUpperCase();
+    if (!c) return null;
+    return this.trainers.find(
+      (t) => t.activo && String(t.invite_code || '').trim().toUpperCase() === c,
+    ) || null;
+  }
+
   getByGymId(gymId) {
     return this.trainers.filter(t => t.activo && t.gym_id === gymId);
   }

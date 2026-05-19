@@ -50,6 +50,7 @@ function ensureGym() {
       status: 'active',
       activo: true,
       plan_id: 'd28d-pro',
+      invite_code: 'GYM-D28D-004',
     });
   }
   return GymDatabase.create({
@@ -70,6 +71,7 @@ function ensureGym() {
     secondary_color: '#a3e635',
     status: 'active',
     plan_id: 'd28d-pro',
+    invite_code: 'GYM-D28D-004',
   });
 }
 

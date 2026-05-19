@@ -6,6 +6,10 @@
  *   node scripts/reset_pilot_passwords.cjs            # usa 'Demo!2026'
  *   node scripts/reset_pilot_passwords.cjs 'OtraPwd!' # contraseña custom
  *
+ * Para producción (admins + códigos invite + usuarios finales de prueba):
+ *   node scripts/seed_production_verify.cjs
+ *   Ver docs/VERIFICACION_PRODUCCION.md
+ *
  * No requiere reiniciar el backend (modifica directamente
  * backend/data/users.json). Si la cuenta no existe la crea.
  *
@@ -24,6 +28,12 @@ if (PASSWORD.length < 6) {
 }
 
 const ACCOUNTS = [
+  // Dominio documentado en MANUAL_PLATAFORMA_D28D.md (@d28d.local)
+  { email: 'admin@d28d.local',                nombre: 'Super Admin',         rol: 'super_admin' },
+  { email: 'd28d.admin@d28d.local',            nombre: 'Admin D28D',          rol: 'admin_d28d' },
+  { email: 'food.admin@d28d.local',             nombre: 'Admin Plan Alim.',    rol: 'admin_food' },
+  { email: 'coach.admin@d28d.local',            nombre: 'Admin Entrenadores',  rol: 'admin_entrenador' },
+  // Alias legacy (@foodplan.local)
   { email: 'admin@foodplan.local',            nombre: 'Super Admin',         rol: 'super_admin' },
   { email: 'admin.d28d@foodplan.local',       nombre: 'Admin D28D',          rol: 'admin_d28d' },
   { email: 'admin.food@foodplan.local',       nombre: 'Admin Plan Alim.',    rol: 'admin_food_plan' },

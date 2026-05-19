@@ -4,6 +4,32 @@ import { Pencil, UserPlus, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../context/useI18n';
 
+const EMPTY_MODULE_ACCESS = {
+  d28d: false,
+  training: false,
+  nutrition: false,
+  food_plan: false,
+  live_classes: false,
+};
+
+const MODULE_OPTIONS = [
+  { key: 'd28d', label: 'Programas D28D' },
+  { key: 'training', label: 'Entrenamiento' },
+  { key: 'food_plan', label: 'Plan de alimentación' },
+  { key: 'live_classes', label: 'Clases en vivo' },
+];
+
+const emptyForm = () => ({
+  nombre: '',
+  email: '',
+  password: '',
+  roles: ['usuario_final'],
+  gym_id: '',
+  trainer_id: '',
+  planId: '',
+  module_access: { ...EMPTY_MODULE_ACCESS },
+});
+
 export default function AdminUsers() {
   const [users, setUsers] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -22,15 +48,7 @@ export default function AdminUsers() {
   const [programs, setPrograms] = useState([]);
 
   // Form state
-  const [formData, setFormData] = useState({
-    nombre: '',
-    email: '',
-    password: '',
-    roles: ['usuario_final'],
-    gym_id: '',
-    trainer_id: '',
-    planId: ''
-  });
+  const [formData, setFormData] = useState(emptyForm);
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -76,7 +94,10 @@ export default function AdminUsers() {
     try {
       if (editingUser) {
         // Edit logic (assign/role)
-        await api.put(`/admin/users/${editingUser.id}/role`, { roles: formData.roles });
+        await api.put(`/admin/users/${editingUser.id}/role`, {
+          roles: formData.roles,
+          module_access: formData.module_access,
+        });
         await api.put(`/admin/users/${editingUser.id}/assign`, { 
           gym_id: formData.roles.includes('usuario_final') ? (formData.gym_id || null) : null, 
           trainer_id: formData.trainer_id || null 
@@ -104,11 +125,12 @@ export default function AdminUsers() {
           roles: formData.roles,
           gym_id: formData.roles.includes('usuario_final') && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined,
           gymId: formData.roles.includes('usuario_final') && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined,
-          planId: formData.planId
+          planId: formData.planId,
+          module_access: formData.module_access,
         });
       }
       setEditingUser(null);
-      setFormData({ nombre: '', email: '', password: '', roles: ['usuario_final'], gym_id: '', trainer_id: '', planId: '' });
+      setFormData(emptyForm());
       fetchUsers();
     } catch {
       setError(t('trainers.save_error', 'Error al guardar'));
@@ -124,7 +146,9 @@ export default function AdminUsers() {
       password: '', // Password not shown
       roles: user.roles && user.roles.length ? user.roles : [user.rol || 'usuario_final'],
       gym_id: user.gym_id || '',
-      trainer_id: user.trainer_id || ''
+      trainer_id: user.trainer_id || '',
+      planId: user.planId || '',
+      module_access: { ...EMPTY_MODULE_ACCESS, ...(user.module_access || {}) },
     });
   };
 
@@ -200,7 +224,7 @@ export default function AdminUsers() {
           className="inline-flex items-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black shadow-sm transition-colors"
           onClick={() => {
             setEditingUser(null);
-            setFormData({ nombre: '', email: '', password: '', roles: ['usuario_final'], gym_id: '', trainer_id: '', planId: '' });
+            setFormData(emptyForm());
             setShowForm(true);
           }}
         >
@@ -228,7 +252,7 @@ export default function AdminUsers() {
             onClick={() => {
               setShowForm(false);
               setEditingUser(null);
-              setFormData({ nombre: '', email: '', password: '', roles: ['usuario_final'], gym_id: '', trainer_id: '', planId: '' });
+              setFormData(emptyForm());
             }}
           >
             {t('common.close', 'Cerrar')}
@@ -360,6 +384,33 @@ export default function AdminUsers() {
                   <option value="">{t('common.none', 'Ninguno')}</option>
                   {trainers.map(tr => <option key={tr.id} value={tr.id}>{tr.nombre}</option>)}
                 </select>
+              </div>
+              <div className="md:col-span-2">
+                <label className="label">{t('users.modules', 'Módulos activos')}</label>
+                <p className="text-xs text-stone-500 mb-2">
+                  {t('users.modules_hint', 'Activa o desactiva acceso a D28D, entrenamiento, food y clases en vivo.')}
+                </p>
+                <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                  {MODULE_OPTIONS.map(({ key, label }) => (
+                    <label key={key} className="flex items-center gap-2 text-sm text-stone-700 bg-stone-50 p-2 rounded-lg border border-stone-200 cursor-pointer hover:bg-stone-100">
+                      <input
+                        type="checkbox"
+                        checked={Boolean(formData.module_access?.[key])}
+                        onChange={() => {
+                          setFormData((prev) => ({
+                            ...prev,
+                            module_access: {
+                              ...prev.module_access,
+                              [key]: !prev.module_access?.[key],
+                            },
+                          }));
+                        }}
+                        className="rounded border-stone-300 text-lime-600 focus:ring-lime-500"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
               </div>
             </>
           )}

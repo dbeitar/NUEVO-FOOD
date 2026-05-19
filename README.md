@@ -36,10 +36,17 @@ proyectofoodplan/
 ```
 
 Persistencia:
-- **Desarrollo / piloto**: JSON local en `backend/data/*.json` (atómico,
-  con respaldos opcionales).
-- **Producción**: PostgreSQL, activable con `USE_DB_AUTH=true` y
-  variables `DB_*`.
+- **Desarrollo / piloto / producción hoy (recomendado)**: JSON local en
+  `backend/data/*.json` (JsonStore). En el servidor de prod necesitas
+  **disco persistente** montado en `backend/data/`.
+- **PostgreSQL (`pg`)**: uso **parcial** hoy — auth opcional (`USE_DB_AUTH=true`,
+  no recomendado en prod), food-log parcial, tabla `audit_logs`. Ver
+  [`docs/PRODUCCION_HOY.md`](docs/PRODUCCION_HOY.md).
+- **Semilla post-deploy** (códigos invite + usuarios de prueba):
+  `npm run seed:verify` — manifiesto en
+  `scripts/seeds/production-verify.manifest.json`, guía en
+  [`docs/VERIFICACION_PRODUCCION.md`](docs/VERIFICACION_PRODUCCION.md).
+- **Prisma**: **no está en el proyecto**; migración futura si se requiere ORM único.
 
 Autenticación:
 - JWT firmado con `JWT_SECRET` (obligatorio). El servidor se niega a

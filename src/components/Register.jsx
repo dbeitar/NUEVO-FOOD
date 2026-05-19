@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useAuth } from '../context/useAuth';
 import api from '../services/api';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
@@ -6,6 +6,13 @@ import TermsOfServiceModal from './TermsOfServiceModal';
 import AuthLayout from './AuthLayout';
 import { PUBLIC_BRAND_NAME } from '../utils/branding';
 
+const MODULE_LABELS = {
+  training: 'Entrenamiento',
+  nutrition: 'Plan de alimentación',
+  food_plan: 'Plan de alimentación',
+  d28d: 'Programas D28D',
+  live_classes: 'Clases en vivo',
+};
 
 export default function Register({ onSwitchToLogin }) {
   const [step, setStep] = useState(1);
@@ -20,43 +27,48 @@ export default function Register({ onSwitchToLogin }) {
     altura: '',
     genero: '',
     objetivo: '',
-    gym_id: '',
-    trainer_id: '',
     metodoPago: 'tarjeta_credito',
     tiene_restricciones: false,
     restricciones_detalles: '',
   });
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteContext, setInviteContext] = useState(null);
   const [selectedPlan, setSelectedPlan] = useState(null);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const [loading, setLoading] = useState(false);
+  const [validatingCode, setValidatingCode] = useState(false);
   const [acceptPrivacy, setAcceptPrivacy] = useState(false);
   const [acceptTerms, setAcceptTerms] = useState(false);
   const [rememberEmail, setRememberEmail] = useState(true);
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [plans, setPlans] = useState([]);
-  const [gyms, setGyms] = useState([]);
-  const [trainers, setTrainers] = useState([]);
   const { register, login } = useAuth();
 
   useEffect(() => {
-    const fetchOptions = async () => {
-      try {
-        const [plansRes, gymsRes, trainersRes] = await Promise.all([
-          api.get('/accounts/plans').catch(() => ({ data: [] })),
-          api.get('/gyms').catch(() => ({ data: [] })),
-          api.get('/trainers').catch(() => ({ data: [] })),
-        ]);
-        setPlans(Array.isArray(plansRes.data) ? plansRes.data : []);
-        setGyms(Array.isArray(gymsRes.data) ? gymsRes.data : []);
-        setTrainers(Array.isArray(trainersRes.data) ? trainersRes.data : []);
-      } catch (e) {
-        console.warn('fetchOptions failed', e);
-      }
-    };
-    fetchOptions();
+    api.get('/accounts/plans')
+      .then((res) => setPlans(Array.isArray(res.data) ? res.data : []))
+      .catch(() => setPlans([]));
   }, []);
+
+  const filteredPlans = useMemo(() => {
+    if (!inviteContext?.plan_scope) return plans;
+    const scope = inviteContext.plan_scope;
+    if (scope === 'trainer') {
+      return plans.filter((p) => {
+        const pid = String(p.program_id || '').toLowerCase();
+        return pid === 'virtual_d28d' || pid === 'vital' || !p.program_id;
+      });
+    }
+    if (scope === 'gym' || scope === 'd28d') {
+      return plans.filter((p) => {
+        const pid = String(p.program_id || '').toLowerCase();
+        return ['virtual_d28d', 'pancitas', 'vital'].includes(pid);
+      });
+    }
+    return plans;
+  }, [plans, inviteContext]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -85,8 +97,34 @@ export default function Register({ onSwitchToLogin }) {
     setStep(2);
   };
 
-  const handleStep2Confirm = async (e) => {
+  const validateInviteCode = async (e) => {
     e.preventDefault();
+    setError('');
+    setValidatingCode(true);
+    try {
+      const res = await api.post('/auth/resolve-invite', { code: inviteCode });
+      const ctx = res.data?.data;
+      if (!ctx) {
+        setError('Código no válido');
+        return;
+      }
+      setInviteContext(ctx);
+      setSelectedPlan(null);
+      setStep(3);
+    } catch (err) {
+      setError(err.response?.data?.error || 'No pudimos validar el código');
+    } finally {
+      setValidatingCode(false);
+    }
+  };
+
+  const handleFinalSubmit = async (e) => {
+    e.preventDefault();
+    if (!inviteContext) {
+      setError('Primero valida tu código de entrenador o gimnasio');
+      setStep(2);
+      return;
+    }
     setError('');
     setSuccess('');
     setLoading(true);
@@ -103,29 +141,29 @@ export default function Register({ onSwitchToLogin }) {
         objetivo: formData.objetivo,
         tiene_restricciones: formData.tiene_restricciones,
         restricciones_detalles: formData.restricciones_detalles,
+        gym_id: inviteContext.gym_id,
+        trainer_id: inviteContext.trainer_id,
+        module_access: inviteContext.module_access,
+        invite_code: inviteCode.trim(),
       });
       await login(formData.email, formData.password);
       if (selectedPlan) {
         await api.post('/accounts', {
           plan: selectedPlan.nombre,
-          gym_id: formData.gym_id ? parseInt(formData.gym_id, 10) : null,
-          trainer_id: formData.trainer_id ? parseInt(formData.trainer_id, 10) : null,
+          gym_id: inviteContext.gym_id || null,
+          trainer_id: inviteContext.trainer_id || null,
           metodoPago: formData.metodoPago,
         });
       }
       if (rememberEmail && formData.email) {
         try {
           localStorage.setItem('prefillEmail', formData.email);
-        } catch (err) {
-          console.warn('Failed to persist prefillEmail', err);
-        }
+        } catch { /* noop */ }
       }
       setSuccess('¡Registro completado! Entrando a tu cuenta...');
       try {
         localStorage.setItem('afterRegisterHome', '1');
-      } catch (err) {
-        console.warn('Failed to set afterRegisterHome flag', err);
-      }
+      } catch { /* noop */ }
       window.location.assign('/');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al completar el registro');
@@ -134,12 +172,16 @@ export default function Register({ onSwitchToLogin }) {
     }
   };
 
+  const stepTitle = step === 1 ? 'Crear cuenta' : step === 2 ? 'Código de acceso' : 'Elige tu plan';
+  const stepSubtitle = step === 1
+    ? `Únete a ${PUBLIC_BRAND_NAME}`
+    : step === 2
+      ? 'Ingresa el código que te dio tu entrenador, tu gimnasio o D28D'
+      : inviteContext?.label || 'Selecciona un plan para activar tus módulos';
+
   return (
     <>
-      <AuthLayout
-        title={step === 1 ? 'Crear Cuenta' : 'Elige tu plan'}
-        subtitle={step === 1 ? `Únete a ${PUBLIC_BRAND_NAME}` : 'Selecciona un plan y completa tu registro'}
-      >
+      <AuthLayout wide={step >= 2} title={stepTitle} subtitle={stepSubtitle}>
         {error && <div className="error-message">{error}</div>}
         {success && <div className="success-message">{success}</div>}
 
@@ -147,7 +189,7 @@ export default function Register({ onSwitchToLogin }) {
           <form onSubmit={handleStep1} className="space-y-4">
             <div className="auth-form-row">
               <div className="form-group">
-                <label htmlFor="nombre" className="label">Nombre Completo</label>
+                <label htmlFor="nombre" className="label">Nombre completo</label>
                 <input type="text" id="nombre" name="nombre" value={formData.nombre} onChange={handleChange} required placeholder="Tu nombre" className="input" />
               </div>
               <div className="form-group">
@@ -161,17 +203,17 @@ export default function Register({ onSwitchToLogin }) {
                 <input type="password" id="password" name="password" value={formData.password} onChange={handleChange} required placeholder="Mínimo 6 caracteres" className="input" />
               </div>
               <div className="form-group">
-                <label htmlFor="confirmPassword" className="label">Confirmar Contraseña</label>
+                <label htmlFor="confirmPassword" className="label">Confirmar contraseña</label>
                 <input type="password" id="confirmPassword" name="confirmPassword" value={formData.confirmPassword} onChange={handleChange} required placeholder="Repite tu contraseña" className="input" />
               </div>
             </div>
             <div className="auth-form-row">
               <div className="form-group">
                 <label htmlFor="teléfono" className="label">Teléfono</label>
-                <input type="tel" id="teléfono" name="teléfono" value={formData.teléfono} onChange={handleChange} placeholder="+1234567890" className="input" />
+                <input type="tel" id="teléfono" name="teléfono" value={formData.teléfono} onChange={handleChange} placeholder="+57 300 000 0000" className="input" />
               </div>
               <div className="form-group">
-                <label htmlFor="fecha_nacimiento" className="label">Fecha de Nacimiento</label>
+                <label htmlFor="fecha_nacimiento" className="label">Fecha de nacimiento</label>
                 <input type="date" id="fecha_nacimiento" name="fecha_nacimiento" value={formData.fecha_nacimiento} onChange={handleChange} className="input" />
               </div>
             </div>
@@ -182,12 +224,12 @@ export default function Register({ onSwitchToLogin }) {
               </div>
               <div className="form-group">
                 <label htmlFor="altura" className="label">Altura (cm)</label>
-                <input type="number" id="altura" name="altura" value={formData.altura} onChange={handleChange} placeholder="180" step="0.1" className="input" />
+                <input type="number" id="altura" name="altura" value={formData.altura} onChange={handleChange} placeholder="170" step="0.1" className="input" />
               </div>
               <div className="form-group">
                 <label htmlFor="genero" className="label">Género</label>
                 <select id="genero" name="genero" value={formData.genero} onChange={handleChange} className="input" required>
-                  <option value="">Selecciona tu género</option>
+                  <option value="">Selecciona</option>
                   <option value="masculino">Masculino</option>
                   <option value="femenino">Femenino</option>
                 </select>
@@ -198,7 +240,6 @@ export default function Register({ onSwitchToLogin }) {
                 <input
                   type="checkbox"
                   id="tiene_restricciones"
-                  name="tiene_restricciones"
                   checked={formData.tiene_restricciones}
                   onChange={(e) => setFormData((prev) => ({ ...prev, tiene_restricciones: e.target.checked }))}
                 />
@@ -206,12 +247,11 @@ export default function Register({ onSwitchToLogin }) {
               </div>
               {formData.tiene_restricciones && (
                 <textarea
-                  id="restricciones_detalles"
                   name="restricciones_detalles"
                   value={formData.restricciones_detalles}
                   onChange={handleChange}
-                  placeholder="Especifica alergias, preferencias (ej. vegetariano), recomendaciones médicas, etc."
-                  className="input"
+                  placeholder="Alergias, vegetariano, recomendaciones médicas…"
+                  className="input mt-2"
                   rows="3"
                 />
               )}
@@ -220,9 +260,9 @@ export default function Register({ onSwitchToLogin }) {
               <label htmlFor="objetivo" className="label">Objetivo</label>
               <select id="objetivo" name="objetivo" value={formData.objetivo} onChange={handleChange} className="input">
                 <option value="">Selecciona tu objetivo</option>
-                <option value="pérdida_de_grasa">Pérdida de Grasa</option>
+                <option value="pérdida_de_grasa">Pérdida de grasa</option>
                 <option value="mantenimiento">Mantenimiento</option>
-                <option value="ganancia_muscular">Ganancia Muscular</option>
+                <option value="ganancia_muscular">Ganancia muscular</option>
               </select>
             </div>
             <div className="checkbox-group">
@@ -239,53 +279,91 @@ export default function Register({ onSwitchToLogin }) {
                 <label htmlFor="acceptTerms">Acepto los <button type="button" onClick={() => setShowTermsModal(true)} className="policy-link">Términos y Condiciones</button></label>
               </div>
             </div>
-            <button type="submit" className="btn-primary w-full">Continuar a elegir plan</button>
+            <button type="submit" className="btn-primary w-full">Continuar</button>
           </form>
         )}
 
         {step === 2 && (
-          <form onSubmit={handleStep2Confirm} className="space-y-4">
-            <p className="text-stone-600 text-sm">Elige un plan (opcional: gimnasio y entrenador). Puedes omitir el plan y elegirlo después.</p>
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              {plans.map((plan) => (
-                <div
-                  key={plan.nombre}
-                  onClick={() => setSelectedPlan(plan)}
-                  className={`card cursor-pointer ${selectedPlan?.nombre === plan.nombre ? 'ring-2 ring-lime-500' : ''}`}
-                >
-                  <h4 className="font-bold text-stone-900">{plan.nombre?.toUpperCase()}</h4>
-                  <p className="text-lime-600 font-semibold">${(plan.precio_mensual || 0).toLocaleString()}/mes</p>
-                  <p className="text-stone-600 text-sm">{plan.descripcion}</p>
-                </div>
-              ))}
-            </div>
-            {plans.length === 0 && <p className="text-stone-500 text-sm">No hay planes disponibles. Puedes registrarte sin plan y elegirlo después.</p>}
+          <form onSubmit={validateInviteCode} className="space-y-4">
+            <p className="text-stone-600 text-sm">
+              Antes de elegir plan, indica el código de tu <strong>entrenador</strong>, tu <strong>gimnasio</strong> o el código <strong>D28D</strong>.
+            </p>
             <div className="form-group">
-              <label className="label">Gimnasio (opcional)</label>
-              <select name="gym_id" value={formData.gym_id} onChange={handleChange} className="input">
-                <option value="">Ninguno</option>
-                {gyms.map((g) => <option key={g.id} value={g.id}>{g.nombre}</option>)}
-              </select>
+              <label htmlFor="inviteCode" className="label">Código de invitación</label>
+              <input
+                id="inviteCode"
+                type="text"
+                className="input uppercase"
+                placeholder="Ej: COACH-CARLOS-001, GYM-D28D-004, D28D-PILOTO"
+                value={inviteCode}
+                onChange={(e) => setInviteCode(e.target.value)}
+                required
+                autoComplete="off"
+              />
             </div>
-            <div className="form-group">
-              <label className="label">Entrenador (opcional)</label>
-              <select name="trainer_id" value={formData.trainer_id} onChange={handleChange} className="input">
-                <option value="">Ninguno</option>
-                {trainers.map((t) => <option key={t.id} value={t.id}>{t.nombre}</option>)}
-              </select>
+            <p className="text-xs text-stone-500">
+              Piloto: <code className="bg-stone-100 px-1 rounded">D28D-PILOTO</code> · Gimnasio D28D: <code className="bg-stone-100 px-1 rounded">GYM-D28D-004</code> · Coach: <code className="bg-stone-100 px-1 rounded">COACH-CARLOS-001</code>
+            </p>
+            <div className="flex gap-3">
+              <button type="button" className="btn-secondary flex-1" onClick={() => setStep(1)}>Atrás</button>
+              <button type="submit" className="btn-primary flex-1" disabled={validatingCode}>
+                {validatingCode ? 'Validando…' : 'Validar código'}
+              </button>
             </div>
+          </form>
+        )}
+
+        {step === 3 && inviteContext && (
+          <form onSubmit={handleFinalSubmit} className="space-y-4">
+            <div className="bg-lime-50 border border-lime-200 rounded-2xl p-4 text-sm">
+              <p className="font-semibold text-stone-900">{inviteContext.label}</p>
+              <p className="text-stone-600 mt-1">Módulos que tendrás activos:</p>
+              <ul className="mt-2 flex flex-wrap gap-2">
+                {Object.entries(inviteContext.module_access || {})
+                  .filter(([, v]) => v)
+                  .map(([key]) => (
+                    <li key={key} className="text-xs bg-white border border-lime-300 text-lime-800 px-2 py-1 rounded-full">
+                      {MODULE_LABELS[key] || key}
+                    </li>
+                  ))}
+              </ul>
+            </div>
+
+            <p className="text-stone-600 text-sm">Elige un plan (opcional — puedes activarlo después con tu coach).</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {filteredPlans.map((plan) => {
+                const selected = selectedPlan?.nombre === plan.nombre;
+                return (
+                  <button
+                    key={plan.nombre}
+                    type="button"
+                    onClick={() => setSelectedPlan(selected ? null : plan)}
+                    className={`card text-left p-4 transition-all ${selected ? 'ring-2 ring-lime-500 bg-lime-50/50' : 'hover:border-stone-300'}`}
+                  >
+                    <h4 className="font-bold text-stone-900">{plan.nombre?.toUpperCase()}</h4>
+                    <p className="text-lime-600 font-semibold">${(plan.precio_mensual || 0).toLocaleString()}/mes</p>
+                    <p className="text-stone-600 text-sm mt-1">{plan.descripcion}</p>
+                  </button>
+                );
+              })}
+            </div>
+            {filteredPlans.length === 0 && (
+              <p className="text-stone-500 text-sm">No hay planes para este código. Puedes terminar el registro y tu coach te asignará uno.</p>
+            )}
+
             <div className="form-group">
               <label className="label">Método de pago</label>
               <select name="metodoPago" value={formData.metodoPago} onChange={handleChange} className="input">
-                <option value="tarjeta_credito">Tarjeta de Crédito</option>
+                <option value="tarjeta_credito">Tarjeta de crédito</option>
                 <option value="transferencia">Transferencia</option>
                 <option value="efectivo">Efectivo en sede</option>
               </select>
             </div>
+
             <div className="flex gap-3">
-              <button type="button" onClick={() => setStep(1)} className="btn-secondary flex-1">Atrás</button>
+              <button type="button" className="btn-secondary flex-1" onClick={() => setStep(2)}>Atrás</button>
               <button type="submit" disabled={loading} className="btn-primary flex-1">
-                {loading ? 'Completando...' : selectedPlan ? 'Confirmar y pagar' : 'Terminar registro'}
+                {loading ? 'Completando…' : selectedPlan ? 'Confirmar registro' : 'Terminar sin plan'}
               </button>
             </div>
           </form>

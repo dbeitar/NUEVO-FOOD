@@ -14,7 +14,10 @@
     "preview": "vite preview --host 0.0.0.0 --port 10000",
     "doc:gen": "node scripts/md-to-docx.mjs",
     "lint": "eslint \"src/**/*.{js,jsx}\"",
-    "test": "vitest run --passWithNoTests"
+    "test": "vitest run --passWithNoTests",
+    "seed:verify": "node scripts/seed_production_verify.cjs",
+    "seed:invites": "node scripts/seed_invite_codes.cjs",
+    "seed:pilot": "node scripts/reset_pilot_passwords.cjs"
   },
   "keywords": [],
   "author": "",

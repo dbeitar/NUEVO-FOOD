@@ -48,7 +48,10 @@ if (!JWT_SECRET || String(JWT_SECRET).trim().length < 32) {
 const corsOriginEnv = (process.env.CORS_ORIGIN || '').trim();
 const corsAllowList = corsOriginEnv
   ? corsOriginEnv.split(',').map((s) => s.trim()).filter(Boolean)
-  : (IS_PROD ? [] : ['http://localhost:5175', 'http://127.0.0.1:5175']);
+  : (IS_PROD ? [] : [
+    'http://localhost:5175', 'http://127.0.0.1:5175',
+    'http://localhost:5174', 'http://127.0.0.1:5174',
+  ]);
 if (IS_PROD && corsAllowList.length === 0) {
   console.error('[CONFIG] CORS_ORIGIN obligatorio en producción. Aborto arranque.');
   process.exit(1);
@@ -221,6 +224,22 @@ if (ENABLE_DEV_ROUTES) {
 // Aplicar rate limit reforzado a todo /api/auth/*
 app.use('/api/auth', authLimiter);
 
+const { resolveInviteCode } = require('./src/utils/inviteResolver');
+
+// Público: validar código de entrenador / gimnasio / D28D en registro
+app.post('/api/auth/resolve-invite', (req, res) => {
+  try {
+    const result = resolveInviteCode(req.body?.code);
+    if (!result.ok) {
+      return res.status(result.status || 400).json({ error: result.error });
+    }
+    return res.json({ success: true, data: result.data });
+  } catch (e) {
+    console.error('resolve-invite:', e.message);
+    return res.status(500).json({ error: 'Error validando código' });
+  }
+});
+
 // Rutas de Autenticación
 if (USE_DB_AUTH) {
   app.use('/api/auth', authRoutes);
@@ -280,6 +299,7 @@ if (USE_DB_AUTH) {
         genero = null, rol = 'usuario_final',
         tiene_restricciones = false, restricciones_detalles = '',
         medidas_biomecanicas, experiencia, metodo_entrenamiento,
+        gym_id, trainer_id, module_access, invite_code,
       } = req.body || {};
 
       if (!nombre || !email) {
@@ -304,6 +324,9 @@ if (USE_DB_AUTH) {
       }
 
       const hashedPassword = await bcryptjs.hash(finalPassword, 10);
+      const resolvedInvite = invite_code ? resolveInviteCode(invite_code) : null;
+      const inviteData = resolvedInvite?.ok ? resolvedInvite.data : null;
+
       const created = userDB.create({
         nombre,
         email,
@@ -316,7 +339,14 @@ if (USE_DB_AUTH) {
         tiene_restricciones: Boolean(tiene_restricciones),
         restricciones_detalles: restricciones_detalles || '',
         clave_hash: hashedPassword,
-        rol,
+        rol: 'usuario_final',
+        roles: ['usuario_final'],
+        gym_id: gym_id ?? inviteData?.gym_id ?? null,
+        trainer_id: trainer_id ?? inviteData?.trainer_id ?? null,
+        gymId: gym_id ?? inviteData?.gym_id ?? null,
+        module_access: module_access && typeof module_access === 'object'
+          ? module_access
+          : (inviteData?.module_access || {}),
         medidas_biomecanicas,
         experiencia,
         metodo_entrenamiento,
@@ -747,5 +777,11 @@ app.listen(PORT, () => {
   console.log(`[server] Escuchando en http://localhost:${PORT} (env=${NODE_ENV})`);
   console.log(`[server] CORS allow: ${corsAllowList.join(', ') || '(ninguno; bloqueado)'}`);
   if (ENABLE_DEV_ROUTES) console.log('[server] /api/dev/* habilitados');
-  console.log(`[server] Auth backend: ${USE_DB_AUTH ? 'DB' : 'JSON'}`);
+  console.log(`[server] Auth backend: ${USE_DB_AUTH ? 'DB (solo login)' : 'JSON (dominio completo)'}`);
+  if (USE_DB_AUTH) {
+    console.warn(
+      '[CONFIG] USE_DB_AUTH=true: auth en PostgreSQL pero gimnasios, usuarios admin, programas, ciclos, etc. siguen en JSON. ' +
+      'No usar en producción hasta migración completa. Ver docs/PRODUCCION_HOY.md',
+    );
+  }
 });
