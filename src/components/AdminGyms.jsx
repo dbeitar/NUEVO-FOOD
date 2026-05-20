@@ -2,9 +2,11 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Building2, MapPin, Phone, Mail, Plus, Edit2, Trash2, X, Save, Search, AlertCircle, CheckCircle } from 'lucide-react';
 import { useI18n } from '../context/useI18n';
+import InviteCodeCell from './admin/InviteCodeCell';
 
 const emptyGymForm = {
   nombre: '',
+  invite_code: '',
   ciudad: '',
   direccion: '',
   telefono: '',
@@ -129,6 +131,7 @@ export default function AdminGyms() {
       primary_color: gym.primary_color || '#2563eb',
       secondary_color: gym.secondary_color || '#10b981',
       status: gym.status || 'active',
+      invite_code: gym.invite_code || '',
     });
     setShowForm(true);
     setError('');
@@ -160,6 +163,17 @@ export default function AdminGyms() {
       setError(err.response?.data?.error || t('gyms.assign_error', 'Error al asignar plan'));
       setTimeout(() => setError(''), 3000);
     }
+  };
+
+  const saveGymInviteCode = async (gymId, code) => {
+    const { data } = await api.put(`/gyms/${gymId}`, { invite_code: code });
+    const updated = data.gym || data;
+    setGyms((prev) => prev.map((g) => (g.id === gymId ? { ...g, invite_code: updated.invite_code } : g)));
+    setFilteredGyms((prev) => prev.map((g) => (g.id === gymId ? { ...g, invite_code: updated.invite_code } : g)));
+    if (editingGym?.id === gymId) {
+      setFormData((f) => ({ ...f, invite_code: updated.invite_code }));
+    }
+    return updated.invite_code;
   };
 
   const handleCancel = () => {
@@ -256,6 +270,18 @@ export default function AdminGyms() {
                     className="input pl-10"
                   />
                 </div>
+              </div>
+
+              <div className="md:col-span-2">
+                <label className="label">{t('users.invite_code', 'Código de invitación (registro)')}</label>
+                <input
+                  name="invite_code"
+                  value={formData.invite_code}
+                  onChange={handleInputChange}
+                  placeholder="Ej: GYM-D28D-004"
+                  className="input font-mono uppercase"
+                />
+                <p className="text-xs text-stone-500 mt-1">{t('gyms.invite_hint', 'Los usuarios finales usarán este código al registrarse.')}</p>
               </div>
               
               <div>
@@ -493,6 +519,7 @@ export default function AdminGyms() {
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.name', 'Nombre')}</th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('gyms.location', 'Ubicación')}</th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.contact', 'Contacto')}</th>
+                  <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('users.invite_code', 'Código invitación')}</th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.plan', 'Plan')}</th>
                   <th scope="col" className="px-6 py-4 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Estado</th>
                   <th scope="col" className="px-6 py-4 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
@@ -500,10 +527,10 @@ export default function AdminGyms() {
               </thead>
               <tbody className="bg-white divide-y divide-slate-200">
                 {loading ? (
-                  <tr><td colSpan="5" className="px-6 py-8 text-center text-sm text-slate-400">{t('gyms.loading', 'Cargando gimnasios...')}</td></tr>
+                  <tr><td colSpan="6" className="px-6 py-8 text-center text-sm text-slate-400">{t('gyms.loading', 'Cargando gimnasios...')}</td></tr>
                 ) : filteredGyms.length === 0 ? (
                   <tr>
-                    <td colSpan="5" className="px-6 py-12 text-center text-slate-400">
+                    <td colSpan="6" className="px-6 py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center">
                         <Building2 className="h-12 w-12 text-slate-600 mb-3" />
                         <p className="text-lg font-medium text-stone-600">{t('gyms.none', 'No se encontraron gimnasios')}</p>
@@ -548,6 +575,12 @@ export default function AdminGyms() {
                           <Phone size={12} className="text-stone-500" />
                           {gym.telefono || '-'}
                         </div>
+                      </td>
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <InviteCodeCell
+                          value={gym.invite_code}
+                          onSave={(code) => saveGymInviteCode(gym.id, code)}
+                        />
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap">
                         {assigningPlan === gym.id ? (

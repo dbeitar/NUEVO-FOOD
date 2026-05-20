@@ -455,6 +455,9 @@ if (!USE_DB_AUTH) {
 
 // Admin: Usuarios y Roles (modo memoria)
 const { hasRole: hasUserRole } = require('./src/utils/accessControl');
+const GymDatabase = require('./src/models/GymDatabase');
+const TrainersDatabase = require('./src/models/TrainersDatabase');
+const { getD28dInviteCodes } = require('./src/utils/inviteCodeUtils');
 
 // Helpers admin/users: limitan visibilidad / acción al gym del JWT cuando el
 // llamante no es super_admin.
@@ -492,6 +495,39 @@ const USER_MGMT_ROLES = [
   ...PLATFORM_ADMIN_ROLES,
   'admin_gimnasio', 'admin_marca',
 ];
+
+app.get('/api/admin/invite-codes', authMiddleware, (req, res) => {
+  try {
+    const INVITE_VIEW_ROLES = [
+      ...PLATFORM_ADMIN_ROLES,
+      'admin_gimnasio', 'admin_marca', 'admin_training', 'admin_entrenador',
+    ];
+    if (!hasUserRole(req.user, INVITE_VIEW_ROLES)) {
+      return res.status(403).json({ error: 'No tienes permiso para ver códigos de invitación' });
+    }
+    const ownGym = tokenGymId(req.user);
+    const isPlatformAdmin = hasUserRole(req.user, PLATFORM_ADMIN_ROLES);
+    let gyms = GymDatabase.getAll();
+    let trainers = TrainersDatabase.getAll();
+    if (!isPlatformAdmin && ownGym) {
+      gyms = gyms.filter((g) => Number(g.id) === Number(ownGym));
+      trainers = trainers.filter((t) => Number(t.gym_id) === Number(ownGym));
+    }
+    return res.json({
+      d28d_codes: hasUserRole(req.user, PLATFORM_ADMIN_ROLES) ? getD28dInviteCodes() : [],
+      gyms: gyms.map((g) => ({ id: g.id, nombre: g.nombre, invite_code: g.invite_code || null })),
+      trainers: trainers.map((t) => ({
+        id: t.id,
+        nombre: t.nombre,
+        gym_id: t.gym_id,
+        invite_code: t.invite_code || null,
+      })),
+    });
+  } catch (e) {
+    console.error('invite-codes:', e.message);
+    return res.status(500).json({ error: 'Error listando códigos' });
+  }
+});
 
 app.get('/api/admin/users', authMiddleware, (req, res) => {
   try {

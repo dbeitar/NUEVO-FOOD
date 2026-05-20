@@ -1,8 +1,9 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import api from '../services/api';
 import { Pencil, UserPlus, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../context/useI18n';
+import InviteCodeCell from './admin/InviteCodeCell';
 
 const EMPTY_MODULE_ACCESS = {
   d28d: false,
@@ -46,9 +47,19 @@ export default function AdminUsers() {
   const [assignedTitle, setAssignedTitle] = useState('');
   const [assignedList, setAssignedList] = useState([]);
   const [programs, setPrograms] = useState([]);
+  const [d28dCodes, setD28dCodes] = useState([]);
 
   // Form state
   const [formData, setFormData] = useState(emptyForm);
+
+  const gymById = useMemo(
+    () => Object.fromEntries(gyms.map((g) => [Number(g.id), g])),
+    [gyms],
+  );
+  const trainerById = useMemo(
+    () => Object.fromEntries(trainers.map((t) => [Number(t.id), t])),
+    [trainers],
+  );
 
   const fetchUsers = useCallback(async () => {
     try {
@@ -83,6 +94,30 @@ export default function AdminUsers() {
     fetchUsers();
     fetchResources();
   }, [fetchUsers, fetchResources]);
+
+  useEffect(() => {
+    const roles = Array.isArray(currentUser?.roles) && currentUser.roles.length
+      ? currentUser.roles
+      : [currentUser?.rol].filter(Boolean);
+    if (!roles.some((r) => ['super_admin', 'admin_d28d'].includes(r))) return;
+    api.get('/admin/invite-codes')
+      .then((res) => setD28dCodes(res.data?.d28d_codes || []))
+      .catch(() => setD28dCodes(['D28D-PILOTO', 'D28D-PILOTO-2026', 'D28D']));
+  }, [currentUser]);
+
+  const saveGymInviteCode = async (gymId, code) => {
+    const { data } = await api.put(`/gyms/${gymId}`, { invite_code: code });
+    const updated = data.gym || data;
+    setGyms((prev) => prev.map((g) => (g.id === gymId ? { ...g, invite_code: updated.invite_code } : g)));
+    return updated.invite_code;
+  };
+
+  const saveTrainerInviteCode = async (trainerId, code) => {
+    const { data } = await api.put(`/trainers/${trainerId}`, { invite_code: code });
+    const updated = data.trainer || data;
+    setTrainers((prev) => prev.map((t) => (t.id === trainerId ? { ...t, invite_code: updated.invite_code } : t)));
+    return updated.invite_code;
+  };
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
@@ -232,6 +267,20 @@ export default function AdminUsers() {
           {t('users.new_user', 'Nuevo Usuario')}
         </button>
       </div>
+
+      {d28dCodes.length > 0 && (
+        <div className="bg-lime-50 border border-lime-200 rounded-2xl p-4 text-sm">
+          <p className="font-semibold text-stone-900">{t('users.d28d_invite_codes', 'Códigos D28D (registro público)')}</p>
+          <p className="text-stone-600 mt-1">{t('users.d28d_invite_hint', 'Comparte estos códigos con usuarios que entren directo a la plataforma D28D:')}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {d28dCodes.map((code) => (
+              <code key={code} className="text-xs font-mono bg-white border border-lime-300 text-lime-900 px-2 py-1 rounded">
+                {code}
+              </code>
+            ))}
+          </div>
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-950/40 border-l-4 border-red-500 p-4 rounded-md">
@@ -449,6 +498,7 @@ export default function AdminUsers() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.id', 'ID')}</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.name', 'Nombre')}</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.city', 'Ciudad')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('users.invite_code', 'Código invitación')}</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('plans.capacity', 'Cupo Máx')}</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
                 </tr>
@@ -459,6 +509,12 @@ export default function AdminUsers() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">#{g.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">{g.nombre}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{g.ciudad || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <InviteCodeCell
+                        value={g.invite_code}
+                        onSave={(code) => saveGymInviteCode(g.id, code)}
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-stone-600">{g.capacidad_usuarios ?? 50}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button
@@ -494,6 +550,7 @@ export default function AdminUsers() {
                   <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.id', 'ID')}</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.name', 'Nombre')}</th>
                   <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('trainers.specialty', 'Especialidad')}</th>
+                  <th className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('users.invite_code', 'Código invitación')}</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('plans.capacity', 'Cupo Máx')}</th>
                   <th className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
                 </tr>
@@ -504,6 +561,12 @@ export default function AdminUsers() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">#{tr.id}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900">{tr.nombre}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{tr.especialidad || '-'}</td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                      <InviteCodeCell
+                        value={tr.invite_code}
+                        onSave={(code) => saveTrainerInviteCode(tr.id, code)}
+                      />
+                    </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-stone-600">{tr.capacidad_usuarios ?? 50}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
                       <button
@@ -538,15 +601,16 @@ export default function AdminUsers() {
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.email', 'Email')}</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.role', 'Rol')}</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.gym', 'Gimnasio')}</th>
+                <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('users.invite_code', 'Código invitación')}</th>
                 <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Programa</th>
                 <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
               </tr>
             </thead>
             <tbody className="bg-white divide-y divide-slate-200">
               {loading ? (
-                    <tr><td colSpan="6" className="px-6 py-4 text-center text-sm text-stone-600">{t('users.loading', 'Cargando usuarios...')}</td></tr>
+                    <tr><td colSpan="7" className="px-6 py-4 text-center text-sm text-stone-600">{t('users.loading', 'Cargando usuarios...')}</td></tr>
               ) : users.length === 0 ? (
-                 <tr><td colSpan="6" className="px-6 py-4 text-center text-sm text-stone-600">{t('users.none', 'No hay usuarios registrados.')}</td></tr>
+                 <tr><td colSpan="7" className="px-6 py-4 text-center text-sm text-stone-600">{t('users.none', 'No hay usuarios registrados.')}</td></tr>
               ) : (
                 users.map(user => (
                   <tr key={user.id} className="hover:bg-stone-100 transition-colors">
@@ -563,7 +627,29 @@ export default function AdminUsers() {
                       </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
-                      {user.gym_id ? (gyms.find(g => g.id === user.gym_id)?.nombre || user.gym_id) : '-'}
+                      {user.gym_id ? (gymById[Number(user.gym_id)]?.nombre || user.gym_id) : '-'}
+                    </td>
+                    <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
+                      <div className="flex flex-col gap-1">
+                        {user.gym_id && gymById[Number(user.gym_id)]?.invite_code && (
+                          <span className="text-xs">
+                            <span className="text-stone-500">Gym:</span>{' '}
+                            <InviteCodeCell value={gymById[Number(user.gym_id)].invite_code} readOnly />
+                          </span>
+                        )}
+                        {user.trainer_id && trainerById[Number(user.trainer_id)]?.invite_code && (
+                          <span className="text-xs">
+                            <span className="text-stone-500">Coach:</span>{' '}
+                            <InviteCodeCell value={trainerById[Number(user.trainer_id)].invite_code} readOnly />
+                          </span>
+                        )}
+                        {!user.gym_id && !user.trainer_id && user.module_access?.d28d && d28dCodes[0] && (
+                          <InviteCodeCell value={d28dCodes[0]} readOnly placeholder="D28D" />
+                        )}
+                        {!user.gym_id && !user.trainer_id && !user.module_access?.d28d && (
+                          <span className="text-stone-400">—</span>
+                        )}
+                      </div>
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">
                       {(() => {

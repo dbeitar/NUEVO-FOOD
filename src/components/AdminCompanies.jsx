@@ -3,6 +3,7 @@ import api from '../services/api';
 import { Building2, Dumbbell, Users, Search, Plus, Save } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../context/useI18n';
+import InviteCodeCell from './admin/InviteCodeCell';
 
 export default function AdminCompanies() {
   const { user } = useAuth();
@@ -19,6 +20,7 @@ export default function AdminCompanies() {
   const [error, setError] = useState('');
   const [creating, setCreating] = useState(false);
   const [form, setForm] = useState({ nombre: '', email: '', password: '', planId: '' });
+  const [d28dCodes, setD28dCodes] = useState([]);
 
   const fetchAll = useCallback(async () => {
     try {
@@ -32,10 +34,29 @@ export default function AdminCompanies() {
       setTrainers(Array.isArray(t.data) ? t.data : []);
       setUsers(u.data?.data || []);
       setPlans(p.data || []);
+      api.get('/admin/invite-codes')
+        .then((meta) => setD28dCodes(meta.data?.d28d_codes || []))
+        .catch(() => setD28dCodes([]));
     } catch {
       setError(t('companies.error_loading', 'Error cargando datos'));
     }
   }, [t]);
+
+  const saveGymInviteCode = async (gymId, code) => {
+    const { data } = await api.put(`/gyms/${gymId}`, { invite_code: code });
+    const updated = data.gym || data;
+    setGyms((prev) => prev.map((g) => (g.id === gymId ? { ...g, invite_code: updated.invite_code } : g)));
+    if (selectedGym?.id === gymId) setSelectedGym((g) => ({ ...g, invite_code: updated.invite_code }));
+    return updated.invite_code;
+  };
+
+  const saveTrainerInviteCode = async (trainerId, code) => {
+    const { data } = await api.put(`/trainers/${trainerId}`, { invite_code: code });
+    const updated = data.trainer || data;
+    setTrainers((prev) => prev.map((tr) => (tr.id === trainerId ? { ...tr, invite_code: updated.invite_code } : tr)));
+    if (selectedTrainer?.id === trainerId) setSelectedTrainer((tr) => ({ ...tr, invite_code: updated.invite_code }));
+    return updated.invite_code;
+  };
 
   useEffect(() => {
     fetchAll();
@@ -125,6 +146,17 @@ export default function AdminCompanies() {
   }
 
   return (
+    <div className="space-y-4">
+      {d28dCodes.length > 0 && (
+        <div className="card bg-lime-50 border-lime-200">
+          <p className="font-semibold text-stone-900 text-sm">{t('companies.d28d_codes', 'Códigos D28D para registro')}</p>
+          <div className="mt-2 flex flex-wrap gap-2">
+            {d28dCodes.map((code) => (
+              <code key={code} className="text-xs font-mono bg-white border border-lime-300 px-2 py-1 rounded">{code}</code>
+            ))}
+          </div>
+        </div>
+      )}
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="card">
         <div className="flex items-center justify-between mb-4">
@@ -147,6 +179,11 @@ export default function AdminCompanies() {
                 </div>
                 <span className="text-xs text-stone-600">{g.ciudad || ''}</span>
               </div>
+              {g.invite_code && (
+                <code className="mt-1 block text-[10px] font-mono text-lime-800 bg-lime-50 px-1.5 py-0.5 rounded border border-lime-200">
+                  {g.invite_code}
+                </code>
+              )}
             </li>
           ))}
           {filteredGyms.length === 0 && <li className="text-sm text-stone-600">{t('companies.no_gyms', 'Sin gimnasios')}</li>}
@@ -167,13 +204,18 @@ export default function AdminCompanies() {
         <ul className="divide-y divide-slate-200">
           {filteredTrainers.map(t => (
             <li key={t.id} className={`py-2 px-2 rounded-lg hover:bg-stone-50 cursor-pointer ${selectedTrainer?.id === t.id ? 'bg-stone-100' : ''}`} onClick={() => { setSelectedTrainer(t); setSelectedGym(null); }}>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Users className="w-4 h-4 text-stone-600" />
-                  <span className="text-sm text-stone-900">{t.nombre}</span>
+              <div className="flex items-center justify-between gap-2">
+                <div className="flex items-center gap-2 min-w-0">
+                  <Users className="w-4 h-4 text-stone-600 shrink-0" />
+                  <span className="text-sm text-stone-900 truncate">{t.nombre}</span>
                 </div>
-                <span className="text-xs text-stone-600">{t.email || ''}</span>
+                <span className="text-xs text-stone-600 shrink-0 truncate">{t.email || ''}</span>
               </div>
+              {t.invite_code && (
+                <code className="mt-1 block text-[10px] font-mono text-lime-800 bg-lime-50 px-1.5 py-0.5 rounded border border-lime-200 truncate">
+                  {t.invite_code}
+                </code>
+              )}
             </li>
           ))}
           {filteredTrainers.length === 0 && <li className="text-sm text-stone-600">{t('companies.no_trainers', 'Sin entrenadores')}</li>}
@@ -195,6 +237,19 @@ export default function AdminCompanies() {
 
         {message && <div className="bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl p-2 mb-3">{message}</div>}
         {error && <div className="bg-red-50 border border-red-200 text-red-700 rounded-xl p-2 mb-3">{error}</div>}
+
+        {selectedGym && (
+          <div className="mb-4 p-3 rounded-xl border border-lime-200 bg-lime-50/50">
+            <p className="text-xs font-semibold text-stone-600 uppercase mb-2">{t('users.invite_code', 'Código invitación')} — {selectedGym.nombre}</p>
+            <InviteCodeCell value={selectedGym.invite_code} onSave={(code) => saveGymInviteCode(selectedGym.id, code)} />
+          </div>
+        )}
+        {selectedTrainer && (
+          <div className="mb-4 p-3 rounded-xl border border-lime-200 bg-lime-50/50">
+            <p className="text-xs font-semibold text-stone-600 uppercase mb-2">{t('users.invite_code', 'Código invitación')} — {selectedTrainer.nombre}</p>
+            <InviteCodeCell value={selectedTrainer.invite_code} onSave={(code) => saveTrainerInviteCode(selectedTrainer.id, code)} />
+          </div>
+        )}
 
         {creating && (selectedGym || selectedTrainer) && (
           <form onSubmit={createUser} className="mb-4 grid grid-cols-1 md:grid-cols-2 gap-3">
@@ -246,6 +301,7 @@ export default function AdminCompanies() {
           </table>
         </div>
       </div>
+    </div>
     </div>
   );
 }

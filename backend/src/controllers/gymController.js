@@ -6,6 +6,11 @@ const {
   filterByGym,
   canAccessEntity,
 } = require('../utils/tenantScope');
+const {
+  normalizeInviteCode,
+  assertInviteCodeAvailable,
+  suggestGymInviteCode,
+} = require('../utils/inviteCodeUtils');
 
 // Roles que pueden gestionar gyms en su scope.
 // - super_admin / admin_d28d: toda la plataforma.
@@ -88,13 +93,25 @@ const createGym = (req, res) => {
       latitude, longitude, capacidad_usuarios, plan_id,
       logo_url, brand_name, brand_slug, white_label_enabled, welcome_message,
       support_whatsapp, primary_color, secondary_color, status,
+      invite_code,
     } = req.body || {};
 
     if (!nombre || !email || !ciudad) {
       return res.status(400).json({ error: 'Nombre, email y ciudad son requeridos' });
     }
 
-    const newGym = GymDatabase.create({
+    let inviteCodeValue = null;
+    if (invite_code) {
+      const check = assertInviteCodeAvailable({
+        code: invite_code,
+        excludeGymId: null,
+        excludeTrainerId: null,
+      });
+      if (!check.ok) return res.status(409).json({ error: check.error });
+      inviteCodeValue = check.code;
+    }
+
+    let newGym = GymDatabase.create({
       nombre,
       direccion,
       telefono: telefono || teléfono || '',
@@ -114,7 +131,19 @@ const createGym = (req, res) => {
       primary_color: primary_color || '#2563eb',
       secondary_color: secondary_color || '#10b981',
       status: status || 'active',
+      invite_code: inviteCodeValue,
     });
+
+    if (!newGym.invite_code) {
+      const suggested = suggestGymInviteCode(newGym.id, newGym.nombre);
+      const check = assertInviteCodeAvailable({
+        code: suggested,
+        excludeGymId: newGym.id,
+        excludeTrainerId: null,
+      });
+      const finalCode = check.ok ? check.code : `${suggested}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+      newGym = GymDatabase.update(newGym.id, { invite_code: finalCode }) || newGym;
+    }
 
     res.status(201).json({ message: 'Gimnasio creado exitosamente', gym: newGym });
   } catch (error) {
@@ -136,7 +165,18 @@ const updateGym = (req, res) => {
     if (!isPlatformAdmin(req.user) && !canAccessEntity(req.user, target)) {
       return res.status(403).json({ error: 'Solo puedes modificar tu propio gimnasio' });
     }
-    const updatedGym = GymDatabase.update(parseInt(id, 10), req.body);
+    const updates = { ...(req.body || {}) };
+    if (updates.invite_code !== undefined) {
+      const check = assertInviteCodeAvailable({
+        code: updates.invite_code,
+        excludeGymId: parseInt(id, 10),
+        excludeTrainerId: null,
+      });
+      if (!check.ok) return res.status(409).json({ error: check.error });
+      updates.invite_code = check.code;
+    }
+    const updatedGym = GymDatabase.update(parseInt(id, 10), updates);
+    if (!updatedGym) return res.status(404).json({ error: 'Gimnasio no encontrado' });
     res.json({ message: 'Gimnasio actualizado exitosamente', gym: updatedGym });
   } catch (error) {
     console.error('Error actualizando gimnasio:', error.message);

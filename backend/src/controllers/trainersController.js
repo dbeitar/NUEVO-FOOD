@@ -6,6 +6,10 @@ const {
   filterByGym,
   canAccessEntity,
 } = require('../utils/tenantScope');
+const {
+  assertInviteCodeAvailable,
+  suggestTrainerInviteCode,
+} = require('../utils/inviteCodeUtils');
 
 const TRAINER_MANAGE_ROLES = ['super_admin', 'admin_gimnasio', 'admin_marca', 'admin_gym'];
 const isTrainerManager = (user) => Boolean(user) && TRAINER_MANAGE_ROLES.includes(user.rol);
@@ -80,7 +84,10 @@ const createTrainer = (req, res) => {
     if (!isTrainerManager(req.user)) {
       return res.status(403).json({ error: 'No tienes permiso para esta acción' });
     }
-    const { nombre, email, teléfono, telefono, especialidad, certificaciones, experiencia_años, gym_id, horario_disponible, tarifa_sesion, capacidad_usuarios } = req.body || {};
+    const {
+      nombre, email, teléfono, telefono, especialidad, certificaciones, experiencia_años,
+      gym_id, horario_disponible, tarifa_sesion, capacidad_usuarios, invite_code,
+    } = req.body || {};
     if (!nombre || !email) {
       return res.status(400).json({ error: 'Nombre y email son requeridos' });
     }
@@ -89,7 +96,19 @@ const createTrainer = (req, res) => {
     if (finalGymId == null) {
       return res.status(400).json({ error: 'No es posible determinar el gym destino' });
     }
-    const newTrainer = TrainersDatabase.create({
+
+    let inviteCodeValue = null;
+    if (invite_code) {
+      const check = assertInviteCodeAvailable({
+        code: invite_code,
+        excludeGymId: null,
+        excludeTrainerId: null,
+      });
+      if (!check.ok) return res.status(409).json({ error: check.error });
+      inviteCodeValue = check.code;
+    }
+
+    let newTrainer = TrainersDatabase.create({
       nombre,
       email,
       telefono: telefono || teléfono || null,
@@ -100,7 +119,20 @@ const createTrainer = (req, res) => {
       horario_disponible,
       tarifa_sesion: tarifa_sesion || 0,
       capacidad_usuarios: capacidad_usuarios ?? 50,
+      invite_code: inviteCodeValue,
     });
+
+    if (!newTrainer.invite_code) {
+      const suggested = suggestTrainerInviteCode(newTrainer.id, newTrainer.nombre);
+      const check = assertInviteCodeAvailable({
+        code: suggested,
+        excludeGymId: null,
+        excludeTrainerId: newTrainer.id,
+      });
+      const finalCode = check.ok ? check.code : `${suggested}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+      newTrainer = TrainersDatabase.update(newTrainer.id, { invite_code: finalCode }) || newTrainer;
+    }
+
     res.status(201).json({ message: 'Entrenador creado exitosamente', trainer: newTrainer });
   } catch (error) {
     console.error('Error creando entrenador:', error.message);
@@ -122,6 +154,15 @@ const updateTrainer = (req, res) => {
     const updates = { ...(req.body || {}) };
     if (!isSuperAdmin(req.user) && updates.gym_id !== undefined) {
       delete updates.gym_id;
+    }
+    if (updates.invite_code !== undefined) {
+      const check = assertInviteCodeAvailable({
+        code: updates.invite_code,
+        excludeGymId: null,
+        excludeTrainerId: parseInt(req.params.id, 10),
+      });
+      if (!check.ok) return res.status(409).json({ error: check.error });
+      updates.invite_code = check.code;
     }
     const updatedTrainer = TrainersDatabase.update(parseInt(req.params.id, 10), updates);
     res.json({ message: 'Entrenador actualizado exitosamente', trainer: updatedTrainer });
