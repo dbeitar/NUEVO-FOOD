@@ -74,7 +74,7 @@ class UserDatabase {
     return this.users.find((u) => u.email === email);
   }
 
-  create(userData) {
+  async create(userData) {
     const newUser = {
       id: this.nextId++,
       nombre: userData.nombre,
@@ -102,13 +102,17 @@ class UserDatabase {
       fecha_registro: new Date(),
     };
     const normalized = this.normalizeUser(newUser);
-    this.users.push(normalized);
 
     if (useRelationalStorage()) {
-      userRepo.createLegacy(normalized).catch((e) => console.error('[UserDatabase] create:', e.message));
-    } else {
-      this.save();
+      const saved = await userRepo.createLegacy(normalized);
+      const finalUser = this.normalizeUser({ ...normalized, ...saved, id: saved.id });
+      this.users.push(finalUser);
+      this.nextId = Math.max(this.nextId, saved.id + 1);
+      return finalUser;
     }
+
+    this.users.push(normalized);
+    this.save();
     return normalized;
   }
 

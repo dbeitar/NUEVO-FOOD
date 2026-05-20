@@ -172,10 +172,11 @@ if (IS_PROD) {
 // Rate limit reforzado para auth en cualquier entorno
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 20,
+  max: IS_PROD ? 20 : 300,
   message: 'Demasiados intentos. Intenta de nuevo en 15 minutos.',
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => !IS_PROD && String(req.path || '').includes('resolve-invite'),
 });
 
 // Health checks (públicos, mínimos)
@@ -227,12 +228,12 @@ if (ENABLE_DEV_ROUTES) {
 // Aplicar rate limit reforzado a todo /api/auth/*
 app.use('/api/auth', authLimiter);
 
-const { resolveInviteCode } = require('./src/utils/inviteResolver');
+const { resolveInviteCode, resolveInviteCodeAsync } = require('./src/utils/inviteResolver');
 
 // Público: validar código de entrenador / gimnasio / D28D en registro
-app.post('/api/auth/resolve-invite', (req, res) => {
+app.post('/api/auth/resolve-invite', async (req, res) => {
   try {
-    const result = resolveInviteCode(req.body?.code);
+    const result = await resolveInviteCodeAsync(req.body?.code);
     if (!result.ok) {
       return res.status(result.status || 400).json({ error: result.error });
     }
@@ -330,7 +331,7 @@ if (USE_DB_AUTH) {
       const resolvedInvite = invite_code ? resolveInviteCode(invite_code) : null;
       const inviteData = resolvedInvite?.ok ? resolvedInvite.data : null;
 
-      const created = userDB.create({
+      const created = await userDB.create({
         nombre,
         email,
         telefono: teléfono || telefono || null,
@@ -364,7 +365,10 @@ if (USE_DB_AUTH) {
       });
     } catch (error) {
       console.error('Error registrando usuario:', error.message);
-      res.status(500).json({ error: 'Error interno del servidor' });
+      if (error.code === 'P2002') {
+        return res.status(409).json({ error: 'El email ya está registrado' });
+      }
+      res.status(500).json({ error: error.message || 'Error interno del servidor' });
     }
   });
 
@@ -565,7 +569,7 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
 
     const pwd = password && String(password).length >= 6 ? password : Math.random().toString(36).slice(-8);
     const hashedPassword = await bcryptjs.hash(pwd, 10);
-    const created = userDB.create({
+    const created = await userDB.create({
       nombre,
       email,
       clave_hash: hashedPassword,

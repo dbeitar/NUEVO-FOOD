@@ -31,16 +31,27 @@ function toLegacy(row) {
   };
 }
 
+function parseBirthDate(raw) {
+  if (!raw || String(raw).trim() === '') return null;
+  const iso = String(raw).trim().slice(0, 10);
+  const d = new Date(`${iso}T00:00:00.000Z`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function toNumberOrNull(value) {
+  if (value === null || value === undefined || value === '') return null;
+  const n = Number(value);
+  return Number.isFinite(n) ? n : null;
+}
+
 function toPrisma(legacy) {
   return {
     nombre: legacy.nombre,
     email: legacy.email,
     telefono: legacy.telefono || null,
-    fechaNacimiento: legacy.fecha_nacimiento
-      ? new Date(`${legacy.fecha_nacimiento}T00:00:00.000Z`)
-      : null,
-    peso: legacy.peso ?? null,
-    altura: legacy.altura ?? null,
+    fechaNacimiento: parseBirthDate(legacy.fecha_nacimiento),
+    peso: toNumberOrNull(legacy.peso),
+    altura: toNumberOrNull(legacy.altura),
     objetivo: legacy.objetivo || null,
     claveHash: legacy.clave_hash,
     rol: legacy.rol || 'usuario_final',

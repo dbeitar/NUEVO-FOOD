@@ -13,7 +13,7 @@ services:
       POSTGRES_PASSWORD: mvpfood_dev_secret
       POSTGRES_DB: mvpfood
     ports:
-      - "5432:5432"
+      - "5434:5432"
     volumes:
       - mvpfood_pgdata:/var/lib/postgresql/data
     healthcheck:

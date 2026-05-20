@@ -18,7 +18,11 @@ async function findById(id) {
 
 async function createLegacy(legacy) {
   const data = toPrisma(legacy);
-  const row = await getPrisma().user.create({ data });
+  const row = await getPrisma().user.upsert({
+    where: { email: legacy.email },
+    create: data,
+    update: data,
+  });
   return toLegacy(row);
 }
 
@@ -32,6 +36,10 @@ async function updateLegacy(id, updates) {
     data,
   });
   return toLegacy(row);
+}
+
+async function upsertLegacy(legacy) {
+  return createLegacy(legacy);
 }
 
 async function deleteSoft(id) {
@@ -48,5 +56,6 @@ module.exports = {
   findById,
   createLegacy,
   updateLegacy,
+  upsertLegacy,
   deleteSoft,
 };

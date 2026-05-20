@@ -6,6 +6,17 @@ import TermsOfServiceModal from './TermsOfServiceModal';
 import AuthLayout from './AuthLayout';
 import { PUBLIC_BRAND_NAME } from '../utils/branding';
 
+function readApiError(err, fallback) {
+  const data = err?.response?.data;
+  if (typeof data === 'string' && data.trim()) return data.trim();
+  if (data?.error) return data.error;
+  if (data?.message) return data.message;
+  if (err?.response?.status === 429) {
+    return 'Demasiados intentos. Espera unos minutos o reinicia el backend en desarrollo.';
+  }
+  return fallback;
+}
+
 const MODULE_LABELS = {
   training: 'Entrenamiento',
   nutrition: 'Plan de alimentación',
@@ -86,8 +97,8 @@ export default function Register({ onSwitchToLogin }) {
       setError('Las contraseñas no coinciden');
       return;
     }
-    if (formData.password.length < 6) {
-      setError('La contraseña debe tener al menos 6 caracteres');
+    if (formData.password.length < 8) {
+      setError('La contraseña debe tener al menos 8 caracteres');
       return;
     }
     if (!formData.genero) {
@@ -112,7 +123,7 @@ export default function Register({ onSwitchToLogin }) {
       setSelectedPlan(null);
       setStep(3);
     } catch (err) {
-      setError(err.response?.data?.error || 'No pudimos validar el código');
+      setError(readApiError(err, 'No pudimos validar el código'));
     } finally {
       setValidatingCode(false);
     }
@@ -134,9 +145,9 @@ export default function Register({ onSwitchToLogin }) {
         email: formData.email,
         password: formData.password,
         teléfono: formData.teléfono,
-        fecha_nacimiento: formData.fecha_nacimiento,
-        peso: formData.peso,
-        altura: formData.altura,
+        fecha_nacimiento: formData.fecha_nacimiento || null,
+        peso: formData.peso || null,
+        altura: formData.altura || null,
         genero: formData.genero,
         objetivo: formData.objetivo,
         tiene_restricciones: formData.tiene_restricciones,
@@ -146,14 +157,25 @@ export default function Register({ onSwitchToLogin }) {
         module_access: inviteContext.module_access,
         invite_code: inviteCode.trim(),
       });
-      await login(formData.email, formData.password);
+      try {
+        await login(formData.email, formData.password);
+      } catch (loginErr) {
+        setError(
+          `Cuenta creada, pero no pudimos iniciar sesión automáticamente: ${readApiError(loginErr, 'revisa tu contraseña')}. Usa "Iniciar sesión" con el mismo email.`
+        );
+        return;
+      }
       if (selectedPlan) {
-        await api.post('/accounts', {
-          plan: selectedPlan.nombre,
-          gym_id: inviteContext.gym_id || null,
-          trainer_id: inviteContext.trainer_id || null,
-          metodoPago: formData.metodoPago,
-        });
+        try {
+          await api.post('/accounts', {
+            plan: selectedPlan.nombre,
+            gym_id: inviteContext.gym_id || null,
+            trainer_id: inviteContext.trainer_id || null,
+            metodoPago: formData.metodoPago,
+          });
+        } catch (planErr) {
+          console.warn('Plan opcional no activado:', planErr?.response?.data || planErr.message);
+        }
       }
       if (rememberEmail && formData.email) {
         try {
@@ -166,7 +188,7 @@ export default function Register({ onSwitchToLogin }) {
       } catch { /* noop */ }
       window.location.assign('/');
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al completar el registro');
+      setError(readApiError(err, 'Error al completar el registro'));
     } finally {
       setLoading(false);
     }

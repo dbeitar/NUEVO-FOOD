@@ -19,11 +19,13 @@ const BACKEND = path.join(ROOT, 'backend');
 const MANIFEST_PATH = path.join(__dirname, 'seeds', 'production-verify.manifest.json');
 
 process.chdir(BACKEND);
+require('dotenv').config();
+process.env.USE_RELATIONAL_STORAGE = 'true';
 
 const bcrypt = require(path.join(BACKEND, 'node_modules', 'bcryptjs'));
-const JsonStore = require(path.join(BACKEND, 'src/utils/JsonStore'));
-const userDB = require(path.join(BACKEND, 'src/models/UserDatabase'));
-const { resolveInviteCode, MODULE_PRESETS } = require(path.join(BACKEND, 'src/utils/inviteResolver'));
+const userRepo = require(path.join(BACKEND, 'src/db/repositories/userRepository'));
+const { resolveInviteCodeAsync } = require(path.join(BACKEND, 'src/utils/inviteResolver'));
+const { connectPrisma, getPrisma } = require(path.join(BACKEND, 'src/lib/prisma'));
 
 let password = 'Demo!2026';
 
@@ -32,40 +34,31 @@ function loadManifest() {
   return JSON.parse(raw);
 }
 
-function seedInviteCodes(manifest) {
-  const gymStore = new JsonStore('gyms.json', []);
-  const trainerStore = new JsonStore('trainers.json', []);
+async function seedInviteCodes(manifest) {
+  const prisma = getPrisma();
   let gyms = 0;
   let trainers = 0;
-
-  for (const gym of gymStore.getAll()) {
-    const spec = manifest.gym_invite_codes.find((g) => g.gym_id === gym.id);
-    if (spec) {
-      gym.invite_code = spec.invite_code;
-      gyms++;
-    }
+  for (const spec of manifest.gym_invite_codes) {
+    await prisma.gym.updateMany({
+      where: { id: spec.gym_id },
+      data: { inviteCode: spec.invite_code },
+    });
+    gyms++;
   }
-
-  for (const tr of trainerStore.getAll()) {
-    const spec = manifest.trainer_invite_codes.find((t) => t.trainer_id === tr.id);
-    if (spec) {
-      tr.invite_code = spec.invite_code;
-      trainers++;
-    } else if (!tr.invite_code) {
-      tr.invite_code = `COACH-${String(tr.id).padStart(3, '0')}`;
-      trainers++;
-    }
+  for (const spec of manifest.trainer_invite_codes) {
+    await prisma.trainer.updateMany({
+      where: { id: spec.trainer_id },
+      data: { inviteCode: spec.invite_code },
+    });
+    trainers++;
   }
-
-  gymStore.setAll(gymStore.getAll());
-  trainerStore.setAll(trainerStore.getAll());
   return { gyms, trainers };
 }
 
 async function upsertUser({ email, nombre, rol, roles, gym_id, trainer_id, module_access }) {
   const hash = await bcrypt.hash(password, 10);
-  const existing = userDB.getByEmail(email);
-  const payload = {
+  const existing = await userRepo.findByEmail(email);
+  const legacy = {
     nombre,
     email,
     clave_hash: hash,
@@ -79,17 +72,12 @@ async function upsertUser({ email, nombre, rol, roles, gym_id, trainer_id, modul
     objetivo: 'mantenimiento',
     activo: true,
   };
-
-  if (existing) {
-    userDB.update(existing.id, payload);
-    return { action: 'updated', id: existing.id, email };
-  }
-  const created = userDB.create(payload);
-  return { action: 'created', id: created.id, email };
+  const row = await userRepo.upsertLegacy(legacy);
+  return { action: existing ? 'updated' : 'created', id: row.id, email };
 }
 
 async function seedEndUser(spec) {
-  const resolved = resolveInviteCode(spec.invite_code);
+  const resolved = await resolveInviteCodeAsync(spec.invite_code);
   if (!resolved.ok) {
     throw new Error(`Código inválido para ${spec.email}: ${spec.invite_code} — ${resolved.error}`);
   }
@@ -106,6 +94,7 @@ async function seedEndUser(spec) {
 }
 
 async function main() {
+  await connectPrisma();
   const manifest = loadManifest();
   const argPwd = (process.argv[2] || '').trim();
   password = argPwd || manifest.default_password || 'Demo!2026';
@@ -119,7 +108,7 @@ async function main() {
   console.log(`Manifiesto: ${MANIFEST_PATH}`);
   console.log(`Contraseña: ${pwd}\n`);
 
-  const { gyms, trainers } = seedInviteCodes(manifest);
+  const { gyms, trainers } = await seedInviteCodes(manifest);
   console.log(`Códigos invite: ${gyms} gimnasios, ${trainers} entrenadores`);
   console.log(`Códigos D28D (env D28D_INVITE_CODE): ${manifest.d28d_invite_codes.join(', ')}\n`);
 
@@ -138,7 +127,7 @@ async function main() {
   console.log('\n--- Usuarios finales de verificación ---');
   for (const spec of manifest.end_users_verification) {
     const r = await seedEndUser(spec);
-    const resolved = resolveInviteCode(spec.invite_code);
+    const resolved = await resolveInviteCodeAsync(spec.invite_code);
     const mods = Object.entries(resolved.data.module_access)
       .filter(([, v]) => v)
       .map(([k]) => k)
@@ -150,7 +139,7 @@ async function main() {
 
   console.log('\n--- Smoke API (local) ---');
   for (const code of ['D28D-PILOTO', 'GYM-D28D-004', 'COACH-CARLOS-001']) {
-    const r = resolveInviteCode(code);
+    const r = await resolveInviteCodeAsync(code);
     console.log(`  ${code}: ${r.ok ? r.data.type + ' — ' + r.data.label : 'ERROR ' + r.error}`);
   }
 
