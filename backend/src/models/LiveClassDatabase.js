@@ -1,4 +1,6 @@
 const JsonStore = require('../utils/JsonStore');
+const { useRelationalStorage } = require('../utils/storageMode');
+const domainRepo = require('../db/repositories/domainDocumentRepository');
 
 class LiveClassDatabase {
   constructor() {
@@ -26,10 +28,29 @@ class LiveClassDatabase {
       },
     ];
 
-    this.store = new JsonStore('live_classes.json', initial);
-    this.rows = this.normalizeRows(Array.isArray(this.store.getAll()) ? this.store.getAll() : []);
+    if (!useRelationalStorage()) {
+      this.store = new JsonStore('live_classes.json', initial);
+      this.rows = this.normalizeRows(Array.isArray(this.store.getAll()) ? this.store.getAll() : []);
+    } else {
+      this.rows = [];
+    }
     this.nextId = this.rows.length > 0 ? Math.max(...this.rows.map((item) => item.id || 0)) + 1 : 1;
-    this.store.setAll(this.rows);
+    if (!useRelationalStorage()) this.store.setAll(this.rows);
+  }
+
+  async hydrate() {
+    if (!useRelationalStorage()) return;
+    const arr = await domainRepo.getArray('live_classes');
+    this.rows = this.normalizeRows(Array.isArray(arr) && arr.length ? arr : []);
+    this.nextId = this.rows.length > 0 ? Math.max(...this.rows.map((item) => item.id || 0)) + 1 : 1;
+  }
+
+  _persist() {
+    if (useRelationalStorage()) {
+      domainRepo.setArray('live_classes', this.rows).catch((e) => console.error('[LiveClass]', e.message));
+    } else {
+      this._persist();
+    }
   }
 
   normalizeRows(rows) {
@@ -77,7 +98,7 @@ class LiveClassDatabase {
       created_at: new Date().toISOString(),
     };
     this.rows.push(newClass);
-    this.store.setAll(this.rows);
+    this._persist();
     return newClass;
   }
 
@@ -99,7 +120,7 @@ class LiveClassDatabase {
     if (updates.active !== undefined) item.active = !!updates.active;
     if (updates.source_module !== undefined) item.source_module = String(updates.source_module || 'gym');
     if (updates.locked !== undefined) item.locked = !!updates.locked;
-    this.store.setAll(this.rows);
+    this._persist();
     return item;
   }
 
@@ -123,7 +144,7 @@ class LiveClassDatabase {
         trigger: 'join_zoom_click',
       },
     ];
-    this.store.setAll(this.rows);
+    this._persist();
     return item;
   }
 
@@ -138,7 +159,7 @@ class LiveClassDatabase {
       throw error;
     }
     item.enrolled_user_ids = [...current, userId];
-    this.store.setAll(this.rows);
+    this._persist();
     return item;
   }
 
@@ -147,7 +168,7 @@ class LiveClassDatabase {
     if (!item) return null;
     const current = Array.isArray(item.enrolled_user_ids) ? item.enrolled_user_ids : [];
     item.enrolled_user_ids = current.filter((id) => id !== userId);
-    this.store.setAll(this.rows);
+    this._persist();
     return item;
   }
 
@@ -203,7 +224,7 @@ class LiveClassDatabase {
     const index = this.rows.findIndex((item) => item.id === id);
     if (index === -1) return false;
     this.rows.splice(index, 1);
-    this.store.setAll(this.rows);
+    this._persist();
     return true;
   }
 }

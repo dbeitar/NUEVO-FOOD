@@ -1,9 +1,31 @@
 const JsonStore = require('../utils/JsonStore');
+const { useRelationalStorage } = require('../utils/storageMode');
+const domainRepo = require('../db/repositories/domainDocumentRepository');
 
 const store = new JsonStore('training_plans.json', []);
-let rows = store.getAll();
-if (!Array.isArray(rows)) rows = [];
-let nextId = rows.length > 0 ? Math.max(...rows.map((r) => r.id || 0)) + 1 : 1;
+let rows = [];
+let nextId = 1;
+
+if (!useRelationalStorage()) {
+  rows = store.getAll();
+  if (!Array.isArray(rows)) rows = [];
+  nextId = rows.length > 0 ? Math.max(...rows.map((r) => r.id || 0)) + 1 : 1;
+}
+
+function persistRows() {
+  if (useRelationalStorage()) {
+    domainRepo.setArray('training_plans', rows).catch((e) => console.error('[TrainingPlans]', e.message));
+  } else {
+    store.setAll(rows);
+  }
+}
+
+async function hydrate() {
+  if (!useRelationalStorage()) return;
+  rows = await domainRepo.getArray('training_plans');
+  if (!Array.isArray(rows)) rows = [];
+  nextId = rows.length > 0 ? Math.max(...rows.map((r) => r.id || 0)) + 1 : 1;
+}
 
 const TrainingPlansStore = {
     getAll() {
@@ -62,7 +84,7 @@ const TrainingPlansStore = {
             updated_at: new Date().toISOString(),
         };
         rows.push(plan);
-        store.setAll(rows);
+        persistRows();
         return plan;
     },
 
@@ -100,7 +122,7 @@ const TrainingPlansStore = {
         if (data.split_type) plan.split_type = data.split_type;
         plan.updated_at = new Date().toISOString();
         rows[idx] = plan;
-        store.setAll(rows);
+        persistRows();
         return plan;
     },
 
@@ -126,7 +148,7 @@ const TrainingPlansStore = {
         plan.updated_at = new Date().toISOString();
         const idx = rows.findIndex((r) => r.id === Number(planId));
         rows[idx] = plan;
-        store.setAll(rows);
+        persistRows();
         return plan;
     },
 
@@ -149,7 +171,7 @@ const TrainingPlansStore = {
         plan.updated_at = new Date().toISOString();
         const idx = rows.findIndex((r) => r.id === Number(planId));
         rows[idx] = plan;
-        store.setAll(rows);
+        persistRows();
         return plan;
     },
 
@@ -166,7 +188,7 @@ const TrainingPlansStore = {
         plan.updated_at = new Date().toISOString();
         const idx = rows.findIndex((r) => r.id === Number(planId));
         rows[idx] = plan;
-        store.setAll(rows);
+        persistRows();
         return plan;
     },
 
@@ -183,7 +205,7 @@ const TrainingPlansStore = {
             ejercicios: []
         });
         plan.updated_at = new Date().toISOString();
-        store.setAll(rows);
+        persistRows();
         return plan;
     },
 
@@ -194,7 +216,7 @@ const TrainingPlansStore = {
         // Re-index days
         plan.dias.forEach((d, i) => d.dia = i + 1);
         plan.updated_at = new Date().toISOString();
-        store.setAll(rows);
+        persistRows();
         return plan;
     },
 
@@ -213,7 +235,7 @@ const TrainingPlansStore = {
             notes: ''
         });
         plan.updated_at = new Date().toISOString();
-        store.setAll(rows);
+        persistRows();
         return plan;
     },
 
@@ -222,7 +244,7 @@ const TrainingPlansStore = {
         if (!plan || !plan.dias?.[dayIndex]?.ejercicios) return null;
         plan.dias[dayIndex].ejercicios.splice(exIndex, 1);
         plan.updated_at = new Date().toISOString();
-        store.setAll(rows);
+        persistRows();
         return plan;
     },
 
@@ -230,9 +252,10 @@ const TrainingPlansStore = {
         const idx = rows.findIndex((r) => r.id === Number(id));
         if (idx === -1) return false;
         rows.splice(idx, 1);
-        store.setAll(rows);
+        persistRows();
         return true;
     },
 };
 
+TrainingPlansStore.hydrate = hydrate;
 module.exports = TrainingPlansStore;

@@ -1,11 +1,9 @@
 const JsonStore = require('../utils/JsonStore');
 const bcryptjs = require('bcryptjs');
 const { hydrateAccess, normalizeRoles } = require('../utils/accessControl');
+const { useRelationalStorage } = require('../utils/storageMode');
+const userRepo = require('../db/repositories/userRepository');
 
-// Seed inicial de usuarios. Las contraseñas se generan a partir de la env
-// `INITIAL_USERS_PASSWORD`. Si no está definida, el seed inicial NO crea
-// contraseñas (el clave_hash queda vacío y el usuario no puede loggearse hasta
-// que un admin le asigne una nueva). Esto evita versionar/usar `Admin!234`.
 function makeInitialUsers() {
   const seedPwd = String(process.env.INITIAL_USERS_PASSWORD || '').trim();
   const hash = seedPwd.length >= 8 ? bcryptjs.hashSync(seedPwd, 10) : '';
@@ -20,14 +18,36 @@ function makeInitialUsers() {
 
 class UserDatabase {
   constructor() {
-    this.store = new JsonStore('users.json', makeInitialUsers());
-    this.users = (this.store.getAll() || []).map((user) => this.normalizeUser(user));
+    this.users = [];
+    this.nextId = 1;
+    this._hydrated = false;
 
+    if (!useRelationalStorage()) {
+      this.store = new JsonStore('users.json', makeInitialUsers());
+      this.users = (this.store.getAll() || []).map((user) => this.normalizeUser(user));
+      this.nextId = this.users.length > 0 ? Math.max(...this.users.map((u) => u.id)) + 1 : 1;
+      this._hydrated = true;
+    }
+  }
+
+  async hydrate() {
+    if (!useRelationalStorage() || this._hydrated) return;
+    this.users = (await userRepo.findAllLegacy()).map((u) => this.normalizeUser(u));
     this.nextId = this.users.length > 0 ? Math.max(...this.users.map((u) => u.id)) + 1 : 1;
+    this._hydrated = true;
   }
 
   save() {
-    this.store.setAll(this.users);
+    if (!useRelationalStorage()) {
+      this.store.setAll(this.users);
+    }
+  }
+
+  _persistRelational(user) {
+    if (!useRelationalStorage()) return;
+    userRepo.updateLegacy(user.id, user).catch((e) => {
+      console.error('[UserDatabase] persist:', e.message);
+    });
   }
 
   normalizeUser(user) {
@@ -47,11 +67,11 @@ class UserDatabase {
   }
 
   getById(id) {
-    return this.users.find(u => u.id === id);
+    return this.users.find((u) => u.id === id);
   }
 
   getByEmail(email) {
-    return this.users.find(u => u.email === email);
+    return this.users.find((u) => u.email === email);
   }
 
   create(userData) {
@@ -59,7 +79,7 @@ class UserDatabase {
       id: this.nextId++,
       nombre: userData.nombre,
       email: userData.email,
-      clave_hash: userData.clave_hash, // Already hashed
+      clave_hash: userData.clave_hash,
       rol: userData.rol || 'usuario_final',
       roles: normalizeRoles(userData),
       permissions: hydrateAccess(userData).permissions,
@@ -79,27 +99,44 @@ class UserDatabase {
       trainer_id: userData.trainer_id || null,
       gymId: userData.gymId || (userData.gym_id ?? null),
       planId: userData.planId || null,
-      fecha_registro: new Date()
+      fecha_registro: new Date(),
     };
-    this.users.push(newUser);
-    this.save();
-    return newUser;
+    const normalized = this.normalizeUser(newUser);
+    this.users.push(normalized);
+
+    if (useRelationalStorage()) {
+      userRepo.createLegacy(normalized).catch((e) => console.error('[UserDatabase] create:', e.message));
+    } else {
+      this.save();
+    }
+    return normalized;
   }
 
   update(id, updates) {
-    const user = this.users.find(u => u.id === id);
+    const user = this.users.find((u) => u.id === id);
     if (!user) return null;
     Object.assign(user, updates);
-    Object.assign(user, this.normalizeUser(user));
-    this.save();
+    const normalized = this.normalizeUser(user);
+    Object.assign(user, normalized);
+
+    if (useRelationalStorage()) {
+      this._persistRelational(user);
+    } else {
+      this.save();
+    }
     return user;
   }
 
   delete(id) {
-    const index = this.users.findIndex(u => u.id === id);
+    const index = this.users.findIndex((u) => u.id === id);
     if (index === -1) return false;
     this.users.splice(index, 1);
-    this.save();
+
+    if (useRelationalStorage()) {
+      userRepo.deleteSoft(id).catch((e) => console.error('[UserDatabase] delete:', e.message));
+    } else {
+      this.save();
+    }
     return true;
   }
 }

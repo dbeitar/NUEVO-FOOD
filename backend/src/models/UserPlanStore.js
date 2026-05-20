@@ -1,16 +1,27 @@
 const JsonStore = require('../utils/JsonStore');
+const { useRelationalStorage } = require('../utils/storageMode');
+const { getPrisma } = require('../lib/prisma');
 
 const store = new JsonStore('user_plans.json', {});
-let plans = store.getAll();
-if (typeof plans !== 'object' || plans === null || Array.isArray(plans)) {
-  plans = {};
+let plans = {};
+if (!useRelationalStorage()) {
+  plans = store.getAll();
+  if (typeof plans !== 'object' || plans === null || Array.isArray(plans)) plans = {};
 }
 
-function save() {
-  store.setAll(plans);
+async function savePlan(userId, payload) {
+  if (useRelationalStorage()) {
+    await getPrisma().userPlan.upsert({
+      where: { userId: Number(userId) },
+      create: { userId: Number(userId), payload },
+      update: { payload },
+    });
+  } else {
+    store.setAll(plans);
+  }
 }
 
-module.exports = {
+const api = {
   // Devuelve el plan del usuario o null si todavía no tiene uno asignado.
   // No se auto-popula con valores ficticios para no mostrar datos falsos al usuario.
   get(userId) {
@@ -27,7 +38,18 @@ module.exports = {
       updatedBy,
     };
     plans[key] = merged;
-    save();
+    savePlan(userId, merged).catch((e) => console.error('[UserPlan]', e.message));
     return merged;
   },
+
+  async hydrate() {
+    if (!useRelationalStorage()) return;
+    const rows = await getPrisma().userPlan.findMany();
+    plans = {};
+    rows.forEach((r) => {
+      plans[String(r.userId)] = r.payload;
+    });
+  },
 };
+
+module.exports = api;

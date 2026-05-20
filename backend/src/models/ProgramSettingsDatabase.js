@@ -47,6 +47,10 @@ const INITIAL_DATA = [
 ];
 
 const programStore = new JsonStore('program_settings.json', INITIAL_DATA);
+const { useRelationalStorage } = require('../utils/storageMode');
+const { getPrisma } = require('../lib/prisma');
+
+let programsCache = null;
 
 class ProgramSettingsDatabase {
   constructor() {
@@ -150,8 +154,40 @@ class ProgramSettingsDatabase {
       .slice(0, 40);
   }
 
+  async hydrate() {
+    if (!useRelationalStorage()) return;
+    const rows = await getPrisma().programSetting.findMany();
+    if (!rows.length) {
+      for (const p of INITIAL_DATA) {
+        await getPrisma().programSetting.create({
+          data: {
+            id: p.id,
+            name: p.name,
+            color: p.color,
+            active: p.active !== false,
+            activeCycleId: p.active_cycle_id || 1,
+            zoomEmail: p.zoom_email || '',
+            zoomAccounts: p.zoom_accounts || null,
+          },
+        });
+      }
+      programsCache = INITIAL_DATA;
+    } else {
+      programsCache = rows.map((r) => ({
+        id: r.id,
+        name: r.name,
+        color: r.color,
+        active: r.active,
+        active_cycle_id: r.activeCycleId,
+        zoom_email: r.zoomEmail,
+        zoom_accounts: r.zoomAccounts,
+      }));
+    }
+  }
+
   _readRaw() {
     try {
+      if (useRelationalStorage() && programsCache) return programsCache;
       let data = programStore.getAll();
       if (!data || !Array.isArray(data) || data.length === 0) {
         if (fs.existsSync(DATA_FILE)) {
@@ -169,7 +205,35 @@ class ProgramSettingsDatabase {
   }
 
   _writeRaw(programs) {
-    programStore.setAll(programs);
+    programsCache = programs;
+    if (useRelationalStorage()) {
+      (async () => {
+        for (const p of programs) {
+          await getPrisma().programSetting.upsert({
+          where: { id: p.id },
+          create: {
+            id: p.id,
+            name: p.name,
+            color: p.color || '#64748b',
+            active: p.active !== false,
+            activeCycleId: p.active_cycle_id || 1,
+            zoomEmail: p.zoom_email,
+            zoomAccounts: p.zoom_accounts,
+          },
+          update: {
+            name: p.name,
+            color: p.color,
+            active: p.active !== false,
+            activeCycleId: p.active_cycle_id || 1,
+            zoomEmail: p.zoom_email,
+            zoomAccounts: p.zoom_accounts,
+          },
+        });
+        }
+      })().catch((e) => console.error('[ProgramSettings]', e.message));
+    } else {
+      programStore.setAll(programs);
+    }
   }
 
   _stripSecrets(program) {

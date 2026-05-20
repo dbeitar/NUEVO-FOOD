@@ -1,4 +1,6 @@
 const JsonStore = require('../utils/JsonStore');
+const { useRelationalStorage } = require('../utils/storageMode');
+const accountsRepo = require('../db/repositories/accountsRepository');
 
 const DEFAULT_ACCOUNTS = [
       {
@@ -81,30 +83,44 @@ const DEFAULT_STATE = {
 // Cuentas y planes de suscripción (persistidos vía JsonStore / PostgreSQL)
 class AccountsDatabase {
   constructor() {
-    this.store = new JsonStore('accounts_state.json', DEFAULT_STATE);
-    const state = this.store.getAll();
-    if (state && typeof state === 'object' && !Array.isArray(state) && state.accounts) {
-      this.accounts = state.accounts;
-      this.planes = state.planes || DEFAULT_PLANES;
-      this.nextId = state.nextId || 3;
+    this.accounts = [];
+    this.planes = [];
+    this.nextId = 1;
+    if (!useRelationalStorage()) {
+      this.store = new JsonStore('accounts_state.json', DEFAULT_STATE);
+      const state = this.store.getAll();
+      if (state?.accounts) {
+        this.accounts = state.accounts;
+        this.planes = state.planes || DEFAULT_PLANES;
+        this.nextId = state.nextId || 3;
+      } else {
+        this.accounts = [...DEFAULT_ACCOUNTS];
+        this.planes = [...DEFAULT_PLANES];
+        this.nextId = 3;
+      }
+    }
+  }
+
+  async hydrate() {
+    if (!useRelationalStorage()) return;
+    const state = await accountsRepo.loadState();
+    if (!state.planes.length) {
+      for (const p of DEFAULT_PLANES) await accountsRepo.upsertPlan(p);
+      const reloaded = await accountsRepo.loadState();
+      this.planes = reloaded.planes;
+      this.accounts = reloaded.accounts;
+      this.nextId = reloaded.nextId;
     } else {
-      this.accounts = [...DEFAULT_ACCOUNTS];
-      this.planes = [...DEFAULT_PLANES];
-      this.nextId = 3;
-      this.accounts.forEach((a) => {
-        const p = this.planes.find((pl) => pl.nombre === a.plan);
-        if (p) p.usuarios_activos = (p.usuarios_activos || 0) + 1;
-      });
-      this._persist();
+      this.planes = state.planes;
+      this.accounts = state.accounts;
+      this.nextId = state.nextId;
     }
   }
 
   _persist() {
-    this.store.setAll({
-      accounts: this.accounts,
-      planes: this.planes,
-      nextId: this.nextId,
-    });
+    if (!useRelationalStorage()) {
+      this.store.setAll({ accounts: this.accounts, planes: this.planes, nextId: this.nextId });
+    }
   }
 
   getAll() {

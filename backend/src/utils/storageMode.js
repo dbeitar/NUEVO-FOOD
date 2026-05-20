@@ -1,39 +1,50 @@
 /**
- * Modo de persistencia del dominio (gimnasios, usuarios, ciclos, etc.).
+ * Persistencia del dominio.
  *
- * USE_PG_STORAGE=true  → PostgreSQL (Prisma → json_collections).
- * USE_PG_STORAGE=false → archivos en backend/data/*.json
- *
- * USE_PRISMA=false     → SQL crudo (pg) en lugar de Prisma (solo si PG activo).
- *
- * En producción, si hay DATABASE_URL o DB_* y no se desactiva, se usa PostgreSQL + Prisma.
+ * USE_RELATIONAL_STORAGE=true (default con DATABASE_URL) → tablas Prisma.
+ * USE_JSON_FILES=true → solo desarrollo sin Docker/Postgres.
  */
-function usePgStorage() {
-  const explicit = String(process.env.USE_PG_STORAGE || '').trim().toLowerCase();
-  if (explicit === 'true' || explicit === '1' || explicit === 'yes') return true;
-  if (explicit === 'false' || explicit === '0' || explicit === 'no') return false;
 
-  const isProd = String(process.env.NODE_ENV || '').toLowerCase() === 'production';
-  const hasDb = Boolean(
+function hasDatabaseConfig() {
+  return Boolean(
     process.env.DATABASE_URL
-    || process.env.DB_HOST
-    || process.env.DB_NAME,
+    || (process.env.DB_HOST && process.env.DB_NAME && process.env.DB_USER),
   );
-  return isProd && hasDb;
+}
+
+function useJsonFiles() {
+  const explicit = String(process.env.USE_JSON_FILES || '').trim().toLowerCase();
+  if (explicit === 'true' || explicit === '1') return true;
+  if (explicit === 'false' || explicit === '0') return false;
+  return !hasDatabaseConfig();
+}
+
+function useRelationalStorage() {
+  if (useJsonFiles()) return false;
+  const explicit = String(process.env.USE_RELATIONAL_STORAGE || '').trim().toLowerCase();
+  if (explicit === 'true' || explicit === '1') return true;
+  if (explicit === 'false' || explicit === '0') return false;
+  return hasDatabaseConfig();
+}
+
+/** @deprecated usar useRelationalStorage */
+function usePgStorage() {
+  return useRelationalStorage();
 }
 
 function useDbAuth() {
-  if (usePgStorage()) return false;
-  return String(process.env.USE_DB_AUTH || '').toLowerCase() === 'true';
+  return false;
 }
 
-/** Prisma ORM para json_collections (recomendado en producción). */
 function usePrisma() {
-  if (!usePgStorage()) return false;
-  const explicit = String(process.env.USE_PRISMA || '').trim().toLowerCase();
-  if (explicit === 'false' || explicit === '0' || explicit === 'no') return false;
-  if (explicit === 'true' || explicit === '1' || explicit === 'yes') return true;
-  return true;
+  return useRelationalStorage();
 }
 
-module.exports = { usePgStorage, useDbAuth, usePrisma };
+module.exports = {
+  useJsonFiles,
+  useRelationalStorage,
+  usePgStorage,
+  useDbAuth,
+  usePrisma,
+  hasDatabaseConfig,
+};

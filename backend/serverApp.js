@@ -79,9 +79,9 @@ if (NODE_ENV !== 'test') {
   app.use(morgan(IS_PROD ? 'combined' : 'dev'));
 }
 
-const { useDbAuth, usePgStorage, usePrisma } = require('./src/utils/storageMode');
+const { useDbAuth, useRelationalStorage, usePrisma, useJsonFiles } = require('./src/utils/storageMode');
 const USE_DB_AUTH = useDbAuth();
-const USE_PG_STORAGE = usePgStorage();
+const USE_RELATIONAL = useRelationalStorage();
 const USE_PRISMA = usePrisma();
 const ENABLE_DEV_ROUTES = !IS_PROD && String(process.env.ENABLE_DEV_ROUTES || '').toLowerCase() === 'true';
 const SEED_DEMO = String(process.env.SEED_DEMO || '').toLowerCase() === 'true';
@@ -780,12 +780,10 @@ const server = app.listen(PORT, () => {
   console.log(`[server] Escuchando en http://localhost:${PORT} (env=${NODE_ENV})`);
   console.log(`[server] CORS allow: ${corsAllowList.join(', ') || '(ninguno; bloqueado)'}`);
   if (ENABLE_DEV_ROUTES) console.log('[server] /api/dev/* habilitados');
-  if (USE_PG_STORAGE) {
-    console.log(
-      `[server] Persistencia: PostgreSQL${USE_PRISMA ? ' + Prisma' : ''} (json_collections) — dominio completo`,
-    );
-  } else {
-    console.log(`[server] Persistencia: archivos JSON${USE_DB_AUTH ? ' + auth parcial en PG' : ''}`);
+  if (USE_RELATIONAL) {
+    console.log('[server] Persistencia: PostgreSQL relacional + Prisma — dominio completo');
+  } else if (useJsonFiles()) {
+    console.log(`[server] Persistencia: archivos JSON (dev)${USE_DB_AUTH ? ' + auth parcial en PG' : ''}`);
     if (USE_DB_AUTH) {
       console.warn(
         '[CONFIG] USE_DB_AUTH=true sin USE_PG_STORAGE: solo login en PG. Ver docs/PRODUCCION_HOY.md',
@@ -794,7 +792,7 @@ const server = app.listen(PORT, () => {
   }
 });
 
-if (USE_PG_STORAGE) {
+if (USE_RELATIONAL) {
   const pgCollectionCache = require('./src/utils/pgCollectionCache');
   const shutdown = async (signal) => {
     console.log(`[server] ${signal}: guardando colecciones en PostgreSQL…`);

@@ -1,4 +1,6 @@
 const JsonStore = require('../utils/JsonStore');
+const { useRelationalStorage } = require('../utils/storageMode');
+const { getPrisma } = require('../lib/prisma');
 // Alimentos semilla; se fusionarán en el almacenamiento local si faltan
 const seedFoods = [
   // Proteínas
@@ -804,9 +806,87 @@ const seedFoods = [
   },
 ];
 
-// Persistencia en JSON local
 const foodStore = new JsonStore('foods.json', seedFoods);
-let foodDatabase = foodStore.getAll();
+let foodDatabase = useRelationalStorage() ? [] : foodStore.getAll();
+
+function persistFoods() {
+  if (useRelationalStorage()) {
+    (async () => {
+      const prisma = getPrisma();
+      for (const f of foodDatabase) {
+        await prisma.foodItem.upsert({
+          where: { id: f.id },
+          create: {
+            id: f.id,
+            nombre: f.nombre,
+            barcode: f.barcode,
+            categoria: f.categoria,
+            marca: f.marca,
+            cantidad: f.cantidad,
+            unidad: f.unidad,
+            calorias: f.calorias,
+            proteina: f.proteina,
+            carbohidratos: f.carbohidratos,
+            grasas: f.grasas,
+            activo: f.activo !== false,
+          },
+          update: {
+            nombre: f.nombre,
+            activo: f.activo !== false,
+          },
+        });
+      }
+    })().catch((e) => console.error('[FoodDatabase]', e.message));
+  } else {
+    foodStore.setAll(foodDatabase);
+  }
+}
+
+async function hydrateFoods() {
+  if (!useRelationalStorage()) return;
+  const prisma = getPrisma();
+  let rows = await prisma.foodItem.findMany({ orderBy: { id: 'asc' } });
+  if (!rows.length) {
+    let id = 1;
+    for (const f of seedFoods) {
+      await prisma.foodItem.create({
+        data: {
+          id: id++,
+          nombre: f.nombre,
+          barcode: f.barcode,
+          categoria: f.categoria,
+          marca: f.marca,
+          cantidad: f.cantidad,
+          unidad: f.unidad,
+          calorias: f.calorias,
+          proteina: f.proteina,
+          carbohidratos: f.carbohidratos,
+          grasas: f.grasas,
+          activo: true,
+        },
+      });
+    }
+    rows = await prisma.foodItem.findMany({ orderBy: { id: 'asc' } });
+  }
+  foodDatabase = rows.map((r) => ({
+    id: r.id,
+    nombre: r.nombre,
+    barcode: r.barcode,
+    categoria: r.categoria,
+    marca: r.marca,
+    cantidad: r.cantidad != null ? Number(r.cantidad) : null,
+    unidad: r.unidad,
+    calorias: r.calorias != null ? Number(r.calorias) : null,
+    proteina: r.proteina != null ? Number(r.proteina) : null,
+    carbohidratos: r.carbohidratos != null ? Number(r.carbohidratos) : null,
+    grasas: r.grasas != null ? Number(r.grasas) : null,
+    activo: r.activo,
+  }));
+  nextFoodId = foodDatabase.length ? Math.max(...foodDatabase.map((f) => f.id)) + 1 : 1;
+}
+
+if (!useRelationalStorage()) {
+foodDatabase = foodStore.getAll();
 // Fusionar semillas ausentes (por nombre+categoría o barcode)
 const normKey = (it) => (it.barcode ? `b:${it.barcode}` : `n:${(it.nombre || '').toLowerCase()}|${(it.categoria || '').toLowerCase()}`);
 const map = new Map(foodDatabase.map(f => [normKey(f), f]));
@@ -822,8 +902,9 @@ foodDatabase = Array.from(map.values()).map((f, idx) => ({
   id: f.id ?? (idx + 1),
 }));
 // Guardar si se añadieron nuevas semillas
-foodStore.setAll(foodDatabase);
+persistFoods();
 let nextFoodId = foodDatabase.length > 0 ? Math.max(...foodDatabase.map(f => f.id)) + 1 : 1;
+}
 
 const FoodDatabase = {
   // Obtener todos los alimentos
@@ -855,7 +936,7 @@ const FoodDatabase = {
       createdAt: new Date(),
     };
     foodDatabase.push(newFood);
-    foodStore.setAll(foodDatabase);
+    persistFoods();
     return newFood;
   },
 
@@ -864,7 +945,7 @@ const FoodDatabase = {
     const index = foodDatabase.findIndex((f) => f.id === id);
     if (index !== -1) {
       foodDatabase[index] = { ...foodDatabase[index], ...updates };
-      foodStore.setAll(foodDatabase);
+      persistFoods();
       return foodDatabase[index];
     }
     return null;
@@ -875,7 +956,7 @@ const FoodDatabase = {
     const index = foodDatabase.findIndex((f) => f.id === id);
     if (index !== -1) {
       foodDatabase[index].activo = false;
-      foodStore.setAll(foodDatabase);
+      persistFoods();
       return true;
     }
     return false;
@@ -900,4 +981,5 @@ const FoodDatabase = {
   },
 };
 
+FoodDatabase.hydrate = hydrateFoods;
 module.exports = FoodDatabase;

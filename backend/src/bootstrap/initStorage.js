@@ -1,29 +1,47 @@
-const { usePgStorage, useDbAuth, usePrisma } = require('../utils/storageMode');
+const path = require('path');
+const { execSync } = require('child_process');
+const {
+  useJsonFiles,
+  useRelationalStorage,
+  useDbAuth,
+} = require('../utils/storageMode');
 
 async function initStorage() {
-  if (useDbAuth() && usePgStorage()) {
-    console.warn(
-      '[CONFIG] USE_DB_AUTH ignorado: con USE_PG_STORAGE todo el dominio (incl. usuarios) va a PostgreSQL.',
-    );
+  if (useDbAuth() && useRelationalStorage()) {
+    console.warn('[CONFIG] USE_DB_AUTH ignorado: auth y dominio usan tablas relacionales.');
   }
 
-  if (!usePgStorage()) {
-    console.log('[storage] Modo archivos JSON (backend/data/)');
+  if (useJsonFiles()) {
+    console.log('[storage] Modo archivos JSON (solo dev sin Postgres)');
     return { mode: 'json', orm: null };
   }
 
-  if (!process.env.DATABASE_URL && !process.env.DB_HOST && !process.env.DB_NAME) {
-    throw new Error(
-      'USE_PG_STORAGE activo pero faltan DATABASE_URL o DB_HOST/DB_NAME/DB_USER/DB_PASSWORD',
-    );
+  const { ensureDatabaseUrl, connectPrisma, getPrisma } = require('../lib/prisma');
+  if (!ensureDatabaseUrl()) {
+    throw new Error('Falta DATABASE_URL o DB_HOST/DB_NAME/DB_USER para almacenamiento relacional');
   }
 
-  const pgCollectionCache = require('../utils/pgCollectionCache');
-  await pgCollectionCache.init();
+  await connectPrisma();
 
-  const mode = usePrisma() ? 'postgres+prisma' : 'postgres';
-  console.log(`[storage] Persistencia: ${mode} (json_collections)`);
-  return { mode, orm: usePrisma() ? 'prisma' : 'pg' };
+  const backendRoot = path.join(__dirname, '../..');
+  try {
+    execSync('npx prisma migrate deploy', { cwd: backendRoot, stdio: 'inherit' });
+  } catch (e) {
+    console.warn('[storage] migrate deploy:', e.message);
+  }
+
+  const { hydrateAll } = require('../db/hydrateAll');
+  await hydrateAll();
+
+  const userCount = await getPrisma().user.count();
+  if (userCount === 0) {
+    const { seedRelationalFromJson } = require('../db/seedRelationalFromJson');
+    await seedRelationalFromJson();
+    await hydrateAll();
+  }
+
+  console.log('[storage] PostgreSQL relacional + Prisma — listo');
+  return { mode: 'relational', orm: 'prisma' };
 }
 
 module.exports = { initStorage };
