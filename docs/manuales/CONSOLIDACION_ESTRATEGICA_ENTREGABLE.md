@@ -10,12 +10,14 @@
 
 | Documento | Propósito |
 | --- | --- |
-| `docs/VISION_Y_POSICIONAMIENTO_ECOSISTEMA.md` | Núcleo del negocio, ICP, propuesta de valor, no-objetivos, principios rectores. |
-| `docs/ARQUITECTURA_VISIBLE_EXPERIENCIA.md` | Experiencia simplificada por rol (Usuario, Coach, Gym/Marca) y reglas duras. |
-| `docs/ROADMAP_REALISTA_ECOSISTEMA.md` | Separación honesta **Core Actual** vs **Roadmap Futuro** + criterios de promoción. |
-| `docs/GTM_LATAM_COACHES_Y_GYMS.md` | Estrategia LATAM, ICP comercial, pricing conceptual, adquisición, posicionamiento. |
-| `docs/PILOTO_ECOSISTEMA_FITNESS.md` | Diseño del piloto controlado, métricas de éxito, reglas y entregables. |
-| `docs/CONSOLIDACION_ESTRATEGICA_ENTREGABLE.md` | Este documento (resumen y trazabilidad). |
+| `VISION_Y_POSICIONAMIENTO_ECOSISTEMA.md` | Núcleo del negocio, ICP, propuesta de valor, no-objetivos, principios rectores. |
+| `ARQUITECTURA_VISIBLE_EXPERIENCIA.md` | Experiencia simplificada por rol (Usuario, Coach, Gym/Marca) y reglas duras. |
+| `ROADMAP_REALISTA_ECOSISTEMA.md` | Separación honesta **Core Actual** vs **Roadmap Futuro** + criterios de promoción. |
+| `GTM_LATAM_COACHES_Y_GYMS.md` | Estrategia LATAM, ICP comercial, pricing conceptual, adquisición, posicionamiento. |
+| `PILOTO_ECOSISTEMA_FITNESS.md` | Diseño del piloto controlado, métricas de éxito, reglas y entregables. |
+| `CONSOLIDACION_ESTRATEGICA_ENTREGABLE.md` | Este documento (resumen y trazabilidad). |
+
+> Todos viven en `docs/manuales/`.
 
 ---
 
@@ -23,10 +25,10 @@
 
 | Documento | Cambios principales |
 | --- | --- |
-| `docs/MANUAL_PLATAFORMA_D28D.md` | Encabezado nuevo con relaciones a otros docs. Aclaración explícita sobre el rol real de la IA. Refinada descripción del módulo Entrenadores (CV en tiempo real marcado como suspendido). Refinado el módulo de Equivalentes y NutritionChat para reflejar IA opcional, no central. |
-| `docs/ECOSISTEMA_MODULAR_MARCA_BLANCA.md` | Reformateado, lenguaje consolidado, decisiones de tabla mejoradas. **Nueva sección de Gobernanza** (ownership, multi-tenant, white-label, permisos, contenido bloqueado, auditoría, cambios y datos del usuario). |
-| `docs/RESUMEN_MODULOS_ENTRENAMIENTO.md` | Reescrito para reflejar **lo que existe hoy**, eliminando lenguaje futurista. Agregada sección explícita “Qué NO hace hoy” por módulo. |
-| `docs/TRAINING_MODULE.md` | Encabezado aclara que `cv_tracking_logic` es **estructura preparada para futuro**, no capacidad activa. Sección final “Lo que este endpoint NO hace”. |
+| `MANUAL_PLATAFORMA_D28D.md` | Encabezado nuevo con relaciones a otros docs. Aclaración explícita sobre el rol real de la IA. Refinada descripción del módulo Entrenadores (CV en tiempo real marcado como suspendido). Refinado el módulo de Equivalentes y NutritionChat para reflejar IA opcional, no central. |
+| `ECOSISTEMA_MODULAR_MARCA_BLANCA.md` | Reformateado, lenguaje consolidado, decisiones de tabla mejoradas. **Nueva sección de Gobernanza** (ownership, multi-tenant, white-label, permisos, contenido bloqueado, auditoría, cambios y datos del usuario). |
+| `RESUMEN_MODULOS_ENTRENAMIENTO.md` | Reescrito para reflejar **lo que existe hoy**, eliminando lenguaje futurista. Agregada sección explícita “Qué NO hace hoy” por módulo. |
+| `TRAINING_MODULE.md` | Encabezado aclara que `cv_tracking_logic` es **estructura preparada para futuro**, no capacidad activa. Sección final “Lo que este endpoint NO hace”. |
 
 ---
 
@@ -128,7 +130,7 @@ Estas son recomendaciones **previas** a cualquier nuevo cambio técnico. Cumplir
 6. **Antes de cualquier nuevo módulo, completar la ficha de gobernanza** (ownership, white-label, contenido bloqueado/clonable, permisos requeridos) según `ECOSISTEMA_MODULAR_MARCA_BLANCA.md`.
 
 7. **Versionar la documentación.**
-   Cualquier cambio relevante en visión, gobernanza, roadmap o piloto se versiona en `docs/` con fecha y motivo.
+   Cualquier cambio relevante en visión, gobernanza, roadmap o piloto se versiona en `docs/manuales/` con fecha y motivo.
 
 8. **No expandir GTM** hasta cerrar el piloto con éxito (≥ 5/6 métricas mínimas).
 
@@ -141,18 +143,20 @@ Estas son recomendaciones **previas** a cualquier nuevo cambio técnico. Cumplir
 ## 8. Mapa rápido de la documentación consolidada
 
 ```
-docs/
+docs/manuales/
+├── 00_GUIA_DE_REVISION.md                     ← EMPIEZA AQUÍ
+├── README.md                                  ← índice por tema
 ├── VISION_Y_POSICIONAMIENTO_ECOSISTEMA.md     ← núcleo estratégico
 ├── ARQUITECTURA_VISIBLE_EXPERIENCIA.md        ← UX por rol
 ├── ECOSISTEMA_MODULAR_MARCA_BLANCA.md         ← módulos + gobernanza
 ├── ROADMAP_REALISTA_ECOSISTEMA.md             ← Core vs Futuro
 ├── GTM_LATAM_COACHES_Y_GYMS.md                ← go-to-market
 ├── PILOTO_ECOSISTEMA_FITNESS.md               ← validación real
-├── MANUAL_PLATAFORMA_D28D.md                  ← manual operativo (refinado)
-├── RESUMEN_MODULOS_ENTRENAMIENTO.md           ← módulos training (refinado)
-├── TRAINING_MODULE.md                         ← contrato técnico (refinado)
-├── FASE_2_PLAN.md                             ← histórico operativo
-└── CONSOLIDACION_ESTRATEGICA_ENTREGABLE.md    ← este documento
+├── MANUAL_PLATAFORMA_D28D.md                  ← manual operativo
+├── DOCUMENTO_TECNICO_FOOD_PLAN.md             ← técnico + estructura
+├── INFRAESTRUCTURA_RELACIONAL.md              ← Postgres + Prisma
+├── AUDITORIA_PRE_PILOTO.md                    ← riesgos P0/P1
+└── CONSOLIDACION_ESTRATEGICA_ENTREGABLE.md    ← mapa estratégico
 ```
 
 ---

@@ -7,7 +7,7 @@ Alimentación** (calculadora, catálogo, recetas, registro), **Entrenadores**
 con white-label opcional por gym.
 
 > Estado: **piloto controlado**. P0 y P1 aplicados. Ver
-> [`docs/AUDITORIA_PRE_PILOTO.md`](docs/AUDITORIA_PRE_PILOTO.md) para el
+> [`docs/manuales/AUDITORIA_PRE_PILOTO.md`](docs/manuales/AUDITORIA_PRE_PILOTO.md) para el
 > detalle de hallazgos, fixes y validación.
 
 ---
@@ -41,11 +41,11 @@ Persistencia:
   **disco persistente** montado en `backend/data/`.
 - **PostgreSQL + Prisma (relacional)**: tablas `users`, `gyms`, `trainers`, etc.
   Docker local: `docker compose up -d postgres`. Ver
-  [`docs/INFRAESTRUCTURA_RELACIONAL.md`](docs/INFRAESTRUCTURA_RELACIONAL.md).
+  [`docs/manuales/INFRAESTRUCTURA_RELACIONAL.md`](docs/manuales/INFRAESTRUCTURA_RELACIONAL.md).
 - **Semilla post-deploy** (códigos invite + usuarios de prueba):
   `npm run seed:verify` — manifiesto en
   `scripts/seeds/production-verify.manifest.json`, guía en
-  [`docs/VERIFICACION_PRODUCCION.md`](docs/VERIFICACION_PRODUCCION.md).
+  [`docs/manuales/VERIFICACION_PRODUCCION.md`](docs/manuales/VERIFICACION_PRODUCCION.md).
 - **Prisma**: **no está en el proyecto**; migración futura si se requiere ORM único.
 
 Autenticación:
@@ -268,13 +268,12 @@ node scripts/md-to-docx-custom.mjs    # Exporta docs/* a .docx
 
 ## 10. Documentación complementaria
 
-- `docs/AUDITORIA_PRE_PILOTO.md` — auditoría y plan P0/P1/P2.
-- `docs/MANUAL_PLATAFORMA_D28D.md` — manual operativo.
-- `docs/ARQUITECTURA_VISIBLE_EXPERIENCIA.md` — narrativa de UX.
-- `docs/ECOSISTEMA_MODULAR_MARCA_BLANCA.md` — modelo multi-tenant.
-- `docs/GTM_LATAM_COACHES_Y_GYMS.md` — go-to-market.
-- `docs/PILOTO_ECOSISTEMA_FITNESS.md` — guion de piloto.
-- `docs/SMOKE_TESTS_PILOTO.md` — checklist manual de validación.
+**Manuales y revisión del producto (carpeta única):**
+
+- [`docs/manuales/00_GUIA_DE_REVISION.md`](docs/manuales/00_GUIA_DE_REVISION.md) — **empieza aquí**
+- [`docs/manuales/README.md`](docs/manuales/README.md) — índice por tema (negocio, técnico, riesgos, piloto)
+
+Otros: [`docs/README.md`](docs/README.md) (PDFs, testing, test-runs).
 
 ---
 

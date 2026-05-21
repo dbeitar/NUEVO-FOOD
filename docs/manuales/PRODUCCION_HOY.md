@@ -22,7 +22,7 @@ Todo el dominio se guarda en PostgreSQL (`json_collections`), **sin cambiar** en
 
 **No usar** `USE_DB_AUTH=true` junto con `USE_PG_STORAGE` (queda obsoleto).
 
-Guías: [`docs/PRISMA_PRODUCCION.md`](PRISMA_PRODUCCION.md), [`docs/POSTGRES_PRODUCCION.md`](POSTGRES_PRODUCCION.md).
+Guías: [PRISMA_PRODUCCION.md](./PRISMA_PRODUCCION.md), [POSTGRES_PRODUCCION.md](./POSTGRES_PRODUCCION.md).
 
 **Fallback:** sin Postgres, el backend sigue usando archivos en `backend/data/` (volumen persistente).
 
@@ -153,7 +153,7 @@ cd backend && npm start
 ```
 
 Manifiesto: `scripts/seeds/production-verify.manifest.json`  
-Guía completa: **`docs/VERIFICACION_PRODUCCION.md`**
+Guía completa: **[VERIFICACION_PRODUCCION.md](./VERIFICACION_PRODUCCION.md)**
 
 ### Smoke post-deploy
 
@@ -185,7 +185,7 @@ Para cumplir **“todo en PostgreSQL + Prisma sin mezclar”**:
 3. **Eliminar JsonStore** de controllers o usar capa repository única.
 4. **Un solo flag** `DATABASE_URL` + Prisma Client; retirar `USE_DB_AUTH`, `mysql2`, rutas duplicadas en `server.js`.
 5. **Script de importación** JSON → PG para datos del piloto.
-6. **Tests de regresión** con el checklist de `docs/SMOKE_TESTS_PILOTO.md`.
+6. **Tests de regresión** con el checklist de [SMOKE_TESTS_PILOTO.md](./SMOKE_TESTS_PILOTO.md).
 
 Estimación realista: **varios días de desarrollo** antes de apagar JSON con seguridad.
 

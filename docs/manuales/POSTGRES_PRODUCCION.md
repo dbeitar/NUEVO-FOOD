@@ -57,7 +57,7 @@ curl -s -X POST https://TU-API/api/auth/login \
   -d '{"email":"final.d28d@d28d.local","password":"Demo!2026"}'
 ```
 
-Ver también: `docs/VERIFICACION_PRODUCCION.md`.
+Ver también: [VERIFICACION_PRODUCCION.md](./VERIFICACION_PRODUCCION.md).
 
 ## Desarrollo local (seguir con archivos JSON)
 

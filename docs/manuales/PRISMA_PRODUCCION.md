@@ -77,4 +77,4 @@ Sigue usando PostgreSQL vía `pg`, no archivos JSON.
 - `backend/src/lib/prisma.js`
 - `backend/src/utils/pgCollectionCache.js`
 
-Ver también: `docs/POSTGRES_PRODUCCION.md`, `docs/VERIFICACION_PRODUCCION.md`.
+Ver también: [POSTGRES_PRODUCCION.md](./POSTGRES_PRODUCCION.md), [VERIFICACION_PRODUCCION.md](./VERIFICACION_PRODUCCION.md).

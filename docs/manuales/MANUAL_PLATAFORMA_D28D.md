@@ -304,7 +304,7 @@ MVPFOOD/
 │   ├── _archive/experimental/      # Coach Virtual / poseCv (no usado)
 │   ├── utils/branding.js           # PUBLIC_BRAND_NAME = "D28D Gimnasio Virtual"
 │   └── services/api.js             # Axios + interceptor logout 401
-└── docs/                            # Manual + auditoría + roadmap
+└── docs/manuales/                   # Manuales de revisión (esta carpeta)
 ```
 
 ---

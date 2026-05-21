@@ -116,4 +116,4 @@ D28D_INVITE_CODE=D28D,D28D-PILOTO,D28D-PILOTO-2026
 - Volver a ejecutar `node scripts/seed_production_verify.cjs`.
 - Reiniciar backend.
 
-Ver también: `docs/PRODUCCION_HOY.md`.
+Ver también: [PRODUCCION_HOY.md](./PRODUCCION_HOY.md).
