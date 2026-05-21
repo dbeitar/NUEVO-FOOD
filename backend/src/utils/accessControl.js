@@ -71,6 +71,12 @@ const ROLE_PERMISSIONS = {
     'brands.manage',
     'users.manage_assigned',
   ],
+  /** Host operativo D28D: solo clases en vivo asignadas (sin programas/ciclos/gyms/training). */
+  entrenador_d28d: [
+    'live_classes.view',
+    'live_classes.host',
+    'd28d.view',
+  ],
   entrenador: [
     'trainers.manage_own',
     'training.manage_own',
@@ -125,6 +131,22 @@ function hasPermission(userLike = {}, permission) {
   return hydrateAccess(userLike).permissions.includes(permission);
 }
 
+/** Solo rol operativo D28D (sin coach / admin training). */
+function isD28dHostOnlyUser(userLike = {}) {
+  const roles = normalizeRoles(userLike);
+  if (!roles.includes('entrenador_d28d')) return false;
+  const alsoOperator = roles.some((r) => [
+    'super_admin', 'admin_d28d', 'admin_marca', 'admin_gimnasio', 'admin_gym',
+    'entrenador', 'admin_training', 'admin_entrenador', 'admin_food', 'admin_food_plan',
+  ].includes(r));
+  return !alsoOperator;
+}
+
+function canManageTraining(userLike = {}) {
+  if (isD28dHostOnlyUser(userLike)) return false;
+  return hasRole(userLike, ['super_admin', 'admin_gimnasio', 'entrenador', 'admin_training', 'admin_entrenador']);
+}
+
 module.exports = {
   ALL_ROLES,
   ROLE_PERMISSIONS,
@@ -133,4 +155,6 @@ module.exports = {
   hasRole,
   normalizeRoles,
   permissionsForRoles,
+  isD28dHostOnlyUser,
+  canManageTraining,
 };

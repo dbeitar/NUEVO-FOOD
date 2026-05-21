@@ -2,10 +2,22 @@ const LiveClassDatabase = require('../models/LiveClassDatabase');
 const userDB = require('../models/UserDatabase');
 const GymDatabase = require('../models/GymDatabase');
 const { hasRole } = require('../utils/accessControl');
+const { filterClassesForD28dHost, isClassAssignedToHost } = require('../utils/d28dHostUtils');
 
-const isAdmin = (req) => req.user && hasRole(req.user, ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']);
+const LIVE_ADMIN_ROLES = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d'];
+const D28D_HOST_ROLE = 'entrenador_d28d';
+
+const isLiveAdmin = (req) => req.user && hasRole(req.user, LIVE_ADMIN_ROLES);
+const isD28dHostOnly = (req) => {
+  if (!req.user) return false;
+  return hasRole(req.user, [D28D_HOST_ROLE]) && !isLiveAdmin(req);
+};
+/** Compat: nombre legacy usado en rutas de escritura. */
+const isAdmin = isLiveAdmin;
+
 const canEditClass = (req, classItem = null) => {
   if (!req.user) return false;
+  if (isD28dHostOnly(req)) return false;
   if (hasRole(req.user, ['super_admin'])) return true;
   if (classItem?.locked || classItem?.source_module === 'd28d') {
     return hasRole(req.user, ['admin_d28d']);
@@ -41,11 +53,14 @@ const getPublicClasses = (req, res) => {
 
 const getAdminClasses = (req, res) => {
   try {
-    if (!isAdmin(req)) {
+    if (!isLiveAdmin(req) && !isD28dHostOnly(req)) {
       return res.status(403).json({ error: 'No tienes permiso para ver las clases' });
     }
     const programId = req.query.program_id || null;
-    const classes = LiveClassDatabase.getAll().filter((item) => matchesProgram(item, programId));
+    let classes = LiveClassDatabase.getAll().filter((item) => matchesProgram(item, programId));
+    if (isD28dHostOnly(req)) {
+      classes = filterClassesForD28dHost(classes, req.user);
+    }
     return res.json({ success: true, data: classes });
   } catch (error) {
     console.error('Error obteniendo clases admin:', error);
@@ -55,11 +70,15 @@ const getAdminClasses = (req, res) => {
 
 const getAttendanceReport = (req, res) => {
   try {
-    if (!isAdmin(req)) {
+    if (!isLiveAdmin(req) && !isD28dHostOnly(req)) {
       return res.status(403).json({ error: 'No tienes permiso para ver asistencia' });
     }
     const gyms = GymDatabase.getAll();
-    const rows = LiveClassDatabase.getAll().map((classItem) => {
+    let classList = LiveClassDatabase.getAll();
+    if (isD28dHostOnly(req)) {
+      classList = filterClassesForD28dHost(classList, req.user);
+    }
+    const rows = classList.map((classItem) => {
       const attendedIds = Array.isArray(classItem.attendance_user_ids) ? classItem.attendance_user_ids : [];
       const attendees = attendedIds
         .map((id) => userDB.getById(id))
@@ -235,7 +254,8 @@ const joinClass = (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const classItem = LiveClassDatabase.getById(id);
-    if (!canAccessClass(classItem, req.user)) {
+    const hostAccess = isD28dHostOnly(req) && isClassAssignedToHost(classItem, req.user);
+    if (!hostAccess && !canAccessClass(classItem, req.user)) {
       return res.status(404).json({ error: 'Clase no encontrada' });
     }
     const updated = LiveClassDatabase.attend(id, req.user);

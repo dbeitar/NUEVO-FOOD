@@ -19,10 +19,10 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const rootDir = path.resolve(__dirname, '..');
-const mdPath = path.join(rootDir, 'DOCUMENTO_TECNICO_FOOD_PLAN.md');
+const mdPath = path.join(rootDir, 'docs', 'manuales', '04_TECNICO_Y_DESPLIEGUE.md');
 const outDir = path.join(rootDir, 'docs');
-const outPath = path.join(outDir, 'DOCUMENTO_TECNICO_FOOD_PLAN.docx');
-const fallbackOutPath = path.join(outDir, 'DOCUMENTO_TECNICO_FOOD_PLAN_ACTUALIZADO.docx');
+const outPath = path.join(outDir, 'D28D_TECNICO_Y_DESPLIEGUE.docx');
+const fallbackOutPath = path.join(outDir, 'D28D_TECNICO_Y_DESPLIEGUE_ACTUALIZADO.docx');
 
 function parseMarkdownToDocxBlocks(md) {
   const lines = md.split(/\r?\n/);

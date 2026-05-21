@@ -8,7 +8,7 @@
   },
   "scripts": {
     "dev": "vite",
-    "dev:all": "concurrently -k -n front,back -c green,cyan \"npm run dev\" \"npm --prefix backend run dev\"",
+    "dev:all": "concurrently -k -n front,back -c green,cyan \"npm run dev\" \"sh -c 'PORT=3002 npm --prefix backend run dev'\"",
     "docker:up": "docker compose up -d postgres",
     "docker:down": "docker compose down",
     "autosave": "node scripts/autosave.js",
@@ -21,7 +21,9 @@
     "seed:invites": "node scripts/seed_invite_codes.cjs",
     "seed:pilot": "node scripts/reset_pilot_passwords.cjs",
     "db:migrate-json": "node scripts/migrate_json_to_postgres.cjs",
-    "db:prisma-deploy": "node scripts/prisma_deploy.cjs"
+    "db:prisma-deploy": "node scripts/prisma_deploy.cjs",
+    "test:phases": "bash scripts/test_all_phases.sh http://localhost:3002/api",
+    "test:e2e": "node scripts/e2e_full_system_test.mjs http://localhost:3002/api"
   },
   "keywords": [],
   "author": "",

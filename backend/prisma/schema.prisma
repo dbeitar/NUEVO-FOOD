@@ -40,6 +40,7 @@ model User {
   trainer               Trainer?  @relation(fields: [trainerId], references: [id], onDelete: SetNull)
   accounts              UserAccount[]
   userPlan              UserPlan?
+  moduleLicenses        ModuleLicense[]
 
   @@index([rol])
   @@index([gymId])
@@ -95,6 +96,14 @@ model Trainer {
   capacidadUsuarios Int?     @default(50) @map("capacidad_usuarios")
   planId            String?  @map("plan_id")
   inviteCode        String?  @unique @map("invite_code")
+  logoUrl           String?  @map("logo_url")
+  brandName         String?  @map("brand_name")
+  brandSlug         String?  @map("brand_slug")
+  whiteLabelEnabled Boolean  @default(false) @map("white_label_enabled")
+  welcomeMessage    String?  @map("welcome_message") @db.Text
+  supportWhatsapp   String?  @map("support_whatsapp")
+  primaryColor      String?  @map("primary_color")
+  secondaryColor    String?  @map("secondary_color")
   activo            Boolean  @default(true)
   creado            DateTime @default(now())
 
@@ -104,6 +113,51 @@ model Trainer {
 
   @@index([gymId])
   @@map("trainers")
+}
+
+model ModuleLicense {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  moduleCode String    @map("module_code") @db.VarChar(32)
+  active     Boolean   @default(true)
+  validFrom  DateTime  @default(now()) @map("valid_from")
+  validUntil DateTime? @map("valid_until")
+  source     String    @default("invite") @db.VarChar(32)
+  metadata   Json?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleCode])
+  @@index([userId, active])
+  @@map("module_licenses")
+}
+
+model PaymentLink {
+  id         Int      @id @default(autoincrement())
+  moduleCode String   @map("module_code") @db.VarChar(32)
+  label      String?
+  paymentUrl String   @map("payment_url") @db.Text
+  active     Boolean  @default(true)
+  sortOrder  Int      @default(0) @map("sort_order")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([moduleCode])
+  @@map("payment_links")
+}
+
+model TrainingPlanRow {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  trainerId Int?     @map("trainer_id")
+  payload   Json
+  activo    Boolean  @default(true)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([trainerId])
+  @@map("training_plan_rows")
 }
 
 model Cycle {

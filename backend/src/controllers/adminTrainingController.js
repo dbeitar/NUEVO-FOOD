@@ -1,11 +1,9 @@
 const TrainingPlansStore = require('../models/TrainingPlansStore');
 const TrainingLogStore = require('../models/TrainingLogStore');
 const UserDatabase = require('../models/UserDatabase');
+const { canManageTraining } = require('../utils/accessControl');
 
-// Helper para validar permisos de entrenador/admin
-const isTrainerOrAdmin = (req) => {
-    return ['super_admin', 'admin_gimnasio', 'entrenador'].includes(req.user?.rol);
-};
+const isTrainerOrAdmin = (req) => canManageTraining(req.user);
 
 const adminTrainingController = {
     // === PLANES DE ENTRENAMIENTO ===

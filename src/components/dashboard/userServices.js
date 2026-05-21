@@ -44,6 +44,14 @@ const SERVICE_DEFS = [
     alt: 'Entrenamiento personalizado',
   },
   {
+    id: 'gym',
+    title: 'Gimnasio',
+    desc: 'Tu marca, usuarios y vigencias del gimnasio.',
+    descAdmin: 'Marca blanca, usuarios y operación del gym.',
+    img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
+    alt: 'Gimnasio marca blanca',
+  },
+  {
     id: 'live-classes',
     title: 'Clases en Vivo',
     desc: 'Agenda de clases en vivo y links de reunión.',
@@ -57,7 +65,7 @@ const ADMIN_ROLES = new Set([
   'super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym',
   'admin_d28d', 'admin_food_plan', 'admin_food',
   'admin_training', 'admin_entrenador',
-  'entrenador', 'nutricionista',
+  'entrenador', 'entrenador_d28d', 'nutricionista',
 ]);
 
 export function getRolesArr(user) {
@@ -93,7 +101,7 @@ export function getEnabledServiceIds(user) {
 
   // 1) super_admin SIEMPRE ve todo (regla pedida explícitamente).
   if (roles.includes('super_admin')) {
-    return ['d28d', 'food-plan', 'training', 'live-classes'];
+    return ['gym', 'd28d', 'food-plan', 'training', 'live-classes'];
   }
 
   // 2) Admin específico: solo SU servicio (override estricto sobre module_access).
@@ -106,11 +114,15 @@ export function getEnabledServiceIds(user) {
   if ((roles.includes('admin_entrenador') || roles.includes('admin_training')) && roles.length === 1) {
     return ['training'];
   }
+  if (roles.includes('entrenador_d28d') && roles.length === 1) {
+    return ['live-classes'];
+  }
 
   // 3) Acceso explícito declarado en el usuario (cuando hay multi-rol mixto
   //    o cuando el gym ha contratado servicios concretos).
   if (access && Object.keys(access).length > 0) {
     const mapped = [];
+    if (access.gym) mapped.push('gym');
     if (access.d28d) mapped.push('d28d');
     if (access.food_plan || access['food-plan']) mapped.push('food-plan');
     if (access.training) mapped.push('training');
@@ -132,6 +144,7 @@ export function getEnabledServiceIds(user) {
   }
   // Gimnasios marca blanca: entran por D28D + sus clases en vivo.
   if (roles.includes('admin_marca') || roles.includes('admin_gimnasio') || roles.includes('admin_gym')) {
+    ids.add('gym');
     ids.add('d28d');
     ids.add('live-classes');
   }
@@ -150,7 +163,7 @@ export function getEnabledServiceIds(user) {
 }
 
 function orderServiceIds(ids) {
-  const order = ['d28d', 'food-plan', 'training', 'live-classes'];
+  const order = ['gym', 'd28d', 'food-plan', 'training', 'live-classes'];
   return order.filter((id) => ids.includes(id));
 }
 

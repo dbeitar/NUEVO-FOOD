@@ -18,7 +18,14 @@
     { "email": "admin@d28d.local", "nombre": "Super Admin", "rol": "super_admin" },
     { "email": "d28d.admin@d28d.local", "nombre": "Admin D28D", "rol": "admin_d28d" },
     { "email": "food.admin@d28d.local", "nombre": "Admin Plan Alim.", "rol": "admin_food" },
-    { "email": "coach.admin@d28d.local", "nombre": "Admin Entrenadores", "rol": "admin_entrenador" }
+    { "email": "coach.admin@d28d.local", "nombre": "Admin Entrenadores", "rol": "admin_entrenador" },
+    {
+      "email": "host.d28d@d28d.local",
+      "nombre": "Alejo",
+      "rol": "entrenador_d28d",
+      "roles": ["entrenador_d28d"],
+      "module_access": { "d28d": true, "live_classes": true, "training": false, "food_plan": false }
+    }
   ],
   "end_users_verification": [
     {
@@ -32,7 +39,7 @@
       "email": "final.gym@d28d.local",
       "nombre": "Verificación — Usuario Gimnasio",
       "invite_code": "GYM-D28D-004",
-      "expected_modules": ["d28d", "live_classes"],
+      "expected_modules": ["gym", "d28d", "live_classes"],
       "dashboard_note": "Debe ver D28D y Clases en vivo (sin training ni food)"
     },
     {

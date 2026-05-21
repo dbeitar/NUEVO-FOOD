@@ -8,7 +8,7 @@
  *
  * Para producción (admins + códigos invite + usuarios finales de prueba):
  *   node scripts/seed_production_verify.cjs
- *   Ver docs/VERIFICACION_PRODUCCION.md
+ *   Ver docs/manuales/03_PRODUCTO_Y_OPERACION.md
  *
  * No requiere reiniciar el backend (modifica directamente
  * backend/data/users.json). Si la cuenta no existe la crea.

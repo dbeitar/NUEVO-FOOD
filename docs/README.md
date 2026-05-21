@@ -6,7 +6,8 @@
 
 ### [manuales/](./manuales/)
 
-**Punto de entrada:** [manuales/00_GUIA_DE_REVISION.md](./manuales/00_GUIA_DE_REVISION.md)
+**Punto de entrada:** [manuales/01_INDICE_MAESTRO.md](./manuales/01_INDICE_MAESTRO.md)  
+**Arquitectura objetivo (Fase 2):** [manuales/06_FASE2_ANALISIS_BRECHAS.md](./manuales/06_FASE2_ANALISIS_BRECHAS.md)
 
 ---
 

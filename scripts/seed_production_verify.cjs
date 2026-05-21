@@ -112,21 +112,33 @@ async function main() {
   console.log(`Códigos invite: ${gyms} gimnasios, ${trainers} entrenadores`);
   console.log(`Códigos D28D (env D28D_INVITE_CODE): ${manifest.d28d_invite_codes.join(', ')}\n`);
 
+  const licenseService = require(path.join(BACKEND, 'src/services/licenseService'));
+  const prisma = getPrisma();
+  for (const [i, mod] of ['food', 'training', 'd28d', 'gym'].entries()) {
+    await prisma.paymentLink.upsert({
+      where: { moduleCode: mod },
+      create: { moduleCode: mod, label: `Pago ${mod}`, paymentUrl: '', active: false, sortOrder: i + 1 },
+      update: {},
+    });
+  }
+
   console.log('--- Administradores piloto ---');
   for (const acc of manifest.admin_accounts) {
     const r = await upsertUser({
       email: acc.email,
       nombre: acc.nombre,
       rol: acc.rol,
-      roles: [acc.rol],
-      module_access: {},
+      roles: acc.roles || [acc.rol],
+      module_access: acc.module_access || {},
     });
+    await licenseService.syncFromModuleAccess(r.id, acc.module_access || {}, 'seed');
     console.log(`  ${r.action.toUpperCase().padEnd(7)} ${acc.email} (id=${r.id}, ${acc.rol})`);
   }
 
   console.log('\n--- Usuarios finales de verificación ---');
   for (const spec of manifest.end_users_verification) {
     const r = await seedEndUser(spec);
+    await licenseService.applyInviteModules(r.id, (await resolveInviteCodeAsync(spec.invite_code)).data.module_access, 'invite');
     const resolved = await resolveInviteCodeAsync(spec.invite_code);
     const mods = Object.entries(resolved.data.module_access)
       .filter(([, v]) => v)
@@ -144,7 +156,7 @@ async function main() {
   }
 
   console.log('\n✓ Listo. Reinicia el backend y prueba login con las cuentas del manifiesto.');
-  console.log('  Documentación: docs/VERIFICACION_PRODUCCION.md');
+  console.log('  Documentación: docs/manuales/03_PRODUCTO_Y_OPERACION.md');
 }
 
 main().catch((err) => {

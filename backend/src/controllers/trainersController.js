@@ -191,6 +191,62 @@ const deleteTrainer = (req, res) => {
   }
 };
 
+const BRANDING_FIELDS = [
+  'logo_url', 'brand_name', 'brand_slug', 'white_label_enabled',
+  'welcome_message', 'support_whatsapp', 'primary_color', 'secondary_color',
+];
+
+const canEditTrainerBranding = (req, trainer) => {
+  if (!req.user || !trainer) return false;
+  if (isSuperAdmin(req.user) || isTrainerManager(req.user)) return true;
+  const tid = req.user.trainer_id ?? req.user.trainerId;
+  return tid != null && String(tid) === String(trainer.id);
+};
+
+const getTrainerBranding = (req, res) => {
+  try {
+    const trainer = TrainersDatabase.getById(parseInt(req.params.id, 10));
+    if (!trainer) return res.status(404).json({ error: 'Entrenador no encontrado' });
+    if (!canEditTrainerBranding(req, trainer) && !canAccessEntity(req.user, trainer)) {
+      return res.status(403).json({ error: 'Acceso denegado' });
+    }
+    res.json({
+      id: trainer.id,
+      nombre: trainer.nombre,
+      logo_url: trainer.logo_url || null,
+      brand_name: trainer.brand_name || null,
+      brand_slug: trainer.brand_slug || null,
+      white_label_enabled: trainer.white_label_enabled === true,
+      welcome_message: trainer.welcome_message || null,
+      support_whatsapp: trainer.support_whatsapp || null,
+      primary_color: trainer.primary_color || null,
+      secondary_color: trainer.secondary_color || null,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Error obteniendo branding' });
+  }
+};
+
+const updateTrainerBranding = (req, res) => {
+  try {
+    const trainer = TrainersDatabase.getById(parseInt(req.params.id, 10));
+    if (!trainer) return res.status(404).json({ error: 'Entrenador no encontrado' });
+    if (!canEditTrainerBranding(req, trainer)) {
+      return res.status(403).json({ error: 'No puedes editar este branding' });
+    }
+    const updates = {};
+    for (const key of BRANDING_FIELDS) {
+      if (req.body && Object.prototype.hasOwnProperty.call(req.body, key)) {
+        updates[key] = req.body[key];
+      }
+    }
+    const updated = TrainersDatabase.update(trainer.id, updates);
+    res.json({ success: true, data: updated });
+  } catch (error) {
+    res.status(500).json({ error: 'Error actualizando branding' });
+  }
+};
+
 module.exports = {
   getAllTrainers,
   getTrainerById,
@@ -200,4 +256,6 @@ module.exports = {
   createTrainer,
   updateTrainer,
   deleteTrainer,
+  getTrainerBranding,
+  updateTrainerBranding,
 };

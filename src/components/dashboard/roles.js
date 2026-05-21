@@ -18,6 +18,7 @@ const ADMIN_ROLES = new Set([
   'admin_training',
   'admin_entrenador',
   'entrenador',
+  'entrenador_d28d',
   'nutricionista',
 ]);
 
@@ -30,6 +31,7 @@ export function isFinalUser(user) {
 export function defaultViewForRole(user) {
   if (isFinalUser(user)) return 'myplan';
   const roles = userRoles(user);
+  if (roles.includes('entrenador_d28d') && !roles.includes('entrenador')) return 'liveclasses';
   if (roles.includes('entrenador')) return 'coach';
   if (roles.some((r) => ['admin_gimnasio', 'admin_gym', 'admin_marca'].includes(r))) return 'gymadmin';
   return 'home';

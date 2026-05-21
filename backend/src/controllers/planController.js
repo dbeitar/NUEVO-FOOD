@@ -1,6 +1,11 @@
 const UserPlanStore = require('../models/UserPlanStore');
+const { hasRole } = require('../utils/accessControl');
 
-const allowedEditors = new Set(['super_admin', 'admin_gimnasio', 'entrenador']);
+const canEditNutritionPlan = (user) => hasRole(user, [
+  'super_admin', 'admin_gimnasio', 'admin_marca',
+  'entrenador', 'nutricionista', 'admin_food', 'admin_food_plan',
+  'admin_entrenador', 'admin_training',
+]);
 
 const planController = {
   getMine: (req, res) => {
@@ -13,7 +18,7 @@ const planController = {
   },
   updateForUser: (req, res) => {
     try {
-      if (!allowedEditors.has(req.user.rol)) {
+      if (!canEditNutritionPlan(req.user)) {
         return res.status(403).json({ success: false, error: 'Sin permisos para actualizar plan' });
       }
       const { userId } = req.params;

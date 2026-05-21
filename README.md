@@ -6,9 +6,13 @@ Alimentación** (calculadora, catálogo, recetas, registro), **Entrenadores**
 (rutinas, asignación, galería de videos). Multi-tenant por `gym_id`,
 con white-label opcional por gym.
 
+> **Arquitectura:** evolución sin destrucción — no reescrituras; preservar
+> todo lo operativo y mejorar de forma incremental. Ver
+> [`docs/manuales/01_INDICE_MAESTRO.md`](docs/manuales/01_INDICE_MAESTRO.md).
+
 > Estado: **piloto controlado**. P0 y P1 aplicados. Ver
-> [`docs/manuales/AUDITORIA_PRE_PILOTO.md`](docs/manuales/AUDITORIA_PRE_PILOTO.md) para el
-> detalle de hallazgos, fixes y validación.
+> [`docs/manuales/05_RIESGOS_Y_AUDITORIA.md`](docs/manuales/05_RIESGOS_Y_AUDITORIA.md) para
+> riesgos, hallazgos y checklist de release.
 
 ---
 
@@ -36,17 +40,12 @@ proyectofoodplan/
 ```
 
 Persistencia:
-- **Desarrollo / piloto / producción hoy (recomendado)**: JSON local en
-  `backend/data/*.json` (JsonStore). En el servidor de prod necesitas
-  **disco persistente** montado en `backend/data/`.
-- **PostgreSQL + Prisma (relacional)**: tablas `users`, `gyms`, `trainers`, etc.
-  Docker local: `docker compose up -d postgres`. Ver
-  [`docs/manuales/INFRAESTRUCTURA_RELACIONAL.md`](docs/manuales/INFRAESTRUCTURA_RELACIONAL.md).
+- **Producción y desarrollo con Docker (recomendado)**: PostgreSQL + Prisma
+  (`USE_RELATIONAL_STORAGE=true`). Docker: `docker compose up -d postgres` (puerto **5434**).
+  Guía: [`docs/manuales/04_TECNICO_Y_DESPLIEGUE.md`](docs/manuales/04_TECNICO_Y_DESPLIEGUE.md).
+- **Solo dev sin Docker**: JSON en `backend/data/*.json` (JsonStore).
 - **Semilla post-deploy** (códigos invite + usuarios de prueba):
-  `npm run seed:verify` — manifiesto en
-  `scripts/seeds/production-verify.manifest.json`, guía en
-  [`docs/manuales/VERIFICACION_PRODUCCION.md`](docs/manuales/VERIFICACION_PRODUCCION.md).
-- **Prisma**: **no está en el proyecto**; migración futura si se requiere ORM único.
+  `node scripts/seed_production_verify.cjs 'Demo!2026'` — ver doc 03 en manuales.
 
 Autenticación:
 - JWT firmado con `JWT_SECRET` (obligatorio). El servidor se niega a
@@ -268,10 +267,10 @@ node scripts/md-to-docx-custom.mjs    # Exporta docs/* a .docx
 
 ## 10. Documentación complementaria
 
-**Manuales y revisión del producto (carpeta única):**
+**Manuales (5 documentos maestros):**
 
-- [`docs/manuales/00_GUIA_DE_REVISION.md`](docs/manuales/00_GUIA_DE_REVISION.md) — **empieza aquí**
-- [`docs/manuales/README.md`](docs/manuales/README.md) — índice por tema (negocio, técnico, riesgos, piloto)
+- [`docs/manuales/01_INDICE_MAESTRO.md`](docs/manuales/01_INDICE_MAESTRO.md) — **empieza aquí**
+- [`docs/manuales/README.md`](docs/manuales/README.md) — índice: negocio · producto · técnico · riesgos
 
 Otros: [`docs/README.md`](docs/README.md) (PDFs, testing, test-runs).
 

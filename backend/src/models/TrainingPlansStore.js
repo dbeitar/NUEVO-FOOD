@@ -1,6 +1,7 @@
 const JsonStore = require('../utils/JsonStore');
-const { useRelationalStorage } = require('../utils/storageMode');
+const { useRelationalStorage, useTrainingPlanSql } = require('../utils/storageMode');
 const domainRepo = require('../db/repositories/domainDocumentRepository');
+const planRowRepo = require('../db/repositories/trainingPlanRowRepository');
 
 const store = new JsonStore('training_plans.json', []);
 let rows = [];
@@ -20,11 +21,33 @@ function persistRows() {
   }
 }
 
+async function mergeSqlPlans(baseRows) {
+  if (!useTrainingPlanSql()) return baseRows;
+  try {
+    const sqlRows = await planRowRepo.findAllLegacy();
+    const byUser = new Set(sqlRows.map((r) => Number(r.user_id)));
+    const rest = (baseRows || []).filter((r) => !byUser.has(Number(r.user_id)));
+    const merged = [...sqlRows, ...rest];
+    nextId = merged.length > 0 ? Math.max(...merged.map((r) => r.id || 0)) + 1 : 1;
+    return merged;
+  } catch (e) {
+    console.error('[TrainingPlans] SQL merge:', e.message);
+    return baseRows;
+  }
+}
+
 async function hydrate() {
   if (!useRelationalStorage()) return;
   rows = await domainRepo.getArray('training_plans');
   if (!Array.isArray(rows)) rows = [];
+  rows = await mergeSqlPlans(rows);
   nextId = rows.length > 0 ? Math.max(...rows.map((r) => r.id || 0)) + 1 : 1;
+}
+
+function dualPersistPlan(plan) {
+  if (useTrainingPlanSql()) {
+    planRowRepo.upsertFromLegacy(plan).catch((e) => console.error('[TrainingPlans] SQL:', e.message));
+  }
 }
 
 const TrainingPlansStore = {
@@ -85,6 +108,7 @@ const TrainingPlansStore = {
         };
         rows.push(plan);
         persistRows();
+        dualPersistPlan(plan);
         return plan;
     },
 
@@ -123,6 +147,7 @@ const TrainingPlansStore = {
         plan.updated_at = new Date().toISOString();
         rows[idx] = plan;
         persistRows();
+        dualPersistPlan(plan);
         return plan;
     },
 

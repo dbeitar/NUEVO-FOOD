@@ -28,6 +28,10 @@ const cycleRoutes = require('./src/routes/cycleRoutes');
 const seedD28DData = require('./src/seedD28DData');
 const authMiddleware = require('./src/middleware/auth');
 const { hydrateAccess } = require('./src/utils/accessControl');
+const { enrichUserAccess } = require('./src/utils/userAccessEnrichment');
+const licenseService = require('./src/services/licenseService');
+const licenseRoutes = require('./src/routes/licenseRoutes');
+const paymentLinkRoutes = require('./src/routes/paymentLinkRoutes');
 
 const tracingMiddleware = require('./src/middleware/tracing');
 const app = express();
@@ -250,8 +254,8 @@ if (USE_DB_AUTH) {
 } else {
   // ---------- Auth (modo JSON local) ----------
   // Helpers internos
-  const buildAuthToken = (user) => {
-    const access = hydrateAccess(user);
+  const buildAuthToken = async (user) => {
+    const access = await enrichUserAccess(user);
     return {
       access,
       token: jwt.sign(
@@ -271,8 +275,8 @@ if (USE_DB_AUTH) {
     };
   };
 
-  const profileShape = (user) => {
-    const access = hydrateAccess(user);
+  const profileShape = async (user) => {
+    const access = await enrichUserAccess(user);
     return {
       id: user.id,
       nombre: user.nombre,
@@ -289,6 +293,7 @@ if (USE_DB_AUTH) {
       roles: access.roles,
       permissions: access.permissions,
       module_access: access.module_access,
+      licenses: access.licenses || [],
       gym_id: user.gym_id || user.gymId || null,
       trainer_id: user.trainer_id || null,
     };
@@ -331,6 +336,10 @@ if (USE_DB_AUTH) {
       const resolvedInvite = invite_code ? resolveInviteCode(invite_code) : null;
       const inviteData = resolvedInvite?.ok ? resolvedInvite.data : null;
 
+      const finalModuleAccess = module_access && typeof module_access === 'object'
+        ? module_access
+        : (inviteData?.module_access || {});
+
       const created = await userDB.create({
         nombre,
         email,
@@ -348,13 +357,13 @@ if (USE_DB_AUTH) {
         gym_id: gym_id ?? inviteData?.gym_id ?? null,
         trainer_id: trainer_id ?? inviteData?.trainer_id ?? null,
         gymId: gym_id ?? inviteData?.gym_id ?? null,
-        module_access: module_access && typeof module_access === 'object'
-          ? module_access
-          : (inviteData?.module_access || {}),
+        module_access: finalModuleAccess,
         medidas_biomecanicas,
         experiencia,
         metodo_entrenamiento,
       });
+
+      await licenseService.applyInviteModules(created.id, finalModuleAccess, 'invite');
 
       const message = usedTemp
         ? 'Usuario registrado. Se generó una clave temporal; pídela al administrador o usa "Olvidé mi contraseña".'
@@ -386,7 +395,7 @@ if (USE_DB_AUTH) {
       if (!validPassword) {
         return res.status(401).json({ error: 'Email o contraseña incorrectos' });
       }
-      const { access, token } = buildAuthToken(user);
+      const { access, token } = await buildAuthToken(user);
       res.json({
         message: 'Login exitoso',
         token,
@@ -398,6 +407,7 @@ if (USE_DB_AUTH) {
           roles: access.roles,
           permissions: access.permissions,
           module_access: access.module_access,
+          licenses: access.licenses || [],
         },
       });
     } catch (error) {
@@ -406,7 +416,7 @@ if (USE_DB_AUTH) {
     }
   });
 
-  app.get('/api/auth/profile', (req, res) => {
+  app.get('/api/auth/profile', async (req, res) => {
     try {
       const token = req.headers['authorization']?.split(' ')[1];
       if (!token) {
@@ -417,7 +427,7 @@ if (USE_DB_AUTH) {
       if (!user) {
         return res.status(404).json({ error: 'Usuario no encontrado' });
       }
-      res.json(profileShape(user));
+      res.json(await profileShape(user));
     } catch (error) {
       res.status(403).json({ error: 'Token inválido o expirado' });
     }
@@ -472,8 +482,10 @@ const ADMIN_ROLES_ASSIGNABLE_ONLY_BY_SUPER = [
   'super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d',
   'admin_food_plan', 'admin_food', 'admin_training', 'admin_entrenador', 'admin_gym',
 ];
+const D28D_HOST_ROLES = ['entrenador_d28d'];
 const ALLOWED_ROLES_FOR_ADMIN = [
   ...ADMIN_ROLES_ASSIGNABLE_ONLY_BY_SUPER,
+  ...D28D_HOST_ROLES,
   'entrenador', 'nutricionista', 'usuario_final',
 ];
 
@@ -589,6 +601,10 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
     if (!isSuper && nextRoles.some((r) => ADMIN_ROLES_ASSIGNABLE_ONLY_BY_SUPER.includes(r))) {
       return res.status(403).json({ error: 'Solo super_admin puede crear administradores' });
     }
+    const isD28dAdmin = hasUserRole(req.user, ['admin_d28d']);
+    if (!isSuper && !isD28dAdmin && nextRoles.some((r) => D28D_HOST_ROLES.includes(r))) {
+      return res.status(403).json({ error: 'Solo super_admin o admin_d28d puede crear entrenadores D28D' });
+    }
     // Resolución de gym_id:
     // - operadores de plataforma: usan el gym_id del body (incluso null).
     // - admin_gimnasio/admin_marca: fuerza el gym propio del JWT.
@@ -623,13 +639,14 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
       gymId: finalGymId,
       planId: planId || null,
     });
+    await licenseService.syncFromModuleAccess(created.id, module_access || {}, 'admin');
     res.status(201).json({ success: true, data: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol } });
   } catch (e) {
     res.status(500).json({ error: 'Error creando usuario' });
   }
 });
 
-app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
+app.put('/api/admin/users/:id/role', authMiddleware, async (req, res) => {
   try {
     if (!hasUserRole(req.user, USER_MGMT_ROLES)) {
       return res.status(403).json({ error: 'No tienes permiso para cambiar roles' });
@@ -645,6 +662,10 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
     if (!isSuper && nextRoles.some((role) => ADMIN_ROLES_ASSIGNABLE_ONLY_BY_SUPER.includes(role))) {
       return res.status(403).json({ error: 'Solo super_admin puede asignar roles administrativos' });
     }
+    const isD28dAdmin = hasUserRole(req.user, ['admin_d28d']);
+    if (!isSuper && !isD28dAdmin && nextRoles.some((role) => D28D_HOST_ROLES.includes(role))) {
+      return res.status(403).json({ error: 'Solo super_admin o admin_d28d puede asignar entrenador D28D' });
+    }
     const target = userDB.getById(parseInt(id, 10));
     if (!target) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
@@ -659,9 +680,12 @@ app.put('/api/admin/users/:id/role', authMiddleware, (req, res) => {
         return res.status(403).json({ error: 'No puedes modificar usuarios de otro gimnasio' });
       }
     }
-    userDB.update(target.id, { rol: rol || nextRoles[0], roles: nextRoles, permissions: Array.isArray(permissions) ? permissions : target.permissions, module_access: module_access || target.module_access || {} });
+    const nextAccess = module_access || target.module_access || {};
+    userDB.update(target.id, { rol: rol || nextRoles[0], roles: nextRoles, permissions: Array.isArray(permissions) ? permissions : target.permissions, module_access: nextAccess });
+    await licenseService.syncFromModuleAccess(target.id, nextAccess, 'admin');
     const updated = userDB.getById(target.id);
-    res.json({ success: true, data: { id: updated.id, nombre: updated.nombre, email: updated.email, rol: updated.rol, roles: updated.roles, permissions: updated.permissions, module_access: updated.module_access } });
+    const resolved = await licenseService.resolveModuleAccess(target.id, nextAccess);
+    res.json({ success: true, data: { id: updated.id, nombre: updated.nombre, email: updated.email, rol: updated.rol, roles: updated.roles, permissions: updated.permissions, module_access: resolved } });
   } catch (e) {
     res.status(500).json({ error: 'Error actualizando rol' });
   }
@@ -789,6 +813,8 @@ app.use('/api/ecosystem', ecosystemRoutes);
 app.use('/api/trainer-masters', trainerMastersRoutes);
 app.use('/api/programs', programRoutes);
 app.use('/api/cycles', cycleRoutes);
+app.use('/api/licenses', licenseRoutes);
+app.use('/api/payment-links', paymentLinkRoutes);
 
 // Manejo de errores final (incluye CORS rechazado)
 // eslint-disable-next-line no-unused-vars
@@ -826,7 +852,7 @@ const server = app.listen(PORT, () => {
     console.log(`[server] Persistencia: archivos JSON (dev)${USE_DB_AUTH ? ' + auth parcial en PG' : ''}`);
     if (USE_DB_AUTH) {
       console.warn(
-        '[CONFIG] USE_DB_AUTH=true sin USE_PG_STORAGE: solo login en PG. Ver docs/PRODUCCION_HOY.md',
+        '[CONFIG] USE_DB_AUTH=true sin USE_PG_STORAGE: solo login en PG. Ver docs/manuales/04_TECNICO_Y_DESPLIEGUE.md',
       );
     }
   }

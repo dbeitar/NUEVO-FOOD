@@ -6,6 +6,7 @@ import { useI18n } from '../context/useI18n';
 import InviteCodeCell from './admin/InviteCodeCell';
 
 const EMPTY_MODULE_ACCESS = {
+  gym: false,
   d28d: false,
   training: false,
   nutrition: false,
@@ -14,6 +15,7 @@ const EMPTY_MODULE_ACCESS = {
 };
 
 const MODULE_OPTIONS = [
+  { key: 'gym', label: 'Gimnasio (producto)' },
   { key: 'd28d', label: 'Programas D28D' },
   { key: 'training', label: 'Entrenamiento' },
   { key: 'food_plan', label: 'Plan de alimentación' },
@@ -209,6 +211,7 @@ export default function AdminUsers() {
       case 'admin_training':
       case 'admin_entrenador': return 'badge-amber';
       case 'entrenador': return 'badge-green';
+      case 'entrenador_d28d': return 'badge-orange';
       case 'nutricionista': return 'badge-teal';
       default: return 'badge-slate';
     }
@@ -379,6 +382,7 @@ export default function AdminUsers() {
               {[
                 { value: 'usuario_final', label: 'Usuario Final' },
                 { value: 'entrenador', label: 'Entrenador' },
+                { value: 'entrenador_d28d', label: 'Entrenador D28D (solo clases)' },
                 { value: 'nutricionista', label: 'Nutricionista' },
                 { value: 'admin_gimnasio', label: 'Admin Gimnasio' },
                 { value: 'admin_food_plan', label: 'Admin Food Plan' },

@@ -12,6 +12,8 @@ router.get('/', trainersController.getAllTrainers);
 router.get('/search/specialty', trainersController.searchBySpecialty);
 router.get('/search/general', trainersController.searchTrainers);
 router.get('/gym/:gymId', trainersController.getTrainersByGym);
+router.get('/:id/branding', trainersController.getTrainerBranding);
+router.put('/:id/branding', trainersController.updateTrainerBranding);
 router.get('/:id', trainersController.getTrainerById);
 
 router.post('/', trainersController.createTrainer);

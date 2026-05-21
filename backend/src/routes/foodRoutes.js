@@ -23,18 +23,22 @@ router.get("/search", foodController.searchFoods);
 router.get("/barcode/:barcode", foodController.getByBarcode);
 
 // ADMIN ONLY: Importar alimentos masivos
+const FOOD_ADMIN_ROLES = [
+  "super_admin",
+  "admin_food",
+  "admin_food_plan",
+  "admin_gimnasio",
+  "admin_marca",
+];
+
 router.post("/import", requireRole(["super_admin"]), foodController.importFoods);
 
-// ADMIN ONLY: Crear respaldo manual
-router.post("/backup", requireRole(["super_admin"]), foodController.backupFoods);
+router.post("/backup", requireRole(FOOD_ADMIN_ROLES), foodController.backupFoods);
 
-// ADMIN ONLY: Crear alimento
-router.post("/", requireRole(["super_admin"]), foodController.createFood);
+router.post("/", requireRole(FOOD_ADMIN_ROLES), foodController.createFood);
 
-// ADMIN ONLY: Actualizar alimento
-router.put("/:foodId", requireRole(["super_admin"]), foodController.updateFood);
+router.put("/:foodId", requireRole(FOOD_ADMIN_ROLES), foodController.updateFood);
 
-// ADMIN ONLY: Eliminar alimento
-router.delete("/:foodId", requireRole(["super_admin"]), foodController.deleteFood);
+router.delete("/:foodId", requireRole(FOOD_ADMIN_ROLES), foodController.deleteFood);
 
 module.exports = router;

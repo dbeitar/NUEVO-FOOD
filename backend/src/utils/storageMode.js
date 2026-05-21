@@ -40,11 +40,20 @@ function usePrisma() {
   return useRelationalStorage();
 }
 
+/** Fase 6: leer/escribir training plans en tabla SQL además de DomainDocument */
+function useTrainingPlanSql() {
+  const explicit = String(process.env.TRAINING_PLANS_SQL || '').trim().toLowerCase();
+  if (explicit === 'true' || explicit === '1') return useRelationalStorage();
+  if (explicit === 'false' || explicit === '0') return false;
+  return useRelationalStorage();
+}
+
 module.exports = {
   useJsonFiles,
   useRelationalStorage,
   usePgStorage,
   useDbAuth,
   usePrisma,
+  useTrainingPlanSql,
   hasDatabaseConfig,
 };

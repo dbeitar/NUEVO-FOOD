@@ -28,6 +28,8 @@ import { userRoles, isFinalUser, makeHasAnyRole } from './dashboard/roles';
 import { getServicesFor } from './dashboard/userServices';
 import MyPlanView from './dashboard/MyPlanView';
 import ServicesHero from './dashboard/ServicesHero';
+import GymProductView from './dashboard/GymProductView';
+import AdminPaymentLinks from './AdminPaymentLinks';
 import FoodPlanAdminView from './dashboard/FoodPlanAdminView';
 import D28DAdminView from './dashboard/D28DAdminView';
 import TrainersAdminView from './dashboard/TrainersAdminView';
@@ -47,6 +49,7 @@ export default function Dashboard() {
   const [myPlan, setMyPlan] = useState(null);
   const [planLoading, setPlanLoading] = useState(true);
   const [gymBrand, setGymBrand] = useState(null);
+  const [coachBrand, setCoachBrand] = useState(null);
   const today = new Date().toISOString().split('T')[0];
 
   const roles = useMemo(() => userRoles(user), [user]);
@@ -98,14 +101,26 @@ export default function Dashboard() {
     return () => { active = false; };
   }, [user?.gym_id]);
 
+  useEffect(() => {
+    const tid = user?.trainer_id;
+    if (!tid) { setCoachBrand(null); return; }
+    let active = true;
+    (async () => {
+      try {
+        const r = await api.get(`/trainers/${tid}/branding`);
+        if (active) setCoachBrand(r.data);
+      } catch {
+        if (active) setCoachBrand(null);
+      }
+    })();
+    return () => { active = false; };
+  }, [user?.trainer_id]);
+
   // === Branding (white-label) =============================================
-  // Regla: solo se aplica white-label si el gym tiene `brand_name` configurado
-  // EXPLÍCITAMENTE. El `nombre` interno del gym (p.ej. "Gym Pro Fitness") es
-  // su razón social, no su brand pública: el default del sistema siempre es
-  // "D28D Gimnasio Virtual" hasta que un gym defina su propio brand_name.
   const brandName = (gymBrand?.brand_name && gymBrand.brand_name.trim())
+    || (coachBrand?.white_label_enabled && coachBrand?.brand_name?.trim())
     || PUBLIC_BRAND_NAME;
-  const brandLogo = gymBrand?.logo_url || '';
+  const brandLogo = gymBrand?.logo_url || (coachBrand?.white_label_enabled ? coachBrand?.logo_url : '') || '';
 
   // === Handlers ============================================================
   const navigate = (view) => {
@@ -189,6 +204,13 @@ export default function Dashboard() {
           { id: 'myaccount', label: 'Mi cuenta' },
         ];
       }
+      if (roles.includes('entrenador_d28d') && !roles.includes('entrenador')) {
+        return [
+          { id: 'home', label: 'Inicio' },
+          { id: 'liveclasses', label: 'Clases en Vivo' },
+          { id: 'myaccount', label: 'Mi cuenta' },
+        ];
+      }
       if (roles.includes('entrenador')) {
         return [
           { id: 'home', label: 'Inicio' },
@@ -226,6 +248,7 @@ export default function Dashboard() {
         { id: 'adminusers', label: 'Usuarios' },
         { id: 'masters', label: 'Maestros' },
         { id: 'audit', label: 'Auditoría' },
+        { id: 'paymentlinks', label: 'Pagos' },
         { id: 'myaccount', label: 'Mi cuenta' },
       ];
     }
@@ -250,6 +273,9 @@ export default function Dashboard() {
     if (!openServicePanel) return renderHome();
     if (openServicePanel === 'food-plan') {
       return <FoodPlanAdminView hasAnyRole={hasAnyRole} onNavigate={navigate} onBack={onBackToHome} />;
+    }
+    if (openServicePanel === 'gym') {
+      return <GymProductView hasAnyRole={hasAnyRole} onNavigate={navigate} onBack={onBackToHome} />;
     }
     if (openServicePanel === 'd28d') {
       return (
@@ -292,6 +318,7 @@ export default function Dashboard() {
       case 'admingyms': return <AdminGyms />;
       case 'myaccount': return <MyAccount />;
       case 'audit': return hasAnyRole(['super_admin']) ? <AuditDashboard /> : null;
+      case 'paymentlinks': return hasAnyRole(['super_admin']) ? <AdminPaymentLinks /> : null;
       case 'progress': return <Progress />;
       case 'equivalentes': return <Equivalentes />;
       case 'training': return <TrainingModule />;

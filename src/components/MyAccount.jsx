@@ -4,6 +4,7 @@ import api from '../services/api';
  
 import { emitToast } from '../context/toast';
 import { useI18n } from '../context/useI18n';
+import CoachBrandingPanel from './CoachBrandingPanel';
 
 export default function MyAccount() {
   const { user, refreshProfile } = useAuth();
@@ -242,6 +243,10 @@ export default function MyAccount() {
             </div>
           )}
         </section>
+      )}
+
+      {!isPlanSelection && (user?.roles?.includes('entrenador') || user?.rol === 'entrenador') && user?.trainer_id && (
+        <CoachBrandingPanel trainerId={user.trainer_id} />
       )}
 
       {!isPlanSelection && (

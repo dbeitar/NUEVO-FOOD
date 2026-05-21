@@ -19,6 +19,7 @@ const MODULE_PRESETS = {
     live_classes: true,
   },
   gym: {
+    gym: true,
     d28d: true,
     training: false,
     nutrition: false,
