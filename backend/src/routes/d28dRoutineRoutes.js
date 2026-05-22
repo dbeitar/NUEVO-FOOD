@@ -15,6 +15,7 @@ router.get('/notes/host', ctrl.listHostNotes);
 router.post('/notes/host', ctrl.addHostNote);
 
 router.get('/history/:rootId', ctrl.getHistory);
+router.get('/schedule', ctrl.listForSchedule);
 router.get('/', ctrl.listRoutines);
 router.post('/', ctrl.createRoutine);
 router.get('/:id', ctrl.getRoutine);

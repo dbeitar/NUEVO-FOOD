@@ -123,14 +123,14 @@ export default function TrainerBrandingModal({ trainer, onClose, onSaved }) {
               <textarea className="input min-h-[72px]" name="welcome_message" value={formData.welcome_message} onChange={(e) => setFormData((p) => ({ ...p, welcome_message: e.target.value }))} />
             </label>
             <WhiteLabelFields formData={formData} setFormData={setFormData} />
-          </form>
             <div className="form-modal-footer">
               <button type="button" className="btn-secondary" onClick={onClose}>{t('common.cancel', 'Cancelar')}</button>
-              <button type="submit" form="trainer-branding-form" className="btn-primary inline-flex items-center gap-2" disabled={saving}>
+              <button type="submit" className="btn-primary inline-flex items-center gap-2" disabled={saving}>
                 <Save size={16} />
                 {saving ? t('common.saving', 'Guardando...') : t('common.save', 'Guardar')}
               </button>
             </div>
+          </form>
         )}
       </div>
     </div>

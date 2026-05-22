@@ -64,6 +64,26 @@ export default function Dashboard() {
   const [coachBrand, setCoachBrand] = useState(null);
   const today = new Date().toISOString().split('T')[0];
 
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const service = params.get('service');
+    const view = params.get('view');
+    if (service === 'food-plan') {
+      setOpenServicePanel('food-plan');
+      setCurrentView('servicePanel');
+      params.delete('service');
+      params.delete('view');
+      const qs = params.toString();
+      const next = `${window.location.pathname}${qs ? `?${qs}` : ''}`;
+      window.history.replaceState({}, '', next);
+    } else if (view && isFoodLegacyView(view)) {
+      setCurrentView(view);
+      params.delete('view');
+      const qs = params.toString();
+      window.history.replaceState({}, '', `${window.location.pathname}${qs ? `?${qs}` : ''}`);
+    }
+  }, []);
+
   const roles = useMemo(() => userRoles(user), [user]);
   const hasAnyRole = useMemo(() => makeHasAnyRole(roles), [roles]);
   const isFinal = isFinalUser(user);
@@ -363,11 +383,12 @@ export default function Dashboard() {
       );
     }
     if (openServicePanel === 'd28d-routines') {
-      if (!hasAnyRole(['super_admin', 'admin_d28d'])) {
+      if (!hasAnyRole(['super_admin', 'admin_d28d', 'entrenador_d28d'])) {
         return renderHome();
       }
       return (
         <D28dRoutinesMaster
+          readOnly={!hasAnyRole(['super_admin', 'admin_d28d'])}
           onBack={() => {
             setOpenServicePanel(null);
             setCurrentView('masters');

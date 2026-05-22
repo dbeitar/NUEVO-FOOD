@@ -33,10 +33,36 @@ const ROUTINE_STATES = ['activa', 'archivada'];
 
 const ROUTINE_SCOPES = ['d28d_platform', 'training', 'coach_wl', 'gym_wl'];
 
+const NIVEL_OPTIONS = ['principiante', 'intermedio', 'avanzado'];
+
+const OBJETIVO_OPTIONS = [
+  'fuerza',
+  'hipertrofia',
+  'resistencia',
+  'movilidad',
+  'metabolico',
+  'mantenimiento',
+];
+
+const EQUIPMENT_OPTIONS = [
+  'banda',
+  'mancuerna',
+  'barra',
+  'silla',
+  'peso_corporal',
+  'otros',
+];
+
+const VARIANT_LEVELS = ['principiante', 'intermedio', 'avanzado'];
+
 module.exports = {
   BLOCK_TYPES,
   BLOCK_TYPE_LABELS,
   DEFAULT_CATEGORIES,
   ROUTINE_STATES,
   ROUTINE_SCOPES,
+  NIVEL_OPTIONS,
+  OBJETIVO_OPTIONS,
+  EQUIPMENT_OPTIONS,
+  VARIANT_LEVELS,
 };

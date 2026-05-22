@@ -57,7 +57,7 @@ export default function MastersHub({ onOpenMaster, hasAnyRole }) {
 
         <div className="services-hero-grid">
           {masters.map((m) => {
-            if (m.id === 'd28d-routines' && hasAnyRole && !hasAnyRole(['super_admin', 'admin_d28d'])) {
+            if (m.id === 'd28d-routines' && hasAnyRole && !hasAnyRole(['super_admin', 'admin_d28d', 'entrenador_d28d'])) {
               return null;
             }
             return (

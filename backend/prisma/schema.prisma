@@ -345,8 +345,12 @@ model D28dRoutine {
   nombre        String   @db.VarChar(255)
   categoria     String   @db.VarChar(120)
   subcategoria  String?  @db.VarChar(120)
+  objetivo      String?  @db.VarChar(64)
   nivel         String?  @db.VarChar(64)
+  duracion      String?  @db.VarChar(64)
   descripcion   String?  @db.Text
+  notasTecnicas String?  @map("notas_tecnicas") @db.Text
+  equipamiento  Json     @default("[]")
   estado        String   @default("activa") @db.VarChar(32)
   scope         String   @default("d28d_platform") @db.VarChar(64)
   createdBy     Int?     @map("created_by")
@@ -362,13 +366,17 @@ model D28dRoutine {
 }
 
 model D28dRoutineBlock {
-  id        Int      @id @default(autoincrement())
-  routineId Int      @map("routine_id")
-  tipo      String   @db.VarChar(32)
-  orden     Int      @default(0)
-  nombre    String?  @db.VarChar(255)
-  config    Json     @default("{}")
-  createdAt DateTime @default(now()) @map("created_at")
+  id            Int      @id @default(autoincrement())
+  routineId     Int      @map("routine_id")
+  tipo          String   @db.VarChar(32)
+  orden         Int      @default(0)
+  nombre        String?  @db.VarChar(255)
+  tecnica       String?  @db.VarChar(120)
+  duracion      String?  @db.VarChar(64)
+  descanso      String?  @db.VarChar(64)
+  observaciones String?  @db.Text
+  config        Json     @default("{}")
+  createdAt     DateTime @default(now()) @map("created_at")
 
   routine   D28dRoutine @relation(fields: [routineId], references: [id], onDelete: Cascade)
   exercises D28dRoutineExercise[]
@@ -382,10 +390,14 @@ model D28dRoutineExercise {
   blockId       Int      @map("block_id")
   nombre        String   @db.VarChar(255)
   orden         Int      @default(0)
+  series        String?  @db.VarChar(64)
   repeticiones  String?  @db.VarChar(64)
   duracion      String?  @db.VarChar(64)
   descanso      String?  @db.VarChar(64)
+  tempo         String?  @db.VarChar(64)
+  intensidad    String?  @db.VarChar(64)
   observaciones String?  @db.Text
+  variantes     Json     @default("{}")
   videoUrl      String?  @map("video_url") @db.VarChar(512)
   imagenUrl     String?  @map("imagen_url") @db.VarChar(512)
   createdAt     DateTime @default(now()) @map("created_at")

@@ -37,8 +37,8 @@ export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack, food
         </button>
         <h3 className="text-xl font-bold text-stone-900 mb-2">Plan de Alimentación (Food Plan)</h3>
         <p className="text-stone-600 mb-4">
-          El módulo nutricional opera en Food Plan. Las rutas internas legacy permanecen disponibles
-          con <code className="text-xs">VITE_FOOD_EXTERNAL=false</code>.
+          El módulo nutricional opera en Food Plan embebido (<code className="text-xs">/food-plan</code>).
+          Las rutas legacy del monolito requieren <code className="text-xs">VITE_FOOD_LEGACY=true</code>.
         </p>
         <a
           href={url}

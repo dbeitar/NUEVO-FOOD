@@ -49,6 +49,18 @@ exports.upsertCategory = async (req, res) => {
   }
 };
 
+exports.listForSchedule = async (req, res) => {
+  if (!canViewHost(req.user) && !canManage(req.user)) {
+    return res.status(403).json({ success: false, message: 'Sin permiso' });
+  }
+  try {
+    const data = await routineService.listForSchedule();
+    return res.json({ success: true, data });
+  } catch (err) {
+    return sendError(res, err);
+  }
+};
+
 exports.listRoutines = async (req, res) => {
   if (!canViewHost(req.user) && !canManage(req.user)) {
     return res.status(403).json({ success: false, message: 'Sin permiso' });

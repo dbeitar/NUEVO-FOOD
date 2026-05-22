@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 import LiveClassRoutineHost from './live/LiveClassRoutineHost';
+import RoutineTemplateViewer from './routines/RoutineTemplateViewer';
 
 const defaultForm = {
   title: '',
@@ -14,6 +15,7 @@ const defaultForm = {
   program_id: '',
   d28d_routine_id: '',
   use_routine: false,
+  d28d_session_adjustments: '',
 };
 
 function formatDateTimeLocal(value) {
@@ -32,6 +34,7 @@ export default function AdminLiveClasses() {
   const [programs, setPrograms] = useState([]);
   const [routines, setRoutines] = useState([]);
   const [previewClass, setPreviewClass] = useState(null);
+  const [routinePreview, setRoutinePreview] = useState(null);
 
   const fetchItems = async () => {
     try {
@@ -65,10 +68,28 @@ export default function AdminLiveClasses() {
 
   const fetchRoutines = async () => {
     try {
-      const resp = await api.get('/d28d/routines');
+      const resp = await api.get('/d28d/routines/schedule');
       setRoutines(resp.data?.data || []);
     } catch {
-      setRoutines([]);
+      try {
+        const fallback = await api.get('/d28d/routines', { params: { estado: 'activa' } });
+        setRoutines(fallback.data?.data || []);
+      } catch {
+        setRoutines([]);
+      }
+    }
+  };
+
+  const loadRoutinePreview = async (routineId) => {
+    if (!routineId) {
+      setRoutinePreview(null);
+      return;
+    }
+    try {
+      const resp = await api.get(`/d28d/routines/${routineId}`);
+      setRoutinePreview(resp.data?.data || null);
+    } catch {
+      setRoutinePreview(null);
     }
   };
 
@@ -99,6 +120,7 @@ export default function AdminLiveClasses() {
           active: form.active,
           program_id: form.program_id || null,
           d28d_routine_id: form.use_routine && form.d28d_routine_id ? Number(form.d28d_routine_id) : null,
+          d28d_session_adjustments: form.use_routine ? (form.d28d_session_adjustments || '').trim() : null,
         };
         if (form.id) {
           await api.put(`/live-classes/admin/${form.id}`, payload);
@@ -129,8 +151,16 @@ export default function AdminLiveClasses() {
       program_id: item.program_id || '',
       d28d_routine_id: item.d28d_routine_id || '',
       use_routine: Boolean(item.d28d_routine_id),
+      d28d_session_adjustments: item.d28d_routine_snapshot?.session_adjustments
+        || item.d28d_session_adjustments
+        || '',
     });
     setPreviewClass(item);
+    if (item.d28d_routine_id) {
+      loadRoutinePreview(item.d28d_routine_id);
+    } else {
+      setRoutinePreview(item.d28d_routine || item.d28d_routine_snapshot || null);
+    }
   };
 
   const handleDelete = async (item) => {
@@ -169,10 +199,14 @@ export default function AdminLiveClasses() {
             Programar con rutina D28D (sin escribir ejercicios manualmente)
           </label>
           {form.use_routine && (
+            <>
             <select
               className="input w-full mt-2"
               value={form.d28d_routine_id}
-              onChange={(e) => handleChange('d28d_routine_id', e.target.value)}
+              onChange={(e) => {
+                handleChange('d28d_routine_id', e.target.value);
+                loadRoutinePreview(e.target.value);
+              }}
               required
             >
               <option value="">Seleccionar rutina…</option>
@@ -182,6 +216,26 @@ export default function AdminLiveClasses() {
                 </option>
               ))}
             </select>
+            <label className="block mt-3">
+              <span className="text-xs font-semibold text-slate-700">Ajustes puntuales para esta sesión (no modifica la plantilla)</span>
+              <textarea
+                className="input w-full min-h-[72px] mt-1"
+                value={form.d28d_session_adjustments}
+                onChange={(e) => handleChange('d28d_session_adjustments', e.target.value)}
+                placeholder="Ej: reducir carga 10%, sustituir burpees por step-ups…"
+              />
+            </label>
+            {routinePreview && (
+              <div className="mt-4 rounded-2xl border border-slate-200 bg-white p-4 max-h-[420px] overflow-y-auto">
+                <p className="text-xs font-semibold text-slate-600 mb-2">Vista previa de plantilla</p>
+                <RoutineTemplateViewer
+                  routine={routinePreview}
+                  sessionAdjustments={form.d28d_session_adjustments}
+                  compact
+                />
+              </div>
+            )}
+            </>
           )}
         </div>
 

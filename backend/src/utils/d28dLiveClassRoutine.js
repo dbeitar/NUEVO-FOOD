@@ -1,5 +1,6 @@
 const routineRepo = require('../db/repositories/d28dRoutineRepository');
 const { useRelationalStorage } = require('./storageMode');
+const { routineSnapshot } = require('../shared/routineTemplateModel');
 
 async function buildRoutineLinkFields(body = {}, existing = null) {
   const routineId = body.d28d_routine_id ?? existing?.d28d_routine_id;
@@ -7,20 +8,20 @@ async function buildRoutineLinkFields(body = {}, existing = null) {
   const routine = await routineRepo.getRoutineById(routineId);
   if (!routine) return {};
   const snapshot = {
-    id: routine.id,
-    root_id: routine.root_id,
-    nombre: routine.nombre,
-    categoria: routine.categoria,
-    subcategoria: routine.subcategoria,
-    nivel: routine.nivel,
+    ...routineSnapshot(routine),
     version: routine.version,
-    blocks: routine.blocks,
+    session_adjustments: body.d28d_session_adjustments
+      ? String(body.d28d_session_adjustments).trim()
+      : (existing?.d28d_routine_snapshot?.session_adjustments || null),
   };
   const patch = {
     d28d_routine_id: routine.id,
     d28d_routine_version: routine.version,
     d28d_routine_snapshot: snapshot,
   };
+  if (body.d28d_session_adjustments !== undefined) {
+    patch.d28d_session_adjustments = String(body.d28d_session_adjustments || '').trim();
+  }
   if (!body.title && !existing?.title) patch.title = routine.nombre;
   if (body.description === undefined && !existing?.description && routine.descripcion) {
     patch.description = routine.descripcion;

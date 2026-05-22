@@ -54,6 +54,10 @@ function FoodShellSsoGate() {
 
         const { data } = await api.post('/food-module/exchange', { token });
         const payload = data?.data || data;
+        if (!payload?.accessToken) {
+          setError('No se recibió sesión Food Plan. Verifica licencia food y FOOD_MODULE_URL en el servidor.');
+          return;
+        }
         localStorage.setItem('token', payload.accessToken);
         localStorage.setItem('refreshToken', payload.refreshToken || '');
         localStorage.setItem('user', JSON.stringify(payload.user));

@@ -1,7 +1,16 @@
 const fs = require('fs');
 const path = require('path');
 const routineRepo = require('../db/repositories/d28dRoutineRepository');
-const { BLOCK_TYPES, DEFAULT_CATEGORIES } = require('../constants/d28dRoutineTypes');
+const {
+  BLOCK_TYPES,
+  DEFAULT_CATEGORIES,
+  BLOCK_TYPE_LABELS,
+  NIVEL_OPTIONS,
+  OBJETIVO_OPTIONS,
+  EQUIPMENT_OPTIONS,
+  VARIANT_LEVELS,
+} = require('../constants/d28dRoutineTypes');
+const { normalizeRoutineInput, BLOCK_CONFIG_DEFAULTS } = require('../shared/routineTemplateModel');
 const { useRelationalStorage } = require('../utils/storageMode');
 
 function assertRelational() {
@@ -88,14 +97,15 @@ module.exports = {
   },
   createRoutine: (body, userId) => {
     assertRelational();
-    return routineRepo.createRoutine(body, userId);
+    return routineRepo.createRoutine(normalizeRoutineInput(body), userId);
   },
   updateRoutine: (id, body, { newVersion = false, userId } = {}) => {
     assertRelational();
+    const normalized = normalizeRoutineInput(body);
     if (newVersion) {
-      return routineRepo.cloneRoutine(id, { versionBump: true, createdBy: userId, overrides: body });
+      return routineRepo.cloneRoutine(id, { versionBump: true, createdBy: userId, overrides: normalized });
     }
-    return routineRepo.updateRoutineInPlace(id, body);
+    return routineRepo.updateRoutineInPlace(id, normalized);
   },
   duplicateRoutine: (id, userId) => {
     assertRelational();
@@ -118,6 +128,12 @@ module.exports = {
   importFromFile,
   meta: () => ({
     block_types: BLOCK_TYPES,
+    block_type_labels: BLOCK_TYPE_LABELS,
+    block_config_defaults: BLOCK_CONFIG_DEFAULTS,
     default_categories: DEFAULT_CATEGORIES,
+    nivel_options: NIVEL_OPTIONS,
+    objetivo_options: OBJETIVO_OPTIONS,
+    equipment_options: EQUIPMENT_OPTIONS,
+    variant_levels: VARIANT_LEVELS,
   }),
 };

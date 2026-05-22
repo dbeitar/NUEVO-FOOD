@@ -1,14 +1,19 @@
 const { getPrisma } = require('../../lib/prisma');
+const { normalizeRoutineInput } = require('../../shared/routineTemplateModel');
 
 function mapExercise(row) {
   return {
     id: row.id,
     nombre: row.nombre,
     orden: row.orden,
+    series: row.series,
     repeticiones: row.repeticiones,
     duracion: row.duracion,
     descanso: row.descanso,
+    tempo: row.tempo,
+    intensidad: row.intensidad,
     observaciones: row.observaciones,
+    variantes: row.variantes && typeof row.variantes === 'object' ? row.variantes : {},
     video_url: row.videoUrl,
     imagen_url: row.imagenUrl,
   };
@@ -20,6 +25,10 @@ function mapBlock(row) {
     tipo: row.tipo,
     orden: row.orden,
     nombre: row.nombre,
+    tecnica: row.tecnica,
+    duracion: row.duracion,
+    descanso: row.descanso,
+    observaciones: row.observaciones,
     config: row.config || {},
     exercises: (row.exercises || []).map(mapExercise).sort((a, b) => a.orden - b.orden),
   };
@@ -35,8 +44,12 @@ function mapRoutine(row) {
     nombre: row.nombre,
     categoria: row.categoria,
     subcategoria: row.subcategoria,
+    objetivo: row.objetivo,
     nivel: row.nivel,
+    duracion: row.duracion,
     descripcion: row.descripcion,
+    notas_tecnicas: row.notasTecnicas,
+    equipamiento: Array.isArray(row.equipamiento) ? row.equipamiento : [],
     estado: row.estado,
     scope: row.scope,
     created_by: row.createdBy,
@@ -52,6 +65,23 @@ const routineInclude = {
     include: { exercises: { orderBy: { orden: 'asc' } } },
   },
 };
+
+function routineCoreData(normalized, createdBy) {
+  return {
+    nombre: normalized.nombre,
+    categoria: normalized.categoria,
+    subcategoria: normalized.subcategoria,
+    objetivo: normalized.objetivo,
+    nivel: normalized.nivel,
+    duracion: normalized.duracion,
+    descripcion: normalized.descripcion,
+    notasTecnicas: normalized.notas_tecnicas,
+    equipamiento: normalized.equipamiento,
+    estado: normalized.estado,
+    scope: normalized.scope,
+    createdBy: createdBy ?? undefined,
+  };
+}
 
 async function ensureDefaultCategories() {
   const prisma = getPrisma();
@@ -137,31 +167,40 @@ async function getVersionHistory(rootId) {
 }
 
 async function createBlocks(tx, routineId, blocks = []) {
-  for (let i = 0; i < blocks.length; i += 1) {
-    const b = blocks[i];
+  const normalized = normalizeRoutineInput({ nombre: '_', categoria: '_', blocks });
+  for (let i = 0; i < normalized.blocks.length; i += 1) {
+    const b = normalized.blocks[i];
     const block = await tx.d28dRoutineBlock.create({
       data: {
         routineId,
-        tipo: String(b.tipo || 'BLOQUE_LIBRE'),
-        orden: Number(b.orden ?? i),
-        nombre: b.nombre ? String(b.nombre) : null,
-        config: b.config && typeof b.config === 'object' ? b.config : {},
+        tipo: b.tipo,
+        orden: b.orden,
+        nombre: b.nombre,
+        tecnica: b.tecnica,
+        duracion: b.duracion,
+        descanso: b.descanso,
+        observaciones: b.observaciones,
+        config: b.config,
       },
     });
-    const exercises = Array.isArray(b.exercises) ? b.exercises : [];
-    for (let j = 0; j < exercises.length; j += 1) {
-      const ex = exercises[j];
+    for (let j = 0; j < b.exercises.length; j += 1) {
+      const ex = b.exercises[j];
+      if (!ex.nombre) continue;
       await tx.d28dRoutineExercise.create({
         data: {
           blockId: block.id,
-          nombre: String(ex.nombre || '').trim(),
-          orden: Number(ex.orden ?? j),
-          repeticiones: ex.repeticiones != null ? String(ex.repeticiones) : null,
-          duracion: ex.duracion != null ? String(ex.duracion) : null,
-          descanso: ex.descanso != null ? String(ex.descanso) : null,
-          observaciones: ex.observaciones ? String(ex.observaciones) : null,
-          videoUrl: ex.video_url || ex.videoUrl || null,
-          imagenUrl: ex.imagen_url || ex.imagenUrl || null,
+          nombre: ex.nombre,
+          orden: ex.orden,
+          series: ex.series,
+          repeticiones: ex.repeticiones,
+          duracion: ex.duracion,
+          descanso: ex.descanso,
+          tempo: ex.tempo,
+          intensidad: ex.intensidad,
+          observaciones: ex.observaciones,
+          variantes: ex.variantes,
+          videoUrl: ex.video_url,
+          imagenUrl: ex.imagen_url,
         },
       });
     }
@@ -169,6 +208,7 @@ async function createBlocks(tx, routineId, blocks = []) {
 }
 
 async function createRoutine(payload, createdBy) {
+  const normalized = normalizeRoutineInput(payload);
   const prisma = getPrisma();
   return prisma.$transaction(async (tx) => {
     const draft = await tx.d28dRoutine.create({
@@ -176,14 +216,7 @@ async function createRoutine(payload, createdBy) {
         rootId: 0,
         version: 1,
         isCurrent: true,
-        nombre: String(payload.nombre).trim(),
-        categoria: String(payload.categoria).trim(),
-        subcategoria: payload.subcategoria ? String(payload.subcategoria) : null,
-        nivel: payload.nivel ? String(payload.nivel) : null,
-        descripcion: payload.descripcion ? String(payload.descripcion) : null,
-        estado: payload.estado || 'activa',
-        scope: payload.scope || 'd28d_platform',
-        createdBy: createdBy || null,
+        ...routineCoreData(normalized, createdBy),
       },
     });
     const rootId = draft.id;
@@ -191,7 +224,7 @@ async function createRoutine(payload, createdBy) {
       where: { id: draft.id },
       data: { rootId },
     });
-    await createBlocks(tx, draft.id, payload.blocks || []);
+    await createBlocks(tx, draft.id, normalized.blocks);
     const full = await tx.d28dRoutine.findUnique({
       where: { id: draft.id },
       include: routineInclude,
@@ -201,22 +234,28 @@ async function createRoutine(payload, createdBy) {
 }
 
 async function updateRoutineInPlace(id, payload) {
+  const normalized = normalizeRoutineInput({ ...payload, nombre: payload.nombre || ' ', categoria: payload.categoria || ' ' });
   const prisma = getPrisma();
   return prisma.$transaction(async (tx) => {
     await tx.d28dRoutine.update({
       where: { id: Number(id) },
       data: {
-        nombre: payload.nombre != null ? String(payload.nombre).trim() : undefined,
-        categoria: payload.categoria != null ? String(payload.categoria).trim() : undefined,
-        subcategoria: payload.subcategoria !== undefined ? (payload.subcategoria ? String(payload.subcategoria) : null) : undefined,
-        nivel: payload.nivel !== undefined ? (payload.nivel ? String(payload.nivel) : null) : undefined,
-        descripcion: payload.descripcion !== undefined ? (payload.descripcion ? String(payload.descripcion) : null) : undefined,
+        nombre: normalized.nombre || undefined,
+        categoria: normalized.categoria || undefined,
+        subcategoria: payload.subcategoria !== undefined ? normalized.subcategoria : undefined,
+        objetivo: payload.objetivo !== undefined ? normalized.objetivo : undefined,
+        nivel: payload.nivel !== undefined ? normalized.nivel : undefined,
+        duracion: payload.duracion !== undefined ? normalized.duracion : undefined,
+        descripcion: payload.descripcion !== undefined ? normalized.descripcion : undefined,
+        notasTecnicas: payload.notas_tecnicas !== undefined ? normalized.notas_tecnicas : undefined,
+        equipamiento: payload.equipamiento !== undefined ? normalized.equipamiento : undefined,
         estado: payload.estado || undefined,
+        scope: payload.scope || undefined,
       },
     });
     if (Array.isArray(payload.blocks)) {
       await tx.d28dRoutineBlock.deleteMany({ where: { routineId: Number(id) } });
-      await createBlocks(tx, Number(id), payload.blocks);
+      await createBlocks(tx, Number(id), normalized.blocks);
     }
     const full = await tx.d28dRoutine.findUnique({
       where: { id: Number(id) },
@@ -229,6 +268,11 @@ async function updateRoutineInPlace(id, payload) {
 async function cloneRoutine(sourceId, { versionBump = false, createdBy, overrides = {} } = {}) {
   const source = await getRoutineById(sourceId, { allowAnyVersion: true });
   if (!source) return null;
+  const merged = normalizeRoutineInput({
+    ...source,
+    ...overrides,
+    blocks: overrides.blocks || source.blocks,
+  });
   const prisma = getPrisma();
 
   return prisma.$transaction(async (tx) => {
@@ -251,13 +295,17 @@ async function cloneRoutine(sourceId, { versionBump = false, createdBy, override
         rootId: versionBump ? source.root_id : 0,
         version: versionBump ? nextVersion : 1,
         isCurrent: true,
-        nombre: overrides.nombre || `${source.nombre}${versionBump ? '' : ' (copia)'}`,
-        categoria: overrides.categoria || source.categoria,
-        subcategoria: overrides.subcategoria ?? source.subcategoria,
-        nivel: overrides.nivel ?? source.nivel,
-        descripcion: overrides.descripcion ?? source.descripcion,
-        estado: overrides.estado || 'activa',
-        scope: overrides.scope || source.scope,
+        nombre: merged.nombre + (versionBump ? '' : ' (copia)'),
+        categoria: merged.categoria,
+        subcategoria: merged.subcategoria,
+        objetivo: merged.objetivo,
+        nivel: merged.nivel,
+        duracion: merged.duracion,
+        descripcion: merged.descripcion,
+        notasTecnicas: merged.notas_tecnicas,
+        equipamiento: merged.equipamiento,
+        estado: merged.estado,
+        scope: merged.scope,
         createdBy: createdBy || source.created_by,
       },
     });
@@ -267,7 +315,7 @@ async function cloneRoutine(sourceId, { versionBump = false, createdBy, override
       await tx.d28dRoutine.update({ where: { id: created.id }, data: { rootId } });
     }
 
-    await createBlocks(tx, created.id, overrides.blocks || source.blocks);
+    await createBlocks(tx, created.id, merged.blocks);
 
     const full = await tx.d28dRoutine.findUnique({
       where: { id: created.id },

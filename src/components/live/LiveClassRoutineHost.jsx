@@ -1,18 +1,12 @@
 import { useEffect, useState } from 'react';
 import api from '../../services/api';
-
-const BLOCK_LABELS = {
-  REST_PAUSE: 'Rest-Pause',
-  TABATA: 'Tabata',
-  HIIT: 'HIIT',
-  AMRAP: 'AMRAP',
-  EMOM: 'EMOM',
-  SUPER_SET: 'Super Set',
-  BLOQUE_LIBRE: 'Bloque libre',
-};
+import RoutineTemplateViewer from '../routines/RoutineTemplateViewer';
 
 export default function LiveClassRoutineHost({ classItem, user }) {
   const routine = classItem?.d28d_routine || classItem?.d28d_routine_snapshot;
+  const sessionAdjustments = routine?.session_adjustments
+    || classItem?.d28d_session_adjustments
+    || '';
   const [note, setNote] = useState('');
   const [notes, setNotes] = useState([]);
   const [saving, setSaving] = useState(false);
@@ -63,42 +57,32 @@ export default function LiveClassRoutineHost({ classItem, user }) {
   return (
     <section className="mt-6 rounded-2xl border border-lime-200 bg-lime-50/50 p-4">
       <h3 className="font-bold text-stone-900">Rutina D28D — vista anfitrión</h3>
-      <p className="text-sm text-stone-600 mt-1">
-        <strong>{routine.nombre}</strong> · {routine.categoria}
-        {routine.subcategoria ? ` · ${routine.subcategoria}` : ''}
-        {routine.version ? ` · v${routine.version}` : ''}
+      <p className="text-xs text-amber-800 mt-2">
+        Solo lectura de plantilla maestra. Tus observaciones no modifican la rutina.
       </p>
-      <p className="text-xs text-amber-800 mt-2">Solo lectura de plantilla maestra. Tus observaciones no modifican la rutina.</p>
-
-      <div className="mt-4 space-y-3">
-        {(routine.blocks || []).map((block) => (
-          <div key={block.id || block.orden} className="rounded-xl bg-white border border-slate-200 p-3">
-            <div className="font-semibold text-sm">
-              {BLOCK_LABELS[block.tipo] || block.tipo}
-              {block.nombre ? ` — ${block.nombre}` : ''}
-            </div>
-            <ul className="mt-2 text-sm space-y-1">
-              {(block.exercises || []).map((ex) => (
-                <li key={ex.id || ex.orden}>
-                  {ex.nombre}
-                  {ex.repeticiones ? ` · ${ex.repeticiones} reps` : ''}
-                  {ex.duracion ? ` · ${ex.duracion}` : ''}
-                  {ex.descanso ? ` · desc ${ex.descanso}` : ''}
-                </li>
-              ))}
-            </ul>
-          </div>
-        ))}
-      </div>
 
       <div className="mt-4">
-        <label className="text-sm font-semibold block mb-1">Observaciones del anfitrión ({user?.nombre || 'coach'})</label>
-        <textarea className="input w-full min-h-[72px]" value={note} onChange={(e) => setNote(e.target.value)} placeholder="Notas para esta sesión (no editan la plantilla)" />
-        <button type="button" className="btn-primary mt-2" disabled={saving} onClick={saveNote}>Guardar observación</button>
+        <RoutineTemplateViewer routine={routine} sessionAdjustments={sessionAdjustments} />
+      </div>
+
+      <div className="mt-4 pt-4 border-t border-lime-200">
+        <label className="block text-sm font-semibold mb-1">Observaciones del anfitrión</label>
+        <textarea
+          className="input w-full min-h-[72px]"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+          placeholder="Notas para esta clase (no alteran la plantilla)…"
+        />
+        <button type="button" className="btn-primary mt-2 text-sm" disabled={saving} onClick={saveNote}>
+          {saving ? 'Guardando…' : 'Registrar observación'}
+        </button>
         {notes.length > 0 && (
           <ul className="mt-3 text-sm space-y-2">
             {notes.map((n) => (
-              <li key={n.id} className="bg-white rounded-lg p-2 border border-slate-100">{n.texto}</li>
+              <li key={n.id} className="bg-white rounded-lg p-2 border border-slate-100">
+                <span className="text-xs text-slate-400">{new Date(n.created_at).toLocaleString()}</span>
+                <p>{n.texto}</p>
+              </li>
             ))}
           </ul>
         )}

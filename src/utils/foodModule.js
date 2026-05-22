@@ -5,7 +5,7 @@ export function isFoodLegacyMode() {
   return String(import.meta.env.VITE_FOOD_LEGACY || '').toLowerCase() === 'true';
 }
 
-/** Food Plan original embebido (food_version_final). Activo por defecto. */
+/** Food Plan embebido (`modules/food_version_final` en /food-plan). */
 export function isFoodExternal() {
   return !isFoodLegacyMode();
 }
@@ -30,14 +30,16 @@ export function isFoodLegacyView(viewId) {
   return FOOD_LEGACY_VIEWS.has(viewId);
 }
 
-/** Abre Food Plan (embebido en /food-plan con SSO). */
+/** Abre Food Plan embebido en /food-plan con SSO (shell → food-module/exchange). */
 export async function openFoodModule(returnPath) {
   if (isFoodLegacyMode()) {
     return;
   }
+
   const returnUrl = returnPath
     ? `${window.location.origin}${returnPath.startsWith('/') ? returnPath : `/${returnPath}`}`
     : window.location.href;
+
   try {
     const shellToken = localStorage.getItem('token');
     if (shellToken) {
