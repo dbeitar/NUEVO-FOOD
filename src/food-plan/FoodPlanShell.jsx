@@ -1,5 +1,5 @@
-import { useEffect, useState } from 'react';
-import { BrowserRouter, Routes, Route, useSearchParams, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { BrowserRouter, Routes, Route, useSearchParams, useNavigate, useLocation } from 'react-router-dom';
 import { Provider, useDispatch } from 'react-redux';
 import { Toaster } from 'react-hot-toast';
 import { configureStore } from '@reduxjs/toolkit';
@@ -15,6 +15,25 @@ const foodStore = configureStore({
     nutrition: nutritionReducer,
   },
 });
+
+function applyFoodSession(dispatch, payload) {
+  localStorage.setItem('token', payload.accessToken);
+  localStorage.setItem('refreshToken', payload.refreshToken || '');
+  localStorage.setItem('user', JSON.stringify(payload.user));
+  localStorage.setItem('subscription', JSON.stringify(payload.subscription || null));
+  if (payload.branding) {
+    localStorage.setItem('shellBranding', JSON.stringify(payload.branding));
+  }
+  dispatch({
+    type: 'auth/login/fulfilled',
+    payload: {
+      accessToken: payload.accessToken,
+      refreshToken: payload.refreshToken,
+      user: payload.user,
+      subscription: payload.subscription,
+    },
+  });
+}
 
 function bootstrapAuthFromStorage(dispatch) {
   const accessToken = localStorage.getItem('token');
@@ -38,45 +57,70 @@ function FoodShellSsoGate() {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const [error, setError] = useState('');
+  const startedRef = useRef(false);
 
   useEffect(() => {
-    const token = params.get('token');
-    if (!token) {
-      setError('Token SSO no recibido');
+    if (startedRef.current) return;
+    startedRef.current = true;
+
+    const handoff =
+      params.get('token')
+      || sessionStorage.getItem('d28d_food_handoff');
+    sessionStorage.removeItem('d28d_food_handoff');
+
+    const shellToken = localStorage.getItem('d28d_token');
+    if (!handoff && !shellToken) {
+      setError('Token SSO no recibido. Vuelve al inicio y abre Food Plan de nuevo.');
       return;
     }
+
     (async () => {
       try {
-        const shellToken = localStorage.getItem('token');
-        if (shellToken) localStorage.setItem('d28d_token', shellToken);
+        if (shellToken) {
+          localStorage.setItem('d28d_token', shellToken);
+        }
         localStorage.setItem('d28d_shell', 'true');
         localStorage.setItem('d28d_shell_label', import.meta.env.VITE_BRAND_NAME || 'D28D Gimnasio Virtual');
 
-        const { data } = await api.post('/food-module/exchange', { token });
-        const payload = data?.data || data;
+        let payload = null;
+
+        if (handoff) {
+          try {
+            const { data } = await api.post(
+              '/food-module/exchange',
+              { token: handoff },
+              { skipShellAuth: true, skipAuthClearOn401: true },
+            );
+            payload = data?.data || data;
+          } catch (handoffErr) {
+            if (handoffErr.response?.status !== 401 || !shellToken) {
+              throw handoffErr;
+            }
+          }
+        }
+
+        if (!payload?.accessToken && shellToken) {
+          const { data } = await api.post(
+            '/food-module/exchange-session',
+            {},
+            {
+              headers: { Authorization: `Bearer ${shellToken}` },
+              skipShellAuth: true,
+            },
+          );
+          payload = data?.data || data;
+        }
+
         if (!payload?.accessToken) {
-          setError('No se recibió sesión Food Plan. Verifica licencia food y FOOD_MODULE_URL en el servidor.');
+          setError('No se recibió sesión Food Plan. Cierra sesión, vuelve a entrar en D28D y abre Food Plan otra vez.');
           return;
         }
-        localStorage.setItem('token', payload.accessToken);
-        localStorage.setItem('refreshToken', payload.refreshToken || '');
-        localStorage.setItem('user', JSON.stringify(payload.user));
-        localStorage.setItem('subscription', JSON.stringify(payload.subscription || null));
-        if (payload.branding) {
-          localStorage.setItem('shellBranding', JSON.stringify(payload.branding));
-        }
-        dispatch({
-          type: 'auth/login/fulfilled',
-          payload: {
-            accessToken: payload.accessToken,
-            refreshToken: payload.refreshToken,
-            user: payload.user,
-            subscription: payload.subscription,
-          },
-        });
+
+        applyFoodSession(dispatch, payload);
         navigate('/dashboard', { replace: true });
       } catch (err) {
-        setError(err.response?.data?.error || err.message || 'Error conectando con Food Plan');
+        const msg = err.response?.data?.error || err.message || 'Error conectando con Food Plan';
+        setError(msg);
       }
     })();
   }, [params, navigate, dispatch]);
@@ -100,9 +144,12 @@ function FoodShellSsoGate() {
 
 function FoodPlanRoutes() {
   const dispatch = useDispatch();
+  const location = useLocation();
+
   useEffect(() => {
+    if (location.pathname.endsWith('/shell-sso')) return;
     bootstrapAuthFromStorage(dispatch);
-  }, [dispatch]);
+  }, [dispatch, location.pathname]);
 
   return (
     <div className="food-plan-root min-h-screen">

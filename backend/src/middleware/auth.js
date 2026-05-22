@@ -37,6 +37,8 @@ const authenticateToken = async (req, res, next) => {
         dbUser.id,
         dbUser.module_access || {},
       );
+      await licenseService.syncFromModuleAccess(dbUser.id, module_access, 'auth');
+      module_access = await licenseService.resolveModuleAccess(dbUser.id, module_access);
     }
 
     const base = {

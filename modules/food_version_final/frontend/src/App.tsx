@@ -51,7 +51,15 @@ function PublicAuthRoute({ children }: { children: JSX.Element }) {
 function PrivateRoute({ children, roles }: { children: JSX.Element; roles?: string[] }) {
   const { user, accessToken } = useSelector((s: RootState) => s.auth)
   if (!accessToken || !user) {
-    if (isD28dEmbeddedShell()) return <Navigate to="/shell-sso" replace />
+    if (isD28dEmbeddedShell()) {
+      const shellTok = typeof localStorage !== 'undefined' ? localStorage.getItem('d28d_token') : null
+      if (shellTok) {
+        window.location.replace(`/food-plan/shell-sso?relaunch=1`)
+        return null
+      }
+      window.location.replace('/')
+      return null
+    }
     return <Navigate to="/login" replace />
   }
   if (roles && !roles.includes(user.role)) return <Navigate to="/dashboard" replace />

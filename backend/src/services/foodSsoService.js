@@ -7,7 +7,7 @@ function ssoSecret() {
 function createHandoffToken(payload) {
   const secret = ssoSecret();
   if (!secret) throw new Error('FOOD_SSO_SECRET o JWT_SECRET requerido');
-  const ttl = Number(process.env.FOOD_SSO_TTL_SEC || 120);
+  const ttl = Number(process.env.FOOD_SSO_TTL_SEC || 600);
   return jwt.sign(
     {
       typ: 'food_shell_sso',

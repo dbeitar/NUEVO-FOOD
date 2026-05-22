@@ -12,9 +12,62 @@ const {
 } = require('../services/foodSsoService');
 const licenseService = require('../services/licenseService');
 const { auditFood } = require('../services/foodAudit');
-const { userHasModule } = require('../middleware/requireModuleLicense');
+const { hydrateAccess } = require('../utils/accessControl');
+const { userHasModule, ensureModuleLicensesSynced } = require('../middleware/requireModuleLicense');
+
+async function foodAccessContext(userRow) {
+  if (!userRow) return null;
+  const module_access = await ensureModuleLicensesSynced(
+    { id: userRow.id, module_access: userRow.module_access || {}, rol: userRow.rol, roles: userRow.roles },
+    'food_gate',
+  );
+  const access = hydrateAccess({ ...userRow, module_access });
+  return {
+    id: userRow.id,
+    email: userRow.email,
+    rol: access.roles[0] || userRow.rol,
+    roles: access.roles,
+    module_access,
+  };
+}
 
 const router = express.Router();
+
+async function deliverFoodSession(res, user, { handoffToken = null, auditAction = 'food.exchange' } = {}) {
+  const ctx = await foodAccessContext(user);
+  const ok = await userHasModule(ctx, 'food');
+  if (!ok) {
+    return res.status(403).json({ error: 'Módulo food no licenciado o vencido', module: 'food' });
+  }
+
+  const branding = await resolveBrandingForUser(user.id);
+  const session = await foodProvisioning.foodSessionForShell({
+    userId: user.id,
+    email: user.email,
+    nombre: user.nombre,
+    moduleAccess: ctx.module_access,
+    handoffToken,
+    branding,
+    rol: ctx.rol,
+    roles: ctx.roles,
+  });
+  if (!session.ok) {
+    return res.status(502).json({ error: session.error || 'No se pudo abrir Food Plan' });
+  }
+  auditFood(user.id, auditAction, 'Sesión Food entregada al shell embebido', {
+    food_user_id: user.food_user_id,
+  });
+  return res.json({
+    success: true,
+    data: {
+      accessToken: session.accessToken,
+      refreshToken: session.refreshToken,
+      user: session.user,
+      subscription: session.subscription,
+      branding: session.branding || branding,
+    },
+  });
+}
 
 function publicFoodUrl() {
   return process.env.FOOD_MODULE_PUBLIC_URL
@@ -54,7 +107,8 @@ router.get('/branding', auth, async (req, res) => {
 
 router.get('/launch', auth, async (req, res) => {
   try {
-    const ok = await userHasModule(req.user, 'food');
+    const ctx = await foodAccessContext(await userRepo.findById(req.user.id));
+    const ok = await userHasModule(ctx || req.user, 'food');
     if (!ok) {
       auditFood(req.user.id, 'food.access.denied', 'Sin licencia food activa', {}, 'warn');
       return res.status(403).json({ error: 'Módulo food no licenciado o vencido', module: 'food' });
@@ -82,7 +136,7 @@ router.get('/launch', auth, async (req, res) => {
         url,
         token,
         mode: embedded ? 'embedded' : 'external',
-        expires_in: Number(process.env.FOOD_SSO_TTL_SEC || 120),
+        expires_in: Number(process.env.FOOD_SSO_TTL_SEC || 600),
         return_url: returnUrl,
       },
     });
@@ -111,39 +165,21 @@ router.post('/exchange', async (req, res) => {
     const user = await userRepo.findById(Number(payload.sub));
     if (!user) return res.status(404).json({ error: 'Usuario shell no encontrado' });
 
-    const ok = await userHasModule({ id: user.id, module_access: user.module_access, roles: user.roles, rol: user.rol }, 'food');
-    if (!ok) {
-      return res.status(403).json({ error: 'Módulo food no licenciado o vencido', module: 'food' });
-    }
-
-    const module_access = await licenseService.resolveModuleAccess(user.id, user.module_access || {});
-    const branding = await resolveBrandingForUser(user.id);
-    const session = await foodProvisioning.foodSessionForShell({
-      userId: user.id,
-      email: user.email,
-      nombre: user.nombre,
-      moduleAccess: module_access,
-      handoffToken,
-      branding,
-    });
-    if (!session.ok) {
-      return res.status(502).json({ error: session.error || 'No se pudo abrir Food Plan' });
-    }
-    auditFood(user.id, 'food.exchange', 'Sesión Food entregada al shell embebido', {
-      food_user_id: user.food_user_id,
-    });
-    res.json({
-      success: true,
-      data: {
-        accessToken: session.accessToken,
-        refreshToken: session.refreshToken,
-        user: session.user,
-        subscription: session.subscription,
-        branding: session.branding || branding,
-      },
-    });
+    return deliverFoodSession(res, user, { handoffToken, auditAction: 'food.exchange' });
   } catch (e) {
     auditFood(null, 'food.exchange.error', e.message, {}, 'error');
+    res.status(500).json({ error: e.message });
+  }
+});
+
+/** SSO embebido usando JWT del shell (sin handoff en URL; evita expiración de 120s). */
+router.post('/exchange-session', auth, async (req, res) => {
+  try {
+    const user = await userRepo.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuario shell no encontrado' });
+    return deliverFoodSession(res, user, { handoffToken: null, auditAction: 'food.exchange.session' });
+  } catch (e) {
+    auditFood(req.user?.id, 'food.exchange.session.error', e.message, {}, 'error');
     res.status(500).json({ error: e.message });
   }
 });

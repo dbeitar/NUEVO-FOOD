@@ -53,11 +53,18 @@ export async function openFoodModule(returnPath) {
     });
     const url = data?.data?.url;
     if (url) {
+      try {
+        const handoff = new URL(url, window.location.origin).searchParams.get('token');
+        if (handoff) sessionStorage.setItem('d28d_food_handoff', handoff);
+      } catch { /* noop */ }
       window.location.href = url;
       return;
     }
   } catch (e) {
-    console.warn('[food] launch SSO:', e.response?.data?.error || e.message);
+    const msg = e.response?.data?.error || e.message || 'No se pudo abrir Food Plan';
+    console.warn('[food] launch SSO:', msg);
+    window.alert(msg);
+    return;
   }
-  window.location.href = '/food-plan/shell-sso';
+  window.alert('No se recibió URL de Food Plan. Comprueba que tienes licencia food activa.');
 }

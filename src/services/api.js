@@ -37,6 +37,7 @@ const api = axios.create({
 // Token: leer de localStorage en cada request. Si quieres "logout global"
 // llama localStorage.removeItem('token') y los siguientes requests irán sin él.
 api.interceptors.request.use((config) => {
+  if (config.skipShellAuth) return config;
   try {
     const token = localStorage.getItem('token');
     if (token) {
@@ -51,7 +52,9 @@ api.interceptors.response.use(
   (r) => r,
   (error) => {
     const status = error?.response?.status;
-    if (status === 401) {
+    const url = String(error?.config?.url || '');
+    const isFoodSso = url.includes('/food-module/exchange');
+    if (status === 401 && !error?.config?.skipAuthClearOn401 && !isFoodSso) {
       try {
         localStorage.removeItem('token');
       } catch { /* noop */ }

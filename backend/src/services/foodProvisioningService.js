@@ -5,6 +5,7 @@
 const crypto = require('crypto');
 const userRepo = require('../db/repositories/userRepository');
 const licenseService = require('./licenseService');
+const { userHasModule } = require('../middleware/requireModuleLicense');
 const { resolveBrandingForUser } = require('./foodBrandingService');
 const { auditFood } = require('./foodAudit');
 
@@ -82,6 +83,28 @@ function hasFoodLicense(moduleAccess) {
   return Boolean(moduleAccess.food_plan || moduleAccess.nutrition || moduleAccess.food);
 }
 
+/** Misma política que requireModuleLicense (super_admin, roles food, module_access). */
+async function userCanUseFood({ userId, moduleAccess, rol, roles } = {}) {
+  let userLike = {
+    id: userId,
+    module_access: moduleAccess || {},
+    rol,
+    roles,
+  };
+  if (userId && !rol && !roles?.length) {
+    const u = await userRepo.findById(userId);
+    if (u) {
+      userLike = {
+        id: u.id,
+        module_access: moduleAccess || u.module_access || {},
+        rol: u.rol,
+        roles: u.roles,
+      };
+    }
+  }
+  return userHasModule(userLike, 'food');
+}
+
 async function fetchJson(url, options = {}) {
   const res = await fetch(url, options);
   const text = await res.text();
@@ -110,7 +133,7 @@ async function provisionFoodUser({
     auditFood(userId, 'food.provision.skipped', 'FOOD_MODULE_URL no configurada', { source });
     return { ok: true, skipped: true, reason: 'FOOD_MODULE_URL no configurada' };
   }
-  if (!hasFoodLicense(moduleAccess)) {
+  if (!(await userCanUseFood({ userId, moduleAccess }))) {
     auditFood(userId, 'food.provision.skipped', 'Sin licencia food', { source });
     return { ok: true, skipped: true, reason: 'sin licencia food' };
   }
@@ -199,11 +222,13 @@ async function foodSessionForShell({
   moduleAccess,
   handoffToken,
   branding,
+  rol,
+  roles,
 }) {
   if (!foodModuleEnabled()) {
     return { ok: false, error: 'FOOD_MODULE_URL no configurada en el servidor' };
   }
-  if (!hasFoodLicense(moduleAccess)) {
+  if (!(await userCanUseFood({ userId, moduleAccess, rol, roles }))) {
     return { ok: false, error: 'Módulo food no licenciado o vencido' };
   }
 
@@ -317,9 +342,14 @@ async function syncFoodUserState(userId, { active = true } = {}) {
 }
 
 async function onFoodLicenseChange(userId, moduleAccess) {
-  const has = hasFoodLicense(moduleAccess);
   const user = await userRepo.findById(userId);
   if (!user) return null;
+  const has = await userCanUseFood({
+    userId,
+    moduleAccess,
+    rol: user.rol,
+    roles: user.roles,
+  });
   if (has) {
     return provisionFoodUser({
       userId: user.id,
@@ -343,6 +373,7 @@ async function onFoodLicenseChange(userId, moduleAccess) {
 module.exports = {
   foodModuleEnabled,
   hasFoodLicense,
+  userCanUseFood,
   provisionFoodUser,
   syncFoodUserState,
   onFoodLicenseChange,
