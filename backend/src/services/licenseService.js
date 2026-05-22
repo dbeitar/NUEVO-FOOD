@@ -64,13 +64,21 @@ function licensesToList(moduleAccess = {}) {
   }));
 }
 
-async function listForUser(userId) {
+function isLicenseRowActive(lic) {
+  if (!lic || lic.active === false) return false;
+  if (lic.valid_until) {
+    return new Date(lic.valid_until).getTime() >= Date.now();
+  }
+  return true;
+}
+
+async function listForUser(userId, { includeInactive = false } = {}) {
   const id = Number(userId);
   if (!id) return [];
   if (useRelationalStorage()) {
     const { getPrisma } = require('../lib/prisma');
     const rows = await getPrisma().moduleLicense.findMany({
-      where: { userId: id, active: true },
+      where: includeInactive ? { userId: id } : { userId: id, active: true },
       orderBy: { moduleCode: 'asc' },
     });
     return rows.map((r) => ({
@@ -84,10 +92,16 @@ async function listForUser(userId) {
       metadata: r.metadata,
     }));
   }
-  return (getJsonStore().getAll() || []).filter((r) => Number(r.user_id) === id && r.active !== false);
+  const all = (getJsonStore().getAll() || []).filter((r) => Number(r.user_id) === id);
+  return includeInactive ? all : all.filter((r) => r.active !== false);
 }
 
-async function syncFromModuleAccess(userId, moduleAccess = {}, source = 'sync') {
+async function userHasActiveModule(userId, moduleCode) {
+  const licenses = await listForUser(userId, { includeInactive: true });
+  return licenses.some((l) => l.module_code === moduleCode && isLicenseRowActive(l));
+}
+
+async function syncFromModuleAccess(userId, moduleAccess = {}, source = 'sync', licenseMeta = {}) {
   const id = Number(userId);
   if (!id) return [];
   const codes = codesFromModuleAccess(normalizeModuleAccess(moduleAccess));
@@ -96,13 +110,27 @@ async function syncFromModuleAccess(userId, moduleAccess = {}, source = 'sync') 
     const prisma = getPrisma();
     for (const code of MODULE_CODES) {
       const active = codes.includes(code);
+      const meta = licenseMeta[code] || {};
+      let validUntil = null;
+      if (meta.valid_until) {
+        const d = new Date(meta.valid_until);
+        if (!Number.isNaN(d.getTime())) validUntil = d;
+      }
+      if (meta.suspended === true) {
+        await prisma.moduleLicense.upsert({
+          where: { userId_moduleCode: { userId: id, moduleCode: code } },
+          create: { userId: id, moduleCode: code, active: false, source, validUntil },
+          update: { active: false, source, validUntil, updatedAt: new Date() },
+        });
+        continue;
+      }
       await prisma.moduleLicense.upsert({
         where: { userId_moduleCode: { userId: id, moduleCode: code } },
-        create: { userId: id, moduleCode: code, active, source },
-        update: { active, source, updatedAt: new Date() },
+        create: { userId: id, moduleCode: code, active, source, validUntil },
+        update: { active, source, validUntil, updatedAt: new Date() },
       });
     }
-    return listForUser(id);
+    return listForUser(id, { includeInactive: true });
   }
   const all = getJsonStore().getAll() || [];
   const rest = all.filter((r) => Number(r.user_id) !== id);
@@ -125,7 +153,7 @@ async function resolveModuleAccess(userId, legacyAccess = {}) {
   const licenses = await listForUser(userId);
   if (!licenses.length) return normalized;
   const fromLicenses = moduleAccessFromCodes(
-    licenses.filter((l) => l.active !== false).map((l) => l.module_code),
+    licenses.filter((l) => isLicenseRowActive(l)).map((l) => l.module_code),
   );
   return { ...normalized, ...fromLicenses };
 }
@@ -142,7 +170,9 @@ module.exports = {
   codesFromModuleAccess,
   moduleAccessFromCodes,
   licensesToList,
+  isLicenseRowActive,
   listForUser,
+  userHasActiveModule,
   syncFromModuleAccess,
   resolveModuleAccess,
   applyInviteModules,

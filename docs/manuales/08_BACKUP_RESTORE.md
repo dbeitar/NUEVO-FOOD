@@ -1,47 +1,27 @@
-# Punto de respaldo — pre integración Food Plan
+# Backup y restore PostgreSQL — MVPFOOD
 
-**Creado:** 2026-05-21  
-**Motivo:** Antes de reemplazar el módulo de alimentación de D28D por `dbeitar/food_version_final`.
-
-## Referencias Git
-
-| Recurso | Nombre |
-|---------|--------|
-| Tag | `pre-food-integration-20260521` |
-| Rama backup | `backup/pre-food-integration-20260521` |
-
-## Contenido del snapshot
-
-Incluye todo el trabajo hasta este punto:
-
-- Fases 1–6 modular (licencias, GYM, white-label coach, payment links)
-- Rediseño D28D (tema, maestro de apariencia, i18n ES/EN)
-- Tarjetas bilingües y paneles admin configurables
-- APIs `frontend-config`, upload de imágenes
-
-## Restaurar el proyecto a este punto
+## Backup automático
 
 ```bash
-cd /Users/cesargomez/Desktop/MVPFOOD
-
-# Ver el commit del tag
-git show pre-food-integration-20260521 --stat
-
-# Opción 1: solo inspeccionar
-git checkout pre-food-integration-20260521
-
-# Opción 2: mover main a este punto (destructivo en main local)
-git checkout main
-git reset --hard pre-food-integration-20260521
-
-# Opción 3: rama nueva desde el backup (recomendado)
-git checkout -b restauracion-desde-backup pre-food-integration-20260521
+chmod +x scripts/backup_postgres.sh
+./scripts/backup_postgres.sh
+# Salida: backups/pg/mvpfood_YYYYMMDD_HHMMSS.dump
 ```
 
-## Si ya publicaste commits posteriores en `origin/main`
+Variables opcionales: `POSTGRES_HOST`, `POSTGRES_PORT` (default 5434), `BACKUP_RETENTION_DAYS` (default 14).
 
-No uses `reset --hard` en main compartido sin coordinar. Crea una rama desde el tag y abre PR de reversión.
+## Restore completo
 
-## Archivo tarball opcional
+```bash
+docker exec -i mvpfood-postgres pg_restore -U mvpfood -d mvpfood --clean --if-exists < backups/pg/mvpfood_YYYYMMDD.dump
+```
 
-Si guardaste un `.tar.gz` manual en Desktop, descomprimir y comparar con `git diff` contra el tag.
+## Restore parcial (tabla)
+
+```bash
+pg_restore -t module_licenses -d mvpfood backups/pg/mvpfood_YYYYMMDD.dump
+```
+
+## Rollback aplicación (Git)
+
+Ver tag `pre-food-integration-20260521` en historial del repositorio.

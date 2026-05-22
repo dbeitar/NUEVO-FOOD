@@ -4,6 +4,7 @@ import { Pencil, UserPlus, Trash2 } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
 import { useI18n } from '../context/useI18n';
 import InviteCodeCell from './admin/InviteCodeCell';
+import TrainerBrandingModal from './admin/TrainerBrandingModal';
 
 const EMPTY_MODULE_ACCESS = {
   gym: false,
@@ -48,6 +49,7 @@ export default function AdminUsers() {
   const [showAssignedModal, setShowAssignedModal] = useState(false);
   const [assignedTitle, setAssignedTitle] = useState('');
   const [assignedList, setAssignedList] = useState([]);
+  const [brandingTrainer, setBrandingTrainer] = useState(null);
   const [programs, setPrograms] = useState([]);
   const [d28dCodes, setD28dCodes] = useState([]);
 
@@ -174,18 +176,28 @@ export default function AdminUsers() {
     }
   };
 
-  const startEdit = (user) => {
+  const startEdit = async (user) => {
     setEditingUser(user);
     setShowForm(true);
+    let module_access = { ...EMPTY_MODULE_ACCESS, ...(user.module_access || {}) };
+    try {
+      const licRes = await api.get(`/licenses/user/${user.id}`);
+      const resolved = licRes.data?.data?.module_access;
+      if (resolved && typeof resolved === 'object') {
+        module_access = { ...EMPTY_MODULE_ACCESS, ...resolved };
+      }
+    } catch {
+      /* fallback module_access del listado */
+    }
     setFormData({
       nombre: user.nombre,
       email: user.email,
-      password: '', // Password not shown
+      password: '',
       roles: user.roles && user.roles.length ? user.roles : [user.rol || 'usuario_final'],
       gym_id: user.gym_id || '',
       trainer_id: user.trainer_id || '',
       planId: user.planId || '',
-      module_access: { ...EMPTY_MODULE_ACCESS, ...(user.module_access || {}) },
+      module_access,
     });
   };
 
@@ -573,17 +585,27 @@ export default function AdminUsers() {
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-right text-sm text-stone-600">{tr.capacidad_usuarios ?? 50}</td>
                     <td className="px-6 py-4 whitespace-nowrap text-right">
-                      <button
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-stone-300 text-stone-700 bg-white hover:bg-stone-100 transition-colors"
-                        onClick={() => {
-                          const list = users.filter(u => u.trainer_id === tr.id);
-                          setAssignedTitle(t('companies.users_of_trainer', 'Usuarios del Entrenador: {name}').replace('{name}', tr.nombre));
-                          setAssignedList(list);
-                          setShowAssignedModal(true);
-                        }}
-                      >
-                        {t('users.view_users', 'Ver usuarios')}
-                      </button>
+                      <div className="flex justify-end gap-2 flex-wrap">
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-lime-300 text-stone-800 bg-lime-50 hover:bg-lime-100 transition-colors"
+                          onClick={() => setBrandingTrainer(tr)}
+                        >
+                          {t('wl.brand_btn', 'Marca')}
+                        </button>
+                        <button
+                          type="button"
+                          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-2xl border border-stone-300 text-stone-700 bg-white hover:bg-stone-100 transition-colors"
+                          onClick={() => {
+                            const list = users.filter(u => u.trainer_id === tr.id);
+                            setAssignedTitle(t('companies.users_of_trainer', 'Usuarios del Entrenador: {name}').replace('{name}', tr.nombre));
+                            setAssignedList(list);
+                            setShowAssignedModal(true);
+                          }}
+                        >
+                          {t('users.view_users', 'Ver usuarios')}
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -751,6 +773,14 @@ export default function AdminUsers() {
             </div>
           </div>
         </div>
+      )}
+
+      {brandingTrainer && (
+        <TrainerBrandingModal
+          trainer={brandingTrainer}
+          onClose={() => setBrandingTrainer(null)}
+          onSaved={fetchResources}
+        />
       )}
     </div>
   );

@@ -2,6 +2,8 @@ import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
 import { Building2, MapPin, Phone, Mail, Plus, Edit2, Trash2, X, Save, Search, AlertCircle, CheckCircle } from 'lucide-react';
 import { useI18n } from '../context/useI18n';
+import { useAuth } from '../context/useAuth';
+import { getRolesArr } from './dashboard/userServices';
 import InviteCodeCell from './admin/InviteCodeCell';
 
 const emptyGymForm = {
@@ -23,6 +25,10 @@ const emptyGymForm = {
   primary_color: '#2563eb',
   secondary_color: '#10b981',
   status: 'active',
+  favicon_url: '',
+  cover_url: '',
+  social_links: {},
+  custom_domain: '',
 };
 
 export default function AdminGyms() {
@@ -37,6 +43,10 @@ export default function AdminGyms() {
   const [plans, setPlans] = useState([]);
   const [assigningPlan, setAssigningPlan] = useState(null);
   const { t } = useI18n();
+  const { user } = useAuth();
+  const roles = getRolesArr(user);
+  const canCreateGym = roles.includes('super_admin') || roles.includes('admin_d28d');
+  const canDeleteGym = canCreateGym;
 
   // Form state
   const [formData, setFormData] = useState(emptyGymForm);
@@ -132,6 +142,10 @@ export default function AdminGyms() {
       secondary_color: gym.secondary_color || '#10b981',
       status: gym.status || 'active',
       invite_code: gym.invite_code || '',
+      favicon_url: gym.favicon_url || '',
+      cover_url: gym.cover_url || '',
+      social_links: gym.social_links && typeof gym.social_links === 'object' ? gym.social_links : {},
+      custom_domain: gym.custom_domain || '',
     });
     setShowForm(true);
     setError('');
@@ -192,11 +206,16 @@ export default function AdminGyms() {
             <Building2 className="text-lime-400" size={28} />
             {t('gyms.title', 'Gestión de Gimnasios')}
           </h3>
-          <p className="text-stone-600 text-sm mt-1">{t('gyms.subtitle', 'Administra las sedes y ubicaciones')}</p>
+          <p className="text-stone-600 text-sm mt-1">
+            {canCreateGym
+              ? t('gyms.subtitle_platform', 'Solo D28D crea gimnasios. Cada sede recibe un código único de invitación.')
+              : t('gyms.subtitle_gym_admin', 'Configura la marca de tu sede. El código de invitación lo asigna D28D.')}
+          </p>
         </div>
         
-        {!showForm && (
+        {!showForm && canCreateGym && (
           <button 
+            type="button"
             className="btn-primary inline-flex items-center gap-2"
             onClick={() => {
               setEditingGym(null);
@@ -272,17 +291,25 @@ export default function AdminGyms() {
                 </div>
               </div>
 
+              {(canCreateGym || !editingGym) && (
               <div className="md:col-span-2">
                 <label className="label">{t('users.invite_code', 'Código de invitación (registro)')}</label>
-                <input
-                  name="invite_code"
-                  value={formData.invite_code}
-                  onChange={handleInputChange}
-                  placeholder="Ej: GYM-D28D-004"
-                  className="input font-mono uppercase"
-                />
+                {canCreateGym ? (
+                  <input
+                    name="invite_code"
+                    value={formData.invite_code}
+                    onChange={handleInputChange}
+                    placeholder="Ej: GYM-D28D-004"
+                    className="input font-mono uppercase"
+                  />
+                ) : (
+                  <p className="input font-mono" style={{ background: 'var(--d28d-surface-2)' }}>
+                    {formData.invite_code || t('gyms.code_pending', 'Asignado por D28D')}
+                  </p>
+                )}
                 <p className="text-xs text-stone-500 mt-1">{t('gyms.invite_hint', 'Los usuarios finales usarán este código al registrarse.')}</p>
               </div>
+              )}
               
               <div>
                 <label className="label">{t('common.city', 'Ciudad')}</label>
@@ -478,6 +505,8 @@ export default function AdminGyms() {
                 <span className="text-sm font-semibold text-stone-700">Marca blanca activa</span>
               </label>
             </div>
+            <WhiteLabelFields formData={formData} setFormData={setFormData} />
+
             <div className="mt-4 rounded-lg border border-slate-200 bg-stone-50 p-4">
               <div className="text-xs uppercase text-stone-500 font-semibold mb-2">Vista previa marca blanca</div>
               <div className="flex items-center gap-3">
@@ -579,6 +608,7 @@ export default function AdminGyms() {
                       <td className="px-6 py-4 whitespace-nowrap">
                         <InviteCodeCell
                           value={gym.invite_code}
+                          readOnly={!canCreateGym}
                           onSave={(code) => saveGymInviteCode(gym.id, code)}
                         />
                       </td>
@@ -627,13 +657,16 @@ export default function AdminGyms() {
                           >
                             <Edit2 size={16} />
                           </button>
+                          {canDeleteGym && (
                           <button 
+                            type="button"
                             className="text-white bg-red-600 hover:bg-red-700 p-2 rounded-lg transition-colors"
                             onClick={() => handleDelete(gym.id)}
                             title={t('common.delete', 'Eliminar')}
                           >
                             <Trash2 size={16} />
                           </button>
+                          )}
                         </div>
                       </td>
                     </tr>

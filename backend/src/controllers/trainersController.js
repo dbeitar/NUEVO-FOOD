@@ -194,6 +194,7 @@ const deleteTrainer = (req, res) => {
 const BRANDING_FIELDS = [
   'logo_url', 'brand_name', 'brand_slug', 'white_label_enabled',
   'welcome_message', 'support_whatsapp', 'primary_color', 'secondary_color',
+  'favicon_url', 'cover_url', 'social_links', 'custom_domain',
 ];
 
 const canEditTrainerBranding = (req, trainer) => {
@@ -221,6 +222,10 @@ const getTrainerBranding = (req, res) => {
       support_whatsapp: trainer.support_whatsapp || null,
       primary_color: trainer.primary_color || null,
       secondary_color: trainer.secondary_color || null,
+      favicon_url: trainer.favicon_url || null,
+      cover_url: trainer.cover_url || null,
+      social_links: trainer.social_links || {},
+      custom_domain: trainer.custom_domain || null,
     });
   } catch (error) {
     res.status(500).json({ error: 'Error obteniendo branding' });

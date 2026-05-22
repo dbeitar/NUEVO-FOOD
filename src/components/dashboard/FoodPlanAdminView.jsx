@@ -27,7 +27,30 @@ const CARDS = [
   { id: 'recipes', view: 'recipes' },
 ];
 
-export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack }) {
+export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack, foodExternal, foodExternalUrl }) {
+  if (foodExternal) {
+    const url = foodExternalUrl || 'https://foodplan.tech';
+    return (
+      <div className="dashboard-main-view p-6 max-w-xl">
+        <button type="button" className="text-sm text-stone-600 mb-4 hover:underline" onClick={onBack}>
+          ← Volver
+        </button>
+        <h3 className="text-xl font-bold text-stone-900 mb-2">Plan de Alimentación (Food Plan)</h3>
+        <p className="text-stone-600 mb-4">
+          El módulo nutricional opera en Food Plan. Las rutas internas legacy permanecen disponibles
+          con <code className="text-xs">VITE_FOOD_EXTERNAL=false</code>.
+        </p>
+        <a
+          href={url}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="btn-primary inline-block"
+        >
+          Abrir Food Plan
+        </a>
+      </div>
+    );
+  }
   return (
     <PanelAdminSection
       panelId="food-plan"

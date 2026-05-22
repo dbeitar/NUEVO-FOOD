@@ -28,7 +28,7 @@ const ExercisesGalleryStore = {
     return rows.find((r) => normalize(r.name) === key) || null;
   },
 
-  create({ name, muscle_group = '', youtube_url, created_by = null, is_global = true }) {
+  create({ name, muscle_group = '', youtube_url, created_by = null, is_global = true, gym_id = null }) {
     const exists = this.getByExerciseName(name);
     if (exists) {
       return { error: 'Ya existe un video para ese ejercicio' };
@@ -40,6 +40,7 @@ const ExercisesGalleryStore = {
       youtube_url: String(youtube_url).trim(),
       is_global: is_global !== false,
       created_by,
+      gym_id: gym_id != null ? Number(gym_id) : null,
       created_at: new Date().toISOString(),
     };
     rows.push(item);

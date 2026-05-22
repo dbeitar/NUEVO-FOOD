@@ -3,9 +3,11 @@ const authMiddleware = require('../middleware/auth');
 const trainingController = require('../controllers/trainingController');
 const adminTrainingController = require('../controllers/adminTrainingController');
 const router = express.Router();
+const { requireModuleLicense } = require('../middleware/requireModuleLicense');
 
 // Todas las rutas de /api/training requieren autenticación.
 router.use(authMiddleware);
+router.use(requireModuleLicense('training'));
 
 // Generación de plan (antes era pública por error)
 router.post('/plan-json', trainingController.generatePlanJson);

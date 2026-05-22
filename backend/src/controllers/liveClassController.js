@@ -2,9 +2,17 @@ const LiveClassDatabase = require('../models/LiveClassDatabase');
 const userDB = require('../models/UserDatabase');
 const GymDatabase = require('../models/GymDatabase');
 const { hasRole } = require('../utils/accessControl');
+const { isPlatformAdmin, getUserGymId, isGymAdmin } = require('../utils/tenantScope');
 const { filterClassesForD28dHost, isClassAssignedToHost } = require('../utils/d28dHostUtils');
+const {
+  canUserAccessD28dLiveClass,
+  filterConsumerLiveClasses,
+  filterAdminLiveClasses,
+  filterAttendanceReport,
+} = require('../utils/liveClassScope');
 
-const LIVE_ADMIN_ROLES = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d'];
+const LIVE_ADMIN_ROLES = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym', 'admin_d28d'];
+const LIVE_PLATFORM_WRITE_ROLES = ['super_admin', 'admin_d28d'];
 const D28D_HOST_ROLE = 'entrenador_d28d';
 
 const isLiveAdmin = (req) => req.user && hasRole(req.user, LIVE_ADMIN_ROLES);
@@ -12,26 +20,16 @@ const isD28dHostOnly = (req) => {
   if (!req.user) return false;
   return hasRole(req.user, [D28D_HOST_ROLE]) && !isLiveAdmin(req);
 };
-/** Compat: nombre legacy usado en rutas de escritura. */
-const isAdmin = isLiveAdmin;
+/** Crear/editar plantillas: solo plataforma D28D (no admin de gym). */
+const canManageLiveTemplates = (req) => req.user && hasRole(req.user, LIVE_PLATFORM_WRITE_ROLES);
 
 const canEditClass = (req, classItem = null) => {
   if (!req.user) return false;
   if (isD28dHostOnly(req)) return false;
-  if (hasRole(req.user, ['super_admin'])) return true;
-  if (classItem?.locked || classItem?.source_module === 'd28d') {
-    return hasRole(req.user, ['admin_d28d']);
-  }
-  return hasRole(req.user, ['admin_marca', 'admin_gimnasio', 'entrenador']);
+  return canManageLiveTemplates(req);
 };
-const canAccessClass = (classItem, user) => {
-  if (!classItem || !classItem.active) return false;
-  if (classItem.gym_id === null || classItem.gym_id === undefined) return true;
-  if (!user) return false;
-  const userGym = user.gym_id ?? user.gymId ?? null;
-  // Comparación tolerante a string/number (JWT puede traer string, JSON number).
-  return userGym !== null && String(userGym) === String(classItem.gym_id);
-};
+
+const canAccessClass = (classItem, user) => canUserAccessD28dLiveClass(classItem, user);
 
 const matchesProgram = (item, programId) => {
   if (!programId) return true;
@@ -41,9 +39,10 @@ const matchesProgram = (item, programId) => {
 const getPublicClasses = (req, res) => {
   try {
     const programId = req.query.program_id || null;
-    const classes = LiveClassDatabase.getAll()
-      .filter((item) => item.active && (item.gym_id === null || canAccessClass(item, req.user)))
-      .filter((item) => matchesProgram(item, programId));
+    const classes = filterConsumerLiveClasses(
+      LiveClassDatabase.getAll().filter((item) => item.active),
+      req.user,
+    ).filter((item) => matchesProgram(item, programId));
     return res.json({ success: true, data: classes });
   } catch (error) {
     console.error('Error obteniendo clases en vivo:', error);
@@ -60,6 +59,8 @@ const getAdminClasses = (req, res) => {
     let classes = LiveClassDatabase.getAll().filter((item) => matchesProgram(item, programId));
     if (isD28dHostOnly(req)) {
       classes = filterClassesForD28dHost(classes, req.user);
+    } else if (isGymAdmin(req.user) && !isPlatformAdmin(req.user)) {
+      classes = filterAdminLiveClasses(classes, req.user);
     }
     return res.json({ success: true, data: classes });
   } catch (error) {
@@ -77,12 +78,22 @@ const getAttendanceReport = (req, res) => {
     let classList = LiveClassDatabase.getAll();
     if (isD28dHostOnly(req)) {
       classList = filterClassesForD28dHost(classList, req.user);
+    } else if (isGymAdmin(req.user) && !isPlatformAdmin(req.user)) {
+      classList = filterAdminLiveClasses(classList, req.user);
     }
-    const rows = classList.map((classItem) => {
+    const scopeGymId = isGymAdmin(req.user) && !isPlatformAdmin(req.user)
+      ? getUserGymId(req.user)
+      : null;
+    let rows = classList.map((classItem) => {
       const attendedIds = Array.isArray(classItem.attendance_user_ids) ? classItem.attendance_user_ids : [];
       const attendees = attendedIds
         .map((id) => userDB.getById(id))
         .filter(Boolean)
+        .filter((user) => {
+          if (scopeGymId == null) return true;
+          const ug = user.gym_id || user.gymId || null;
+          return ug != null && String(ug) === String(scopeGymId);
+        })
         .map((user) => {
           const gymId = user.gym_id || user.gymId || classItem.gym_id || null;
           const gym = gyms.find((item) => item.id === Number(gymId));
@@ -112,6 +123,7 @@ const getAttendanceReport = (req, res) => {
         locked: !!classItem.locked,
         total_attendees: attendees.length,
         by_gym: Object.values(byGym).sort((a, b) => b.count - a.count),
+        gym_id: classItem.gym_id,
       };
     });
     return res.json({ success: true, data: rows });
@@ -123,10 +135,10 @@ const getAttendanceReport = (req, res) => {
 
 const createClass = (req, res) => {
   try {
-    if (!isAdmin(req)) {
-      return res.status(403).json({ error: 'No tienes permiso para crear clases' });
+    if (!canManageLiveTemplates(req)) {
+      return res.status(403).json({ error: 'Solo D28D puede crear o programar clases en vivo' });
     }
-    const { title, description = '', zoom_link, start_time, end_time, gym_id: bodyGymId = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40, source_module = 'gym' } = req.body || {};
+    const { title, description = '', zoom_link, start_time, end_time, gym_id: bodyGymId = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40, source_module = 'd28d' } = req.body || {};
     if (!title || !zoom_link || !start_time || !end_time) {
       return res.status(400).json({ error: 'title, zoom_link, start_time y end_time son requeridos' });
     }
@@ -134,18 +146,9 @@ const createClass = (req, res) => {
       return res.status(403).json({ error: 'Solo D28D puede crear clases globales' });
     }
 
-    // Tenant: admin de gym solo puede crear clases para SU gym.
-    // super_admin y admin_d28d pueden indicar gym arbitrario (incl. null=global).
-    const jwtGym = req.user?.gym_id ?? req.user?.gymId ?? null;
-    let finalGymId;
-    if (hasRole(req.user, ['super_admin', 'admin_d28d'])) {
-      finalGymId = bodyGymId === '' || bodyGymId === undefined ? null : bodyGymId;
-    } else {
-      if (!jwtGym) {
-        return res.status(403).json({ error: 'Tu usuario no tiene gimnasio asociado para crear clases' });
-      }
-      finalGymId = jwtGym;
-    }
+    const finalGymId = bodyGymId === '' || bodyGymId === undefined || bodyGymId === null
+      ? null
+      : bodyGymId;
 
     const created = LiveClassDatabase.create({
       title,
@@ -172,8 +175,8 @@ const createClass = (req, res) => {
 
 const seedD28DWeek = (req, res) => {
   try {
-    if (!isAdmin(req)) {
-      return res.status(403).json({ error: 'No tienes permiso para crear plantilla D28D' });
+    if (!canManageLiveTemplates(req)) {
+      return res.status(403).json({ error: 'Solo D28D puede crear plantilla D28D' });
     }
     const created = LiveClassDatabase.seedD28DWeek(req.body?.base_date ? new Date(req.body.base_date) : new Date());
     return res.status(201).json({ success: true, data: created });
@@ -186,6 +189,10 @@ const seedD28DWeek = (req, res) => {
 const enrollClass = (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
+    const classItem = LiveClassDatabase.getById(id);
+    if (!canAccessClass(classItem, req.user)) {
+      return res.status(404).json({ error: 'Clase no encontrada' });
+    }
     const updated = LiveClassDatabase.enroll(id, req.user.id);
     if (!updated) return res.status(404).json({ error: 'Clase no encontrada' });
     return res.json({ success: true, data: updated });
@@ -210,8 +217,8 @@ const unenrollClass = (req, res) => {
 
 const updateClass = (req, res) => {
   try {
-    if (!isAdmin(req)) {
-      return res.status(403).json({ error: 'No tienes permiso para actualizar clases' });
+    if (!canManageLiveTemplates(req)) {
+      return res.status(403).json({ error: 'Solo D28D puede actualizar clases en vivo' });
     }
     const id = parseInt(req.params.id, 10);
     const current = LiveClassDatabase.getById(id);
@@ -231,8 +238,8 @@ const updateClass = (req, res) => {
 
 const deleteClass = (req, res) => {
   try {
-    if (!isAdmin(req)) {
-      return res.status(403).json({ error: 'No tienes permiso para eliminar clases' });
+    if (!canManageLiveTemplates(req)) {
+      return res.status(403).json({ error: 'Solo D28D puede eliminar clases en vivo' });
     }
     const id = parseInt(req.params.id, 10);
     const current = LiveClassDatabase.getById(id);

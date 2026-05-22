@@ -1,6 +1,11 @@
 const { getPrisma } = require('../../lib/prisma');
 const { toLegacy, toPrisma } = require('../mappers/gymMapper');
 
+async function findById(id) {
+  const row = await getPrisma().gym.findUnique({ where: { id: Number(id) } });
+  return toLegacy(row);
+}
+
 async function findAllLegacy() {
   const rows = await getPrisma().gym.findMany({ orderBy: { id: 'asc' } });
   return rows.map(toLegacy);
@@ -30,4 +35,4 @@ async function deleteSoft(id) {
   return true;
 }
 
-module.exports = { findAllLegacy, createLegacy, updateLegacy, deleteSoft };
+module.exports = { findById, findAllLegacy, createLegacy, updateLegacy, deleteSoft };

@@ -26,6 +26,8 @@ function toLegacy(row) {
     trainer_id: row.trainerId,
     gymId: row.gymId,
     planId: row.planId,
+    food_user_id: row.foodUserId || null,
+    training_user_id: row.trainingUserId || null,
     activo: row.activo,
     fecha_registro: row.fechaRegistro,
   };
@@ -45,7 +47,7 @@ function toNumberOrNull(value) {
 }
 
 function toPrisma(legacy) {
-  return {
+  const data = {
     nombre: legacy.nombre,
     email: legacy.email,
     telefono: legacy.telefono || null,
@@ -64,11 +66,16 @@ function toPrisma(legacy) {
     medidasBiomecanicas: legacy.medidas_biomecanicas || null,
     experiencia: legacy.experiencia || 'principiante',
     metodoEntrenamiento: legacy.metodo_entrenamiento || null,
-    gymId: legacy.gym_id ?? legacy.gymId ?? null,
-    trainerId: legacy.trainer_id ?? null,
     planId: legacy.planId || null,
+    foodUserId: legacy.food_user_id || null,
+    trainingUserId: legacy.training_user_id || null,
     activo: legacy.activo !== false,
   };
+  const gymId = legacy.gym_id ?? legacy.gymId;
+  const trainerId = legacy.trainer_id ?? legacy.trainerId;
+  if (gymId != null && gymId !== '') data.gymId = Number(gymId);
+  if (trainerId != null && trainerId !== '') data.trainerId = Number(trainerId);
+  return data;
 }
 
 module.exports = { toLegacy, toPrisma };

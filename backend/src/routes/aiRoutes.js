@@ -2,9 +2,11 @@ const express = require('express');
 const router = express.Router();
 const auth = require('../middleware/auth');
 const aiController = require('../controllers/aiController');
+const { requireModuleLicense } = require('../middleware/requireModuleLicense');
 
 // Todas las rutas necesitan autenticación
 router.use(auth);
+router.use(requireModuleLicense('food'));
 
 // GET: Verificar si IA (local) está habilitada
 router.get('/enabled', aiController.isEnabled);

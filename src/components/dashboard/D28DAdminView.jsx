@@ -47,13 +47,27 @@ const OPERATION_CARDS = [
   },
 ];
 
+/** Gimnasios dentro de D28D: solo plataforma crea sedes; admin gym opera usuarios/clases/asistencia. */
 const GYM_CARDS = [
-  { id: 'admingyms', view: 'admingyms' },
-  { id: 'adminusers', view: 'adminusers' },
+  {
+    id: 'admingyms',
+    view: 'admingyms',
+    when: (has) => has(['super_admin', 'admin_d28d']),
+  },
+  {
+    id: 'adminusers',
+    view: 'adminusers',
+    when: (has) => has(['super_admin', 'admin_d28d', 'admin_marca', 'admin_gimnasio', 'admin_gym']),
+  },
+  {
+    id: 'liveclasses',
+    view: 'liveclasses',
+    when: (has) => has(['admin_marca', 'admin_gimnasio', 'admin_gym']),
+  },
   {
     id: 'admincompanies',
     view: 'admincompanies',
-    when: (has) => has(['super_admin', 'admin_d28d', 'admin_gym']),
+    when: (has) => has(['super_admin', 'admin_d28d']),
   },
 ];
 

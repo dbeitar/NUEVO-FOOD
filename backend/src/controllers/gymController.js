@@ -92,7 +92,9 @@ const createGym = (req, res) => {
       nombre, direccion, teléfono, telefono, email, ciudad, país, pais,
       latitude, longitude, capacidad_usuarios, plan_id,
       logo_url, brand_name, brand_slug, white_label_enabled, welcome_message,
-      support_whatsapp, primary_color, secondary_color, status,
+      support_whatsapp, primary_color, secondary_color,
+      favicon_url, cover_url, social_links, custom_domain,
+      status,
       invite_code,
     } = req.body || {};
 
@@ -130,6 +132,10 @@ const createGym = (req, res) => {
       support_whatsapp: support_whatsapp || '',
       primary_color: primary_color || '#2563eb',
       secondary_color: secondary_color || '#10b981',
+      favicon_url: favicon_url || '',
+      cover_url: cover_url || '',
+      social_links: social_links && typeof social_links === 'object' ? social_links : {},
+      custom_domain: custom_domain || null,
       status: status || 'active',
       invite_code: inviteCodeValue,
     });
@@ -166,6 +172,9 @@ const updateGym = (req, res) => {
       return res.status(403).json({ error: 'Solo puedes modificar tu propio gimnasio' });
     }
     const updates = { ...(req.body || {}) };
+    if (updates.invite_code !== undefined && !isPlatformAdmin(req.user)) {
+      delete updates.invite_code;
+    }
     if (updates.invite_code !== undefined) {
       const check = assertInviteCodeAvailable({
         code: updates.invite_code,

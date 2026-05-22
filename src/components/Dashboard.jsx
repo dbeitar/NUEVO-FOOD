@@ -30,9 +30,15 @@ import AdminProgramsManager from './AdminProgramsManager';
 
 import { userRoles, isFinalUser, makeHasAnyRole } from './dashboard/roles';
 import { getServicesFor } from './dashboard/userServices';
+import { isFoodExternal, getFoodModulePublicUrl, isFoodLegacyView, openFoodModule } from '../utils/foodModule';
+import {
+  isTrainingExternal,
+  isTrainingLegacyView,
+  openTrainingModule,
+  consumeTrainingLaunch,
+} from '../utils/trainingModule';
 import MyPlanView from './dashboard/MyPlanView';
 import ServicesHero from './dashboard/ServicesHero';
-import GymProductView from './dashboard/GymProductView';
 import AdminPaymentLinks from './AdminPaymentLinks';
 import FoodPlanAdminView from './dashboard/FoodPlanAdminView';
 import D28DAdminView from './dashboard/D28DAdminView';
@@ -64,6 +70,10 @@ export default function Dashboard() {
     () => getServicesFor(user, frontendConfig, lang),
     [user, frontendConfig, lang],
   );
+
+  useEffect(() => {
+    consumeTrainingLaunch(navigate, setOpenServicePanel, setCurrentView);
+  }, [user?.id]);
 
   // === Carga de datos ======================================================
   useEffect(() => {
@@ -137,15 +147,55 @@ export default function Dashboard() {
 
   // === Handlers ============================================================
   const navigate = (view) => {
+    if (isFoodExternal() && isFoodLegacyView(view)) {
+      openFoodModule('/dashboard');
+      return;
+    }
+    if (isTrainingLegacyView(view)) {
+      openTrainingModule('/dashboard').then((launch) => {
+        if (launch?.mode === 'internal') {
+          if (launch.destinationView?.startsWith('service:')) {
+            setOpenServicePanel(launch.destinationView.split(':')[1]);
+            setCurrentView('servicePanel');
+          } else {
+            setCurrentView(launch.destinationView || 'training');
+            setOpenServicePanel(null);
+          }
+        }
+      }).catch(() => setCurrentView(view));
+      return;
+    }
     setCurrentView(view);
     setOpenServicePanel(null);
   };
 
-  const onPickService = (service) => {
+  const onPickService = async (service) => {
     if (!service) return;
+    if (service.destinationView === 'external:food' || (service.moduleLaunch === 'food' && isFoodExternal())) {
+      openFoodModule('/dashboard');
+      return;
+    }
+    if (service.destinationView === 'external:training' || service.moduleLaunch === 'training') {
+      try {
+        const launch = await openTrainingModule('/dashboard');
+        if (launch?.mode === 'internal') {
+          if (launch.destinationView?.startsWith('service:')) {
+            setOpenServicePanel(launch.destinationView.split(':')[1]);
+            setCurrentView('servicePanel');
+          } else {
+            navigate(launch.destinationView || 'training');
+          }
+        }
+      } catch {
+        setOpenServicePanel('training');
+        setCurrentView('servicePanel');
+      }
+      return;
+    }
     if (service.destinationView?.startsWith('service:')) {
-      // Admin/coach → abrir maestro independiente.
-      const moduleId = service.destinationView.split(':')[1];
+      // Admin/coach → panel del servicio (gym vive solo dentro de D28D).
+      let moduleId = service.destinationView.split(':')[1];
+      if (moduleId === 'gym') moduleId = 'd28d';
       setOpenServicePanel(moduleId);
       setCurrentView('servicePanel');
       return;
@@ -169,7 +219,9 @@ export default function Dashboard() {
     const account = t('nav.myaccount', 'Mi Cuenta');
     if (isFinal) {
       const items = [{ id: 'home', label: home }];
-      if (services.find((s) => s.id === 'food-plan')) items.push({ id: 'myplan', label: t('nav.myplan', 'Mi Plan') });
+      if (services.find((s) => s.id === 'food-plan') && !isFoodExternal()) {
+        items.push({ id: 'myplan', label: t('nav.myplan', 'Mi Plan') });
+      }
       if (services.find((s) => s.id === 'training')) items.push({ id: 'training', label: t('nav.training', 'Entrenamiento') });
       items.push({ id: 'progress', label: t('nav.progress', 'Progreso') });
       if (services.find((s) => s.id === 'd28d') || services.find((s) => s.id === 'live-classes')) {
@@ -192,6 +244,13 @@ export default function Dashboard() {
         ];
       }
       if (hasAnyRole(['admin_food', 'admin_food_plan']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
+        if (isFoodExternal()) {
+          return [
+            { id: 'home', label: home },
+            { id: 'adminusers', label: t('nav.users', 'Usuarios') },
+            { id: 'myaccount', label: account },
+          ];
+        }
         return [
           { id: 'home', label: home },
           { id: 'adminusers', label: t('nav.users', 'Usuarios') },
@@ -272,10 +331,15 @@ export default function Dashboard() {
   const renderServicePanel = () => {
     if (!openServicePanel) return renderHome();
     if (openServicePanel === 'food-plan') {
-      return <FoodPlanAdminView hasAnyRole={hasAnyRole} onNavigate={navigate} onBack={onBackToHome} />;
-    }
-    if (openServicePanel === 'gym') {
-      return <GymProductView hasAnyRole={hasAnyRole} onNavigate={navigate} onBack={onBackToHome} />;
+      return (
+        <FoodPlanAdminView
+          hasAnyRole={hasAnyRole}
+          onNavigate={navigate}
+          onBack={onBackToHome}
+          foodExternal={isFoodExternal()}
+          foodExternalUrl={getFoodModulePublicUrl()}
+        />
+      );
     }
     if (openServicePanel === 'd28d') {
       return (
@@ -288,7 +352,14 @@ export default function Dashboard() {
       );
     }
     if (openServicePanel === 'training') {
-      return <TrainersAdminView hasAnyRole={hasAnyRole} onNavigate={navigate} onBack={onBackToHome} />;
+      return (
+        <TrainersAdminView
+          hasAnyRole={hasAnyRole}
+          onNavigate={navigate}
+          onBack={onBackToHome}
+          trainingExternal={isTrainingExternal()}
+        />
+      );
     }
     if (openServicePanel === 'live-classes') {
       const canProgram = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']);

@@ -1,11 +1,26 @@
+import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { defineConfig } from 'vite'
 import react from '@vitejs/plugin-react'
 import tailwind from '@tailwindcss/vite'
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const foodSrc = path.resolve(__dirname, 'modules/food_version_final/frontend/src')
+
 export default defineConfig(() => {
   const port = 5175
+  const foodApiOrigin = (process.env.VITE_FOOD_API_PROXY || 'https://foodplan.tech').replace(/\/api\/v1\/?$/, '')
   return {
     plugins: [react(), tailwind()],
+    resolve: {
+      alias: {
+        '@food': foodSrc,
+      },
+    },
+    define: {
+      'import.meta.env.VITE_FOOD_EMBEDDED': JSON.stringify('true'),
+      'import.meta.env.VITE_API_URL': JSON.stringify('/food-api'),
+    },
     build: {
       sourcemap: true,
       chunkSizeWarningLimit: 700,
@@ -38,6 +53,13 @@ export default defineConfig(() => {
       port,
       strictPort: false,
       open: true,
+      proxy: {
+        '/food-api': {
+          target: foodApiOrigin,
+          changeOrigin: true,
+          rewrite: (p) => p.replace(/^\/food-api/, '/api/v1'),
+        },
+      },
     },
     preview: {
       port: 10000,

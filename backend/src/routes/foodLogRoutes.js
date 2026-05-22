@@ -2,9 +2,11 @@ const express = require("express");
 const router = express.Router();
 const auth = require("../middleware/auth");
 const foodLogController = require("../controllers/foodLogController");
+const { requireModuleLicense } = require("../middleware/requireModuleLicense");
 
 // Proteger todas las rutas con autenticación
 router.use(auth);
+router.use(requireModuleLicense("food"));
 
 router.get("/combos", foodLogController.getMealCombos);
 router.post("/bulk", foodLogController.bulkAddFoods);

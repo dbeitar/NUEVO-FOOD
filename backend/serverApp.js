@@ -34,6 +34,10 @@ const licenseService = require('./src/services/licenseService');
 const licenseRoutes = require('./src/routes/licenseRoutes');
 const paymentLinkRoutes = require('./src/routes/paymentLinkRoutes');
 const frontendConfigRoutes = require('./src/routes/frontendConfigRoutes');
+const foodModuleRoutes = require('./src/routes/foodModuleRoutes');
+const foodProvisioning = require('./src/services/foodProvisioningService');
+const trainingModuleRoutes = require('./src/routes/trainingModuleRoutes');
+const trainingProvisioning = require('./src/services/trainingProvisioningService');
 
 const tracingMiddleware = require('./src/middleware/tracing');
 const app = express();
@@ -252,7 +256,7 @@ app.post('/api/auth/resolve-invite', async (req, res) => {
 });
 
 // Rutas de Autenticación
-if (USE_DB_AUTH) {
+if (USE_DB_AUTH || USE_RELATIONAL) {
   app.use('/api/auth', authRoutes);
 } else {
   // ---------- Auth (modo JSON local) ----------
@@ -368,6 +372,25 @@ if (USE_DB_AUTH) {
 
       await licenseService.applyInviteModules(created.id, finalModuleAccess, 'invite');
 
+      foodProvisioning.provisionFoodUser({
+        userId: created.id,
+        email: created.email,
+        nombre: created.nombre,
+        password: finalPassword,
+        moduleAccess: finalModuleAccess,
+        telefono: teléfono || telefono,
+        peso,
+        altura,
+        genero,
+        source: 'register',
+      }).catch((e) => console.warn('[register] food provision:', e.message));
+
+      trainingProvisioning.provisionTrainingUser({
+        userId: created.id,
+        moduleAccess: finalModuleAccess,
+        source: 'register',
+      }).catch((e) => console.warn('[register] training provision:', e.message));
+
       const message = usedTemp
         ? 'Usuario registrado. Se generó una clave temporal; pídela al administrador o usa "Olvidé mi contraseña".'
         : 'Usuario registrado exitosamente';
@@ -390,15 +413,19 @@ if (USE_DB_AUTH) {
       if (!email || !password) {
         return res.status(400).json({ error: 'Email y contraseña son requeridos' });
       }
+      const { auditAuth } = require('./src/services/authAudit');
       const user = userDB.getByEmail(email);
       if (!user) {
+        auditAuth(null, 'auth.failed', 'Login fallido — usuario no existe', { email }, 'warn');
         return res.status(401).json({ error: 'Email o contraseña incorrectos' });
       }
       const validPassword = await bcryptjs.compare(password, user.clave_hash);
       if (!validPassword) {
+        auditAuth(user.id, 'auth.failed', 'Login fallido — contraseña incorrecta', { email }, 'warn');
         return res.status(401).json({ error: 'Email o contraseña incorrectos' });
       }
       const { access, token } = await buildAuthToken(user);
+      auditAuth(user.id, 'auth.login', 'Login exitoso', { email: user.email });
       res.json({
         message: 'Login exitoso',
         token,
@@ -411,6 +438,8 @@ if (USE_DB_AUTH) {
           permissions: access.permissions,
           module_access: access.module_access,
           licenses: access.licenses || [],
+          gym_id: user.gym_id || user.gymId || null,
+          trainer_id: user.trainer_id || null,
         },
       });
     } catch (error) {
@@ -688,6 +717,12 @@ app.put('/api/admin/users/:id/role', authMiddleware, async (req, res) => {
     await licenseService.syncFromModuleAccess(target.id, nextAccess, 'admin');
     const updated = userDB.getById(target.id);
     const resolved = await licenseService.resolveModuleAccess(target.id, nextAccess);
+    foodProvisioning.onFoodLicenseChange(target.id, resolved).catch((e) => {
+      console.warn('[admin] food license sync:', e.message);
+    });
+    trainingProvisioning.onTrainingLicenseChange(target.id, resolved).catch((e) => {
+      console.warn('[admin] training license sync:', e.message);
+    });
     res.json({ success: true, data: { id: updated.id, nombre: updated.nombre, email: updated.email, rol: updated.rol, roles: updated.roles, permissions: updated.permissions, module_access: resolved } });
   } catch (e) {
     res.status(500).json({ error: 'Error actualizando rol' });
@@ -819,6 +854,8 @@ app.use('/api/cycles', cycleRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/payment-links', paymentLinkRoutes);
 app.use('/api/frontend-config', frontendConfigRoutes);
+app.use('/api/food-module', foodModuleRoutes);
+app.use('/api/training-module', trainingModuleRoutes);
 
 // Manejo de errores final (incluye CORS rechazado)
 // eslint-disable-next-line no-unused-vars

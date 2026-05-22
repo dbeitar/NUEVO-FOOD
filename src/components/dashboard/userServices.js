@@ -1,4 +1,6 @@
 import { mergeServiceDef } from '../../utils/frontendConfigMerge';
+import { isFoodExternal, getFoodModulePublicUrl } from '../../utils/foodModule';
+import { isTrainingExternal, getTrainingModulePublicUrl } from '../../utils/trainingModule';
 
 // Resuelve qué SERVICIOS ve un usuario en su pantalla de inicio.
 //
@@ -13,7 +15,7 @@ import { mergeServiceDef } from '../../utils/frontendConfigMerge';
 //     pero su acción cambia según el rol: usuario final entra a su experiencia
 //     de consumo; admin/coach entra al maestro de ese servicio.
 //
-// Orden visual fijo: D28D → Plan de Alimentación → Entrenadores → Clases en Vivo
+// Orden visual: D28D → Gimnasio (producto/licencia, panel D28D) → Food → Training → Live
 //
 // IMPORTANTE: los GIMNASIOS NO son un servicio independiente. Viven bajo
 // D28D porque consumen el contenido D28D y agendan sobre las plantillas de
@@ -24,8 +26,8 @@ const SERVICE_DEFS = [
   {
     id: 'd28d',
     title: 'D28D',
-    desc: 'Programas Vital, Pancitas y Virtual D28D + tu gimnasio.',
-    descAdmin: 'Programas, gimnasios marca blanca, clases en vivo y galería.',
+    desc: 'Programas Vital, Pancitas y Virtual D28D. Si perteneces a un gimnasio, agenda clases en vivo aquí.',
+    descAdmin: 'Programas D28D, gimnasios marca blanca (solo plataforma crea sedes), clases en vivo y asistencia.',
     img: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80',
     alt: 'Sesión de entrenamiento grupal',
   },
@@ -47,11 +49,12 @@ const SERVICE_DEFS = [
   },
   {
     id: 'gym',
-    title: 'Gimnasio',
-    desc: 'Tu marca, usuarios y vigencias del gimnasio.',
-    descAdmin: 'Marca blanca, usuarios y operación del gym.',
+    title: 'Mi Gimnasio',
+    desc: 'Clases en vivo D28D, usuarios de tu sede y marca blanca.',
+    descAdmin: 'Operación del gimnasio afiliado dentro de D28D (no es módulo externo).',
     img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
-    alt: 'Gimnasio marca blanca',
+    alt: 'Gimnasio marca blanca D28D',
+    panelTarget: 'd28d',
   },
   {
     id: 'live-classes',
@@ -80,6 +83,39 @@ function isAdminish(user) {
   return getRolesArr(user).some((r) => ADMIN_ROLES.has(r));
 }
 
+/** Dual-read: module_access legacy + licencias activas en JWT/perfil. */
+export function getEffectiveModuleAccess(user) {
+  const access = user?.module_access && typeof user.module_access === 'object'
+    ? { ...user.module_access }
+    : {};
+  const licenses = Array.isArray(user?.licenses) ? user.licenses : [];
+  for (const lic of licenses) {
+    if (lic.active === false) continue;
+    switch (lic.module_code) {
+      case 'food':
+        access.food_plan = true;
+        access.nutrition = true;
+        break;
+      case 'training':
+        access.training = true;
+        break;
+      case 'd28d':
+        access.d28d = true;
+        break;
+      case 'gym':
+        access.gym = true;
+        access.d28d = true;
+        break;
+      case 'live_classes':
+        access.live_classes = true;
+        break;
+      default:
+        break;
+    }
+  }
+  return access;
+}
+
 // Devuelve los IDs de servicios habilitados para el usuario dado.
 //
 // REGLA ESTRICTA POR ROL:
@@ -97,13 +133,12 @@ function isAdminish(user) {
 export function getEnabledServiceIds(user) {
   if (!user) return [];
   const roles = getRolesArr(user);
-  const access = user.module_access && typeof user.module_access === 'object'
-    ? user.module_access
-    : null;
+  const access = getEffectiveModuleAccess(user);
+  const hasAccessKeys = Object.keys(access).some((k) => access[k]);
 
   // 1) super_admin SIEMPRE ve todo (regla pedida explícitamente).
   if (roles.includes('super_admin')) {
-    return ['gym', 'd28d', 'food-plan', 'training', 'live-classes'];
+    return ['d28d', 'food-plan', 'training', 'live-classes'];
   }
 
   // 2) Admin específico: solo SU servicio (override estricto sobre module_access).
@@ -120,16 +155,14 @@ export function getEnabledServiceIds(user) {
     return ['live-classes'];
   }
 
-  // 3) Acceso explícito declarado en el usuario (cuando hay multi-rol mixto
-  //    o cuando el gym ha contratado servicios concretos).
-  if (access && Object.keys(access).length > 0) {
+  // 3) Licencias + module_access (dual-read).
+  if (hasAccessKeys) {
     const mapped = [];
-    if (access.gym) mapped.push('gym');
-    if (access.d28d) mapped.push('d28d');
-    if (access.food_plan || access['food-plan']) mapped.push('food-plan');
+    if (access.gym || access.d28d) mapped.push('d28d');
+    if (access.food_plan || access.nutrition) mapped.push('food-plan');
     if (access.training) mapped.push('training');
-    if (access.live_classes || access['live-classes']) mapped.push('live-classes');
-    if (mapped.length > 0) return mapped;
+    if (access.live_classes) mapped.push('live-classes');
+    if (mapped.length > 0) return orderServiceIds([...new Set(mapped)]);
   }
 
   // 4) Resolución por combinaciones de rol.
@@ -144,11 +177,9 @@ export function getEnabledServiceIds(user) {
   if (roles.includes('admin_entrenador') || roles.includes('admin_training')) {
     ids.add('training');
   }
-  // Gimnasios marca blanca: entran por D28D + sus clases en vivo.
+  // Gimnasios marca blanca: producto GYM visible → panel D28D.
   if (roles.includes('admin_marca') || roles.includes('admin_gimnasio') || roles.includes('admin_gym')) {
-    ids.add('gym');
     ids.add('d28d');
-    ids.add('live-classes');
   }
   if (roles.includes('entrenador')) {
     ids.add('training');
@@ -165,8 +196,9 @@ export function getEnabledServiceIds(user) {
 }
 
 function orderServiceIds(ids) {
-  const order = ['gym', 'd28d', 'food-plan', 'training', 'live-classes'];
-  return order.filter((id) => ids.includes(id));
+  const normalized = ids.filter((id) => id !== 'gym');
+  const order = ['d28d', 'food-plan', 'training', 'live-classes'];
+  return order.filter((id) => normalized.includes(id));
 }
 
 export function getServicesFor(user, frontendConfig = null, lang = 'es') {
@@ -174,14 +206,28 @@ export function getServicesFor(user, frontendConfig = null, lang = 'es') {
   const adminMode = isAdminish(user);
 
   return SERVICE_DEFS
-    .filter((s) => ids.has(s.id))
+    .filter((s) => ids.has(s.id) && s.id !== 'gym')
     .map((s) => {
       const merged = mergeServiceDef(s, frontendConfig, s.id, adminMode, lang);
+      const panelTarget = s.panelTarget || s.id;
+      const adminDestination = panelTarget === 'd28d' && s.id === 'gym'
+        ? 'service:d28d'
+        : `service:${s.id}`;
+      const externalUrl = s.id === 'food-plan' && isFoodExternal()
+        ? getFoodModulePublicUrl()
+        : s.id === 'training' && isTrainingExternal()
+          ? getTrainingModulePublicUrl()
+          : null;
+      let destinationView = adminMode
+        ? adminDestination
+        : userFacingDestinationFor(s.id);
+      if (externalUrl && s.id === 'food-plan') destinationView = 'external:food';
+      if (s.id === 'training') destinationView = 'external:training';
       return {
         ...merged,
-        destinationView: adminMode
-          ? `service:${s.id}`
-          : userFacingDestinationFor(s.id),
+        externalUrl,
+        destinationView,
+        moduleLaunch: s.id === 'training' ? 'training' : s.id === 'food-plan' ? 'food' : null,
       };
     });
 }
@@ -190,10 +236,11 @@ export { SERVICE_DEFS };
 
 function userFacingDestinationFor(serviceId) {
   switch (serviceId) {
-    case 'food-plan': return 'myplan';
+    case 'food-plan': return isFoodExternal() ? 'external:food' : 'myplan';
     case 'training': return 'training';
-    case 'd28d': return 'liveclasses';
-    case 'live-classes': return 'liveclasses';
+    case 'd28d':
+    case 'live-classes':
+      return 'liveclasses';
     default: return 'myplan';
   }
 }

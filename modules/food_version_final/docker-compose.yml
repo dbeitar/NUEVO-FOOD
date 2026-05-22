@@ -1,0 +1,111 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: foodplan_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: foodplan
+      POSTGRES_USER: fituser
+      POSTGRES_PASSWORD: fitpassword123
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - foodplan_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fituser -d foodplan"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: foodplan_redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    networks:
+      - foodplan_net
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: foodplan_api
+    restart: unless-stopped
+    ports:
+      - "3001:3001"
+    volumes:
+      - ./uploads:/app/uploads
+    environment:
+      NODE_ENV: production
+      PORT: 3001
+      DATABASE_URL: postgresql://fituser:fitpassword123@postgres:5432/foodplan
+      REDIS_URL: redis://redis:6379
+      JWT_SECRET: super_secret_jwt_key_foodplan_2026
+      JWT_REFRESH_SECRET: super_secret_refresh_key_foodplan_2026
+      JWT_EXPIRES_IN: 1h
+      JWT_REFRESH_EXPIRES_IN: 7d
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+      # ── Email ──────────────────────────────────────────────────
+      # Para Gmail: MAIL_HOST=smtp.gmail.com, MAIL_PORT=587, MAIL_SECURE=false
+      # Requiere contraseña de aplicación (no la de tu cuenta):
+      # https://myaccount.google.com/apppasswords
+      MAIL_HOST: ${MAIL_HOST:-mailhog}
+      MAIL_PORT: ${MAIL_PORT:-1025}
+      MAIL_SECURE: ${MAIL_SECURE:-false}
+      MAIL_USER: ${MAIL_USER:-}
+      MAIL_PASS: ${MAIL_PASS:-}
+      MAIL_FROM: ${MAIL_FROM:-noreply@food-plan.com}
+      # ── Chatbot IA ─────────────────────────────────────────────
+      # Obtén tu clave en: https://console.anthropic.com
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - foodplan_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: foodplan_web
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      VITE_API_URL: http://localhost:3001/api/v1
+    depends_on:
+      - backend
+    networks:
+      - foodplan_net
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: foodplan_mail
+    restart: unless-stopped
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+    networks:
+      - foodplan_net
+
+volumes:
+  postgres_data:
+  redis_data:
+
+networks:
+  foodplan_net:
+    driver: bridge

@@ -3,9 +3,11 @@ const router = express.Router();
 const auth = require("../middleware/auth");
 const requireRole = require("../middleware/requireRole");
 const foodController = require("../controllers/foodController");
+const { requireModuleLicense } = require("../middleware/requireModuleLicense");
 
 // Rutas públicas (requieren autenticación)
 router.use(auth);
+router.use(requireModuleLicense("food"));
 
 // GET: Obtener todos los alimentos
 router.get("/", foodController.getAllFoods);

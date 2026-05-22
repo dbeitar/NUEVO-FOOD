@@ -2,6 +2,12 @@ const TrainingPlansStore = require('../models/TrainingPlansStore');
 const TrainingLogStore = require('../models/TrainingLogStore');
 const UserDatabase = require('../models/UserDatabase');
 const { canManageTraining } = require('../utils/accessControl');
+const {
+  filterTrainingPlans,
+  filterTrainingLogs,
+  canAccessTargetUser,
+} = require('../utils/trainingTenantScope');
+const { auditTraining } = require('../services/trainingAudit');
 
 const isTrainerOrAdmin = (req) => canManageTraining(req.user);
 
@@ -17,9 +23,12 @@ const adminTrainingController = {
             const { user_id } = req.query;
             let plans;
             if (user_id) {
-                plans = TrainingPlansStore.getByUserId(user_id);
+              if (!canAccessTargetUser(req.user, user_id)) {
+                return res.status(403).json({ error: 'Sin acceso a planes de este usuario' });
+              }
+              plans = TrainingPlansStore.getByUserId(user_id);
             } else {
-                plans = TrainingPlansStore.getAll();
+              plans = filterTrainingPlans(TrainingPlansStore.getAll(), req.user);
             }
             // Adjuntar info del usuario para mejor frontend
             const enhancedPlans = plans.map(p => {
@@ -45,6 +54,9 @@ const adminTrainingController = {
             }
             const plan = TrainingPlansStore.getById(req.params.id);
             if (!plan) return res.status(404).json({ error: 'Plan no encontrado' });
+            if (!canAccessTargetUser(req.user, plan.user_id)) {
+              return res.status(403).json({ error: 'Sin acceso a este plan' });
+            }
             res.json({ success: true, data: plan });
         } catch (error) {
             res.status(500).json({ error: 'Error obteniendo el plan' });
@@ -59,6 +71,9 @@ const adminTrainingController = {
             }
             const { user_id, level, method, split_type, dias } = req.body;
             if (!user_id) return res.status(400).json({ error: 'user_id es requerido' });
+            if (!canAccessTargetUser(req.user, user_id)) {
+              return res.status(403).json({ error: 'No puedes asignar plan a este usuario' });
+            }
 
             const newPlan = TrainingPlansStore.create({
                 user_id,
@@ -67,6 +82,10 @@ const adminTrainingController = {
                 method,
                 split_type,
                 dias
+            });
+            auditTraining(req.user.id, 'training.assignment', 'Plan asignado a usuario', {
+              plan_id: newPlan.id,
+              user_id,
             });
             res.status(201).json({ success: true, data: newPlan });
         } catch (error) {
@@ -190,7 +209,11 @@ const adminTrainingController = {
                 return res.status(403).json({ error: 'Permisos insuficientes' });
             }
             const { user_id } = req.query;
-            const logs = user_id ? TrainingLogStore.getByUserId(user_id) : TrainingLogStore.getAll();
+            let logs = user_id ? TrainingLogStore.getByUserId(user_id) : TrainingLogStore.getAll();
+            if (user_id && !canAccessTargetUser(req.user, user_id)) {
+              return res.status(403).json({ error: 'Sin acceso al diario de este usuario' });
+            }
+            logs = filterTrainingLogs(logs, req.user);
 
             const enhancedLogs = logs.map(l => {
                 const u = UserDatabase.getById(l.user_id);

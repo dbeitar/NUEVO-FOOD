@@ -47,7 +47,7 @@ Orden fijo de tarjetas: **D28D → Plan alimentación → Entrenadores → Clase
 | admin_gimnasio | D28D + Clases en vivo |
 | usuario_final | Lo definido en `module_access` |
 
-**Gimnasios** no son tarjeta aparte: viven **dentro de D28D** (marca blanca).
+**Gimnasios** no son módulo independiente: viven **dentro de D28D** (marca blanca). Solo `super_admin` / `admin_d28d` crean sedes; cada gym recibe `invite_code` único. Usuarios del gym ven y agendan **clases en vivo D28D** (`source_module=d28d`). Admin del gym: usuarios de su sede, clases y asistencia (sin crear plantillas).
 
 ---
 

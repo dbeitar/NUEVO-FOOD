@@ -3,6 +3,8 @@ const fs = require('fs');
 const { randomUUID } = require('crypto');
 const ExercisesGalleryStore = require('../models/ExercisesGalleryStore');
 const TrainingLogStore = require('../models/TrainingLogStore');
+const { filterGalleryItems } = require('../utils/trainingTenantScope');
+const { isPlatformAdmin, getUserGymId } = require('../utils/tenantScope');
 
 const libraryPath = path.join(__dirname, '..', '..', 'data', 'training_library.json');
 const rawLibrary = JSON.parse(fs.readFileSync(libraryPath, 'utf8'));
@@ -549,10 +551,13 @@ const substituteExercise = async (req, res) => {
 
 const getAdminGallery = async (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    const roles = Array.isArray(req.user?.roles) ? req.user.roles : [req.user?.rol];
+    const allowed = roles.some((r) => ['super_admin', 'admin_gimnasio', 'admin_marca', 'admin_training', 'admin_entrenador', 'entrenador'].includes(r));
+    if (!req.user || !allowed) {
       return res.status(403).json({ error: 'No tienes permisos para ver la galería' });
     }
-    return res.json({ success: true, data: ExercisesGalleryStore.getAll() });
+    const data = filterGalleryItems(ExercisesGalleryStore.getAll(), req.user);
+    return res.json({ success: true, data });
   } catch (error) {
     return res.status(500).json({ error: 'Error obteniendo galería' });
   }
@@ -571,8 +576,9 @@ const createAdminGallery = async (req, res) => {
       name,
       muscle_group,
       youtube_url,
-      is_global,
+      is_global: isPlatformAdmin(req.user) ? is_global : false,
       created_by: req.user.id,
+      gym_id: getUserGymId(req.user),
     });
     if (created?.error) {
       return res.status(409).json({ error: created.error });
