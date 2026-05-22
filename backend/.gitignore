@@ -6,5 +6,7 @@ node_modules/
 .env.backup
 .DS_Store
 *.log
+uploads/frontend/*
+!uploads/frontend/.gitkeep
 *.pem
 *.crt

@@ -1,3 +1,5 @@
+import { mergeServiceDef } from '../../utils/frontendConfigMerge';
+
 // Resuelve qué SERVICIOS ve un usuario en su pantalla de inicio.
 //
 // Reglas (alineadas con docs/ECOSISTEMA_MODULAR_MARCA_BLANCA.md):
@@ -167,23 +169,24 @@ function orderServiceIds(ids) {
   return order.filter((id) => ids.includes(id));
 }
 
-// Devuelve los servicios habilitados, ya enriquecidos con su definición visual,
-// el copy contextual (admin vs usuario final) y la vista destino.
-export function getServicesFor(user) {
+export function getServicesFor(user, frontendConfig = null, lang = 'es') {
   const ids = new Set(getEnabledServiceIds(user));
   const adminMode = isAdminish(user);
 
-  // Mantener orden de SERVICE_DEFS (= orden visual fijo pedido).
   return SERVICE_DEFS
     .filter((s) => ids.has(s.id))
-    .map((s) => ({
-      ...s,
-      desc: adminMode ? s.descAdmin : s.desc,
-      destinationView: adminMode
-        ? `service:${s.id}`
-        : userFacingDestinationFor(s.id),
-    }));
+    .map((s) => {
+      const merged = mergeServiceDef(s, frontendConfig, s.id, adminMode, lang);
+      return {
+        ...merged,
+        destinationView: adminMode
+          ? `service:${s.id}`
+          : userFacingDestinationFor(s.id),
+      };
+    });
 }
+
+export { SERVICE_DEFS };
 
 function userFacingDestinationFor(serviceId) {
   switch (serviceId) {

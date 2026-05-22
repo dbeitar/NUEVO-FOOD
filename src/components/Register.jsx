@@ -4,6 +4,7 @@ import api from '../services/api';
 import PrivacyPolicyModal from './PrivacyPolicyModal';
 import TermsOfServiceModal from './TermsOfServiceModal';
 import AuthLayout from './AuthLayout';
+import { useI18n } from '../context/useI18n';
 import { PUBLIC_BRAND_NAME } from '../utils/branding';
 
 function readApiError(err, fallback) {
@@ -26,6 +27,7 @@ const MODULE_LABELS = {
 };
 
 export default function Register({ onSwitchToLogin }) {
+  const { t } = useI18n();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     nombre: '',
@@ -90,19 +92,19 @@ export default function Register({ onSwitchToLogin }) {
     e.preventDefault();
     setError('');
     if (!acceptPrivacy || !acceptTerms) {
-      setError('Debes aceptar la Política de Privacidad y los Términos de Servicio');
+      setError(t('register.accept_required', 'Debes aceptar la Política de Privacidad y los Términos de Servicio'));
       return;
     }
     if (formData.password !== formData.confirmPassword) {
-      setError('Las contraseñas no coinciden');
+      setError(t('register.password_mismatch', 'Las contraseñas no coinciden'));
       return;
     }
     if (formData.password.length < 8) {
-      setError('La contraseña debe tener al menos 8 caracteres');
+      setError(t('register.password_min', 'La contraseña debe tener al menos 8 caracteres'));
       return;
     }
     if (!formData.genero) {
-      setError('Por favor selecciona tu género');
+      setError(t('register.gender_required', 'Por favor selecciona tu género'));
       return;
     }
     setStep(2);
@@ -116,14 +118,14 @@ export default function Register({ onSwitchToLogin }) {
       const res = await api.post('/auth/resolve-invite', { code: inviteCode });
       const ctx = res.data?.data;
       if (!ctx) {
-        setError('Código no válido');
+        setError(t('register.invite_invalid', 'Código no válido'));
         return;
       }
       setInviteContext(ctx);
       setSelectedPlan(null);
       setStep(3);
     } catch (err) {
-      setError(readApiError(err, 'No pudimos validar el código'));
+      setError(readApiError(err, t('register.invite_validate_error', 'No pudimos validar el código')));
     } finally {
       setValidatingCode(false);
     }
@@ -132,7 +134,7 @@ export default function Register({ onSwitchToLogin }) {
   const handleFinalSubmit = async (e) => {
     e.preventDefault();
     if (!inviteContext) {
-      setError('Primero valida tu código de entrenador o gimnasio');
+      setError(t('register.invite_required', 'Primero valida tu código de entrenador o gimnasio'));
       setStep(2);
       return;
     }
@@ -294,11 +296,17 @@ export default function Register({ onSwitchToLogin }) {
             <div className="policies-section">
               <div className="checkbox-group">
                 <input type="checkbox" id="acceptPrivacy" checked={acceptPrivacy} onChange={(e) => setAcceptPrivacy(e.target.checked)} />
-                <label htmlFor="acceptPrivacy">Acepto la <button type="button" onClick={() => setShowPrivacyModal(true)} className="policy-link">Política de Privacidad</button></label>
+                <label htmlFor="acceptPrivacy">
+                  {t('register.accept_privacy', 'Acepto la')}{' '}
+                  <button type="button" onClick={() => setShowPrivacyModal(true)} className="policy-link">{t('register.privacy_link', 'Política de Privacidad')}</button>
+                </label>
               </div>
               <div className="checkbox-group">
                 <input type="checkbox" id="acceptTerms" checked={acceptTerms} onChange={(e) => setAcceptTerms(e.target.checked)} />
-                <label htmlFor="acceptTerms">Acepto los <button type="button" onClick={() => setShowTermsModal(true)} className="policy-link">Términos y Condiciones</button></label>
+                <label htmlFor="acceptTerms">
+                  {t('register.accept_terms', 'Acepto los')}{' '}
+                  <button type="button" onClick={() => setShowTermsModal(true)} className="policy-link">{t('register.terms_link', 'Términos y Condiciones')}</button>
+                </label>
               </div>
             </div>
             <button type="submit" className="btn-primary w-full">Continuar</button>

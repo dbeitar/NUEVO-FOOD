@@ -10,6 +10,7 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import api from '../../services/api';
+import { useI18n } from '../../context/useI18n';
 import AdminLiveClasses from '../AdminLiveClasses';
 import LiveClasses from '../LiveClasses';
 
@@ -32,6 +33,7 @@ function getAssignedProgramId(user) {
 }
 
 export default function LiveClassesPanel({ user = null, canProgram = false, programId: forcedProgramId = null, onBack = null }) {
+  const { t } = useI18n();
   const [tab, setTab] = useState(canProgram ? TABS.PROGRAM : TABS.CALENDAR);
   const [programs, setPrograms] = useState([]);
   const [selectedProgram, setSelectedProgram] = useState(forcedProgramId || '');
@@ -64,13 +66,13 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
 
   const selectedProgramLabel = useMemo(() => {
     if (canProgram) {
-      if (!selectedProgram) return 'Todos los programas';
+      if (!selectedProgram) return t('live.all_programs', 'Todos los programas');
       const p = programs.find((x) => (x.id || x.code || x.slug) === selectedProgram);
       return p?.name || p?.title || p?.nombre || selectedProgram;
     }
     if (!assignedProgram) return null;
     return assignedProgram;
-  }, [canProgram, selectedProgram, programs, assignedProgram]);
+  }, [canProgram, selectedProgram, programs, assignedProgram, t]);
 
   return (
     <div className="dashboard-main-view">
@@ -79,18 +81,18 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
         style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '0.75rem' }}
       >
         <div>
-          <h2>Clases en Vivo</h2>
-          <p style={{ color: '#475569', margin: 0 }}>
+          <h2 className="d28d-page-title">{t('live.title', 'Clases en Vivo')}</h2>
+          <p className="d28d-text-muted" style={{ margin: 0 }}>
             {canProgram
-              ? 'Programa plantillas o revisa el calendario y filtra por programa.'
+              ? t('live.subtitle_admin', '')
               : assignedProgram
-                ? `Calendario de tu programa asignado.`
-                : 'Agéndate en una clase y entra al Zoom desde el calendario.'}
+                ? t('live.subtitle_assigned', '')
+                : t('live.subtitle_user', '')}
           </p>
         </div>
         {onBack && (
-          <button className="btn-secondary" onClick={onBack} aria-label="Volver">
-            ← Volver
+          <button type="button" className="btn-secondary" onClick={onBack} aria-label={t('live.back', 'Volver')}>
+            {t('live.back', '← Volver')}
           </button>
         )}
       </header>
@@ -98,7 +100,7 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
       {/* Tabs */}
       <div
         role="tablist"
-        aria-label="Vistas de Clases en Vivo"
+        aria-label={t('live.tab_views', 'Vistas de Clases en Vivo')}
         style={{
           display: 'flex',
           gap: '0.25rem',
@@ -114,7 +116,7 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
             onClick={() => setTab(TABS.PROGRAM)}
             style={tabStyle(tab === TABS.PROGRAM)}
           >
-            Programar
+            {t('live.tab_program', 'Programar')}
           </button>
         )}
         <button
@@ -124,7 +126,7 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
           onClick={() => setTab(TABS.CALENDAR)}
           style={tabStyle(tab === TABS.CALENDAR)}
         >
-          Calendario
+          {t('live.tab_calendar', 'Calendario')}
         </button>
       </div>
 
@@ -141,8 +143,8 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
         >
           {canProgram ? (
             <>
-              <label htmlFor="program-filter" style={{ fontSize: '0.875rem', color: '#475569', fontWeight: 500 }}>
-                Programa:
+              <label htmlFor="program-filter" className="d28d-label">
+                {t('live.program_label', 'Programa:')}
               </label>
               <select
                 id="program-filter"
@@ -150,9 +152,9 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
                 onChange={(e) => setSelectedProgram(e.target.value)}
                 className="input"
                 style={{ padding: '0.4rem 0.6rem', maxWidth: 260 }}
-                aria-label="Filtrar calendario por programa"
+                aria-label={t('live.program_label', 'Programa:')}
               >
-                <option value="">Todos los programas</option>
+                <option value="">{t('live.all_programs', 'Todos los programas')}</option>
                 {programs.map((p) => {
                   const id = p.id || p.code || p.slug;
                   const name = p.name || p.title || p.nombre || id;
@@ -161,8 +163,8 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
                   );
                 })}
               </select>
-              <span style={{ fontSize: '0.8rem', color: '#94a3b8' }}>
-                Mostrando: {selectedProgramLabel}
+              <span className="d28d-text-muted" style={{ fontSize: '0.8rem' }}>
+                {t('live.showing', 'Mostrando: {label}', { label: selectedProgramLabel })}
               </span>
             </>
           ) : assignedProgram ? (
@@ -180,7 +182,7 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
             >
               <span aria-hidden="true">●</span>
               <span>
-                Tu programa: <strong>{selectedProgramLabel}</strong>
+                {t('live.your_program', 'Tu programa: {label}', { label: selectedProgramLabel })}
               </span>
             </div>
           ) : (
@@ -193,7 +195,7 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
                 color: '#78350f',
               }}
             >
-              Aún no tienes un programa asignado. Habla con tu coach para que te asigne uno.
+              {t('live.no_program', '')}
             </div>
           )}
         </div>

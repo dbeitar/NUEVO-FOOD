@@ -1,3 +1,5 @@
+import { DASHBOARD_I18N_ES } from './dashboardKeys';
+
 export default {
   'nav.progress': 'Progreso',
   'nav.home': 'Inicio',
@@ -457,4 +459,5 @@ export default {
   'equivalentes.subtitle': 'Intercambia alimentos manteniendo macros aproximados.',
   'equivalentes.base': 'Base',
   'equivalentes.error_loading': 'No fue posible cargar equivalentes. Intenta más tarde.',
-}
+  ...DASHBOARD_I18N_ES,
+};

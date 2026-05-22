@@ -48,57 +48,43 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
   return (
     <AuthLayout title={t('auth.login', 'Iniciar Sesión')} subtitle={`${t('auth.welcome', 'Bienvenido a')} ${PUBLIC_BRAND_NAME}`}>
       {error ? (
-        <div className="bg-red-50 text-red-700 border border-red-200 rounded-xl p-3 text-sm">{t('auth.login_error', 'Error en el login')}: {error}</div>
+        <div className="error-message">{t('auth.login_error', 'Error en el login')}: {error}</div>
       ) : null}
       <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label htmlFor="email" className="block text-sm font-semibold text-stone-700 mb-1">{t('auth.email', 'Correo Electrónico')}</label>
-            <div className="relative">
-              <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M16 12H8m8 0l-4 4m4-4l-4-4M4 6h16v12H4z" />
-              </svg>
-              <input
-                id="email"
-                type="email"
-                required
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={t('auth.email_placeholder', 'tu@email.com')}
-                className="w-full rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 px-4 py-2 pl-10 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
-              />
-            </div>
+          <div className="form-group">
+            <label htmlFor="email" className="label">{t('auth.email', 'Correo Electrónico')}</label>
+            <input
+              id="email"
+              type="email"
+              required
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder={t('auth.email_placeholder', 'tu@email.com')}
+              className="input"
+            />
           </div>
-          <div>
-            <div className="flex items-center justify-between">
-              <label htmlFor="password" className="block text-sm font-semibold text-stone-700 mb-1">{t('auth.password', 'Contraseña')}</label>
-              <button
-                type="button"
-                onClick={onForgotPassword}
-                className="text-xs text-stone-600 hover:text-stone-900 underline"
-              >
+          <div className="form-group">
+            <div className="flex items-center justify-between" style={{ marginBottom: '0.25rem' }}>
+              <label htmlFor="password" className="label" style={{ marginBottom: 0 }}>{t('auth.password', 'Contraseña')}</label>
+              <button type="button" onClick={onForgotPassword} className="link-button" style={{ fontSize: '0.75rem' }}>
                 ¿Olvidaste tu contraseña?
               </button>
             </div>
-            <div className="relative">
-              <svg className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 h-5 w-5 text-stone-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 11c1.657 0 3-1.343 3-3S13.657 5 12 5s-3 1.343-3 3 1.343 3 3 3z" />
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19.4 15a7.97 7.97 0 00-14.8 0M4 19h16" />
-              </svg>
-              <input
-                id="password"
-                type="password"
-                required
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 px-4 py-2 pl-10 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors"
-              />
-            </div>
+            <input
+              id="password"
+              type="password"
+              required
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="••••••••"
+              className="input"
+            />
           </div>
           <button
             type="submit"
             disabled={loading}
-            className="w-full inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-lime-500 hover:bg-lime-400 text-black font-semibold shadow-sm transition-colors disabled:opacity-60"
+            className="btn btn-primary w-full"
+            style={{ width: '100%', padding: '0.75rem' }}
           >
             {loading ? (
               <>
@@ -113,12 +99,12 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
             )}
           </button>
       </form>
-      <div className="mt-6 text-center text-sm text-stone-600">
+      <div className="mt-6 text-center text-sm" style={{ color: 'var(--d28d-muted)' }}>
         {t('auth.no_account', '¿No tienes cuenta?')}{' '}
         <button
           type="button"
           onClick={onSwitchToRegister}
-          className="underline hover:text-stone-900"
+          className="link-button"
         >
           {t('auth.register_free', 'Regístrate gratis')}
         </button>

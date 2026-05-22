@@ -1,0 +1,31 @@
+/**
+ * Tema visual D28D GYM VIRTUAL — negro + amarillo (#FFD700).
+ * Solo CSS; sin librerías de íconos.
+ */
+:root,
+[data-theme="dark"] {
+  --d28d-black: #000000;
+  --d28d-surface: #0f0f0f;
+  --d28d-surface-2: #141414;
+  --d28d-surface-3: #1a1a1a;
+  --d28d-border: #2a2a2a;
+  --d28d-yellow: #ffd700;
+  --d28d-yellow-hover: #ffe566;
+  --d28d-text: #ffffff;
+  --d28d-muted: #ffffff;
+  --d28d-muted-opacity: 0.72;
+  --d28d-danger: #ef4444;
+  --d28d-success: #22c55e;
+}
+
+/* Tema claro: fondo más luminoso; tarjetas oscuras; textos blanco + amarillo */
+[data-theme="light"] {
+  --d28d-black: #d8d8d3;
+  --d28d-surface: #1a1a1a;
+  --d28d-surface-2: #222222;
+  --d28d-surface-3: #2a2a2a;
+  --d28d-border: #3d3d3d;
+  --d28d-text: #ffffff;
+  --d28d-muted: #ffffff;
+  --d28d-muted-opacity: 0.75;
+}

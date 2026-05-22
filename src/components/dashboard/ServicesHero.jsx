@@ -1,51 +1,47 @@
-// Hero de inicio. Muestra los SERVICIOS que el usuario tiene activos
-// (uno o varios). NO es un selector técnico de módulos: es la entrada
-// natural a las cosas del usuario, con su brand arriba.
-//
-// Para usuario final: cada card lleva a su experiencia de consumo
-//   (Mi Plan, Mi Entrenamiento, Mis Clases, Mi gimnasio).
-// Para admin/coach: cada card lleva al maestro independiente del servicio.
+import { resolveMediaUrl } from '../../utils/mediaUrl';
+import { useI18n } from '../../context/useI18n';
 
 export default function ServicesHero({ user, services, brandName, onPickService }) {
+  const { t, lang } = useI18n();
   const greetName = user?.nombre ? user.nombre.split(' ')[0] : null;
-  const greeting = greetName ? `Hola, ${greetName}` : 'Hola';
+  const greeting = greetName
+    ? t('services.greeting', 'Hola, {name}', { name: greetName })
+    : t('services.greeting_short', 'Hola');
+  const brand = brandName || 'D28D';
 
   if (!services || services.length === 0) {
     return (
       <div className="dashboard-main-view">
         <header className="dashboard-header">
           <h2>{greeting}</h2>
-          <p style={{ color: '#475569' }}>
-            Aún no tienes servicios activos en {brandName || 'tu plataforma'}.
-            Contacta a tu coach o al equipo de tu gimnasio para activarlos.
+          <p className="d28d-text-muted">
+            {t('services.no_services', 'Aún no tienes servicios activos.', { brand })}
           </p>
         </header>
       </div>
     );
   }
 
-  // Si solo tiene un servicio, simplificamos: un solo banner grande,
-  // sin la sensación de "elige una de varias opciones".
   const single = services.length === 1;
+  const titleParts = single
+    ? t('services.title_single', 'TU ESPACIO').split(' ')
+    : t('services.title_multi', 'TUS SERVICIOS').split(' ');
 
   return (
     <div className="dashboard-main-view">
-      <header className="dashboard-header">
-        <h2>{greeting}</h2>
-        <p style={{ color: '#475569' }}>
-          {single
-            ? `Bienvenido a ${brandName}. Aquí tienes tu espacio.`
-            : `Bienvenido a ${brandName}. Estos son tus servicios.`}
-        </p>
-      </header>
-
       <div className="services-hero">
-        {!single && (
-          <>
-            <h2 className="services-hero-title">TUS <span>SERVICIOS</span></h2>
-            <p className="services-hero-subtitle">Entra al servicio que quieras revisar hoy.</p>
-          </>
-        )}
+        <p className="services-hero-subtitle" style={{ marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.15em', fontSize: '0.75rem' }}>
+          {greeting}
+        </p>
+        <h2 className="services-hero-title">
+          {titleParts[0]}{' '}
+          <span>{titleParts.slice(1).join(' ') || (single ? 'ESPACIO' : 'SERVICIOS')}</span>
+        </h2>
+        <p className="services-hero-subtitle">
+          {single
+            ? t('services.welcome_single', 'Bienvenido a {brand}.', { brand })
+            : t('services.welcome_multi', 'Bienvenido a {brand}.', { brand })}
+        </p>
 
         <div
           className="services-hero-grid"
@@ -58,9 +54,9 @@ export default function ServicesHero({ user, services, brandName, onPickService 
               className="service-card-hero"
               onClick={() => onPickService(s)}
               style={{ textAlign: 'left', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }}
-              aria-label={`Abrir ${s.title}`}
+              aria-label={t('services.open_aria', 'Abrir {title}', { title: s.title })}
             >
-              <img src={s.img} alt={s.alt} className="service-card-hero-img" />
+              <img src={resolveMediaUrl(s.img)} alt={s.alt} className="service-card-hero-img" />
               <div className="service-card-hero-content">
                 <h3 className="service-card-hero-title">{s.title}</h3>
                 <p className="service-card-hero-desc">{s.desc}</p>

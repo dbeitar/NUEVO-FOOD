@@ -1,7 +1,9 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../services/api';
+import { useI18n } from '../context/useI18n';
 
 export default function AuditDashboard() {
+  const { t } = useI18n();
   const [logs, setLogs] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterLevel, setFilterLevel] = useState('');
@@ -19,7 +21,7 @@ export default function AuditDashboard() {
           traceId: filterTrace || undefined,
           limit: pageSize,
           page,
-        }
+        },
       });
       setLogs(resp.data.data || []);
       setPagination(resp.data.pagination || { page, totalPages: 1, total: (resp.data.data || []).length });
@@ -40,71 +42,59 @@ export default function AuditDashboard() {
     fetchLogs();
   };
 
-  const getLevelColor = (level) => {
+  const getLevelClass = (level) => {
     switch (level) {
-      case 'ERROR': return 'text-red-500 bg-red-100';
-      case 'WARN': return 'text-yellow-600 bg-yellow-100';
-      case 'INFO': return 'text-blue-500 bg-blue-100';
-      default: return 'text-gray-500 bg-gray-100';
+      case 'ERROR': return 'audit-level audit-level-error';
+      case 'WARN': return 'audit-level audit-level-warn';
+      case 'INFO': return 'audit-level audit-level-info';
+      default: return 'audit-level';
     }
   };
 
   return (
-    <div className="p-6 max-w-7xl mx-auto animate-fadeIn">
-      <div className="flex justify-between items-center mb-8">
+    <div className="dashboard-main-view admin-appearance">
+      <header className="dashboard-header" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap' }}>
         <div>
-          <h2 className="text-3xl font-extrabold text-gray-900 tracking-tight">Dashboard de Auditoría</h2>
-          <p className="text-gray-500 mt-1">Monitoreo de trazabilidad y eventos críticos en tiempo real.</p>
+          <h2 className="d28d-page-title">{t('audit.title', 'Dashboard de Auditoría')}</h2>
+          <p className="d28d-text-muted" style={{ margin: 0 }}>{t('audit.subtitle', '')}</p>
         </div>
-        <button 
-          onClick={fetchLogs}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-all shadow-md flex items-center gap-2"
-        >
-          <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" /></svg>
-          Actualizar
+        <button type="button" className="btn-primary" onClick={fetchLogs}>
+          {t('audit.refresh', 'Actualizar')}
         </button>
-      </div>
+      </header>
 
-      <div className="bg-white rounded-2xl shadow-xl border border-gray-100 overflow-hidden">
-        {/* Filtros */}
-        <div className="p-4 bg-gray-50 border-b border-gray-100 flex flex-wrap gap-4 items-end">
-          <div className="flex-1 min-w-[200px]">
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Filtrar por Nivel</label>
-            <select 
-              value={filterLevel} 
-              onChange={(e) => setFilterLevel(e.target.value)}
-              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
-            >
-              <option value="">Todos los niveles</option>
-              <option value="INFO">Información</option>
-              <option value="WARN">Advertencias</option>
-              <option value="ERROR">Errores Críticos</option>
+      <div className="card" style={{ overflow: 'hidden' }}>
+        <div className="p-4" style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', alignItems: 'flex-end', borderBottom: '1px solid var(--d28d-border)' }}>
+          <div style={{ flex: '1 1 200px' }}>
+            <label className="d28d-label">{t('audit.filter_level', 'Filtrar por Nivel')}</label>
+            <select className="input w-full mt-1" value={filterLevel} onChange={(e) => setFilterLevel(e.target.value)}>
+              <option value="">{t('audit.all_levels', 'Todos los niveles')}</option>
+              <option value="INFO">{t('audit.level_info', 'Información')}</option>
+              <option value="WARN">{t('audit.level_warn', 'Advertencias')}</option>
+              <option value="ERROR">{t('audit.level_error', 'Errores Críticos')}</option>
             </select>
           </div>
-          <div className="flex-[2] min-w-[300px]">
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Buscar por Trace ID</label>
-            <div className="flex gap-2">
-              <input 
-                type="text" 
+          <div style={{ flex: '2 1 300px' }}>
+            <label className="d28d-label">{t('audit.trace_id', 'Buscar por Trace ID')}</label>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.25rem' }}>
+              <input
+                type="text"
+                className="input flex-1"
                 value={filterTrace}
                 onChange={(e) => setFilterTrace(e.target.value)}
-                placeholder="Ej: ORD-12345..."
-                className="flex-1 bg-white border border-gray-200 rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
+                placeholder={t('audit.trace_ph', 'Ej: ORD-12345...')}
               />
-              <button 
-                onClick={handleSearch}
-                className="bg-gray-900 text-white px-4 py-2 rounded-xl hover:bg-gray-800 transition-all"
-              >
-                Buscar
+              <button type="button" className="btn-secondary" onClick={handleSearch}>
+                {t('audit.search', 'Buscar')}
               </button>
             </div>
           </div>
-          <div className="min-w-[120px]">
-            <label className="block text-xs font-bold text-gray-400 uppercase tracking-wider mb-2">Por página</label>
+          <div style={{ minWidth: 120 }}>
+            <label className="d28d-label">{t('audit.per_page', 'Por página')}</label>
             <select
+              className="input w-full mt-1"
               value={pageSize}
               onChange={(e) => { setPageSize(parseInt(e.target.value, 10)); setPage(1); }}
-              className="w-full bg-white border border-gray-200 rounded-xl px-4 py-2 focus:ring-2 focus:ring-indigo-500 outline-none transition-all"
             >
               <option value={25}>25</option>
               <option value={50}>50</option>
@@ -114,53 +104,47 @@ export default function AuditDashboard() {
           </div>
         </div>
 
-        {/* Tabla */}
-        <div className="overflow-x-auto">
-          <table className="w-full text-left">
+        <div style={{ overflowX: 'auto' }}>
+          <table className="w-full" style={{ textAlign: 'left', borderCollapse: 'collapse' }}>
             <thead>
-              <tr className="bg-gray-50 text-gray-400 text-xs font-bold uppercase tracking-wider">
-                <th className="px-6 py-4">Fecha / Hora</th>
-                <th className="px-6 py-4">Nivel</th>
-                <th className="px-6 py-4">Evento</th>
-                <th className="px-6 py-4">Trace ID</th>
-                <th className="px-6 py-4">Usuario</th>
-                <th className="px-6 py-4">Mensaje</th>
+              <tr className="d28d-text-muted" style={{ fontSize: '0.7rem', textTransform: 'uppercase' }}>
+                <th style={{ padding: '0.75rem 1rem' }}>{t('audit.col_datetime', 'Fecha / Hora')}</th>
+                <th style={{ padding: '0.75rem 1rem' }}>{t('audit.col_level', 'Nivel')}</th>
+                <th style={{ padding: '0.75rem 1rem' }}>{t('audit.col_event', 'Evento')}</th>
+                <th style={{ padding: '0.75rem 1rem' }}>{t('audit.col_trace', 'Trace ID')}</th>
+                <th style={{ padding: '0.75rem 1rem' }}>{t('audit.col_user', 'Usuario')}</th>
+                <th style={{ padding: '0.75rem 1rem' }}>{t('audit.col_message', 'Mensaje')}</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-100">
+            <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-400 italic">
-                    <div className="animate-pulse flex flex-col items-center gap-2">
-                      <div className="w-8 h-8 border-4 border-indigo-200 border-t-indigo-600 rounded-full animate-spin"></div>
-                      Cargando registros...
-                    </div>
+                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center' }} className="d28d-text-muted">
+                    {t('audit.loading', 'Cargando registros...')}
                   </td>
                 </tr>
               ) : logs.length === 0 ? (
                 <tr>
-                  <td colSpan="6" className="px-6 py-12 text-center text-gray-400 italic">No se encontraron registros de auditoría.</td>
+                  <td colSpan={6} style={{ padding: '2rem', textAlign: 'center' }} className="d28d-text-muted">
+                    {t('audit.empty', 'No se encontraron registros de auditoría.')}
+                  </td>
                 </tr>
               ) : logs.map((log) => (
-                <tr key={log.id} className="hover:bg-indigo-50/30 transition-colors group">
-                  <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-gray-500">
+                <tr key={log.id} style={{ borderTop: '1px solid var(--d28d-border)' }}>
+                  <td style={{ padding: '0.75rem 1rem', whiteSpace: 'nowrap', fontSize: '0.85rem' }} className="d28d-text-muted">
                     {new Date(log.created_at).toLocaleString()}
                   </td>
-                  <td className="px-6 py-4">
-                    <span className={`px-2.5 py-0.5 rounded-full text-xs font-bold ${getLevelColor(log.level)}`}>
-                      {log.level}
-                    </span>
+                  <td style={{ padding: '0.75rem 1rem' }}>
+                    <span className={getLevelClass(log.level)}>{log.level}</span>
                   </td>
-                  <td className="px-6 py-4 text-sm font-bold text-gray-700">
-                    {log.event}
-                  </td>
-                  <td className="px-6 py-4 font-mono text-[10px] text-gray-400 group-hover:text-indigo-600 transition-colors">
+                  <td style={{ padding: '0.75rem 1rem', fontWeight: 600 }}>{log.event}</td>
+                  <td style={{ padding: '0.75rem 1rem', fontFamily: 'monospace', fontSize: '0.65rem' }} className="d28d-text-muted">
                     {log.trace_id || 'N/A'}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600">
-                    {log.user_id ? `ID: ${log.user_id}` : 'Public'}
+                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem' }}>
+                    {log.user_id ? `ID: ${log.user_id}` : t('audit.user_public', 'Público')}
                   </td>
-                  <td className="px-6 py-4 text-sm text-gray-600 max-w-xs truncate" title={log.message}>
+                  <td style={{ padding: '0.75rem 1rem', fontSize: '0.85rem', maxWidth: 280 }} className="d28d-text-muted" title={log.message}>
                     {log.message}
                   </td>
                 </tr>
@@ -168,26 +152,33 @@ export default function AuditDashboard() {
             </tbody>
           </table>
         </div>
-        <div className="flex items-center justify-between p-4 border-t border-gray-100 bg-gray-50 text-sm text-gray-600">
-          <div>
+
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem', padding: '1rem', borderTop: '1px solid var(--d28d-border)' }}>
+          <p className="d28d-text-muted" style={{ margin: 0, fontSize: '0.85rem' }}>
             {pagination.total > 0
-              ? `Mostrando página ${pagination.page} de ${pagination.totalPages} · Total: ${pagination.total} registros`
-              : 'Sin registros'}
-          </div>
-          <div className="flex gap-2">
+              ? t('audit.pagination', 'Mostrando página {page} de {totalPages} · Total: {total} registros', {
+                page: pagination.page,
+                totalPages: pagination.totalPages,
+                total: pagination.total,
+              })
+              : t('audit.no_records', 'Sin registros')}
+          </p>
+          <div style={{ display: 'flex', gap: '0.5rem' }}>
             <button
+              type="button"
+              className="btn-secondary"
               disabled={pagination.page <= 1 || loading}
               onClick={() => setPage((p) => Math.max(1, p - 1))}
-              className="px-3 py-2 rounded-lg border border-gray-200 bg-white disabled:opacity-40"
             >
-              ← Anterior
+              {t('audit.prev', '← Anterior')}
             </button>
             <button
+              type="button"
+              className="btn-secondary"
               disabled={pagination.page >= pagination.totalPages || loading}
               onClick={() => setPage((p) => Math.min(pagination.totalPages, p + 1))}
-              className="px-3 py-2 rounded-lg border border-gray-200 bg-white disabled:opacity-40"
             >
-              Siguiente →
+              {t('audit.next', 'Siguiente →')}
             </button>
           </div>
         </div>

@@ -1,3 +1,5 @@
+import { DASHBOARD_I18N_EN } from './dashboardKeys';
+
 export default {
   'nav.progress': 'Progress',
   'nav.home': 'Home',
@@ -457,4 +459,5 @@ export default {
   'equivalentes.subtitle': 'Swap foods while keeping approximate macros.',
   'equivalentes.base': 'Base',
   'equivalentes.error_loading': 'Could not load equivalents. Try later.',
-}
+  ...DASHBOARD_I18N_EN,
+};

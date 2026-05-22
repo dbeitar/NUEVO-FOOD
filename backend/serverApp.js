@@ -1,4 +1,5 @@
 require('dotenv').config();
+const path = require('path');
 const express = require('express');
 const cors = require('cors');
 const morgan = require('morgan');
@@ -32,6 +33,7 @@ const { enrichUserAccess } = require('./src/utils/userAccessEnrichment');
 const licenseService = require('./src/services/licenseService');
 const licenseRoutes = require('./src/routes/licenseRoutes');
 const paymentLinkRoutes = require('./src/routes/paymentLinkRoutes');
+const frontendConfigRoutes = require('./src/routes/frontendConfigRoutes');
 
 const tracingMiddleware = require('./src/middleware/tracing');
 const app = express();
@@ -76,7 +78,8 @@ const corsOptions = {
 app.use(cors(corsOptions));
 
 app.use(tracingMiddleware);
-app.use(express.json());
+app.use('/api/uploads', express.static(path.join(__dirname, 'uploads')));
+app.use(express.json({ limit: '6mb' }));
 
 // Logger HTTP (silencioso en test; combinado en prod; dev en desarrollo)
 if (NODE_ENV !== 'test') {
@@ -815,6 +818,7 @@ app.use('/api/programs', programRoutes);
 app.use('/api/cycles', cycleRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/payment-links', paymentLinkRoutes);
+app.use('/api/frontend-config', frontendConfigRoutes);
 
 // Manejo de errores final (incluye CORS rechazado)
 // eslint-disable-next-line no-unused-vars

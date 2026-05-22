@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { useAuth } from '../context/useAuth';
+import { useI18n } from '../context/useI18n';
 import { calcularEdad, computeNutritionPlan, findSubstitute, detectConstraint, detectFoodKeyword, pickEquivalentForConstraint, buildMealSuggestion, buildWeeklyPlan, buildShoppingList, buildDailyPlanDetailed } from '../utils/nutrition';
 import api from '../services/api';
 // jsPDF se carga bajo demanda (lazy import) para no pesar en el bundle
@@ -16,6 +17,7 @@ const slugifyBrand = (name) => (name || 'plan')
 
 export default function NutritionChat() {
   const { user } = useAuth();
+  const { t } = useI18n();
   const [open, setOpen] = useState(true);
   const [input, setInput] = useState('');
   const [messages, setMessages] = useState([]);
@@ -309,9 +311,9 @@ export default function NutritionChat() {
       <button
         className="fixed bottom-4 right-4 z-50 rounded-full bg-lime-500 text-black shadow-lg px-4 py-3"
         onClick={() => setOpen(true)}
-        aria-label="Abrir asistente nutricional"
+        aria-label={t('chat.open', 'Abrir asistente nutricional')}
       >
-        Asistente
+        {t('chat.assistant_btn', 'Asistente')}
       </button>
     );
   }
@@ -321,12 +323,21 @@ export default function NutritionChat() {
       <div className="bg-white border border-slate-200 rounded-2xl shadow-xl flex flex-col h-[70vh] md:h-[60vh]">
         <div className="px-4 py-3 border-b border-slate-200 flex items-center justify-between">
           <div>
-            <div className="font-semibold text-stone-900">Asistente nutricional</div>
-            <div className="text-xs text-stone-600">Plan diario: {plan.calorias} kcal · P {plan.macros.proteina}g · C {plan.macros.carbohidratos}g · G {plan.macros.grasas}g</div>
+            <div className="font-semibold text-stone-900">{t('chat.title', 'Asistente nutricional')}</div>
+            <div className="text-xs text-stone-600">
+              {t('chat.plan_line', 'Plan diario: {kcal} kcal · P {p}g · C {c}g · G {g}g', {
+                kcal: plan.calorias,
+                p: plan.macros.proteina,
+                c: plan.macros.carbohidratos,
+                g: plan.macros.grasas,
+              })}
+            </div>
           </div>
           <div className="flex items-center gap-2">
-            <button className="btn-secondary" onClick={() => setShowPrefs((v) => !v)}>{showPrefs ? 'Ocultar prefs' : 'Preferencias'}</button>
-            <button className="btn-secondary" onClick={() => setOpen(false)}>Cerrar</button>
+            <button type="button" className="btn-secondary" onClick={() => setShowPrefs((v) => !v)}>
+              {showPrefs ? t('chat.hide_prefs', 'Ocultar prefs') : t('chat.prefs', 'Preferencias')}
+            </button>
+            <button type="button" className="btn-secondary" onClick={() => setOpen(false)}>{t('chat.close', 'Cerrar')}</button>
           </div>
         </div>
         {showPrefs && (
@@ -429,7 +440,7 @@ export default function NutritionChat() {
               </div>
             )}
             <div className="flex justify-end">
-              <button onClick={savePrefs} className="btn-primary">Guardar preferencias</button>
+              <button type="button" onClick={savePrefs} className="btn-primary">{t('chat.save_prefs', 'Guardar preferencias')}</button>
             </div>
           </div>
         )}
@@ -449,15 +460,15 @@ export default function NutritionChat() {
         <div className="p-3 border-t border-slate-200 flex gap-2">
           <input
             className="flex-1 input"
-            placeholder="Escribe tu consulta..."
+            placeholder={t('chat.placeholder', 'Escribe tu pregunta...')}
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter') handleSend();
             }}
-            aria-label="Mensaje al asistente"
+            aria-label={t('chat.placeholder', 'Escribe tu pregunta...')}
           />
-          <button className="btn-primary" onClick={handleSend}>Enviar</button>
+          <button type="button" className="btn-primary" onClick={handleSend}>{t('chat.send', 'Enviar')}</button>
         </div>
       </div>
     </div>

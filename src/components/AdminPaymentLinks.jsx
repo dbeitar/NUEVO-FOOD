@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 import api from '../services/api';
+import { useI18n } from '../context/useI18n';
 
 const MODULES = [
   { code: 'food', label: 'FOOD' },
@@ -9,6 +10,7 @@ const MODULES = [
 ];
 
 export default function AdminPaymentLinks() {
+  const { t } = useI18n();
   const [links, setLinks] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -21,7 +23,7 @@ export default function AdminPaymentLinks() {
       const r = await api.get('/payment-links/admin');
       setLinks(r.data.data || []);
     } catch {
-      setError('No se pudieron cargar los enlaces de pago');
+      setError(t('payments.load_error', 'No se pudieron cargar los enlaces de pago'));
     } finally {
       setLoading(false);
     }
@@ -35,7 +37,7 @@ export default function AdminPaymentLinks() {
       await api.put('/payment-links/admin', row);
       await load();
     } catch {
-      setError('Error al guardar');
+      setError(t('payments.save_error', 'Error al guardar'));
     } finally {
       setSaving('');
     }
@@ -49,13 +51,13 @@ export default function AdminPaymentLinks() {
     sort_order: 0,
   };
 
-  if (loading) return <p className="text-stone-600">Cargando enlaces…</p>;
+  if (loading) return <p className="d28d-text-muted">{t('payments.loading', 'Cargando enlaces…')}</p>;
 
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-2xl font-bold text-stone-900">Enlaces de pago por módulo</h2>
-        <p className="text-stone-600">Solo super_admin. URLs externas (Mercado Pago, Stripe, etc.).</p>
+        <h2 className="d28d-page-title">{t('payments.title', 'Enlaces de pago por módulo')}</h2>
+        <p className="d28d-text-muted">{t('payments.subtitle', 'Solo super_admin. URLs externas.')}</p>
       </div>
       {error && <p className="text-red-600 text-sm">{error}</p>}
       <div className="space-y-4">
@@ -82,7 +84,7 @@ export default function AdminPaymentLinks() {
                     return [...rest, { ...row, active: e.target.checked }];
                   })}
                 />
-                Activo (visible en registro si hay URL)
+                {t('payments.active', 'Activo (visible en registro si hay URL)')}
               </label>
               <button
                 type="button"
@@ -90,7 +92,7 @@ export default function AdminPaymentLinks() {
                 disabled={saving === m.code}
                 onClick={() => save(row)}
               >
-                {saving === m.code ? 'Guardando…' : 'Guardar'}
+                {saving === m.code ? t('appearance.saving', 'Guardando…') : t('payments.save', 'Guardar')}
               </button>
             </div>
           );

@@ -1,11 +1,10 @@
-// Hub central de MAESTROS del sistema. Solo lo ve super_admin desde
-// el menú superior. Es un atajo para entrar al maestro de cada uno de
-// los tres servicios del ecosistema (D28D, Plan de Alimentación,
-// Entrenadores). No duplica funcionalidad: cada card abre el panel
-// correspondiente (D28DAdminView / FoodPlanAdminView / TrainersAdminView)
-// con todas sus secciones internas.
+import { useMemo } from 'react';
+import { useFrontendConfig } from '../../context/FrontendConfigContext';
+import { useI18n } from '../../context/useI18n';
+import { getMastersFromConfig } from '../../utils/frontendConfigMerge';
+import { resolveMediaUrl } from '../../utils/mediaUrl';
 
-const MASTERS = [
+const MASTERS_DEFAULT = [
   {
     id: 'd28d',
     title: 'D28D',
@@ -30,27 +29,36 @@ const MASTERS = [
 ];
 
 export default function MastersHub({ onOpenMaster }) {
+  const { config } = useFrontendConfig();
+  const { t, lang } = useI18n();
+  const masters = useMemo(
+    () => getMastersFromConfig(config, MASTERS_DEFAULT, lang),
+    [config, lang],
+  );
+  const titleParts = t('masters.title', 'MAESTROS DEL SISTEMA').split(' ');
+
   return (
     <div className="dashboard-main-view">
-      <header className="dashboard-header">
-        <h2>Maestros del sistema</h2>
-        <p style={{ color: '#475569' }}>
-          Administra los catálogos y contenidos de los tres servicios del ecosistema.
-        </p>
-      </header>
-
       <div className="services-hero">
+        <h2 className="services-hero-title">
+          {titleParts[0]}{' '}
+          <span>{titleParts.slice(1).join(' ') || 'DEL SISTEMA'}</span>
+        </h2>
+        <p className="services-hero-subtitle">
+          {t('masters.subtitle', 'Administra los catálogos y contenidos de los tres servicios del ecosistema.')}
+        </p>
+
         <div className="services-hero-grid">
-          {MASTERS.map((m) => (
+          {masters.map((m) => (
             <button
               key={m.id}
               type="button"
               className="service-card-hero"
               onClick={() => onOpenMaster(m.id)}
               style={{ textAlign: 'left', border: 'none', padding: 0, background: 'transparent', cursor: 'pointer' }}
-              aria-label={`Abrir maestro ${m.title}`}
+              aria-label={t('masters.open_aria', 'Abrir maestro {title}', { title: m.title })}
             >
-              <img src={m.img} alt={m.alt} className="service-card-hero-img" />
+              <img src={resolveMediaUrl(m.img)} alt={m.alt} className="service-card-hero-img" />
               <div className="service-card-hero-content">
                 <h3 className="service-card-hero-title">{m.title}</h3>
                 <p className="service-card-hero-desc">{m.desc}</p>

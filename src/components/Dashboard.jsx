@@ -3,6 +3,10 @@ import { useAuth } from '../context/useAuth';
 import { useI18n } from '../context/useI18n';
 import api from '../services/api';
 import { PUBLIC_BRAND_NAME } from '../utils/branding';
+import { useFrontendConfig } from '../context/FrontendConfigContext';
+import { getPublicBrandLogo } from '../utils/frontendConfigMerge';
+import { resolveMediaUrl } from '../utils/mediaUrl';
+import AdminFrontendAppearance from './AdminFrontendAppearance';
 
 import Calculator from './Calculator';
 import AdminCalculator from './AdminCalculator';
@@ -37,6 +41,7 @@ import MastersHub from './dashboard/MastersHub';
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { t, lang, setLang } = useI18n();
+  const { config: frontendConfig, brandName: publicBrandName } = useFrontendConfig();
 
   // === Estado del shell ====================================================
   const [chatOpen, setChatOpen] = useState(false);
@@ -55,7 +60,10 @@ export default function Dashboard() {
   const roles = useMemo(() => userRoles(user), [user]);
   const hasAnyRole = useMemo(() => makeHasAnyRole(roles), [roles]);
   const isFinal = isFinalUser(user);
-  const services = useMemo(() => getServicesFor(user), [user]);
+  const services = useMemo(
+    () => getServicesFor(user, frontendConfig, lang),
+    [user, frontendConfig, lang],
+  );
 
   // === Carga de datos ======================================================
   useEffect(() => {
@@ -119,8 +127,13 @@ export default function Dashboard() {
   // === Branding (white-label) =============================================
   const brandName = (gymBrand?.brand_name && gymBrand.brand_name.trim())
     || (coachBrand?.white_label_enabled && coachBrand?.brand_name?.trim())
+    || publicBrandName
     || PUBLIC_BRAND_NAME;
-  const brandLogo = gymBrand?.logo_url || (coachBrand?.white_label_enabled ? coachBrand?.logo_url : '') || '';
+  const brandLogo = gymBrand?.logo_url
+    || (coachBrand?.white_label_enabled ? coachBrand?.logo_url : '')
+    || getPublicBrandLogo(frontendConfig)
+    || '';
+  const brandLogoSrc = brandLogo ? resolveMediaUrl(brandLogo) : '';
 
   // === Handlers ============================================================
   const navigate = (view) => {
@@ -152,112 +165,99 @@ export default function Dashboard() {
   // que necesitan acceso rápido a todos los maestros, se renderiza una
   // BARRA RÁPIDA SECUNDARIA debajo (ver `quickAdminItems`).
   const navItems = useMemo(() => {
+    const home = t('nav.home', 'Inicio');
+    const account = t('nav.myaccount', 'Mi Cuenta');
     if (isFinal) {
-      const items = [{ id: 'home', label: 'Inicio' }];
-      if (services.find((s) => s.id === 'food-plan')) items.push({ id: 'myplan', label: 'Mi Plan' });
-      if (services.find((s) => s.id === 'training')) items.push({ id: 'training', label: 'Entrenamiento' });
-      items.push({ id: 'progress', label: 'Progreso' });
+      const items = [{ id: 'home', label: home }];
+      if (services.find((s) => s.id === 'food-plan')) items.push({ id: 'myplan', label: t('nav.myplan', 'Mi Plan') });
+      if (services.find((s) => s.id === 'training')) items.push({ id: 'training', label: t('nav.training', 'Entrenamiento') });
+      items.push({ id: 'progress', label: t('nav.progress', 'Progreso') });
       if (services.find((s) => s.id === 'd28d') || services.find((s) => s.id === 'live-classes')) {
-        items.push({ id: 'liveclasses', label: 'Clases' });
+        items.push({ id: 'liveclasses', label: t('nav.liveclasses_short', 'Clases') });
       }
-      items.push({ id: 'myaccount', label: 'Mi cuenta' });
+      items.push({ id: 'myaccount', label: account });
       return items.slice(0, 6);
     }
 
-    // === Admins específicos: solo navegación de su servicio ===============
     if (!hasAnyRole(['super_admin'])) {
       if (hasAnyRole(['admin_d28d']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
-        // admin_d28d opera la plataforma D28D + los gimnasios marca
-        // blanca que consumen su contenido. Debe poder administrar
-        // gimnasios y usuarios además de programas/clases/galería.
         return [
-          { id: 'home', label: 'Inicio' },
-          { id: 'programs', label: 'Programas D28D' },
-          { id: 'liveclasses', label: 'Clases en Vivo' },
-          { id: 'admingyms', label: 'Gimnasios' },
-          { id: 'adminusers', label: 'Usuarios' },
-          { id: 'admingallery', label: 'Galería' },
-          { id: 'myaccount', label: 'Mi cuenta' },
+          { id: 'home', label: home },
+          { id: 'programs', label: t('nav.programs_d28d', 'Programas D28D') },
+          { id: 'liveclasses', label: t('nav.liveclasses', 'Clases en Vivo') },
+          { id: 'admingyms', label: t('nav.gyms', 'Gimnasios') },
+          { id: 'adminusers', label: t('nav.users', 'Usuarios') },
+          { id: 'admingallery', label: t('nav.gallery', 'Galería') },
+          { id: 'myaccount', label: account },
         ];
       }
       if (hasAnyRole(['admin_food', 'admin_food_plan']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
-        // admin_food administra el módulo de alimentación en toda la
-        // plataforma: catálogo, recetas, planes de los usuarios y
-        // seguimiento nutricional.
         return [
-          { id: 'home', label: 'Inicio' },
-          { id: 'adminusers', label: 'Usuarios' },
-          { id: 'admin', label: 'Planes' },
-          { id: 'foodsmanager', label: 'Alimentos' },
-          { id: 'recipes', label: 'Recetas' },
-          { id: 'progress', label: 'Seguimiento' },
-          { id: 'myaccount', label: 'Mi cuenta' },
+          { id: 'home', label: home },
+          { id: 'adminusers', label: t('nav.users', 'Usuarios') },
+          { id: 'admin', label: t('nav.plans_short', 'Planes') },
+          { id: 'foodsmanager', label: t('nav.foods_catalog', 'Alimentos') },
+          { id: 'recipes', label: t('nav.recipes', 'Recetas') },
+          { id: 'progress', label: t('nav.tracking', 'Seguimiento') },
+          { id: 'myaccount', label: account },
         ];
       }
       if (hasAnyRole(['admin_entrenador', 'admin_training']) && !hasAnyRole(['admin_marca', 'admin_gimnasio'])) {
         return [
-          { id: 'home', label: 'Inicio' },
-          { id: 'adminusers', label: 'Usuarios' },
-          { id: 'admintraining', label: 'Rutinas' },
-          { id: 'admingallery', label: 'Galería' },
-          { id: 'progress', label: 'Seguimiento' },
-          { id: 'myaccount', label: 'Mi cuenta' },
+          { id: 'home', label: home },
+          { id: 'adminusers', label: t('nav.users', 'Usuarios') },
+          { id: 'admintraining', label: t('nav.routines', 'Rutinas') },
+          { id: 'admingallery', label: t('nav.gallery', 'Galería') },
+          { id: 'progress', label: t('nav.tracking', 'Seguimiento') },
+          { id: 'myaccount', label: account },
         ];
       }
       if (roles.includes('entrenador_d28d') && !roles.includes('entrenador')) {
         return [
-          { id: 'home', label: 'Inicio' },
-          { id: 'liveclasses', label: 'Clases en Vivo' },
-          { id: 'myaccount', label: 'Mi cuenta' },
+          { id: 'home', label: home },
+          { id: 'liveclasses', label: t('nav.liveclasses', 'Clases en Vivo') },
+          { id: 'myaccount', label: account },
         ];
       }
       if (roles.includes('entrenador')) {
         return [
-          { id: 'home', label: 'Inicio' },
-          { id: 'adminusers', label: 'Mis usuarios' },
-          { id: 'admintraining', label: 'Rutinas' },
-          { id: 'admin', label: 'Planes nutricionales' },
-          { id: 'progress', label: 'Seguimiento' },
-          { id: 'myaccount', label: 'Mi cuenta' },
+          { id: 'home', label: home },
+          { id: 'adminusers', label: t('nav.myusers', 'Mis usuarios') },
+          { id: 'admintraining', label: t('nav.routines', 'Rutinas') },
+          { id: 'admin', label: t('nav.nutrition_plans', 'Planes nutricionales') },
+          { id: 'progress', label: t('nav.tracking', 'Seguimiento') },
+          { id: 'myaccount', label: account },
         ];
       }
       if (hasAnyRole(['admin_gimnasio', 'admin_gym', 'admin_marca'])) {
-        // Gimnasios marca blanca operan dentro de D28D (consumen contenido y
-        // agendan en plantillas de clases en vivo D28D).
         return [
-          { id: 'home', label: 'Inicio' },
-          { id: 'admingyms', label: 'Mi marca' },
-          { id: 'adminusers', label: 'Usuarios' },
-          { id: 'liveclasses', label: 'Clases en Vivo' },
-          { id: 'admingallery', label: 'Galería' },
-          { id: 'myaccount', label: 'Mi cuenta' },
+          { id: 'home', label: home },
+          { id: 'admingyms', label: t('nav.mybrand', 'Mi marca') },
+          { id: 'adminusers', label: t('nav.users', 'Usuarios') },
+          { id: 'liveclasses', label: t('nav.liveclasses', 'Clases en Vivo') },
+          { id: 'admingallery', label: t('nav.gallery', 'Galería') },
+          { id: 'myaccount', label: account },
         ];
       }
     }
 
-    // super_admin: navegación operativa completa.
-    //   - Empresas (gimnasios marca blanca): CRUD de clientes B2B.
-    //   - Usuarios: alta/edición con multi-rol (un usuario puede tener
-    //     varios roles a la vez: ej. coach + admin_food).
-    //   - Maestros: hub que abre los catálogos de los 3 servicios.
-    //   - Auditoría: trazabilidad completa del sistema (exclusivo super_admin).
     if (hasAnyRole(['super_admin'])) {
       return [
-        { id: 'home', label: 'Inicio' },
-        { id: 'admingyms', label: 'Empresas' },
-        { id: 'adminusers', label: 'Usuarios' },
-        { id: 'masters', label: 'Maestros' },
-        { id: 'audit', label: 'Auditoría' },
-        { id: 'paymentlinks', label: 'Pagos' },
-        { id: 'myaccount', label: 'Mi cuenta' },
+        { id: 'home', label: home },
+        { id: 'admingyms', label: t('nav.companies', 'Empresas') },
+        { id: 'adminusers', label: t('nav.users', 'Usuarios') },
+        { id: 'masters', label: t('nav.masters', 'Maestros') },
+        { id: 'audit', label: t('nav.audit', 'Auditoría') },
+        { id: 'paymentlinks', label: t('nav.paymentlinks', 'Pagos') },
+        { id: 'appearance', label: t('nav.appearance', 'Apariencia') },
+        { id: 'myaccount', label: account },
       ];
     }
-    // Fallback defensivo (rol desconocido): solo Inicio + Mi cuenta.
     return [
-      { id: 'home', label: 'Inicio' },
-      { id: 'myaccount', label: 'Mi cuenta' },
+      { id: 'home', label: home },
+      { id: 'myaccount', label: account },
     ];
-  }, [isFinal, roles, hasAnyRole, services]);
+  }, [isFinal, roles, hasAnyRole, services, lang, t]);
 
   // === Vistas =============================================================
   const renderHome = () => (
@@ -319,6 +319,7 @@ export default function Dashboard() {
       case 'myaccount': return <MyAccount />;
       case 'audit': return hasAnyRole(['super_admin']) ? <AuditDashboard /> : null;
       case 'paymentlinks': return hasAnyRole(['super_admin']) ? <AdminPaymentLinks /> : null;
+      case 'appearance': return hasAnyRole(['super_admin']) ? <AdminFrontendAppearance /> : null;
       case 'progress': return <Progress />;
       case 'equivalentes': return <Equivalentes />;
       case 'training': return <TrainingModule />;
@@ -359,10 +360,22 @@ export default function Dashboard() {
     <div className="dashboard-container">
       <nav className="navbar">
         <div className="navbar-brand" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-          {brandLogo
-            ? <img src={brandLogo} alt={brandName} style={{ height: 28, width: 'auto', borderRadius: 6 }} />
-            : <span aria-hidden="true">●</span>}
-          <h1 style={{ fontSize: '1.05rem', margin: 0 }}>{brandName}</h1>
+          {brandLogoSrc
+            ? <img src={brandLogoSrc} alt={brandName} style={{ height: 28, width: 'auto', borderRadius: 4 }} />
+            : null}
+          <h1 style={{ fontSize: '1.05rem', margin: 0 }}>
+            {(() => {
+              const parts = String(brandName || 'D28D GYM VIRTUAL').split(' ');
+              const head = parts[0] || 'D28D';
+              const tail = parts.slice(1).join(' ');
+              return (
+                <>
+                  <span className="brand-d28d">{head}</span>
+                  {tail ? ` ${tail}` : ''}
+                </>
+              );
+            })()}
+          </h1>
         </div>
         <div className="navbar-menu">
           {navItems.map((item) => (
@@ -388,7 +401,7 @@ export default function Dashboard() {
             </select>
           </div>
           <span className="user-name">{user?.nombre}</span>
-          <button onClick={logout} className="btn-logout">Cerrar sesión</button>
+          <button onClick={logout} className="btn-logout">{t('auth.logout', 'Cerrar Sesión')}</button>
         </div>
       </nav>
 
@@ -401,11 +414,11 @@ export default function Dashboard() {
         <div className="fixed bottom-4 right-4 z-40">
           {!chatOpen && (
             <button
-              className="rounded-full bg-lime-500 text-black shadow-lg px-4 py-3"
+              className="fab-assistant"
               onClick={() => setChatOpen(true)}
-              aria-label="Abrir asistente nutricional"
+              aria-label={t('nav.assistant', 'Asistente')}
             >
-              Asistente
+              {t('nav.assistant', 'Asistente')}
             </button>
           )}
         </div>
