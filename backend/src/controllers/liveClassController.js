@@ -10,6 +10,11 @@ const {
   filterAdminLiveClasses,
   filterAttendanceReport,
 } = require('../utils/liveClassScope');
+const {
+  buildRoutineLinkFields,
+  enrichMany,
+  enrichClassWithRoutine,
+} = require('../utils/d28dLiveClassRoutine');
 
 const LIVE_ADMIN_ROLES = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym', 'admin_d28d'];
 const LIVE_PLATFORM_WRITE_ROLES = ['super_admin', 'admin_d28d'];
@@ -50,7 +55,7 @@ const getPublicClasses = (req, res) => {
   }
 };
 
-const getAdminClasses = (req, res) => {
+const getAdminClasses = async (req, res) => {
   try {
     if (!isLiveAdmin(req) && !isD28dHostOnly(req)) {
       return res.status(403).json({ error: 'No tienes permiso para ver las clases' });
@@ -62,7 +67,8 @@ const getAdminClasses = (req, res) => {
     } else if (isGymAdmin(req.user) && !isPlatformAdmin(req.user)) {
       classes = filterAdminLiveClasses(classes, req.user);
     }
-    return res.json({ success: true, data: classes });
+    const enriched = await enrichMany(classes);
+    return res.json({ success: true, data: enriched });
   } catch (error) {
     console.error('Error obteniendo clases admin:', error);
     return res.status(500).json({ error: 'Error obteniendo clases en vivo' });
@@ -133,14 +139,16 @@ const getAttendanceReport = (req, res) => {
   }
 };
 
-const createClass = (req, res) => {
+const createClass = async (req, res) => {
   try {
     if (!canManageLiveTemplates(req)) {
       return res.status(403).json({ error: 'Solo D28D puede crear o programar clases en vivo' });
     }
     const { title, description = '', zoom_link, start_time, end_time, gym_id: bodyGymId = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40, source_module = 'd28d' } = req.body || {};
-    if (!title || !zoom_link || !start_time || !end_time) {
-      return res.status(400).json({ error: 'title, zoom_link, start_time y end_time son requeridos' });
+    const routineLink = await buildRoutineLinkFields(req.body || {});
+    const resolvedTitle = title || routineLink.title;
+    if (!resolvedTitle || !zoom_link || !start_time || !end_time) {
+      return res.status(400).json({ error: 'title (o rutina D28D), zoom_link, start_time y end_time son requeridos' });
     }
     if (source_module === 'd28d' && !hasRole(req.user, ['super_admin', 'admin_d28d'])) {
       return res.status(403).json({ error: 'Solo D28D puede crear clases globales' });
@@ -151,8 +159,8 @@ const createClass = (req, res) => {
       : bodyGymId;
 
     const created = LiveClassDatabase.create({
-      title,
-      description,
+      title: resolvedTitle,
+      description: description || routineLink.description || '',
       zoom_link,
       start_time,
       end_time,
@@ -165,8 +173,11 @@ const createClass = (req, res) => {
       capacity,
       source_module,
       locked: source_module === 'd28d',
+      program_id: req.body.program_id || null,
+      ...routineLink,
     });
-    return res.status(201).json({ success: true, data: created });
+    const enriched = await enrichClassWithRoutine(created);
+    return res.status(201).json({ success: true, data: enriched });
   } catch (error) {
     console.error('Error creando clase en vivo:', error);
     return res.status(500).json({ error: 'Error creando clase en vivo' });
@@ -215,7 +226,7 @@ const unenrollClass = (req, res) => {
   }
 };
 
-const updateClass = (req, res) => {
+const updateClass = async (req, res) => {
   try {
     if (!canManageLiveTemplates(req)) {
       return res.status(403).json({ error: 'Solo D28D puede actualizar clases en vivo' });
@@ -225,11 +236,13 @@ const updateClass = (req, res) => {
     if (!canEditClass(req, current)) {
       return res.status(403).json({ error: 'No puedes editar clases D28D bloqueadas' });
     }
-    const updated = LiveClassDatabase.update(id, req.body || {});
+    const routineLink = await buildRoutineLinkFields(req.body || {}, current);
+    const updated = LiveClassDatabase.update(id, { ...(req.body || {}), ...routineLink });
     if (!updated) {
       return res.status(404).json({ error: 'Clase no encontrada' });
     }
-    return res.json({ success: true, data: updated });
+    const enriched = await enrichClassWithRoutine(updated);
+    return res.json({ success: true, data: enriched });
   } catch (error) {
     console.error('Error actualizando clase en vivo:', error);
     return res.status(500).json({ error: 'Error actualizando clase en vivo' });
@@ -257,7 +270,7 @@ const deleteClass = (req, res) => {
   }
 };
 
-const joinClass = (req, res) => {
+const joinClass = async (req, res) => {
   try {
     const id = parseInt(req.params.id, 10);
     const classItem = LiveClassDatabase.getById(id);
@@ -267,7 +280,8 @@ const joinClass = (req, res) => {
     }
     const updated = LiveClassDatabase.attend(id, req.user);
     if (!updated) return res.status(404).json({ error: 'Clase no encontrada' });
-    return res.json({ success: true, data: { zoom_link: updated.zoom_link, class: updated } });
+    const enriched = await enrichClassWithRoutine(updated);
+    return res.json({ success: true, data: { zoom_link: updated.zoom_link, class: enriched } });
   } catch (error) {
     console.error('Error registrando asistencia:', error);
     return res.status(500).json({ error: 'Error registrando asistencia' });

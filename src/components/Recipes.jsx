@@ -113,8 +113,8 @@ export default function Recipes() {
         </div>
 
       {showImport && (
-        <div className="policy-modal-overlay" onClick={() => !importBusy && setShowImport(false)}>
-          <div className="policy-modal" onClick={(e) => e.stopPropagation()} style={{maxWidth: 840}}>
+        <div className="form-modal-overlay" onClick={() => !importBusy && setShowImport(false)}>
+          <div className="form-modal" onClick={(e) => e.stopPropagation()} style={{maxWidth: 840}}>
             <button className="policy-close-btn" onClick={() => !importBusy && setShowImport(false)}>✕</button>
             <h3>{t('recipes.import_replace', 'Reemplazar biblioteca')}</h3>
             <p className="text-sm text-stone-600">{t('recipes.import_help', 'Pega una tabla con columnas: ID Receta, Nombre del Plato, Ingredientes Clave (IDs), Cal Totales, Proteína T, Carbos T, Grasas T. Se admiten secciones como "--Desayunos...---ID Receta..."')}</p>
@@ -443,8 +443,8 @@ export default function Recipes() {
 
       {/* Modal IA */}
       {showAiModal && (
-        <div className="policy-modal-overlay">
-          <div className="policy-modal">
+        <div className="form-modal-overlay">
+          <div className="form-modal" style={{ padding: '1.25rem' }}>
             <button className="policy-close-btn" onClick={() => setShowAiModal(false)}>✕</button>
             <h3>{t('recipes.ai_title', '👨‍🍳 Chef Inteligente')}</h3>
             

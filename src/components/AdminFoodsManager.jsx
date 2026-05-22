@@ -420,13 +420,13 @@ export default function AdminFoodsManager() {
 
       {/* Modal de importación y reemplazo */}
       {showImport && (
-        <div className="policy-modal-overlay" onClick={() => !importBusy && setShowImport(false)}>
-          <div className="policy-modal" onClick={(e) => e.stopPropagation()} style={{maxWidth: 820}}>
-            <div className="policy-modal-header">
+        <div className="form-modal-overlay" onClick={() => !importBusy && setShowImport(false)}>
+          <div className="form-modal" onClick={(e) => e.stopPropagation()} style={{maxWidth: 820}}>
+            <div className="form-modal-header">
               <h2>{t('foods.import_replace', 'Reemplazar catálogo')}</h2>
               <button className="policy-close-btn" onClick={() => !importBusy && setShowImport(false)}>✕</button>
             </div>
-            <div className="policy-modal-content space-y-3">
+            <div className="form-modal-content space-y-3">
               <p className="text-sm text-stone-600">{t('foods.import_help', 'Pega una tabla con columnas: Código de Barras, Alimento, Categoría, Cal, Prot, Carb, Gras. Usaremos porción 100 g por defecto.')}</p>
               <textarea
                 value={importText}

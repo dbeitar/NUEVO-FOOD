@@ -282,6 +282,98 @@
     border-top: 1px solid var(--d28d-border);
   }
 
+  /* Modales con formularios — panel en fondo gris */
+  .form-modal-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(15, 23, 42, 0.55);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    padding: 1rem;
+  }
+
+  .form-modal {
+    background: #e2e8f0;
+    border: 1px solid #94a3b8;
+    border-radius: 0.75rem;
+    width: 100%;
+    max-width: 48rem;
+    max-height: 90vh;
+    overflow: hidden;
+    color: #0f172a;
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+  }
+
+  .form-modal-header,
+  .form-modal-footer {
+    padding: 1rem 1.25rem;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+  }
+
+  .form-modal-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    border-bottom: 1px solid #cbd5e1;
+  }
+
+  .form-modal-header h2,
+  .form-modal-header h3,
+  .form-modal-header h4 {
+    color: #0f172a;
+    margin: 0;
+  }
+
+  .form-modal-content {
+    padding: 1.25rem;
+    background: #e2e8f0;
+    overflow: auto;
+    max-height: 65vh;
+    color: #1e293b;
+  }
+
+  .form-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    border-top: 1px solid #cbd5e1;
+  }
+
+  .form-modal .input,
+  .form-modal input:not([type='color']):not([type='checkbox']):not([type='radio']),
+  .form-modal select,
+  .form-modal textarea,
+  .form-modal .form-group input,
+  .form-modal .form-group select,
+  .form-modal .form-group textarea {
+    background-color: #ffffff;
+    color: #0f172a;
+    border-color: #cbd5e1;
+  }
+
+  .form-modal .form-close-btn,
+  .form-modal .policy-close-btn {
+    height: 2rem;
+    width: 2rem;
+    border-radius: 9999px;
+    display: grid;
+    place-items: center;
+    color: #64748b;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    cursor: pointer;
+  }
+
+  .form-modal .form-close-btn:hover,
+  .form-modal .policy-close-btn:hover {
+    background: #e2e8f0;
+    color: #0f172a;
+  }
+
   .dashboard-container {
     min-height: 100vh;
     background: var(--d28d-black);

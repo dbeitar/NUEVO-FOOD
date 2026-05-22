@@ -77,9 +77,9 @@ export default function TrainerBrandingModal({ trainer, onClose, onSaved }) {
   if (!trainer) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" role="dialog" aria-modal="true">
-      <div className="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
-        <div className="flex justify-between items-center px-6 py-4 border-b border-slate-200">
+    <div className="form-modal-overlay" role="dialog" aria-modal="true" onClick={onClose}>
+      <div className="form-modal max-w-2xl max-h-[90vh] overflow-y-auto" onClick={(e) => e.stopPropagation()}>
+        <div className="form-modal-header">
           <h4 className="font-semibold text-stone-900">
             {t('wl.coach_brand', 'Marca coach')}: {trainer.nombre}
           </h4>
@@ -90,7 +90,7 @@ export default function TrainerBrandingModal({ trainer, onClose, onSaved }) {
         {loading ? (
           <p className="p-6 text-stone-500">{t('common.loading', 'Cargando...')}</p>
         ) : (
-          <form onSubmit={handleSubmit} className="p-6">
+          <form id="trainer-branding-form" onSubmit={handleSubmit} className="form-modal-content">
             {error && <p className="text-red-600 text-sm mb-4">{error}</p>}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
@@ -123,14 +123,14 @@ export default function TrainerBrandingModal({ trainer, onClose, onSaved }) {
               <textarea className="input min-h-[72px]" name="welcome_message" value={formData.welcome_message} onChange={(e) => setFormData((p) => ({ ...p, welcome_message: e.target.value }))} />
             </label>
             <WhiteLabelFields formData={formData} setFormData={setFormData} />
-            <div className="flex justify-end gap-3 mt-6 pt-4 border-t border-slate-200">
+          </form>
+            <div className="form-modal-footer">
               <button type="button" className="btn-secondary" onClick={onClose}>{t('common.cancel', 'Cancelar')}</button>
-              <button type="submit" className="btn-primary inline-flex items-center gap-2" disabled={saving}>
+              <button type="submit" form="trainer-branding-form" className="btn-primary inline-flex items-center gap-2" disabled={saving}>
                 <Save size={16} />
                 {saving ? t('common.saving', 'Guardando...') : t('common.save', 'Guardar')}
               </button>
             </div>
-          </form>
         )}
       </div>
     </div>

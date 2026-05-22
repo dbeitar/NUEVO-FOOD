@@ -13,6 +13,7 @@ import api from '../../services/api';
 import { useI18n } from '../../context/useI18n';
 import AdminLiveClasses from '../AdminLiveClasses';
 import LiveClasses from '../LiveClasses';
+import LiveClassRoutineHost from '../live/LiveClassRoutineHost';
 
 const TABS = {
   PROGRAM: 'program',
@@ -32,11 +33,19 @@ function getAssignedProgramId(user) {
   );
 }
 
+function userIsD28dHost(user) {
+  const roles = Array.isArray(user?.roles) ? user.roles : [];
+  return roles.includes('entrenador_d28d') || user?.rol === 'entrenador_d28d';
+}
+
 export default function LiveClassesPanel({ user = null, canProgram = false, programId: forcedProgramId = null, onBack = null }) {
   const { t } = useI18n();
   const [tab, setTab] = useState(canProgram ? TABS.PROGRAM : TABS.CALENDAR);
   const [programs, setPrograms] = useState([]);
   const [selectedProgram, setSelectedProgram] = useState(forcedProgramId || '');
+  const [hostClasses, setHostClasses] = useState([]);
+  const [hostClassId, setHostClassId] = useState('');
+  const isHostOnly = !canProgram && userIsD28dHost(user);
 
   // Programa fijo para usuario final (no admin).
   const assignedProgram = useMemo(() => getAssignedProgramId(user), [user]);
@@ -56,6 +65,25 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
     })();
     return () => { active = false; };
   }, [canProgram]);
+
+  useEffect(() => {
+    if (!isHostOnly) return;
+    let active = true;
+    (async () => {
+      try {
+        const r = await api.get('/live-classes/admin');
+        const list = (r.data?.data || []).filter((c) => c.d28d_routine || c.d28d_routine_id);
+        if (!active) return;
+        setHostClasses(list);
+        if (list.length && !hostClassId) setHostClassId(String(list[0].id));
+      } catch {
+        if (active) setHostClasses([]);
+      }
+    })();
+    return () => { active = false; };
+  }, [isHostOnly, hostClassId]);
+
+  const hostClass = hostClasses.find((c) => String(c.id) === String(hostClassId));
 
   // El programId real que pasamos al calendario.
   // - Admin: lo que tenga seleccionado en el dropdown (vacío = todos).
@@ -204,6 +232,17 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
       {/* Contenido */}
       <div role="tabpanel">
         {tab === TABS.PROGRAM && canProgram && <AdminLiveClasses />}
+        {isHostOnly && hostClasses.length > 0 && (
+          <div className="card p-4 mb-6">
+            <label className="text-sm font-semibold block mb-2">Clase asignada (rutina D28D)</label>
+            <select className="input w-full max-w-md" value={hostClassId} onChange={(e) => setHostClassId(e.target.value)}>
+              {hostClasses.map((c) => (
+                <option key={c.id} value={c.id}>{c.title} — {c.start_time}</option>
+              ))}
+            </select>
+            {hostClass && <LiveClassRoutineHost classItem={hostClass} user={user} />}
+          </div>
+        )}
         {tab === TABS.CALENDAR && (
           <LiveClasses key={effectiveProgramId || 'all'} programId={effectiveProgramId} />
         )}

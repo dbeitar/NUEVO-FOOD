@@ -324,3 +324,90 @@ model AuditLog {
   @@index([createdAt])
   @@map("audit_logs")
 }
+
+/// Maestro de Rutinas D28D — plantillas reutilizables (clases en vivo, futuro Training/WL)
+model D28dRoutineCategory {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique @db.VarChar(120)
+  orden     Int      @default(0)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("d28d_routine_categories")
+}
+
+model D28dRoutine {
+  id            Int      @id @default(autoincrement())
+  rootId        Int      @map("root_id")
+  version       Int      @default(1)
+  isCurrent     Boolean  @default(true) @map("is_current")
+  nombre        String   @db.VarChar(255)
+  categoria     String   @db.VarChar(120)
+  subcategoria  String?  @db.VarChar(120)
+  nivel         String?  @db.VarChar(64)
+  descripcion   String?  @db.Text
+  estado        String   @default("activa") @db.VarChar(32)
+  scope         String   @default("d28d_platform") @db.VarChar(64)
+  createdBy     Int?     @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  blocks        D28dRoutineBlock[]
+  hostNotes     D28dRoutineHostNote[]
+
+  @@index([rootId, isCurrent])
+  @@index([categoria, estado])
+  @@map("d28d_routines")
+}
+
+model D28dRoutineBlock {
+  id        Int      @id @default(autoincrement())
+  routineId Int      @map("routine_id")
+  tipo      String   @db.VarChar(32)
+  orden     Int      @default(0)
+  nombre    String?  @db.VarChar(255)
+  config    Json     @default("{}")
+  createdAt DateTime @default(now()) @map("created_at")
+
+  routine   D28dRoutine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercises D28dRoutineExercise[]
+
+  @@index([routineId])
+  @@map("d28d_routine_blocks")
+}
+
+model D28dRoutineExercise {
+  id            Int      @id @default(autoincrement())
+  blockId       Int      @map("block_id")
+  nombre        String   @db.VarChar(255)
+  orden         Int      @default(0)
+  repeticiones  String?  @db.VarChar(64)
+  duracion      String?  @db.VarChar(64)
+  descanso      String?  @db.VarChar(64)
+  observaciones String?  @db.Text
+  videoUrl      String?  @map("video_url") @db.VarChar(512)
+  imagenUrl     String?  @map("imagen_url") @db.VarChar(512)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  block         D28dRoutineBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@index([blockId])
+  @@map("d28d_routine_exercises")
+}
+
+/// Observaciones del anfitrión (no modifica la plantilla maestra)
+model D28dRoutineHostNote {
+  id          Int      @id @default(autoincrement())
+  routineId   Int      @map("routine_id")
+  liveClassId Int?     @map("live_class_id")
+  userId      Int      @map("user_id")
+  texto       String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  routine     D28dRoutine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+
+  @@index([routineId])
+  @@index([liveClassId])
+  @@map("d28d_routine_host_notes")
+}

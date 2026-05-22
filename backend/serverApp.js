@@ -37,6 +37,7 @@ const frontendConfigRoutes = require('./src/routes/frontendConfigRoutes');
 const foodModuleRoutes = require('./src/routes/foodModuleRoutes');
 const foodProvisioning = require('./src/services/foodProvisioningService');
 const trainingModuleRoutes = require('./src/routes/trainingModuleRoutes');
+const d28dRoutineRoutes = require('./src/routes/d28dRoutineRoutes');
 const trainingProvisioning = require('./src/services/trainingProvisioningService');
 
 const tracingMiddleware = require('./src/middleware/tracing');
@@ -856,6 +857,7 @@ app.use('/api/payment-links', paymentLinkRoutes);
 app.use('/api/frontend-config', frontendConfigRoutes);
 app.use('/api/food-module', foodModuleRoutes);
 app.use('/api/training-module', trainingModuleRoutes);
+app.use('/api/d28d/routines', d28dRoutineRoutes);
 
 // Manejo de errores final (incluye CORS rechazado)
 // eslint-disable-next-line no-unused-vars

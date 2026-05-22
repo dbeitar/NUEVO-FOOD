@@ -572,10 +572,13 @@ export default function TrainingModule() {
       )}
 
       {assistantExercise && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-stone-900/40 backdrop-blur-sm p-4">
-          <div className="bg-white rounded-3xl p-6 w-full max-w-md shadow-2xl relative">
-            <button onClick={closeModal} className="absolute top-4 right-4 text-stone-400 hover:text-stone-800 font-bold text-xl">×</button>
-            <h3 className="text-xl font-bold text-stone-900 mb-2">Sustituir ejercicio</h3>
+        <div className="form-modal-overlay" onClick={closeModal}>
+          <div className="form-modal w-full max-w-md relative" onClick={(e) => e.stopPropagation()}>
+            <div className="form-modal-header">
+            <h3 className="text-xl font-bold mb-0">Sustituir ejercicio</h3>
+            <button type="button" onClick={closeModal} className="form-close-btn" aria-label="Cerrar">×</button>
+            </div>
+            <div className="form-modal-content">
             <p className="text-stone-600 text-sm mb-4">
               ¿Por qué quieres reemplazar <strong>{assistantExercise}</strong>?
             </p>
@@ -606,6 +609,7 @@ export default function TrainingModule() {
                 )}
               </div>
             )}
+            </div>
           </div>
         </div>
       )}

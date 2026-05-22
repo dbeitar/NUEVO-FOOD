@@ -55,6 +55,7 @@ backend/data/backups/
 backend/data/localStorage_backup.json
 # Excepción: sí versionamos los archivos de ejemplo
 !backend/data/*.example.json
+!backend/data/d28d_routines_import.json
 
 # Temp files
 temp_token.json

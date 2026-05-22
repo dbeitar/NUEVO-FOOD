@@ -1,0 +1,183 @@
+{
+  "routines": [
+    {
+      "nombre": "Fuerza Pierna — Base D28D",
+      "categoria": "Fuerza Pierna",
+      "subcategoria": "Semana base",
+      "nivel": "intermedio",
+      "descripcion": "Plantilla oficial D28D: tren inferior con progresión controlada.",
+      "blocks": [
+        {
+          "tipo": "BLOQUE_LIBRE",
+          "orden": 0,
+          "nombre": "Activación",
+          "config": { "rounds": 1 },
+          "exercises": [
+            { "nombre": "Sentadilla goblet", "orden": 0, "repeticiones": "12", "duracion": null, "descanso": "60s", "observaciones": "Técnica limpia" },
+            { "nombre": "Prensa de pierna", "orden": 1, "repeticiones": "12", "descanso": "75s" }
+          ]
+        },
+        {
+          "tipo": "REST_PAUSE",
+          "orden": 1,
+          "nombre": "Fuerza principal",
+          "config": { "rest_pause_seconds": 15, "clusters": 2 },
+          "exercises": [
+            { "nombre": "Peso muerto rumano con mancuernas", "orden": 0, "repeticiones": "10", "descanso": "90s" },
+            { "nombre": "Hip thrust", "orden": 1, "repeticiones": "12", "descanso": "75s" }
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Fuerza Tren Superior — Push Pull",
+      "categoria": "Fuerza Tren Superior",
+      "subcategoria": "Semana base",
+      "nivel": "intermedio",
+      "descripcion": "Press, remo y hombro para clases METODO D28D / FUERZA.",
+      "blocks": [
+        {
+          "tipo": "SUPER_SET",
+          "orden": 0,
+          "nombre": "Super set A",
+          "config": { "rest_between_pairs": 90 },
+          "exercises": [
+            { "nombre": "Press banca con mancuernas", "orden": 0, "repeticiones": "10", "descanso": "0" },
+            { "nombre": "Remo con mancuerna", "orden": 1, "repeticiones": "12", "descanso": "90s" }
+          ]
+        },
+        {
+          "tipo": "BLOQUE_LIBRE",
+          "orden": 1,
+          "nombre": "Hombro y brazo",
+          "exercises": [
+            { "nombre": "Press militar sentado", "orden": 0, "repeticiones": "10", "descanso": "75s" },
+            { "nombre": "Face pull", "orden": 1, "repeticiones": "15", "descanso": "60s" }
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Abdomen Cardio — Metabólico D28D",
+      "categoria": "Abdomen Cardio",
+      "nivel": "intermedio",
+      "descripcion": "Bloques HIIT y core para sesiones de alto gasto calórico.",
+      "blocks": [
+        {
+          "tipo": "TABATA",
+          "orden": 0,
+          "nombre": "Tabata 1",
+          "config": { "work_seconds": 20, "rest_seconds": 10, "rounds": 8 },
+          "exercises": [
+            { "nombre": "Burpees", "orden": 0, "duracion": "20s" },
+            { "nombre": "Mountain climbers", "orden": 1, "duracion": "20s" }
+          ]
+        },
+        {
+          "tipo": "HIIT",
+          "orden": 1,
+          "nombre": "HIIT finisher",
+          "config": { "intervals": 6, "work_seconds": 40, "rest_seconds": 20 },
+          "exercises": [
+            { "nombre": "Sentadilla con salto", "orden": 0, "repeticiones": "12" },
+            { "nombre": "Crunch abdominal", "orden": 1, "repeticiones": "20" }
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Full Body — Control D28D",
+      "categoria": "Full Body",
+      "nivel": "todos",
+      "descripcion": "Sesión completa para programación de clases globales.",
+      "blocks": [
+        {
+          "tipo": "EMOM",
+          "orden": 0,
+          "nombre": "EMOM 12 min",
+          "config": { "minutes": 12 },
+          "exercises": [
+            { "nombre": "Flexiones", "orden": 0, "repeticiones": "max técnico" },
+            { "nombre": "Jalón al pecho", "orden": 1, "repeticiones": "12" }
+          ]
+        },
+        {
+          "tipo": "AMRAP",
+          "orden": 1,
+          "nombre": "AMRAP 10 min",
+          "config": { "time_cap_minutes": 10 },
+          "exercises": [
+            { "nombre": "Zancadas caminando", "orden": 0, "repeticiones": "10/pierna" },
+            { "nombre": "Elevación de pantorrilla", "orden": 1, "repeticiones": "15" }
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Fuerza Glúteo — Hip Dominante",
+      "categoria": "Fuerza Glúteo",
+      "nivel": "intermedio",
+      "blocks": [
+        {
+          "tipo": "BLOQUE_LIBRE",
+          "orden": 0,
+          "exercises": [
+            { "nombre": "Hip thrust", "orden": 0, "repeticiones": "12", "descanso": "90s" },
+            { "nombre": "Zancadas caminando", "orden": 1, "repeticiones": "10/pierna", "descanso": "75s" }
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Movilidad — Recuperación activa",
+      "categoria": "Movilidad",
+      "nivel": "todos",
+      "blocks": [
+        {
+          "tipo": "BLOQUE_LIBRE",
+          "orden": 0,
+          "config": { "tempo": "lento" },
+          "exercises": [
+            { "nombre": "Caminata inclinada", "orden": 0, "duracion": "5 min", "observaciones": "RPE 4-5" },
+            { "nombre": "Plancha frontal", "orden": 1, "duracion": "40s" }
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Cardio — Capacidad aeróbica",
+      "categoria": "Cardio",
+      "nivel": "intermedio",
+      "blocks": [
+        {
+          "tipo": "HIIT",
+          "orden": 0,
+          "config": { "intervals": 8, "work_seconds": 45, "rest_seconds": 15 },
+          "exercises": [
+            { "nombre": "Burpees", "orden": 0 },
+            { "nombre": "Sentadilla con salto", "orden": 1 }
+          ]
+        }
+      ]
+    },
+    {
+      "nombre": "Especiales — Bienvenida ciclo",
+      "categoria": "Especiales",
+      "subcategoria": "Onboarding",
+      "nivel": "todos",
+      "descripcion": "Rutina de bienvenida para nuevos ciclos D28D.",
+      "blocks": [
+        {
+          "tipo": "BLOQUE_LIBRE",
+          "orden": 0,
+          "nombre": "Intro método",
+          "exercises": [
+            { "nombre": "Sentadilla goblet", "orden": 0, "repeticiones": "10" },
+            { "nombre": "Press banca con mancuernas", "orden": 1, "repeticiones": "10" },
+            { "nombre": "Plancha frontal", "orden": 2, "duracion": "30s" }
+          ]
+        }
+      ]
+    }
+  ]
+}

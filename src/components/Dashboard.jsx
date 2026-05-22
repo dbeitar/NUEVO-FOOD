@@ -44,6 +44,7 @@ import FoodPlanAdminView from './dashboard/FoodPlanAdminView';
 import D28DAdminView from './dashboard/D28DAdminView';
 import TrainersAdminView from './dashboard/TrainersAdminView';
 import MastersHub from './dashboard/MastersHub';
+import D28dRoutinesMaster from './admin/D28dRoutinesMaster';
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { t, lang, setLang } = useI18n();
@@ -361,6 +362,19 @@ export default function Dashboard() {
         />
       );
     }
+    if (openServicePanel === 'd28d-routines') {
+      if (!hasAnyRole(['super_admin', 'admin_d28d'])) {
+        return renderHome();
+      }
+      return (
+        <D28dRoutinesMaster
+          onBack={() => {
+            setOpenServicePanel(null);
+            setCurrentView('masters');
+          }}
+        />
+      );
+    }
     if (openServicePanel === 'live-classes') {
       const canProgram = hasAnyRole(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']);
       return (
@@ -405,6 +419,7 @@ export default function Dashboard() {
       case 'masters':
         return (
           <MastersHub
+            hasAnyRole={hasAnyRole}
             onOpenMaster={(moduleId) => {
               setOpenServicePanel(moduleId);
               setCurrentView('servicePanel');

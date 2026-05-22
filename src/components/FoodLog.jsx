@@ -669,13 +669,13 @@ export default function FoodLog() {
 
         {/* Modal para asignar alimento */}
         {foodModalOpen && foodModalFood && (
-          <div className="policy-modal-overlay" onClick={closeFoodModal}>
-            <div className="policy-modal" onClick={(e) => e.stopPropagation()}>
-              <div className="policy-modal-header">
+          <div className="form-modal-overlay" onClick={closeFoodModal}>
+            <div className="form-modal" onClick={(e) => e.stopPropagation()}>
+              <div className="form-modal-header">
             <h2>{t('foodlog.assign_food', 'Asignar alimento')}</h2>
                 <button className="policy-close-btn" onClick={closeFoodModal}>✕</button>
               </div>
-              <div className="policy-modal-content">
+              <div className="form-modal-content">
                 <div className="selected-food-detail" style={{ marginTop: 0 }}>
                   <div className="detail-info">
                     <h3>{foodModalFood.nombre}</h3>
@@ -731,7 +731,7 @@ export default function FoodLog() {
                   </div>
                 </div>
               </div>
-              <div className="policy-modal-footer">
+              <div className="form-modal-footer">
                 <button className="btn-secondary" onClick={closeFoodModal}>{t('common.cancel', 'Cancelar')}</button>
                 <button className="btn-primary" onClick={submitFoodModal}>{t('foodlog.add_to_log', 'Agregar al registro')}</button>
               </div>

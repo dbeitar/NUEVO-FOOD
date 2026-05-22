@@ -315,8 +315,9 @@ export default function MyAccount() {
       </section>
 
       {showModal && selectedPlan && (
-        <div className="fixed inset-0 bg-black/60 flex items-center justify-center p-4 z-50">
-          <div className="card w-full max-w-lg">
+        <div className="form-modal-overlay" onClick={() => setShowModal(false)}>
+          <div className="form-modal w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
+            <div className="form-modal-content">
             <h3 className="text-xl font-bold mb-1">{t('myaccount.subscribe_plan', 'Contratar Plan')} {selectedPlan.nombre.toUpperCase()}</h3>
             <p className="text-lime-400 text-2xl font-extrabold mb-4">${selectedPlan.precio_mensual.toLocaleString()}</p>
             
@@ -370,6 +371,7 @@ export default function MyAccount() {
                 </button>
               </div>
             </form>
+            </div>
           </div>
         </div>
       )}

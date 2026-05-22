@@ -62,6 +62,9 @@ class LiveClassDatabase {
         attendance_events: Array.isArray(item.attendance_events) ? item.attendance_events : [],
         source_module: sourceModule,
         locked: item.locked === true || sourceModule === 'd28d',
+        d28d_routine_id: item.d28d_routine_id != null ? Number(item.d28d_routine_id) : null,
+        d28d_routine_version: item.d28d_routine_version != null ? Number(item.d28d_routine_version) : null,
+        d28d_routine_snapshot: item.d28d_routine_snapshot || null,
       };
     });
   }
@@ -95,6 +98,9 @@ class LiveClassDatabase {
       start_time: new Date(data.start_time).toISOString(),
       end_time: new Date(data.end_time).toISOString(),
       active: data.active !== false,
+      d28d_routine_id: data.d28d_routine_id != null ? Number(data.d28d_routine_id) : null,
+      d28d_routine_version: data.d28d_routine_version != null ? Number(data.d28d_routine_version) : null,
+      d28d_routine_snapshot: data.d28d_routine_snapshot || null,
       created_at: new Date().toISOString(),
     };
     this.rows.push(newClass);
@@ -120,6 +126,15 @@ class LiveClassDatabase {
     if (updates.active !== undefined) item.active = !!updates.active;
     if (updates.source_module !== undefined) item.source_module = String(updates.source_module || 'gym');
     if (updates.locked !== undefined) item.locked = !!updates.locked;
+    if (updates.d28d_routine_id !== undefined) {
+      item.d28d_routine_id = updates.d28d_routine_id != null ? Number(updates.d28d_routine_id) : null;
+    }
+    if (updates.d28d_routine_version !== undefined) {
+      item.d28d_routine_version = updates.d28d_routine_version != null ? Number(updates.d28d_routine_version) : null;
+    }
+    if (updates.d28d_routine_snapshot !== undefined) {
+      item.d28d_routine_snapshot = updates.d28d_routine_snapshot || null;
+    }
     this._persist();
     return item;
   }

@@ -26,9 +26,16 @@ const MASTERS_DEFAULT = [
     img: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=800&q=80',
     alt: 'Entrenadores y rutinas',
   },
+  {
+    id: 'd28d-routines',
+    title: 'Rutinas D28D',
+    desc: 'Maestro de rutinas para clases en vivo: bloques, ejercicios, versiones e importación.',
+    img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
+    alt: 'Maestro de rutinas D28D',
+  },
 ];
 
-export default function MastersHub({ onOpenMaster }) {
+export default function MastersHub({ onOpenMaster, hasAnyRole }) {
   const { config } = useFrontendConfig();
   const { t, lang } = useI18n();
   const masters = useMemo(
@@ -49,7 +56,11 @@ export default function MastersHub({ onOpenMaster }) {
         </p>
 
         <div className="services-hero-grid">
-          {masters.map((m) => (
+          {masters.map((m) => {
+            if (m.id === 'd28d-routines' && hasAnyRole && !hasAnyRole(['super_admin', 'admin_d28d'])) {
+              return null;
+            }
+            return (
             <button
               key={m.id}
               type="button"
@@ -64,7 +75,8 @@ export default function MastersHub({ onOpenMaster }) {
                 <p className="service-card-hero-desc">{m.desc}</p>
               </div>
             </button>
-          ))}
+            );
+          })}
         </div>
       </div>
     </div>

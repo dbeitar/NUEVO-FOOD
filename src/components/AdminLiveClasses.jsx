@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
+import LiveClassRoutineHost from './live/LiveClassRoutineHost';
 
 const defaultForm = {
   title: '',
@@ -11,6 +12,8 @@ const defaultForm = {
   is_global: false,
   active: true,
   program_id: '',
+  d28d_routine_id: '',
+  use_routine: false,
 };
 
 function formatDateTimeLocal(value) {
@@ -27,6 +30,8 @@ export default function AdminLiveClasses() {
   const [error, setError] = useState('');
   const [attendance, setAttendance] = useState([]);
   const [programs, setPrograms] = useState([]);
+  const [routines, setRoutines] = useState([]);
+  const [previewClass, setPreviewClass] = useState(null);
 
   const fetchItems = async () => {
     try {
@@ -58,10 +63,20 @@ export default function AdminLiveClasses() {
     }
   };
 
+  const fetchRoutines = async () => {
+    try {
+      const resp = await api.get('/d28d/routines');
+      setRoutines(resp.data?.data || []);
+    } catch {
+      setRoutines([]);
+    }
+  };
+
   useEffect(() => {
     fetchItems();
     fetchAttendance();
     fetchPrograms();
+    fetchRoutines();
   }, []);
 
   const handleChange = (field, value) => {
@@ -74,7 +89,7 @@ export default function AdminLiveClasses() {
         setSaving(true);
         setError('');
         const payload = {
-          title: form.title,
+          title: form.use_routine && form.d28d_routine_id ? '' : form.title,
           description: form.description,
           zoom_link: form.zoom_link,
           start_time: form.start_time,
@@ -83,6 +98,7 @@ export default function AdminLiveClasses() {
           is_global: form.is_global,
           active: form.active,
           program_id: form.program_id || null,
+          d28d_routine_id: form.use_routine && form.d28d_routine_id ? Number(form.d28d_routine_id) : null,
         };
         if (form.id) {
           await api.put(`/live-classes/admin/${form.id}`, payload);
@@ -111,7 +127,10 @@ export default function AdminLiveClasses() {
       is_global: !!item.is_global,
       active: !!item.active,
       program_id: item.program_id || '',
+      d28d_routine_id: item.d28d_routine_id || '',
+      use_routine: Boolean(item.d28d_routine_id),
     });
+    setPreviewClass(item);
   };
 
   const handleDelete = async (item) => {
@@ -140,6 +159,32 @@ export default function AdminLiveClasses() {
       {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-4">{error}</div>}
 
       <form className="grid gap-4 mb-8" onSubmit={handleSubmit}>
+        <div className="rounded-2xl border border-lime-200 bg-lime-50/40 p-4 mb-2">
+          <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
+            <input
+              type="checkbox"
+              checked={form.use_routine}
+              onChange={(e) => handleChange('use_routine', e.target.checked)}
+            />
+            Programar con rutina D28D (sin escribir ejercicios manualmente)
+          </label>
+          {form.use_routine && (
+            <select
+              className="input w-full mt-2"
+              value={form.d28d_routine_id}
+              onChange={(e) => handleChange('d28d_routine_id', e.target.value)}
+              required
+            >
+              <option value="">Seleccionar rutina…</option>
+              {routines.map((r) => (
+                <option key={r.id} value={r.id}>
+                  {r.nombre} — {r.categoria} (v{r.version})
+                </option>
+              ))}
+            </select>
+          )}
+        </div>
+
         <div className="grid sm:grid-cols-2 gap-4">
           <label className="block">
             <span className="text-sm font-semibold text-slate-700">Título</span>
@@ -147,7 +192,9 @@ export default function AdminLiveClasses() {
               className="input w-full"
               value={form.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              required
+              required={!form.use_routine}
+              disabled={form.use_routine}
+              placeholder={form.use_routine ? 'Se completa desde la rutina' : ''}
             />
           </label>
           <label className="block">
@@ -247,11 +294,16 @@ export default function AdminLiveClasses() {
         </button>
       </form>
 
+      {previewClass?.d28d_routine && (
+        <LiveClassRoutineHost classItem={previewClass} user={null} />
+      )}
+
       <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-slate-500 text-xs uppercase tracking-[0.2em]">
             <tr>
               <th className="px-4 py-3">Título</th>
+              <th className="px-4 py-3">Rutina D28D</th>
               <th className="px-4 py-3">Inicio</th>
               <th className="px-4 py-3">Programa</th>
               <th className="px-4 py-3">Gym / Global</th>
@@ -262,13 +314,13 @@ export default function AdminLiveClasses() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" className="px-4 py-5 text-center text-slate-500">
+                <td colSpan="7" className="px-4 py-5 text-center text-slate-500">
                   Cargando clases...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan="6" className="px-4 py-5 text-center text-slate-500">
+                <td colSpan="7" className="px-4 py-5 text-center text-slate-500">
                   Ninguna clase disponible.
                 </td>
               </tr>
@@ -276,6 +328,9 @@ export default function AdminLiveClasses() {
               items.map((item) => (
                 <tr key={item.id} className="border-t border-slate-200">
                   <td className="px-4 py-4 font-medium text-slate-900">{item.title}</td>
+                  <td className="px-4 py-4 text-slate-600 text-xs">
+                    {item.d28d_routine?.nombre || item.d28d_routine_snapshot?.nombre || '—'}
+                  </td>
                   <td className="px-4 py-4 text-slate-600">{item.start_time}</td>
                   <td className="px-4 py-4 text-slate-600 font-bold capitalize">{programs.find(p => p.id === item.program_id)?.name || '---'}</td>
                   <td className="px-4 py-4 text-slate-600">{item.is_global ? 'Global' : item.gym_id || 'Privada'}</td>
