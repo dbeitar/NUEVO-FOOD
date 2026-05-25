@@ -3,7 +3,8 @@ import api from '../../services/api';
 import RoutineTemplateEditor from '../routines/RoutineTemplateEditor';
 import { emptyRoutine, routineFromApi } from '../../shared/routineTemplateConstants';
 
-export default function D28dRoutinesMaster({ onBack, readOnly = false }) {
+export default function D28dRoutinesMaster({ onBack, readOnly = false, variant = 'platform' }) {
+  const isCoach = variant === 'coach';
   const [routines, setRoutines] = useState([]);
   const [categories, setCategories] = useState([]);
   const [selectedId, setSelectedId] = useState(null);
@@ -14,13 +15,14 @@ export default function D28dRoutinesMaster({ onBack, readOnly = false }) {
   const [error, setError] = useState('');
   const [filterCategoria, setFilterCategoria] = useState('');
   const [newCategory, setNewCategory] = useState('');
-
   const loadList = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
+      const listParams = filterCategoria ? { categoria: filterCategoria } : {};
+      if (isCoach) listParams.scope = 'coach';
       const [listRes, catRes] = await Promise.all([
-        api.get('/d28d/routines', { params: filterCategoria ? { categoria: filterCategoria } : {} }),
+        api.get('/d28d/routines', { params: listParams }),
         api.get('/d28d/routines/categories'),
       ]);
       setRoutines(listRes.data?.data || []);
@@ -30,7 +32,7 @@ export default function D28dRoutinesMaster({ onBack, readOnly = false }) {
     } finally {
       setLoading(false);
     }
-  }, [filterCategoria]);
+  }, [filterCategoria, isCoach]);
 
   useEffect(() => {
     loadList();
@@ -95,7 +97,7 @@ export default function D28dRoutinesMaster({ onBack, readOnly = false }) {
   };
 
   const addCategory = async () => {
-    if (readOnly || !newCategory.trim()) return;
+    if (readOnly || isCoach || !newCategory.trim()) return;
     await api.post('/d28d/routines/categories', { nombre: newCategory.trim() });
     setNewCategory('');
     await loadList();
@@ -112,18 +114,29 @@ export default function D28dRoutinesMaster({ onBack, readOnly = false }) {
       <header className="dashboard-header panel-admin-header">
         <div>
           <button type="button" className="btn-secondary panel-back-btn" onClick={onBack}>
-            ← Maestros
+            {isCoach ? '← Entrenadores' : '← Maestros'}
           </button>
-          <h2 className="d28d-page-title">Maestro de Rutinas D28D</h2>
+          <h2 className="d28d-page-title">
+            {isCoach ? 'Mis rutinas de entrenamiento' : 'Maestro de Rutinas D28D'}
+          </h2>
           <p className="d28d-text-muted">
-            {readOnly
-              ? 'Vista de consulta. Las observaciones de sesión se registran en clases en vivo.'
-              : 'Plantillas reutilizables (mismo modelo que Training). Versionado sin alterar clases ya programadas.'}
+            {isCoach
+              ? 'Tus plantillas privadas: bloques, ejercicios y videos. No compartes catálogo con D28D.'
+              : readOnly
+                ? 'Vista de consulta. Las observaciones de sesión se registran en clases en vivo.'
+                : 'Plantillas reutilizables (mismo modelo que Training). Versionado sin alterar clases ya programadas.'}
           </p>
         </div>
-        {!readOnly && (
+        {!readOnly && !isCoach && (
           <div className="flex gap-2 flex-wrap">
             <button type="button" className="btn-secondary" onClick={handleImport}>Importar catálogo D28D</button>
+            <button type="button" className="btn-primary" onClick={() => { setSelectedId(null); setForm(emptyRoutine()); setHistory([]); }}>
+              Nueva rutina
+            </button>
+          </div>
+        )}
+        {!readOnly && isCoach && (
+          <div className="flex gap-2 flex-wrap items-end">
             <button type="button" className="btn-primary" onClick={() => { setSelectedId(null); setForm(emptyRoutine()); setHistory([]); }}>
               Nueva rutina
             </button>
@@ -142,7 +155,7 @@ export default function D28dRoutinesMaster({ onBack, readOnly = false }) {
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          {!readOnly && (
+          {!readOnly && !isCoach && (
             <div className="flex gap-2 mb-4">
               <input className="input flex-1 text-sm" placeholder="Nueva categoría" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} />
               <button type="button" className="btn-secondary text-sm" onClick={addCategory}>+</button>

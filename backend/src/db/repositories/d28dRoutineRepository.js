@@ -52,6 +52,7 @@ function mapRoutine(row) {
     equipamiento: Array.isArray(row.equipamiento) ? row.equipamiento : [],
     estado: row.estado,
     scope: row.scope,
+    trainer_id: row.trainerId,
     created_by: row.createdBy,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
@@ -79,6 +80,7 @@ function routineCoreData(normalized, createdBy) {
     equipamiento: normalized.equipamiento,
     estado: normalized.estado,
     scope: normalized.scope,
+    trainerId: normalized.trainer_id != null ? Number(normalized.trainer_id) : undefined,
     createdBy: createdBy ?? undefined,
   };
 }
@@ -133,11 +135,24 @@ async function upsertCategory({ id, nombre, orden, activo }) {
   return { id: row.id, nombre: row.nombre, orden: row.orden, activo: row.activo };
 }
 
-async function listRoutines({ estado, categoria, currentOnly = true } = {}) {
+async function listRoutines({
+  estado,
+  categoria,
+  currentOnly = true,
+  scopes,
+  coachTrainerId,
+} = {}) {
   const where = {};
   if (estado) where.estado = estado;
   if (categoria) where.categoria = categoria;
   if (currentOnly) where.isCurrent = true;
+
+  if (coachTrainerId != null) {
+    where.scope = { in: ['coach_wl', 'training'] };
+    where.trainerId = Number(coachTrainerId);
+  } else if (Array.isArray(scopes) && scopes.length) {
+    where.scope = { in: scopes };
+  }
 
   const rows = await getPrisma().d28dRoutine.findMany({
     where,
@@ -207,16 +222,18 @@ async function createBlocks(tx, routineId, blocks = []) {
   }
 }
 
-async function createRoutine(payload, createdBy) {
+async function createRoutine(payload, createdBy, trainerId = null) {
   const normalized = normalizeRoutineInput(payload);
   const prisma = getPrisma();
+  const core = routineCoreData(normalized, createdBy);
+  if (trainerId != null) core.trainerId = Number(trainerId);
   return prisma.$transaction(async (tx) => {
     const draft = await tx.d28dRoutine.create({
       data: {
         rootId: 0,
         version: 1,
         isCurrent: true,
-        ...routineCoreData(normalized, createdBy),
+        ...core,
       },
     });
     const rootId = draft.id;
@@ -306,6 +323,9 @@ async function cloneRoutine(sourceId, { versionBump = false, createdBy, override
         equipamiento: merged.equipamiento,
         estado: merged.estado,
         scope: merged.scope,
+        trainerId: overrides.trainer_id != null
+          ? Number(overrides.trainer_id)
+          : (source.trainer_id != null ? Number(source.trainer_id) : undefined),
         createdBy: createdBy || source.created_by,
       },
     });
@@ -371,6 +391,26 @@ async function listHostNotes({ routineId, liveClassId } = {}) {
   }));
 }
 
+async function listHostNotesForHost({ hostUserId, liveClassIds } = {}) {
+  const where = { userId: Number(hostUserId) };
+  if (Array.isArray(liveClassIds) && liveClassIds.length > 0) {
+    where.liveClassId = { in: liveClassIds.map(Number) };
+  }
+  const rows = await getPrisma().d28dRoutineHostNote.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    routine_id: r.routineId,
+    live_class_id: r.liveClassId,
+    user_id: r.userId,
+    texto: r.texto,
+    created_at: r.createdAt,
+  }));
+}
+
 module.exports = {
   mapRoutine,
   ensureDefaultCategories,
@@ -385,4 +425,5 @@ module.exports = {
   archiveRoutine,
   addHostNote,
   listHostNotes,
+  listHostNotesForHost,
 };

@@ -38,6 +38,8 @@ const foodModuleRoutes = require('./src/routes/foodModuleRoutes');
 const foodProvisioning = require('./src/services/foodProvisioningService');
 const trainingModuleRoutes = require('./src/routes/trainingModuleRoutes');
 const d28dRoutineRoutes = require('./src/routes/d28dRoutineRoutes');
+const d28dCoachRoutes = require('./src/routes/d28dCoachRoutes');
+const notificationRoutes = require('./src/routes/notificationRoutes');
 const trainingProvisioning = require('./src/services/trainingProvisioningService');
 
 const tracingMiddleware = require('./src/middleware/tracing');
@@ -539,7 +541,59 @@ const PLATFORM_ADMIN_ROLES = [
 const USER_MGMT_ROLES = [
   ...PLATFORM_ADMIN_ROLES,
   'admin_gimnasio', 'admin_marca',
+  'entrenador', 'nutricionista',
 ];
+const {
+  isCoachUser,
+  getCoachTrainerId,
+  sanitizeModuleAccessForCoachClient,
+} = require('./src/utils/coachScope');
+
+const PRIVILEGED_USER_ROLES = new Set([
+  'super_admin', 'admin_d28d', 'admin_food', 'admin_food_plan',
+  'admin_training', 'admin_entrenador', 'admin_gimnasio', 'admin_marca', 'admin_gym',
+]);
+
+function filterUsersForActor(users, actor) {
+  if (!Array.isArray(users)) return [];
+  if (hasUserRole(actor, ['super_admin'])) return users;
+  const coachTid = getCoachTrainerId(actor);
+  if (isCoachUser(actor) && coachTid != null) {
+    return users.filter((u) => {
+      const roles = Array.isArray(u.roles) && u.roles.length ? u.roles : [u.rol];
+      if (roles.some((r) => PRIVILEGED_USER_ROLES.has(r))) return false;
+      return Number(u.trainer_id) === Number(coachTid);
+    });
+  }
+  const ownGym = tokenGymId(actor);
+  const isPlatformAdmin = hasUserRole(actor, PLATFORM_ADMIN_ROLES);
+  if (!isPlatformAdmin && ownGym) {
+    return users.filter((u) => {
+      const g = u.gym_id ?? u.gymId ?? null;
+      return g !== null && Number(g) === ownGym;
+    });
+  }
+  if (isPlatformAdmin) return users;
+  return [];
+}
+
+const enforceTenantOnUserUpdate = (req, target) => {
+  if (hasUserRole(req.user, PLATFORM_ADMIN_ROLES)) return { ok: true, gym: null };
+  const coachTid = getCoachTrainerId(req.user);
+  if (isCoachUser(req.user)) {
+    if (coachTid == null) return { ok: false, status: 403, error: 'Cuenta sin entrenador vinculado' };
+    if (Number(target.trainer_id) !== Number(coachTid)) {
+      return { ok: false, status: 403, error: 'No puedes modificar usuarios de otro coach' };
+    }
+    return { ok: true, gym: null, trainerId: coachTid };
+  }
+  const ownGym = tokenGymId(req.user);
+  const targetGym = Number(target.gym_id ?? target.gymId ?? 0);
+  if (!ownGym || ownGym !== targetGym) {
+    return { ok: false, status: 403, error: 'No puedes modificar usuarios de otro gimnasio' };
+  }
+  return { ok: true, gym: ownGym };
+};
 
 app.get('/api/admin/invite-codes', authMiddleware, (req, res) => {
   try {
@@ -583,14 +637,7 @@ app.get('/api/admin/users', authMiddleware, (req, res) => {
     // super_admin / admin_d28d / admin_food(plan) / admin_training(entrenador)
     // operan sobre toda la plataforma. El resto (admin_gimnasio, admin_marca)
     // está limitado a su gym.
-    const isPlatformAdmin = hasUserRole(req.user, PLATFORM_ADMIN_ROLES);
-    let users = userDB.getAll();
-    if (!isPlatformAdmin && ownGym) {
-      users = users.filter((u) => {
-        const g = u.gym_id ?? u.gymId ?? null;
-        return g !== null && Number(g) === ownGym;
-      });
-    }
+    let users = filterUsersForActor(userDB.getAll(), req.user);
     const list = users.map(u => ({
       id: u.id,
       nombre: u.nombre,
@@ -641,11 +688,24 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
     // Resolución de gym_id:
     // - operadores de plataforma: usan el gym_id del body (incluso null).
     // - admin_gimnasio/admin_marca: fuerza el gym propio del JWT.
-    const ownGym = tokenGymId(req.user);
+    const coachTid = getCoachTrainerId(req.user);
     let finalGymId;
-    if (isPlatformAdmin) {
+    let finalTrainerId = trainer_id ?? null;
+    let finalModuleAccess = module_access || {};
+    if (isCoachUser(req.user)) {
+      if (coachTid == null) {
+        return res.status(403).json({ error: 'Tu cuenta no tiene entrenador vinculado (trainer_id)' });
+      }
+      finalGymId = null;
+      finalTrainerId = coachTid;
+      finalModuleAccess = sanitizeModuleAccessForCoachClient(finalModuleAccess);
+      if (nextRoles.some((r) => r !== 'usuario_final' && r !== 'nutricionista')) {
+        return res.status(403).json({ error: 'Solo puedes crear usuarios finales o nutricionistas asignados' });
+      }
+    } else if (isPlatformAdmin) {
       finalGymId = gym_id ?? null;
     } else {
+      const ownGym = tokenGymId(req.user);
       if (!ownGym) {
         return res.status(403).json({ error: 'Tu usuario no tiene gimnasio asignado para crear usuarios' });
       }
@@ -661,18 +721,18 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
       rol,
       roles: nextRoles,
       permissions: Array.isArray(permissions) ? permissions : [],
-      module_access: module_access || {},
+      module_access: finalModuleAccess,
       telefono: telefono || null,
       fecha_nacimiento: fecha_nacimiento || null,
       peso: peso ?? null,
       altura: altura ?? null,
       objetivo: objetivo || null,
       gym_id: finalGymId,
-      trainer_id: trainer_id ?? null,
+      trainer_id: finalTrainerId,
       gymId: finalGymId,
       planId: planId || null,
     });
-    await licenseService.syncFromModuleAccess(created.id, module_access || {}, 'admin');
+    await licenseService.syncFromModuleAccess(created.id, finalModuleAccess, 'admin');
     res.status(201).json({ success: true, data: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol } });
   } catch (e) {
     res.status(500).json({ error: 'Error creando usuario' });
@@ -703,17 +763,12 @@ app.put('/api/admin/users/:id/role', authMiddleware, async (req, res) => {
     if (!target) {
       return res.status(404).json({ error: 'Usuario no encontrado' });
     }
-    // Tenant: admin gym solo puede tocar usuarios de su mismo gym.
-    // Los operadores de plataforma pueden tocar cualquier usuario, pero
-    // NUNCA escalar a roles administrativos (validado arriba).
-    if (!isPlatformAdmin) {
-      const ownGym = tokenGymId(req.user);
-      const targetGym = Number(target.gym_id ?? target.gymId ?? 0);
-      if (!ownGym || ownGym !== targetGym) {
-        return res.status(403).json({ error: 'No puedes modificar usuarios de otro gimnasio' });
-      }
+    const guard = enforceTenantOnUserUpdate(req, target);
+    if (!guard.ok) return res.status(guard.status).json({ error: guard.error });
+    let nextAccess = module_access || target.module_access || {};
+    if (isCoachUser(req.user)) {
+      nextAccess = sanitizeModuleAccessForCoachClient(nextAccess);
     }
-    const nextAccess = module_access || target.module_access || {};
     userDB.update(target.id, { rol: rol || nextRoles[0], roles: nextRoles, permissions: Array.isArray(permissions) ? permissions : target.permissions, module_access: nextAccess });
     await licenseService.syncFromModuleAccess(target.id, nextAccess, 'admin');
     const updated = userDB.getById(target.id);
@@ -729,21 +784,6 @@ app.put('/api/admin/users/:id/role', authMiddleware, async (req, res) => {
     res.status(500).json({ error: 'Error actualizando rol' });
   }
 });
-
-// Guard tenant para acciones admin sobre /users/:id.
-// - operadores de plataforma (super_admin, admin_d28d, admin_food[_plan],
-//   admin_training[/entrenador]): sin restricción.
-// - admin_gimnasio / admin_marca: solo usuarios de su gym y sin escalar
-//   gym destino.
-const enforceTenantOnUserUpdate = (req, target) => {
-  if (hasUserRole(req.user, PLATFORM_ADMIN_ROLES)) return { ok: true, gym: null };
-  const ownGym = tokenGymId(req.user);
-  const targetGym = Number(target.gym_id ?? target.gymId ?? 0);
-  if (!ownGym || ownGym !== targetGym) {
-    return { ok: false, status: 403, error: 'No puedes modificar usuarios de otro gimnasio' };
-  }
-  return { ok: true, gym: ownGym };
-};
 
 app.put('/api/admin/users/:id/assign', authMiddleware, (req, res) => {
   try {
@@ -762,7 +802,8 @@ app.put('/api/admin/users/:id/assign', authMiddleware, (req, res) => {
     // admin_gimnasio / admin_marca NO pueden mover el usuario a otro gym.
     // Los operadores de plataforma sí pueden reasignar gimnasio.
     const finalGymId = isPlatformAdmin ? gym_id : (guard.gym ?? user.gym_id ?? null);
-    const updates = { gym_id: finalGymId, trainer_id, gymId: finalGymId, ...(planId !== undefined ? { planId } : {}) };
+    const finalTrainerId = isCoachUser(req.user) ? guard.trainerId : trainer_id;
+    const updates = { gym_id: finalGymId, trainer_id: finalTrainerId, gymId: finalGymId, ...(planId !== undefined ? { planId } : {}) };
     const updated = userDB.update(user.id, updates);
     res.json({ success: true, data: { id: updated.id, gym_id: updated.gym_id || updated.gymId || null, trainer_id: updated.trainer_id || null, planId: updated.planId || null } });
   } catch (e) {
@@ -858,6 +899,8 @@ app.use('/api/frontend-config', frontendConfigRoutes);
 app.use('/api/food-module', foodModuleRoutes);
 app.use('/api/training-module', trainingModuleRoutes);
 app.use('/api/d28d/routines', d28dRoutineRoutes);
+app.use('/api/d28d/coach', d28dCoachRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 // Manejo de errores final (incluye CORS rechazado)
 // eslint-disable-next-line no-unused-vars

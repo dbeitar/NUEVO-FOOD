@@ -12,11 +12,12 @@ const D28D_CODES = new Set(
 /** Presets de módulos según tipo de invitación (claves usadas por userServices). */
 const MODULE_PRESETS = {
   trainer: {
+    gym: false,
     d28d: false,
     training: true,
     nutrition: true,
     food_plan: true,
-    live_classes: true,
+    live_classes: false,
   },
   gym: {
     gym: true,

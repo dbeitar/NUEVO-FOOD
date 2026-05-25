@@ -549,11 +549,26 @@ const substituteExercise = async (req, res) => {
   }
 };
 
+const { isCoachUser, getCoachTrainerId, sanitizeModuleAccessForCoachClient } = require('../utils/coachScope');
+
+const GALLERY_VIEW_ROLES = [
+  'super_admin', 'admin_gimnasio', 'admin_marca', 'admin_d28d',
+  'admin_training', 'admin_entrenador', 'entrenador', 'nutricionista',
+];
+const GALLERY_WRITE_ROLES = [
+  'super_admin', 'admin_gimnasio', 'admin_marca',
+  'admin_training', 'admin_entrenador', 'entrenador', 'nutricionista',
+];
+
+function userHasGalleryRole(user, rolesList) {
+  if (!user) return false;
+  const roles = Array.isArray(user.roles) && user.roles.length ? user.roles : [user.rol];
+  return roles.some((r) => rolesList.includes(r));
+}
+
 const getAdminGallery = async (req, res) => {
   try {
-    const roles = Array.isArray(req.user?.roles) ? req.user.roles : [req.user?.rol];
-    const allowed = roles.some((r) => ['super_admin', 'admin_gimnasio', 'admin_marca', 'admin_training', 'admin_entrenador', 'entrenador'].includes(r));
-    if (!req.user || !allowed) {
+    if (!userHasGalleryRole(req.user, GALLERY_VIEW_ROLES)) {
       return res.status(403).json({ error: 'No tienes permisos para ver la galería' });
     }
     const data = filterGalleryItems(ExercisesGalleryStore.getAll(), req.user);
@@ -565,20 +580,22 @@ const getAdminGallery = async (req, res) => {
 
 const createAdminGallery = async (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!userHasGalleryRole(req.user, GALLERY_WRITE_ROLES)) {
       return res.status(403).json({ error: 'No tienes permisos para crear en la galería' });
     }
     const { name, muscle_group = '', youtube_url, is_global = true } = req.body || {};
     if (!name || !youtube_url) {
       return res.status(400).json({ error: 'name y youtube_url son requeridos' });
     }
+    const coachTid = getCoachTrainerId(req.user);
     const created = ExercisesGalleryStore.create({
       name,
       muscle_group,
       youtube_url,
-      is_global: isPlatformAdmin(req.user) ? is_global : false,
+      is_global: isCoachUser(req.user) ? false : (isPlatformAdmin(req.user) ? is_global : false),
       created_by: req.user.id,
-      gym_id: getUserGymId(req.user),
+      gym_id: isCoachUser(req.user) ? null : getUserGymId(req.user),
+      trainer_id: coachTid,
     });
     if (created?.error) {
       return res.status(409).json({ error: created.error });
@@ -589,10 +606,56 @@ const createAdminGallery = async (req, res) => {
   }
 };
 
+const updateAdminGallery = async (req, res) => {
+  try {
+    if (!userHasGalleryRole(req.user, GALLERY_WRITE_ROLES)) {
+      return res.status(403).json({ error: 'No tienes permisos para editar la galería' });
+    }
+    const id = Number(req.params.id);
+    const current = ExercisesGalleryStore.getById(id);
+    if (!current) {
+      return res.status(404).json({ error: 'Registro no encontrado' });
+    }
+    const visible = filterGalleryItems([current], req.user);
+    if (!visible.length) {
+      return res.status(403).json({ error: 'No puedes editar este registro' });
+    }
+    const { name, muscle_group, youtube_url, is_global } = req.body || {};
+    const patch = {};
+    if (name !== undefined) patch.name = name;
+    if (muscle_group !== undefined) patch.muscle_group = muscle_group;
+    if (youtube_url !== undefined) patch.youtube_url = youtube_url;
+    if (isCoachUser(req.user)) {
+      patch.is_global = false;
+      patch.trainer_id = getCoachTrainerId(req.user);
+    } else if (is_global !== undefined && isPlatformAdmin(req.user)) {
+      patch.is_global = is_global;
+    }
+    const updated = ExercisesGalleryStore.update(id, patch);
+    if (updated?.error) {
+      return res.status(409).json({ error: updated.error });
+    }
+    if (!updated) {
+      return res.status(404).json({ error: 'Registro no encontrado' });
+    }
+    return res.json({ success: true, data: updated });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error actualizando registro de galería' });
+  }
+};
+
 const deleteAdminGallery = async (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!userHasGalleryRole(req.user, GALLERY_WRITE_ROLES)) {
       return res.status(403).json({ error: 'No tienes permisos para eliminar en la galería' });
+    }
+    const current = ExercisesGalleryStore.getById(Number(req.params.id));
+    if (!current) {
+      return res.status(404).json({ error: 'Registro no encontrado' });
+    }
+    const visible = filterGalleryItems([current], req.user);
+    if (!visible.length) {
+      return res.status(403).json({ error: 'No puedes eliminar este registro' });
     }
     const ok = ExercisesGalleryStore.delete(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Registro no encontrado' });
@@ -639,6 +702,7 @@ module.exports = {
   substituteExercise,
   getAdminGallery,
   createAdminGallery,
+  updateAdminGallery,
   deleteAdminGallery,
   getPublicGallery,
   createUserLog

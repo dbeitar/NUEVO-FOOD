@@ -120,6 +120,7 @@ model Trainer {
   gym               Gym?     @relation(fields: [gymId], references: [id], onDelete: SetNull)
   users             User[]
   accounts          UserAccount[]
+  d28dRoutines      D28dRoutine[]
 
   @@index([gymId])
   @@map("trainers")
@@ -353,8 +354,10 @@ model D28dRoutine {
   equipamiento  Json     @default("[]")
   estado        String   @default("activa") @db.VarChar(32)
   scope         String   @default("d28d_platform") @db.VarChar(64)
+  trainerId     Int?     @map("trainer_id")
   createdBy     Int?     @map("created_by")
   createdAt     DateTime @default(now()) @map("created_at")
+  trainer       Trainer? @relation(fields: [trainerId], references: [id], onDelete: SetNull)
   updatedAt     DateTime @updatedAt @map("updated_at")
 
   blocks        D28dRoutineBlock[]

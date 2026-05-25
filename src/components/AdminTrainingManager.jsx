@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import api from '../services/api';
 
-export default function AdminTrainingManager() {
+export default function AdminTrainingManager({ onBack = null }) {
     const [activeTab, setActiveTab] = useState('plans'); // plans, editor, log
     const [plans, setPlans] = useState([]);
     const [logs, setLogs] = useState([]);
@@ -158,6 +158,11 @@ export default function AdminTrainingManager() {
 
     return (
         <div className="card max-w-7xl mx-auto min-h-[80vh]">
+            {onBack && (
+              <button type="button" className="btn-secondary text-sm mb-4" onClick={onBack}>
+                ← Volver a Capacitación
+              </button>
+            )}
             <h2 className="text-3xl font-bold text-stone-900 mb-2">Rutinas</h2>
             <p className="text-stone-600 mb-6 font-medium">Asignación y edición de rutinas + diario de seguimiento por usuario.</p>
 

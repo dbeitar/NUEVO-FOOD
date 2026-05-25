@@ -1,4 +1,8 @@
+const bcryptjs = require('bcryptjs');
 const TrainersDatabase = require('../models/TrainersDatabase');
+const userDB = require('../models/UserDatabase');
+const licenseService = require('../services/licenseService');
+const { sanitizeModuleAccessForCoachClient } = require('../utils/coachScope');
 const {
   isSuperAdmin,
   isGymAdmin,
@@ -93,7 +97,7 @@ const createTrainer = (req, res) => {
     }
     // Forzar gym_id al del admin (salvo super_admin que puede elegir cualquiera).
     const finalGymId = isSuperAdmin(req.user) ? (gym_id ?? null) : getUserGymId(req.user);
-    if (finalGymId == null) {
+    if (!isSuperAdmin(req.user) && finalGymId == null) {
       return res.status(400).json({ error: 'No es posible determinar el gym destino' });
     }
 
@@ -252,6 +256,75 @@ const updateTrainerBranding = (req, res) => {
   }
 };
 
+/** Crea entrenador marca blanca + cuenta login entrenador (solo super_admin). */
+const createTrainerWithAccount = async (req, res) => {
+  try {
+    if (!isSuperAdmin(req.user)) {
+      return res.status(403).json({ error: 'Solo super_admin puede crear coaches marca blanca' });
+    }
+    const {
+      nombre, email, password,
+      telefono, telefonoAlt, especialidad,
+      brand_name, logo_url, primary_color, secondary_color,
+      welcome_message, support_whatsapp, white_label_enabled = true,
+    } = req.body || {};
+    if (!nombre || !email || !password || String(password).length < 6) {
+      return res.status(400).json({ error: 'nombre, email y password (mín. 6) son requeridos' });
+    }
+    if (userDB.getByEmail(email)) {
+      return res.status(409).json({ error: 'El email ya está registrado' });
+    }
+    const suggested = suggestTrainerInviteCode(0, nombre);
+    const check = assertInviteCodeAvailable({ code: suggested, excludeGymId: null, excludeTrainerId: null });
+    const inviteCode = check.ok ? check.code : `${suggested}-${Date.now().toString(36).slice(-4).toUpperCase()}`;
+
+    let trainer = TrainersDatabase.create({
+      nombre,
+      email,
+      telefono: telefono || telefonoAlt || null,
+      especialidad: especialidad || 'Entrenamiento personalizado',
+      certificaciones: [],
+      experiencia_años: 0,
+      gym_id: null,
+      horario_disponible: '',
+      tarifa_sesion: 0,
+      capacidad_usuarios: 200,
+      invite_code: inviteCode,
+      brand_name: brand_name || nombre,
+      logo_url: logo_url || null,
+      primary_color: primary_color || '#65a30d',
+      secondary_color: secondary_color || '#1c1917',
+      welcome_message: welcome_message || '',
+      support_whatsapp: support_whatsapp || null,
+      white_label_enabled: white_label_enabled !== false,
+    });
+
+    const hash = await bcryptjs.hash(password, 10);
+    const moduleAccess = sanitizeModuleAccessForCoachClient({});
+    const user = await userDB.create({
+      nombre,
+      email,
+      clave_hash: hash,
+      rol: 'entrenador',
+      roles: ['entrenador'],
+      permissions: [],
+      module_access: moduleAccess,
+      gym_id: null,
+      trainer_id: trainer.id,
+      gymId: null,
+    });
+    await licenseService.syncFromModuleAccess(user.id, moduleAccess, 'admin');
+
+    return res.status(201).json({
+      success: true,
+      data: { trainer, user: { id: user.id, email: user.email, trainer_id: trainer.id } },
+    });
+  } catch (error) {
+    console.error('Error creando coach WL:', error.message);
+    return res.status(500).json({ error: 'Error creando entrenador marca blanca' });
+  }
+};
+
 module.exports = {
   getAllTrainers,
   getTrainerById,
@@ -259,6 +332,7 @@ module.exports = {
   searchBySpecialty,
   searchTrainers,
   createTrainer,
+  createTrainerWithAccount,
   updateTrainer,
   deleteTrainer,
   getTrainerBranding,

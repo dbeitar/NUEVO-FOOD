@@ -53,8 +53,8 @@ api.interceptors.response.use(
   (error) => {
     const status = error?.response?.status;
     const url = String(error?.config?.url || '');
-    const isFoodSso = url.includes('/food-module/exchange');
-    if (status === 401 && !error?.config?.skipAuthClearOn401 && !isFoodSso) {
+    const isModuleSso = url.includes('/food-module/exchange') || url.includes('/training-module/exchange');
+    if (status === 401 && !error?.config?.skipAuthClearOn401 && !isModuleSso) {
       try {
         localStorage.removeItem('token');
       } catch { /* noop */ }

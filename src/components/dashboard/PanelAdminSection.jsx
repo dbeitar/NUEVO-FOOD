@@ -57,7 +57,16 @@ export default function PanelAdminSection({
               {img ? <img src={img} alt={cardCfg.alt || title} className="admin-panel-card-img" /> : null}
               <h3 className="d28d-section-title">{title}</h3>
               <p className="d28d-text-muted">{desc}</p>
-              <button type="button" className="btn-card">{t('panel.open', 'Abrir')}</button>
+              <button
+                type="button"
+                className="btn-card"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onNavigate(c.view);
+                }}
+              >
+                {t('panel.open', 'Abrir')}
+              </button>
             </div>
           );
         })}

@@ -12,6 +12,11 @@ export class ShellLinkDto {
   @ApiProperty({ required: false }) @IsOptional() @IsBoolean() active?: boolean;
 }
 
+/** Sincroniza contraseña Food = puente D28D (requiere FOOD_SHELL_API_KEY). */
+export class ShellSyncBridgeDto {
+  @ApiProperty() @IsEmail() email: string;
+}
+
 export class ShellBrandingDto {
   @ApiProperty() @IsString() foodUserId: string;
   @ApiProperty() @IsObject() branding: Record<string, unknown>;

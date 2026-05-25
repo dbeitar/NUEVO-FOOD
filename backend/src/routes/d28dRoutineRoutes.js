@@ -18,6 +18,7 @@ router.get('/history/:rootId', ctrl.getHistory);
 router.get('/schedule', ctrl.listForSchedule);
 router.get('/', ctrl.listRoutines);
 router.post('/', ctrl.createRoutine);
+router.post('/:id/copy-to-coach', ctrl.copyToCoach);
 router.get('/:id', ctrl.getRoutine);
 router.put('/:id', ctrl.updateRoutine);
 router.post('/:id/duplicate', ctrl.duplicateRoutine);

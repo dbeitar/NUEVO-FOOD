@@ -33,6 +33,13 @@ const MASTERS_DEFAULT = [
     img: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=800&q=80',
     alt: 'Maestro de rutinas D28D',
   },
+  {
+    id: 'd28d-zoom',
+    title: 'Cuentas Zoom D28D',
+    desc: 'Virtual (1 y 2), Pancitas y Vital: emails en maestro y contraseñas en servidor.',
+    img: 'https://images.unsplash.com/photo-1587825140708-288513e41679?auto=format&fit=crop&w=800&q=80',
+    alt: 'Cuentas Zoom D28D',
+  },
 ];
 
 export default function MastersHub({ onOpenMaster, hasAnyRole }) {
@@ -58,6 +65,9 @@ export default function MastersHub({ onOpenMaster, hasAnyRole }) {
         <div className="services-hero-grid">
           {masters.map((m) => {
             if (m.id === 'd28d-routines' && hasAnyRole && !hasAnyRole(['super_admin', 'admin_d28d', 'entrenador_d28d'])) {
+              return null;
+            }
+            if (m.id === 'd28d-zoom' && hasAnyRole && !hasAnyRole(['super_admin', 'admin_d28d'])) {
               return null;
             }
             return (

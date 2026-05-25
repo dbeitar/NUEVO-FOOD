@@ -56,6 +56,22 @@ export default function AdminUsers() {
   // Form state
   const [formData, setFormData] = useState(emptyForm);
 
+  const actorRoles = useMemo(
+    () => (Array.isArray(currentUser?.roles) && currentUser.roles.length
+      ? currentUser.roles
+      : [currentUser?.rol].filter(Boolean)),
+    [currentUser],
+  );
+  const isCoachActor = useMemo(
+    () => actorRoles.includes('entrenador')
+      && !actorRoles.some((r) => ['super_admin', 'admin_d28d', 'admin_gimnasio', 'admin_marca'].includes(r)),
+    [actorRoles],
+  );
+  const coachModuleOptions = useMemo(
+    () => MODULE_OPTIONS.filter((m) => !['gym', 'd28d', 'live_classes'].includes(m.key)),
+    [],
+  );
+
   const gymById = useMemo(
     () => Object.fromEntries(gyms.map((g) => [Number(g.id), g])),
     [gyms],
@@ -147,7 +163,7 @@ export default function AdminUsers() {
           setError(t('plans.subscription', 'Plan de Suscripción') + ' ' + t('common.name_required', 'Nombre *').replace('Nombre *','es obligatorio'));
           return;
         }
-        if (formData.roles.includes('usuario_final') && !formData.gym_id) {
+        if (!isCoachActor && formData.roles.includes('usuario_final') && !formData.gym_id) {
           setError(t('common.gym', 'Gimnasio') + ' ' + t('common.name_required', 'Nombre *').replace('Nombre *','es obligatorio') + ' ' + '(Usuario Final)');
           return;
         }
@@ -162,8 +178,9 @@ export default function AdminUsers() {
           ...formData,
           rol: formData.roles[0] || 'usuario_final',
           roles: formData.roles,
-          gym_id: formData.roles.includes('usuario_final') && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined,
-          gymId: formData.roles.includes('usuario_final') && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined,
+          gym_id: isCoachActor ? null : (formData.roles.includes('usuario_final') && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined),
+          gymId: isCoachActor ? null : (formData.roles.includes('usuario_final') && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined),
+          trainer_id: isCoachActor ? (currentUser?.trainer_id || formData.trainer_id) : (formData.trainer_id || null),
           planId: formData.planId,
           module_access: formData.module_access,
         });
@@ -283,7 +300,7 @@ export default function AdminUsers() {
         </button>
       </div>
 
-      {d28dCodes.length > 0 && (
+      {d28dCodes.length > 0 && !isCoachActor && (
         <div className="bg-lime-50 border border-lime-200 rounded-2xl p-4 text-sm">
           <p className="font-semibold text-stone-900">{t('users.d28d_invite_codes', 'Códigos D28D (registro público)')}</p>
           <p className="text-stone-600 mt-1">{t('users.d28d_invite_hint', 'Comparte estos códigos con usuarios que entren directo a la plataforma D28D:')}</p>
@@ -453,10 +470,12 @@ export default function AdminUsers() {
               <div className="md:col-span-2">
                 <label className="label">{t('users.modules', 'Módulos activos')}</label>
                 <p className="text-xs text-stone-500 mb-2">
-                  {t('users.modules_hint', 'Activa o desactiva acceso a D28D, entrenamiento, food y clases en vivo.')}
+                  {isCoachActor
+                    ? t('users.modules_hint_coach', 'Solo entrenamiento y plan de alimentación para tus clientes (sin D28D).')
+                    : t('users.modules_hint', 'Activa o desactiva acceso a D28D, entrenamiento, food y clases en vivo.')}
                 </p>
                 <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-                  {MODULE_OPTIONS.map(({ key, label }) => (
+                  {(isCoachActor ? coachModuleOptions : MODULE_OPTIONS).map(({ key, label }) => (
                     <label key={key} className="flex items-center gap-2 text-sm text-stone-700 bg-stone-50 p-2 rounded-lg border border-stone-200 cursor-pointer hover:bg-stone-100">
                       <input
                         type="checkbox"

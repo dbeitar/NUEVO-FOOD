@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
+import { useAuth } from '../context/useAuth';
 import LiveClassRoutineHost from './live/LiveClassRoutineHost';
 import RoutineTemplateViewer from './routines/RoutineTemplateViewer';
+import RoutineTemplateEditor from './routines/RoutineTemplateEditor';
+import { emptyRoutine, routineFromApi } from '../shared/routineTemplateConstants';
 
 const defaultForm = {
   title: '',
@@ -16,7 +19,15 @@ const defaultForm = {
   d28d_routine_id: '',
   use_routine: false,
   d28d_session_adjustments: '',
+  d28d_host_user_id: '',
+  zoom_account_id: 'virtual_d28d_1',
+  auto_zoom: true,
 };
+
+function routineOptionLabel(r) {
+  const sub = r.subcategoria || r.nombre;
+  return `${r.nombre} — ${r.categoria} — ${sub} (v ${r.version})`;
+}
 
 function formatDateTimeLocal(value) {
   if (!value) return '';
@@ -25,6 +36,7 @@ function formatDateTimeLocal(value) {
 }
 
 export default function AdminLiveClasses() {
+  const { user: currentUser } = useAuth();
   const [items, setItems] = useState([]);
   const [form, setForm] = useState(defaultForm);
   const [loading, setLoading] = useState(false);
@@ -33,8 +45,20 @@ export default function AdminLiveClasses() {
   const [attendance, setAttendance] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [routines, setRoutines] = useState([]);
+  const [d28dHosts, setD28dHosts] = useState([]);
   const [previewClass, setPreviewClass] = useState(null);
   const [routinePreview, setRoutinePreview] = useState(null);
+  const [showRoutineEditor, setShowRoutineEditor] = useState(false);
+  const [routineEditForm, setRoutineEditForm] = useState(emptyRoutine());
+  const [routineCategories, setRoutineCategories] = useState([]);
+  const [routineEditSaving, setRoutineEditSaving] = useState(false);
+
+  const canEditRoutines = useMemo(() => {
+    const roles = Array.isArray(currentUser?.roles) && currentUser.roles.length
+      ? currentUser.roles
+      : [currentUser?.rol].filter(Boolean);
+    return roles.some((r) => ['super_admin', 'admin_d28d'].includes(r));
+  }, [currentUser]);
 
   const fetchItems = async () => {
     try {
@@ -66,17 +90,30 @@ export default function AdminLiveClasses() {
     }
   };
 
-  const fetchRoutines = async () => {
+  const fetchRoutines = useCallback(async () => {
     try {
-      const resp = await api.get('/d28d/routines/schedule');
+      const resp = await api.get('/d28d/routines', { params: { estado: 'activa' } });
       setRoutines(resp.data?.data || []);
     } catch {
-      try {
-        const fallback = await api.get('/d28d/routines', { params: { estado: 'activa' } });
-        setRoutines(fallback.data?.data || []);
-      } catch {
-        setRoutines([]);
-      }
+      setRoutines([]);
+    }
+  }, []);
+
+  const fetchD28dHosts = async () => {
+    try {
+      const resp = await api.get('/live-classes/admin/d28d-hosts');
+      setD28dHosts(resp.data?.data || []);
+    } catch {
+      setD28dHosts([]);
+    }
+  };
+
+  const fetchRoutineCategories = async () => {
+    try {
+      const resp = await api.get('/d28d/routines/categories');
+      setRoutineCategories((resp.data?.data || []).map((c) => c.nombre));
+    } catch {
+      setRoutineCategories([]);
     }
   };
 
@@ -98,10 +135,85 @@ export default function AdminLiveClasses() {
     fetchAttendance();
     fetchPrograms();
     fetchRoutines();
-  }, []);
+    fetchD28dHosts();
+    fetchRoutineCategories();
+  }, [fetchRoutines]);
+
+  const openRoutineEditor = async () => {
+    if (!form.d28d_routine_id || !canEditRoutines) return;
+    try {
+      const resp = await api.get(`/d28d/routines/${form.d28d_routine_id}`);
+      const data = resp.data?.data;
+      if (!data) return;
+      setRoutineEditForm(routineFromApi(data));
+      setShowRoutineEditor(true);
+    } catch {
+      setError('No se pudo cargar la plantilla para editar.');
+    }
+  };
+
+  const saveRoutineTemplate = async () => {
+    if (!form.d28d_routine_id) return;
+    try {
+      setRoutineEditSaving(true);
+      setError('');
+      await api.put(`/d28d/routines/${form.d28d_routine_id}`, { ...routineEditForm, new_version: false });
+      await fetchRoutines();
+      await loadRoutinePreview(form.d28d_routine_id);
+      setShowRoutineEditor(false);
+    } catch (e) {
+      setError(e.response?.data?.message || 'Error guardando la plantilla.');
+    } finally {
+      setRoutineEditSaving(false);
+    }
+  };
+
+  const categoryOptions = useMemo(() => {
+    const names = [...routineCategories];
+    if (routineEditForm.categoria && !names.includes(routineEditForm.categoria)) {
+      names.push(routineEditForm.categoria);
+    }
+    return names;
+  }, [routineCategories, routineEditForm.categoria]);
+
+  const hostLabel = (hostId) => {
+    const h = d28dHosts.find((x) => String(x.id) === String(hostId));
+    return h ? `${h.nombre} (${h.email})` : '—';
+  };
 
   const handleChange = (field, value) => {
     setForm((prev) => ({ ...prev, [field]: value }));
+  };
+
+  const generateZoomLink = async () => {
+    if (!form.program_id || !form.start_time || !form.end_time) {
+      setError('Selecciona programa, inicio y fin antes de generar Zoom.');
+      return;
+    }
+    try {
+      setSaving(true);
+      setError('');
+      const resp = await api.post('/live-classes/admin/zoom-meeting', {
+        title: form.use_routine && form.d28d_routine_id ? '' : form.title,
+        program_id: form.program_id,
+        zoom_account_id: form.program_id === 'virtual_d28d' ? form.zoom_account_id : null,
+        start_time: form.start_time,
+        end_time: form.end_time,
+        d28d_host_user_id: form.d28d_host_user_id ? Number(form.d28d_host_user_id) : null,
+        d28d_routine_id: form.use_routine && form.d28d_routine_id ? Number(form.d28d_routine_id) : null,
+        auto_zoom: true,
+      });
+      const link = resp.data?.data?.zoom_link;
+      if (link) {
+        handleChange('zoom_link', link);
+        const msg = resp.data?.data?.zoom?.message;
+        if (msg) setError(msg);
+      }
+    } catch (e) {
+      setError(e.response?.data?.error || 'No se pudo generar el enlace Zoom.');
+    } finally {
+      setSaving(false);
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -112,15 +224,18 @@ export default function AdminLiveClasses() {
         const payload = {
           title: form.use_routine && form.d28d_routine_id ? '' : form.title,
           description: form.description,
-          zoom_link: form.zoom_link,
+          zoom_link: form.auto_zoom && !form.zoom_link ? '' : form.zoom_link,
           start_time: form.start_time,
           end_time: form.end_time,
           gym_id: form.gym_id || null,
           is_global: form.is_global,
           active: form.active,
           program_id: form.program_id || null,
+          zoom_account_id: form.program_id === 'virtual_d28d' ? form.zoom_account_id : null,
+          auto_zoom: form.auto_zoom,
           d28d_routine_id: form.use_routine && form.d28d_routine_id ? Number(form.d28d_routine_id) : null,
           d28d_session_adjustments: form.use_routine ? (form.d28d_session_adjustments || '').trim() : null,
+          d28d_host_user_id: form.d28d_host_user_id ? Number(form.d28d_host_user_id) : null,
         };
         if (form.id) {
           await api.put(`/live-classes/admin/${form.id}`, payload);
@@ -154,6 +269,9 @@ export default function AdminLiveClasses() {
       d28d_session_adjustments: item.d28d_routine_snapshot?.session_adjustments
         || item.d28d_session_adjustments
         || '',
+      d28d_host_user_id: item.d28d_host_user_id || '',
+      zoom_account_id: item.zoom_account_id || 'virtual_d28d_1',
+      auto_zoom: false,
     });
     setPreviewClass(item);
     if (item.d28d_routine_id) {
@@ -188,6 +306,29 @@ export default function AdminLiveClasses() {
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-4">{error}</div>}
 
+      {showRoutineEditor && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+          <div className="bg-white rounded-2xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto p-6">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-xl font-bold text-stone-900">Editar plantilla D28D</h3>
+              <button type="button" className="btn-secondary" onClick={() => setShowRoutineEditor(false)}>Cerrar</button>
+            </div>
+            <RoutineTemplateEditor
+              form={routineEditForm}
+              setForm={setRoutineEditForm}
+              categoryOptions={categoryOptions}
+              readOnly={false}
+            />
+            <div className="flex gap-2 mt-4 pt-4 border-t">
+              <button type="button" className="btn-primary" disabled={routineEditSaving} onClick={saveRoutineTemplate}>
+                Guardar plantilla
+              </button>
+              <button type="button" className="btn-secondary" onClick={() => setShowRoutineEditor(false)}>Cancelar</button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <form className="grid gap-4 mb-8" onSubmit={handleSubmit}>
         <div className="rounded-2xl border border-lime-200 bg-lime-50/40 p-4 mb-2">
           <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
@@ -212,10 +353,37 @@ export default function AdminLiveClasses() {
               <option value="">Seleccionar rutina…</option>
               {routines.map((r) => (
                 <option key={r.id} value={r.id}>
-                  {r.nombre} — {r.categoria} (v{r.version})
+                  {routineOptionLabel(r)}
                 </option>
               ))}
             </select>
+            <p className="text-xs text-slate-600 mt-2">
+              Mismas plantillas que el Maestro de Rutinas D28D (Mi panel de entrenamiento / maestros).
+            </p>
+            {form.d28d_routine_id && canEditRoutines && (
+              <button
+                type="button"
+                className="btn-secondary text-sm mt-2"
+                onClick={openRoutineEditor}
+              >
+                Editar plantilla y videos de ejercicios
+              </button>
+            )}
+            <label className="block mt-3">
+              <span className="text-xs font-semibold text-slate-700">Entrenador D28D (host de la sesión)</span>
+              <select
+                className="input w-full mt-1"
+                value={form.d28d_host_user_id}
+                onChange={(e) => handleChange('d28d_host_user_id', e.target.value)}
+              >
+                <option value="">Sin asignar</option>
+                {d28dHosts.map((h) => (
+                  <option key={h.id} value={h.id}>
+                    {h.nombre} — {h.email}
+                  </option>
+                ))}
+              </select>
+            </label>
             <label className="block mt-3">
               <span className="text-xs font-semibold text-slate-700">Ajustes puntuales para esta sesión (no modifica la plantilla)</span>
               <textarea
@@ -251,33 +419,67 @@ export default function AdminLiveClasses() {
               placeholder={form.use_routine ? 'Se completa desde la rutina' : ''}
             />
           </label>
-          <label className="block">
+          <label className="block sm:col-span-2">
+            <span className="text-sm font-semibold text-slate-700">Programa D28D</span>
+            <select
+              className="input w-full mt-1"
+              value={form.program_id}
+              onChange={(e) => {
+                const pid = e.target.value;
+                handleChange('program_id', pid);
+                if (pid === 'virtual_d28d') handleChange('zoom_account_id', 'virtual_d28d_1');
+              }}
+              required
+            >
+              <option value="">Seleccionar programa…</option>
+              {programs.map((p) => (
+                <option key={p.id} value={p.id}>{p.name}</option>
+              ))}
+            </select>
+          </label>
+          {form.program_id === 'virtual_d28d' && (
+            <label className="block">
+              <span className="text-sm font-semibold text-slate-700">Cuenta Zoom Virtual</span>
+              <select
+                className="input w-full mt-1"
+                value={form.zoom_account_id}
+                onChange={(e) => handleChange('zoom_account_id', e.target.value)}
+              >
+                <option value="virtual_d28d_1">Cuenta 1 — D28dzoom1@gmail.com</option>
+                <option value="virtual_d28d_2">Cuenta 2 — d28dzoom2@gmail.com</option>
+              </select>
+            </label>
+          )}
+          <label className="block sm:col-span-2">
             <span className="text-sm font-semibold text-slate-700">Enlace Zoom</span>
-            <div className="flex gap-2">
+            <label className="inline-flex items-center gap-2 text-xs text-slate-600 mt-1 mb-2">
               <input
-                className="input w-full"
+                type="checkbox"
+                checked={!!form.auto_zoom}
+                onChange={(e) => handleChange('auto_zoom', e.target.checked)}
+              />
+              Generar enlace automático (cuenta del programa + anfitrión alterno)
+            </label>
+            <div className="flex flex-wrap gap-2">
+              <input
+                className="input flex-1 min-w-[200px]"
                 value={form.zoom_link}
                 onChange={(e) => handleChange('zoom_link', e.target.value)}
-                required
+                required={!form.auto_zoom}
+                placeholder={form.auto_zoom ? 'Se genera al guardar o con el botón' : 'https://zoom.us/j/…'}
               />
-              <select 
-                className="input text-xs w-auto"
-                onChange={(e) => {
-                  const p = programs.find(pg => pg.id === e.target.value);
-                  if (p) {
-                    // Si es virtual_d28d, tiene múltiples cuentas. Usamos la primera por ahora o pedimos elegir.
-                    const email = p.zoom_accounts ? p.zoom_accounts[0].email : p.zoom_email;
-                    handleChange('zoom_link', `Zoom: ${email}`);
-                    handleChange('program_id', p.id);
-                  }
-                }}
+              <button
+                type="button"
+                className="btn-secondary text-sm whitespace-nowrap"
+                disabled={saving || !form.program_id}
+                onClick={generateZoomLink}
               >
-                <option value="">Plantilla...</option>
-                {programs.map(p => (
-                  <option key={p.id} value={p.id}>{p.name}</option>
-                ))}
-              </select>
+                Generar Zoom
+              </button>
             </div>
+            <p className="text-xs text-slate-500 mt-1">
+              P = Pancitas · V = Vital · Virtual = cuentas 1 y 2. El entrenador D28D asignado recibe notificación.
+            </p>
           </label>
         </div>
 
@@ -358,6 +560,7 @@ export default function AdminLiveClasses() {
             <tr>
               <th className="px-4 py-3">Título</th>
               <th className="px-4 py-3">Rutina D28D</th>
+              <th className="px-4 py-3">Host D28D</th>
               <th className="px-4 py-3">Inicio</th>
               <th className="px-4 py-3">Programa</th>
               <th className="px-4 py-3">Gym / Global</th>
@@ -368,13 +571,13 @@ export default function AdminLiveClasses() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="7" className="px-4 py-5 text-center text-slate-500">
+                <td colSpan="8" className="px-4 py-5 text-center text-slate-500">
                   Cargando clases...
                 </td>
               </tr>
             ) : items.length === 0 ? (
               <tr>
-                <td colSpan="7" className="px-4 py-5 text-center text-slate-500">
+                <td colSpan="8" className="px-4 py-5 text-center text-slate-500">
                   Ninguna clase disponible.
                 </td>
               </tr>
@@ -384,6 +587,9 @@ export default function AdminLiveClasses() {
                   <td className="px-4 py-4 font-medium text-slate-900">{item.title}</td>
                   <td className="px-4 py-4 text-slate-600 text-xs">
                     {item.d28d_routine?.nombre || item.d28d_routine_snapshot?.nombre || '—'}
+                  </td>
+                  <td className="px-4 py-4 text-slate-600 text-xs">
+                    {hostLabel(item.d28d_host_user_id) || item.coach || '—'}
                   </td>
                   <td className="px-4 py-4 text-slate-600">{item.start_time}</td>
                   <td className="px-4 py-4 text-slate-600 font-bold capitalize">{programs.find(p => p.id === item.program_id)?.name || '---'}</td>

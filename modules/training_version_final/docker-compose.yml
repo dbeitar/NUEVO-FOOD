@@ -1,0 +1,68 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: trainingplan_db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: trainingplan
+      POSTGRES_USER: fituser
+      POSTGRES_PASSWORD: fitpassword123
+    ports:
+      - "5435:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./database/init.sql:/docker-entrypoint-initdb.d/init.sql
+    networks:
+      - training_net
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U fituser -d trainingplan"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trainingplan_api
+    restart: unless-stopped
+    ports:
+      - "3003:3003"
+    environment:
+      NODE_ENV: production
+      PORT: 3003
+      DATABASE_URL: postgresql://fituser:fitpassword123@postgres:5432/trainingplan
+      JWT_SECRET: ${JWT_SECRET:-super_secret_jwt_key_training_2026}
+      JWT_REFRESH_SECRET: ${JWT_REFRESH_SECRET:-super_secret_refresh_key_training_2026}
+      JWT_EXPIRES_IN: 1h
+      JWT_REFRESH_EXPIRES_IN: 7d
+      TRAINING_SHELL_API_KEY: ${TRAINING_SHELL_API_KEY:-}
+      TRAINING_SHELL_SSO_SECRET: ${TRAINING_SHELL_SSO_SECRET:-}
+      FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3004}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - training_net
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: trainingplan_web
+    restart: unless-stopped
+    ports:
+      - "3004:3004"
+    environment:
+      VITE_API_URL: http://localhost:3003/api/v1
+    depends_on:
+      - backend
+    networks:
+      - training_net
+
+volumes:
+  postgres_data:
+
+networks:
+  training_net:
+    driver: bridge

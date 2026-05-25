@@ -15,6 +15,7 @@ router.post('/plan-json', trainingController.generatePlanJson);
 router.get('/gallery', trainingController.getPublicGallery);
 router.get('/admin/gallery', trainingController.getAdminGallery);
 router.post('/admin/gallery', trainingController.createAdminGallery);
+router.put('/admin/gallery/:id', trainingController.updateAdminGallery);
 router.delete('/admin/gallery/:id', trainingController.deleteAdminGallery);
 
 // Maestro de Entrenamiento (Planes persistentes)

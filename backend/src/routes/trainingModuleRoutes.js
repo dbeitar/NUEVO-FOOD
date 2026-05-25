@@ -3,7 +3,13 @@ const auth = require('../middleware/auth');
 const userRepo = require('../db/repositories/userRepository');
 const trainingProvisioning = require('../services/trainingProvisioningService');
 const { resolveBrandingForUser } = require('../services/trainingBrandingService');
-const { createHandoffToken, buildExternalLaunchUrl } = require('../services/trainingSsoService');
+const {
+  createHandoffToken,
+  verifyHandoffToken,
+  buildExternalLaunchUrl,
+  buildEmbeddedLaunchUrl,
+  useEmbeddedTrainingLaunch,
+} = require('../services/trainingSsoService');
 const licenseService = require('../services/licenseService');
 const { auditTraining } = require('../services/trainingAudit');
 const { userHasModule } = require('../middleware/requireModuleLicense');
@@ -23,6 +29,27 @@ function isTrainingExternalMode() {
   ).toLowerCase() === 'true';
 }
 
+async function deliverTrainingSession(res, user, { auditAction = 'training.exchange', handoffToken = null } = {}) {
+  const licensed = await userHasModule(user, 'training');
+  if (!licensed) {
+    return res.status(403).json({ error: 'Módulo training no licenciado o vencido', module: 'training' });
+  }
+  const branding = await resolveBrandingForUser(user.id);
+  const session = await trainingProvisioning.trainingSessionForShell({
+    userId: user.id,
+    branding,
+    handoffToken,
+  });
+  if (!session.ok) {
+    return res.status(502).json({ error: session.error || 'No se pudo abrir módulo Entrenadores' });
+  }
+  auditTraining(user.id, auditAction, 'Sesión training entregada al shell embebido', {
+    training_user_id: session.user?.training_user_id,
+    coach_mode: session.coach_mode,
+  });
+  return res.json({ success: true, data: session });
+}
+
 router.get('/status', auth, async (req, res) => {
   try {
     const user = await userRepo.findById(req.user.id);
@@ -30,7 +57,8 @@ router.get('/status', auth, async (req, res) => {
     res.json({
       success: true,
       data: {
-        enabled: trainingProvisioning.trainingModuleEnabled(),
+        enabled: true,
+        embedded: useEmbeddedTrainingLaunch(),
         external: isTrainingExternalMode(),
         external_url: publicTrainingUrl(),
         training_user_id: user?.training_user_id || null,
@@ -63,26 +91,23 @@ router.get('/launch', auth, async (req, res) => {
     const user = await userRepo.findById(req.user.id);
     const branding = await resolveBrandingForUser(req.user.id);
     const returnUrl = req.query.return_url || process.env.SHELL_PUBLIC_URL || 'http://localhost:5175/dashboard';
-    const roles = Array.isArray(req.user.roles) ? req.user.roles : [req.user.rol];
-    const adminish = roles.some((r) => [
-      'super_admin', 'admin_training', 'admin_entrenador', 'admin_marca',
-      'admin_gimnasio', 'entrenador',
-    ].includes(r));
-
     const token = createHandoffToken({
       sub: user.id,
       email: user.email,
       training_user_id: user.training_user_id || null,
       branding,
     });
+    const embedded = useEmbeddedTrainingLaunch() && !isTrainingExternalMode();
+    const url = embedded
+      ? buildEmbeddedLaunchUrl(returnUrl, token)
+      : buildExternalLaunchUrl(publicTrainingUrl(), token, returnUrl);
 
-    auditTraining(req.user.id, 'training.login', 'Launch training generado', {
+    auditTraining(req.user.id, 'training.launch', 'URL módulo training generada', {
       training_user_id: user.training_user_id,
-      mode: isTrainingExternalMode() ? 'external' : 'internal',
+      embedded,
     });
 
     if (isTrainingExternalMode() && trainingProvisioning.trainingModuleEnabled()) {
-      const url = buildExternalLaunchUrl(publicTrainingUrl(), token, returnUrl);
       return res.json({
         success: true,
         data: {
@@ -95,14 +120,22 @@ router.get('/launch', auth, async (req, res) => {
       });
     }
 
+    const roles = Array.isArray(req.user.roles) ? req.user.roles : [req.user.rol];
+    const adminish = roles.some((r) => [
+      'super_admin', 'admin_training', 'admin_entrenador', 'admin_marca',
+      'admin_gimnasio', 'entrenador',
+    ].includes(r));
+
     res.json({
       success: true,
       data: {
-        mode: 'internal',
-        url: null,
-        panel: 'training',
-        destinationView: adminish ? 'service:training' : 'training',
+        mode: embedded ? 'embedded' : 'internal',
+        url,
         token,
+        panel: 'training',
+        destinationView: embedded
+          ? (adminish ? '/coach' : '/athlete')
+          : (adminish ? 'service:training' : 'training'),
         branding,
         expires_in: Number(process.env.TRAINING_SSO_TTL_SEC || 120),
         return_url: returnUrl,
@@ -110,6 +143,39 @@ router.get('/launch', auth, async (req, res) => {
     });
   } catch (e) {
     auditTraining(req.user?.id, 'training.launch.error', e.message, {}, 'error');
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/exchange', async (req, res) => {
+  try {
+    const handoffToken = req.body?.token;
+    if (!handoffToken) return res.status(400).json({ error: 'token requerido' });
+    let payload;
+    try {
+      payload = verifyHandoffToken(handoffToken);
+    } catch {
+      return res.status(401).json({ error: 'Token shell inválido o expirado' });
+    }
+    if (payload.typ !== 'training_shell_sso') {
+      return res.status(401).json({ error: 'Token shell no válido' });
+    }
+    const user = await userRepo.findById(Number(payload.sub));
+    if (!user) return res.status(404).json({ error: 'Usuario shell no encontrado' });
+    return deliverTrainingSession(res, user, { auditAction: 'training.exchange', handoffToken });
+  } catch (e) {
+    auditTraining(null, 'training.exchange.error', e.message, {}, 'error');
+    res.status(500).json({ error: e.message });
+  }
+});
+
+router.post('/exchange-session', auth, async (req, res) => {
+  try {
+    const user = await userRepo.findById(req.user.id);
+    if (!user) return res.status(404).json({ error: 'Usuario shell no encontrado' });
+    return deliverTrainingSession(res, user, { auditAction: 'training.exchange.session' });
+  } catch (e) {
+    auditTraining(req.user?.id, 'training.exchange.session.error', e.message, {}, 'error');
     res.status(500).json({ error: e.message });
   }
 });

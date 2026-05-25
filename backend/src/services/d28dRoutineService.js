@@ -82,12 +82,14 @@ module.exports = {
     assertRelational();
     return routineRepo.upsertCategory(body);
   },
-  listRoutines: (query) => {
+  listRoutines: (query, listFilter = {}) => {
     assertRelational();
     return routineRepo.listRoutines({
       estado: query.estado,
       categoria: query.categoria,
       currentOnly: query.all_versions !== 'true',
+      scopes: listFilter.scopes,
+      coachTrainerId: listFilter.coachTrainerId,
     });
   },
   getRoutine: (id, opts) => getDetail(id, opts),
@@ -95,9 +97,9 @@ module.exports = {
     assertRelational();
     return routineRepo.getVersionHistory(rootId);
   },
-  createRoutine: (body, userId) => {
+  createRoutine: (body, userId, trainerId = null) => {
     assertRelational();
-    return routineRepo.createRoutine(normalizeRoutineInput(body), userId);
+    return routineRepo.createRoutine(normalizeRoutineInput(body), userId, trainerId);
   },
   updateRoutine: (id, body, { newVersion = false, userId } = {}) => {
     assertRelational();
@@ -107,9 +109,9 @@ module.exports = {
     }
     return routineRepo.updateRoutineInPlace(id, normalized);
   },
-  duplicateRoutine: (id, userId) => {
+  duplicateRoutine: (id, userId, overrides = {}) => {
     assertRelational();
-    return routineRepo.cloneRoutine(id, { versionBump: false, createdBy: userId });
+    return routineRepo.cloneRoutine(id, { versionBump: false, createdBy: userId, overrides });
   },
   archiveRoutine: (id) => {
     assertRelational();

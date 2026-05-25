@@ -1,21 +1,18 @@
 const routineService = require('../services/d28dRoutineService');
-
-const PLATFORM_ROLES = ['super_admin', 'admin_d28d'];
-const HOST_ROLES = [...PLATFORM_ROLES, 'entrenador_d28d'];
-
-function hasRole(user, roles) {
-  const list = Array.isArray(user?.roles) ? user.roles : [];
-  if (list.length) return roles.some((r) => list.includes(r));
-  return roles.includes(user?.rol);
-}
-
-function canManage(user) {
-  return hasRole(user, PLATFORM_ROLES);
-}
-
-function canViewHost(user) {
-  return hasRole(user, HOST_ROLES);
-}
+const { isCoachUser } = require('../utils/coachScope');
+const {
+  canListRoutines,
+  canListRoutinesForLive,
+  canManagePlatform,
+  canManageCoachRoutines,
+  canReadRoutine,
+  canWriteRoutine,
+  buildListFilter,
+  defaultScopeForCreate,
+  trainerIdForCreate,
+  isPlatformRoutine,
+  isD28dHost,
+} = require('../utils/d28dRoutineAccess');
 
 function sendError(res, err) {
   const status = err.status || 500;
@@ -40,7 +37,7 @@ exports.listCategories = async (_req, res) => {
 };
 
 exports.upsertCategory = async (req, res) => {
-  if (!canManage(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
+  if (!canManagePlatform(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
   try {
     const data = await routineService.upsertCategory(req.body);
     return res.json({ success: true, data });
@@ -50,7 +47,7 @@ exports.upsertCategory = async (req, res) => {
 };
 
 exports.listForSchedule = async (req, res) => {
-  if (!canViewHost(req.user) && !canManage(req.user)) {
+  if (!canListRoutinesForLive(req.user)) {
     return res.status(403).json({ success: false, message: 'Sin permiso' });
   }
   try {
@@ -62,11 +59,12 @@ exports.listForSchedule = async (req, res) => {
 };
 
 exports.listRoutines = async (req, res) => {
-  if (!canViewHost(req.user) && !canManage(req.user)) {
+  if (!canListRoutines(req.user)) {
     return res.status(403).json({ success: false, message: 'Sin permiso' });
   }
   try {
-    const data = await routineService.listRoutines(req.query);
+    const filter = buildListFilter(req.user, req.query);
+    const data = await routineService.listRoutines(req.query, filter);
     return res.json({ success: true, data });
   } catch (err) {
     return sendError(res, err);
@@ -74,12 +72,15 @@ exports.listRoutines = async (req, res) => {
 };
 
 exports.getRoutine = async (req, res) => {
-  if (!canViewHost(req.user) && !canManage(req.user)) {
+  if (!canListRoutines(req.user)) {
     return res.status(403).json({ success: false, message: 'Sin permiso' });
   }
   try {
     const data = await routineService.getRoutine(req.params.id, { allowAnyVersion: true });
     if (!data) return res.status(404).json({ success: false, message: 'Rutina no encontrada' });
+    if (!canReadRoutine(req.user, data)) {
+      return res.status(403).json({ success: false, message: 'Sin permiso' });
+    }
     return res.json({ success: true, data });
   } catch (err) {
     return sendError(res, err);
@@ -87,19 +88,32 @@ exports.getRoutine = async (req, res) => {
 };
 
 exports.getHistory = async (req, res) => {
-  if (!canManage(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
   try {
     const data = await routineService.getHistory(req.params.rootId);
-    return res.json({ success: true, data });
+    const visible = data.filter((r) => canReadRoutine(req.user, r));
+    if (!visible.length && !canManagePlatform(req.user)) {
+      return res.status(403).json({ success: false, message: 'Sin permiso' });
+    }
+    return res.json({ success: true, data: visible });
   } catch (err) {
     return sendError(res, err);
   }
 };
 
 exports.createRoutine = async (req, res) => {
-  if (!canManage(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
+  if (!canManageCoachRoutines(req.user)) {
+    return res.status(403).json({ success: false, message: 'Sin permiso' });
+  }
   try {
-    const data = await routineService.createRoutine(req.body, req.user.id);
+    const body = { ...req.body, scope: req.body.scope || defaultScopeForCreate(req.user) };
+    if (isPlatformRoutine({ scope: body.scope }) && !canManagePlatform(req.user)) {
+      return res.status(403).json({ success: false, message: 'Solo D28D puede crear plantillas de plataforma' });
+    }
+    const tid = trainerIdForCreate(req.user);
+    if (isCoachUser(req.user) && tid == null) {
+      return res.status(400).json({ success: false, message: 'Tu cuenta no tiene entrenador vinculado (trainer_id)' });
+    }
+    const data = await routineService.createRoutine(body, req.user.id, tid);
     return res.status(201).json({ success: true, data });
   } catch (err) {
     return sendError(res, err);
@@ -107,10 +121,18 @@ exports.createRoutine = async (req, res) => {
 };
 
 exports.updateRoutine = async (req, res) => {
-  if (!canManage(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
   try {
+    const current = await routineService.getRoutine(req.params.id, { allowAnyVersion: true });
+    if (!current) return res.status(404).json({ success: false, message: 'Rutina no encontrada' });
+    if (!canWriteRoutine(req.user, current)) {
+      return res.status(403).json({ success: false, message: 'Sin permiso para editar esta rutina' });
+    }
+    const body = { ...req.body };
+    if (isPlatformRoutine(current) && body.scope && body.scope !== 'd28d_platform' && !canManagePlatform(req.user)) {
+      return res.status(403).json({ success: false, message: 'No puedes cambiar el ámbito de una plantilla D28D' });
+    }
     const newVersion = req.body.new_version === true || req.query.new_version === 'true';
-    const data = await routineService.updateRoutine(req.params.id, req.body, {
+    const data = await routineService.updateRoutine(req.params.id, body, {
       newVersion,
       userId: req.user.id,
     });
@@ -121,8 +143,12 @@ exports.updateRoutine = async (req, res) => {
 };
 
 exports.duplicateRoutine = async (req, res) => {
-  if (!canManage(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
   try {
+    const current = await routineService.getRoutine(req.params.id, { allowAnyVersion: true });
+    if (!current) return res.status(404).json({ success: false, message: 'Rutina no encontrada' });
+    if (!canWriteRoutine(req.user, current)) {
+      return res.status(403).json({ success: false, message: 'Sin permiso' });
+    }
     const data = await routineService.duplicateRoutine(req.params.id, req.user.id);
     return res.status(201).json({ success: true, data });
   } catch (err) {
@@ -130,9 +156,36 @@ exports.duplicateRoutine = async (req, res) => {
   }
 };
 
-exports.archiveRoutine = async (req, res) => {
-  if (!canManage(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
+exports.copyToCoach = async (req, res) => {
+  if (!canManagePlatform(req.user)) {
+    return res.status(403).json({ success: false, message: 'Solo administración D28D puede copiar plantillas' });
+  }
   try {
+    const source = await routineService.getRoutine(req.params.id, { allowAnyVersion: true });
+    if (!source) return res.status(404).json({ success: false, message: 'Rutina no encontrada' });
+    if (!isPlatformRoutine(source)) {
+      return res.status(400).json({ success: false, message: 'Solo se pueden copiar plantillas D28D de plataforma' });
+    }
+    if (!canReadRoutine(req.user, source)) {
+      return res.status(403).json({ success: false, message: 'Sin permiso' });
+    }
+    const data = await routineService.duplicateRoutine(req.params.id, req.user.id, {
+      scope: 'coach_wl',
+      nombre: `${source.nombre} (mi copia)`,
+    });
+    return res.status(201).json({ success: true, data });
+  } catch (err) {
+    return sendError(res, err);
+  }
+};
+
+exports.archiveRoutine = async (req, res) => {
+  try {
+    const current = await routineService.getRoutine(req.params.id, { allowAnyVersion: true });
+    if (!current) return res.status(404).json({ success: false, message: 'Rutina no encontrada' });
+    if (!canWriteRoutine(req.user, current)) {
+      return res.status(403).json({ success: false, message: 'Sin permiso' });
+    }
     const data = await routineService.archiveRoutine(req.params.id);
     return res.json({ success: true, data });
   } catch (err) {
@@ -141,7 +194,7 @@ exports.archiveRoutine = async (req, res) => {
 };
 
 exports.importBundled = async (req, res) => {
-  if (!canManage(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
+  if (!canManagePlatform(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
   try {
     const data = await routineService.importBundled(req.user.id);
     return res.json({ success: true, data });
@@ -151,7 +204,9 @@ exports.importBundled = async (req, res) => {
 };
 
 exports.addHostNote = async (req, res) => {
-  if (!canViewHost(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
+  if (!isD28dHost(req.user) && !canManagePlatform(req.user)) {
+    return res.status(403).json({ success: false, message: 'Sin permiso' });
+  }
   try {
     const data = await routineService.addHostNote({
       routineId: req.body.routine_id,
@@ -166,7 +221,9 @@ exports.addHostNote = async (req, res) => {
 };
 
 exports.listHostNotes = async (req, res) => {
-  if (!canViewHost(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
+  if (!isD28dHost(req.user) && !canManagePlatform(req.user)) {
+    return res.status(403).json({ success: false, message: 'Sin permiso' });
+  }
   try {
     const data = await routineService.listHostNotes({
       routineId: req.query.routine_id,

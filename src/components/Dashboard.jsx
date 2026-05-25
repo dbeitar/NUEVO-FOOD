@@ -33,8 +33,10 @@ import { getServicesFor } from './dashboard/userServices';
 import { isFoodExternal, getFoodModulePublicUrl, isFoodLegacyView, openFoodModule } from '../utils/foodModule';
 import {
   isTrainingExternal,
+  isTrainingLegacyMode,
   isTrainingLegacyView,
   openTrainingModule,
+  openTrainingModuleView,
   consumeTrainingLaunch,
 } from '../utils/trainingModule';
 import MyPlanView from './dashboard/MyPlanView';
@@ -45,6 +47,8 @@ import D28DAdminView from './dashboard/D28DAdminView';
 import TrainersAdminView from './dashboard/TrainersAdminView';
 import MastersHub from './dashboard/MastersHub';
 import D28dRoutinesMaster from './admin/D28dRoutinesMaster';
+import D28dCoachTracking from './d28d/D28dCoachTracking';
+import D28dZoomAccountsMaster from './d28d/D28dZoomAccountsMaster';
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { t, lang, setLang } = useI18n();
@@ -168,26 +172,34 @@ export default function Dashboard() {
 
   // === Handlers ============================================================
   const navigate = (view) => {
+    if (view === 'home') {
+      setOpenServicePanel(null);
+      setSelectedProgram(null);
+      setCurrentView('home');
+      return;
+    }
     if (isFoodExternal() && isFoodLegacyView(view)) {
       openFoodModule('/dashboard');
       return;
     }
-    if (isTrainingLegacyView(view)) {
-      openTrainingModule('/dashboard').then((launch) => {
-        if (launch?.mode === 'internal') {
-          if (launch.destinationView?.startsWith('service:')) {
-            setOpenServicePanel(launch.destinationView.split(':')[1]);
-            setCurrentView('servicePanel');
-          } else {
-            setCurrentView(launch.destinationView || 'training');
-            setOpenServicePanel(null);
-          }
-        }
-      }).catch(() => setCurrentView(view));
+    // Solo relanzar SSO al entrar por módulo externo; dentro del shell los maestros navegan directo.
+    if (isTrainingExternal() && isTrainingLegacyView(view)) {
+      openTrainingModuleView(view);
       return;
     }
     setCurrentView(view);
-    setOpenServicePanel(null);
+    if (isTrainingLegacyView(view)) {
+      setOpenServicePanel('training');
+    } else if (view === 'servicePanel') {
+      /* mantiene openServicePanel actual */
+    } else {
+      setOpenServicePanel(null);
+    }
+  };
+
+  const backToTrainingPanel = () => {
+    setOpenServicePanel('training');
+    setCurrentView('servicePanel');
   };
 
   const onPickService = async (service) => {
@@ -196,21 +208,13 @@ export default function Dashboard() {
       openFoodModule('/dashboard');
       return;
     }
-    if (service.destinationView === 'external:training' || service.moduleLaunch === 'training') {
-      try {
-        const launch = await openTrainingModule('/dashboard');
-        if (launch?.mode === 'internal') {
-          if (launch.destinationView?.startsWith('service:')) {
-            setOpenServicePanel(launch.destinationView.split(':')[1]);
-            setCurrentView('servicePanel');
-          } else {
-            navigate(launch.destinationView || 'training');
-          }
-        }
-      } catch {
-        setOpenServicePanel('training');
-        setCurrentView('servicePanel');
-      }
+    if (service.destinationView === 'external:training' || (service.moduleLaunch === 'training' && isTrainingExternal())) {
+      await openTrainingModule('/dashboard', '/coach');
+      return;
+    }
+    if (service.moduleLaunch === 'training' && isTrainingLegacyMode()) {
+      setOpenServicePanel('training');
+      setCurrentView('servicePanel');
       return;
     }
     if (service.destinationView?.startsWith('service:')) {
@@ -296,6 +300,7 @@ export default function Dashboard() {
         return [
           { id: 'home', label: home },
           { id: 'liveclasses', label: t('nav.liveclasses', 'Clases en Vivo') },
+          { id: 'd28dtracking', label: t('nav.tracking', 'Seguimiento') },
           { id: 'myaccount', label: account },
         ];
       }
@@ -303,8 +308,9 @@ export default function Dashboard() {
         return [
           { id: 'home', label: home },
           { id: 'adminusers', label: t('nav.myusers', 'Mis usuarios') },
-          { id: 'admintraining', label: t('nav.routines', 'Rutinas') },
-          { id: 'admin', label: t('nav.nutrition_plans', 'Planes nutricionales') },
+          { id: 'coachroutines', label: t('nav.routine_templates', 'Plantillas rutina') },
+          { id: 'admintraining', label: t('nav.planning', 'Planificación') },
+          { id: 'admingallery', label: t('nav.gallery', 'Galería') },
           { id: 'progress', label: t('nav.tracking', 'Seguimiento') },
           { id: 'myaccount', label: account },
         ];
@@ -363,11 +369,27 @@ export default function Dashboard() {
       );
     }
     if (openServicePanel === 'd28d') {
+      const navigateD28d = (view) => {
+        const d28dViews = new Set([
+          'liveclasses', 'programs', 'd28dzoom', 'admingyms', 'adminusers',
+          'admincompanies', 'admingallery', 'adminliveclasses',
+        ]);
+        if (d28dViews.has(view)) {
+          setOpenServicePanel('d28d');
+          setCurrentView(view);
+          return;
+        }
+        navigate(view);
+      };
       return (
         <D28DAdminView
           hasAnyRole={hasAnyRole}
-          onNavigate={navigate}
-          onPickProgram={(programId) => { setSelectedProgram(programId); navigate('liveclasses'); }}
+          onNavigate={navigateD28d}
+          onPickProgram={(programId) => {
+            setSelectedProgram(programId);
+            setOpenServicePanel('d28d');
+            setCurrentView('liveclasses');
+          }}
           onBack={onBackToHome}
         />
       );
@@ -382,17 +404,41 @@ export default function Dashboard() {
         />
       );
     }
+    if (openServicePanel === 'd28d-zoom') {
+      if (!hasAnyRole(['super_admin', 'admin_d28d'])) return renderHome();
+      return (
+        <D28dZoomAccountsMaster
+          onBack={() => {
+            setOpenServicePanel(null);
+            setCurrentView('masters');
+          }}
+        />
+      );
+    }
     if (openServicePanel === 'd28d-routines') {
       if (!hasAnyRole(['super_admin', 'admin_d28d', 'entrenador_d28d'])) {
         return renderHome();
       }
       return (
         <D28dRoutinesMaster
+          variant="platform"
           readOnly={!hasAnyRole(['super_admin', 'admin_d28d'])}
           onBack={() => {
             setOpenServicePanel(null);
             setCurrentView('masters');
           }}
+        />
+      );
+    }
+    if (openServicePanel === 'coach-routines') {
+      if (!hasAnyRole(['entrenador', 'nutricionista', 'admin_training', 'admin_entrenador'])) {
+        return renderHome();
+      }
+      return (
+        <D28dRoutinesMaster
+          variant="coach"
+          readOnly={false}
+          onBack={onBackToHome}
         />
       );
     }
@@ -427,9 +473,25 @@ export default function Dashboard() {
       case 'paymentlinks': return hasAnyRole(['super_admin']) ? <AdminPaymentLinks /> : null;
       case 'appearance': return hasAnyRole(['super_admin']) ? <AdminFrontendAppearance /> : null;
       case 'progress': return <Progress />;
+      case 'd28dtracking':
+        if (!hasAnyRole(['entrenador_d28d'])) return renderHome();
+        return <D28dCoachTracking onBack={() => navigate('home')} />;
       case 'equivalentes': return <Equivalentes />;
       case 'training': return <TrainingModule />;
-      case 'admintraining': return <AdminTrainingManager />;
+      case 'coachroutines':
+        if (!hasAnyRole(['entrenador', 'nutricionista', 'admin_training', 'admin_entrenador'])) return renderHome();
+        return (
+          <D28dRoutinesMaster
+            variant="coach"
+            readOnly={false}
+            onBack={backToTrainingPanel}
+          />
+        );
+      case 'admintraining':
+        if (!hasAnyRole(['entrenador', 'nutricionista', 'admin_training', 'admin_entrenador', 'super_admin', 'admin_marca', 'admin_gimnasio'])) {
+          return renderHome();
+        }
+        return <AdminTrainingManager onBack={backToTrainingPanel} />;
       case 'admingallery': return <AdminTrainingGallery />;
       case 'adminliveclasses':
       case 'liveclasses': {
@@ -437,6 +499,16 @@ export default function Dashboard() {
         return <LiveClassesPanel user={user} canProgram={canProgram} programId={selectedProgram} />;
       }
       case 'programs': return <AdminProgramsManager />;
+      case 'd28dzoom':
+        if (!hasAnyRole(['super_admin', 'admin_d28d'])) return renderHome();
+        return (
+          <D28dZoomAccountsMaster
+            onBack={() => {
+              setOpenServicePanel('d28d');
+              setCurrentView('servicePanel');
+            }}
+          />
+        );
       case 'masters':
         return (
           <MastersHub

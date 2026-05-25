@@ -16,6 +16,7 @@ router.get('/:id/branding', trainersController.getTrainerBranding);
 router.put('/:id/branding', trainersController.updateTrainerBranding);
 router.get('/:id', trainersController.getTrainerById);
 
+router.post('/with-account', trainersController.createTrainerWithAccount);
 router.post('/', trainersController.createTrainer);
 router.put('/:id', trainersController.updateTrainer);
 router.delete('/:id', trainersController.deleteTrainer);

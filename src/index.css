@@ -1,5 +1,6 @@
 @import "tailwindcss";
 @import "./styles/d28d-theme.css";
+@import "./styles/d28d-readability.css";
 
 @layer base {
   body {
@@ -167,7 +168,7 @@
   }
 
   .input::placeholder {
-    color: #666;
+    color: rgba(255, 255, 255, 0.45);
   }
 
   .input:focus {
@@ -295,44 +296,44 @@
   }
 
   .form-modal {
-    background: #e2e8f0;
-    border: 1px solid #94a3b8;
+    background: var(--d28d-surface-2);
+    border: 1px solid var(--d28d-border);
     border-radius: 0.75rem;
     width: 100%;
     max-width: 48rem;
     max-height: 90vh;
     overflow: hidden;
-    color: #0f172a;
-    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.35);
+    color: var(--d28d-text);
+    box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.55);
   }
 
   .form-modal-header,
   .form-modal-footer {
     padding: 1rem 1.25rem;
-    background: #f1f5f9;
-    border-color: #cbd5e1;
+    background: var(--d28d-surface);
+    border-color: var(--d28d-border);
   }
 
   .form-modal-header {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    border-bottom: 1px solid #cbd5e1;
+    border-bottom: 1px solid var(--d28d-border);
   }
 
   .form-modal-header h2,
   .form-modal-header h3,
   .form-modal-header h4 {
-    color: #0f172a;
+    color: var(--d28d-text);
     margin: 0;
   }
 
   .form-modal-content {
     padding: 1.25rem;
-    background: #e2e8f0;
+    background: var(--d28d-surface-2);
     overflow: auto;
     max-height: 65vh;
-    color: #1e293b;
+    color: var(--d28d-text);
   }
 
   .form-modal-footer {
@@ -340,7 +341,7 @@
     justify-content: flex-end;
     flex-wrap: wrap;
     gap: 0.5rem;
-    border-top: 1px solid #cbd5e1;
+    border-top: 1px solid var(--d28d-border);
   }
 
   .form-modal .input,
@@ -350,9 +351,9 @@
   .form-modal .form-group input,
   .form-modal .form-group select,
   .form-modal .form-group textarea {
-    background-color: #ffffff;
-    color: #0f172a;
-    border-color: #cbd5e1;
+    background-color: var(--d28d-surface-3);
+    color: var(--d28d-text);
+    border-color: var(--d28d-border);
   }
 
   .form-modal .form-close-btn,
@@ -362,16 +363,16 @@
     border-radius: 9999px;
     display: grid;
     place-items: center;
-    color: #64748b;
-    background: #f8fafc;
-    border: 1px solid #cbd5e1;
+    color: var(--d28d-text);
+    background: var(--d28d-surface-3);
+    border: 1px solid var(--d28d-border);
     cursor: pointer;
   }
 
   .form-modal .form-close-btn:hover,
   .form-modal .policy-close-btn:hover {
-    background: #e2e8f0;
-    color: #0f172a;
+    background: var(--d28d-surface);
+    color: var(--d28d-yellow);
   }
 
   .dashboard-container {

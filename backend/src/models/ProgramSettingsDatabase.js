@@ -16,19 +16,26 @@ const ZOOM_PASSWORD_ENV = {
   virtual_d28d_2: 'D28D_ZOOM_PASSWORD_VIRTUAL_2',
 };
 
+const DEFAULT_ZOOM_EMAILS = {
+  vital: 'D28dvital@gmail.com',
+  pancitas: 'Pancitasfitbyd28d@gmail.com',
+  virtual_d28d_1: 'D28dzoom1@gmail.com',
+  virtual_d28d_2: 'd28dzoom2@gmail.com',
+};
+
 const INITIAL_DATA = [
   {
     id: 'vital',
-    name: 'Vital',
-    zoom_email: process.env.D28D_ZOOM_EMAIL_VITAL || '',
+    name: 'Vital D28D',
+    zoom_email: process.env.D28D_ZOOM_EMAIL_VITAL || DEFAULT_ZOOM_EMAILS.vital,
     color: '#ec4899',
     active: true,
     active_cycle_id: 7,
   },
   {
     id: 'pancitas',
-    name: 'Pancitas',
-    zoom_email: process.env.D28D_ZOOM_EMAIL_PANCITAS || '',
+    name: 'Pancitas Fit',
+    zoom_email: process.env.D28D_ZOOM_EMAIL_PANCITAS || DEFAULT_ZOOM_EMAILS.pancitas,
     color: '#8b5cf6',
     active: true,
     active_cycle_id: 7,
@@ -37,8 +44,16 @@ const INITIAL_DATA = [
     id: 'virtual_d28d',
     name: 'Virtual D28D',
     zoom_accounts: [
-      { id: 'virtual_d28d_1', email: process.env.D28D_ZOOM_EMAIL_VIRTUAL_1 || '' },
-      { id: 'virtual_d28d_2', email: process.env.D28D_ZOOM_EMAIL_VIRTUAL_2 || '' },
+      {
+        id: 'virtual_d28d_1',
+        label: 'Virtual · Cuenta 1',
+        email: process.env.D28D_ZOOM_EMAIL_VIRTUAL_1 || DEFAULT_ZOOM_EMAILS.virtual_d28d_1,
+      },
+      {
+        id: 'virtual_d28d_2',
+        label: 'Virtual · Cuenta 2',
+        email: process.env.D28D_ZOOM_EMAIL_VIRTUAL_2 || DEFAULT_ZOOM_EMAILS.virtual_d28d_2,
+      },
     ],
     color: '#10b981',
     active: true,
@@ -84,16 +99,27 @@ class ProgramSettingsDatabase {
   // Uso interno (servidor) cuando se necesita arrancar una sesión Zoom.
   // NUNCA retornar este resultado al cliente.
   getZoomCredentialsForProgram(programId, accountId = null) {
+    const emailEnv = {
+      vital: 'D28D_ZOOM_EMAIL_VITAL',
+      pancitas: 'D28D_ZOOM_EMAIL_PANCITAS',
+      virtual_d28d_1: 'D28D_ZOOM_EMAIL_VIRTUAL_1',
+      virtual_d28d_2: 'D28D_ZOOM_EMAIL_VIRTUAL_2',
+    };
     if (programId === 'vital' || programId === 'pancitas') {
+      const program = this.getById(programId);
       return {
-        email: process.env[`D28D_ZOOM_EMAIL_${programId.toUpperCase()}`] || '',
+        email: process.env[emailEnv[programId]] || program?.zoom_email || '',
         password: process.env[ZOOM_PASSWORD_ENV[programId]] || '',
       };
     }
     if (programId === 'virtual_d28d') {
       const target = accountId || 'virtual_d28d_1';
+      const program = this.getById(programId);
+      const acc = Array.isArray(program?.zoom_accounts)
+        ? program.zoom_accounts.find((a) => a.id === target)
+        : null;
       return {
-        email: process.env[`D28D_ZOOM_EMAIL_${target.toUpperCase()}`] || '',
+        email: process.env[emailEnv[target]] || acc?.email || '',
         password: process.env[ZOOM_PASSWORD_ENV[target]] || '',
       };
     }

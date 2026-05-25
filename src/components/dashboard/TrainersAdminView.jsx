@@ -1,7 +1,18 @@
 import PanelAdminSection from './PanelAdminSection';
+import { openTrainingModule } from '../../utils/trainingModule';
 
 const CARDS = [
   { id: 'training', view: 'training' },
+  {
+    id: 'coachbrand',
+    view: 'myaccount',
+    when: (has) => has(['entrenador', 'nutricionista']),
+  },
+  {
+    id: 'coachroutines',
+    view: 'coachroutines',
+    when: (has) => has(['entrenador', 'nutricionista', 'admin_training', 'admin_entrenador']),
+  },
   {
     id: 'admintraining',
     view: 'admintraining',
@@ -10,7 +21,7 @@ const CARDS = [
   {
     id: 'admingallery',
     view: 'admingallery',
-    when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training', 'admin_entrenador']),
+    when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'admin_training', 'admin_entrenador', 'nutricionista']),
   },
   {
     id: 'adminusers',
@@ -26,20 +37,19 @@ const CARDS = [
 
 export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack, trainingExternal, trainingExternalUrl }) {
   if (trainingExternal) {
-    const url = trainingExternalUrl || 'http://localhost:5175';
     return (
       <div className="dashboard-main-view p-6 max-w-xl">
         <button type="button" className="text-sm text-stone-600 mb-4 hover:underline" onClick={onBack}>
           ← Volver
         </button>
-        <h3 className="text-xl font-bold text-stone-900 mb-2">Entrenamiento (módulo externo)</h3>
+        <h3 className="text-xl font-bold text-stone-900 mb-2">Módulo Entrenadores</h3>
         <p className="text-stone-600 mb-4">
-          El módulo training externo se activa con <code className="text-xs">VITE_TRAINING_EXTERNAL=true</code>.
-          Por defecto el shell abre el panel interno con licencia y branding centralizado.
+          Opera en el módulo embebido (<code className="text-xs">/training-module</code>), igual que Food Plan.
+          El panel legacy del shell requiere <code className="text-xs">VITE_TRAINING_LEGACY=true</code>.
         </p>
-        <a href={url} target="_blank" rel="noopener noreferrer" className="btn-primary inline-block">
-          Abrir módulo training
-        </a>
+        <button type="button" className="btn-primary" onClick={() => openTrainingModule('/dashboard', '/coach')}>
+          Abrir módulo Entrenadores
+        </button>
       </div>
     );
   }
