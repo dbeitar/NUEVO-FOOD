@@ -42,6 +42,7 @@ import {
 import MyPlanView from './dashboard/MyPlanView';
 import ServicesHero from './dashboard/ServicesHero';
 import AdminPaymentLinks from './AdminPaymentLinks';
+import AdminModuleVigencias from './AdminModuleVigencias';
 import FoodPlanAdminView from './dashboard/FoodPlanAdminView';
 import D28DAdminView from './dashboard/D28DAdminView';
 import TrainersAdminView from './dashboard/TrainersAdminView';
@@ -290,6 +291,7 @@ export default function Dashboard() {
         return [
           { id: 'home', label: home },
           { id: 'adminusers', label: t('nav.users', 'Usuarios') },
+          { id: 'modulevigencias', label: t('nav.vigencias', 'Vigencias') },
           { id: 'admintraining', label: t('nav.routines', 'Rutinas') },
           { id: 'admingallery', label: t('nav.gallery', 'Galería') },
           { id: 'progress', label: t('nav.tracking', 'Seguimiento') },
@@ -308,6 +310,7 @@ export default function Dashboard() {
         return [
           { id: 'home', label: home },
           { id: 'adminusers', label: t('nav.myusers', 'Mis usuarios') },
+          { id: 'modulevigencias', label: t('nav.vigencias', 'Vigencias') },
           { id: 'coachroutines', label: t('nav.routine_templates', 'Plantillas rutina') },
           { id: 'admintraining', label: t('nav.planning', 'Planificación') },
           { id: 'admingallery', label: t('nav.gallery', 'Galería') },
@@ -320,6 +323,7 @@ export default function Dashboard() {
           { id: 'home', label: home },
           { id: 'admingyms', label: t('nav.mybrand', 'Mi marca') },
           { id: 'adminusers', label: t('nav.users', 'Usuarios') },
+          { id: 'modulevigencias', label: t('nav.vigencias', 'Vigencias') },
           { id: 'liveclasses', label: t('nav.liveclasses', 'Clases en Vivo') },
           { id: 'admingallery', label: t('nav.gallery', 'Galería') },
           { id: 'myaccount', label: account },
@@ -335,6 +339,7 @@ export default function Dashboard() {
         { id: 'masters', label: t('nav.masters', 'Maestros') },
         { id: 'audit', label: t('nav.audit', 'Auditoría') },
         { id: 'paymentlinks', label: t('nav.paymentlinks', 'Pagos') },
+        { id: 'modulevigencias', label: t('nav.vigencias', 'Vigencias') },
         { id: 'appearance', label: t('nav.appearance', 'Apariencia') },
         { id: 'myaccount', label: account },
       ];
@@ -471,6 +476,11 @@ export default function Dashboard() {
       case 'myaccount': return <MyAccount />;
       case 'audit': return hasAnyRole(['super_admin']) ? <AuditDashboard /> : null;
       case 'paymentlinks': return hasAnyRole(['super_admin']) ? <AdminPaymentLinks /> : null;
+      case 'modulevigencias':
+        return hasAnyRole([
+          'super_admin', 'admin_d28d', 'admin_training', 'admin_entrenador',
+          'admin_gimnasio', 'admin_marca', 'entrenador', 'nutricionista',
+        ]) ? <AdminModuleVigencias /> : null;
       case 'appearance': return hasAnyRole(['super_admin']) ? <AdminFrontendAppearance /> : null;
       case 'progress': return <Progress />;
       case 'd28dtracking':

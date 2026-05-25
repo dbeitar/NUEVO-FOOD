@@ -895,6 +895,8 @@ app.use('/api/programs', programRoutes);
 app.use('/api/cycles', cycleRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/payment-links', paymentLinkRoutes);
+const paymentAdminRoutes = require('./src/routes/paymentAdminRoutes');
+app.use('/api/payment-admin', paymentAdminRoutes);
 app.use('/api/frontend-config', frontendConfigRoutes);
 app.use('/api/food-module', foodModuleRoutes);
 app.use('/api/training-module', trainingModuleRoutes);

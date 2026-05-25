@@ -9,6 +9,7 @@ import { TrainingModule } from './training/training.module';
 import { CoachModule } from './coach/coach.module';
 import { BrandingModule } from './branding/branding.module';
 import { ShellModule } from './shell/shell.module';
+import { SubscriptionsModule } from './subscriptions/subscriptions.module';
 import { JwtAuthGuard, RolesGuard } from './common/guards/auth.guard';
 
 @Module({
@@ -27,6 +28,7 @@ import { JwtAuthGuard, RolesGuard } from './common/guards/auth.guard';
     CoachModule,
     BrandingModule,
     ShellModule,
+    SubscriptionsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

@@ -12,6 +12,7 @@ import { LoginDto } from './dto/auth.dto';
 import { ShellExchangeDto } from './dto/shell-auth.dto';
 import { ShellProvisionDto } from './dto/shell-auth.dto';
 import { TrainingService } from '../training/training.service';
+import { SubscriptionsService } from '../subscriptions/subscriptions.service';
 
 @Injectable()
 export class AuthService {
@@ -19,6 +20,7 @@ export class AuthService {
     @InjectRepository(User) private userRepo: Repository<User>,
     private jwtService: JwtService,
     private trainingService: TrainingService,
+    private subscriptionsService: SubscriptionsService,
   ) {}
 
   private shellSsoSecret() {
@@ -118,6 +120,7 @@ export class AuthService {
     await this.userRepo.save(user);
     if (user.isActive && user.role === UserRole.ATHLETE) {
       await this.trainingService.ensureDefaultPlan(user, user.trainerId);
+      await this.subscriptionsService.ensureForUser(user, 'pago_sede');
     }
     return { ok: true, trainingUserId: user.id, shellUserId: user.shellUserId, active: user.isActive };
   }

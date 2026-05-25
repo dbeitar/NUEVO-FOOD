@@ -10,6 +10,7 @@ export default function Layout({ mode }: { mode: 'coach' | 'athlete' }) {
         { to: '/coach/planning', label: 'Planificación' },
         { to: '/coach/gallery', label: 'Galería' },
         { to: '/coach/users', label: 'Atletas' },
+        { to: '/coach/vigencias', label: 'Vigencias' },
       ]
     : [
         { to: '/athlete', label: 'Inicio' },

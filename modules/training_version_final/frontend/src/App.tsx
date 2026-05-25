@@ -8,6 +8,7 @@ import CoachDashboard from './pages/coach/CoachDashboard';
 import CoachPlanning from './pages/coach/CoachPlanning';
 import CoachGallery from './pages/coach/CoachGallery';
 import CoachUsers from './pages/coach/CoachUsers';
+import CoachVigencias from './pages/coach/CoachVigencias';
 import CoachProgress from './pages/coach/CoachProgress';
 import AthleteDashboard from './pages/athlete/AthleteDashboard';
 import WorkoutPage from './pages/athlete/WorkoutPage';
@@ -33,6 +34,7 @@ export default function App() {
           <Route path="planning" element={<CoachPlanning />} />
           <Route path="gallery" element={<CoachGallery />} />
           <Route path="users" element={<CoachUsers />} />
+          <Route path="vigencias" element={<CoachVigencias />} />
           <Route path="progress/:id" element={<CoachProgress />} />
         </Route>
 

@@ -6,6 +6,7 @@ import TermsOfServiceModal from './TermsOfServiceModal';
 import AuthLayout from './AuthLayout';
 import { useI18n } from '../context/useI18n';
 import { PUBLIC_BRAND_NAME } from '../utils/branding';
+import { fetchPaymentMethods, openWompiCheckout } from '../utils/paymentMethods';
 
 function readApiError(err, fallback) {
   const data = err?.response?.data;
@@ -40,7 +41,7 @@ export default function Register({ onSwitchToLogin }) {
     altura: '',
     genero: '',
     objetivo: '',
-    metodoPago: 'tarjeta_credito',
+    metodoPago: 'wompi_online',
     tiene_restricciones: false,
     restricciones_detalles: '',
   });
@@ -57,6 +58,7 @@ export default function Register({ onSwitchToLogin }) {
   const [showPrivacyModal, setShowPrivacyModal] = useState(false);
   const [showTermsModal, setShowTermsModal] = useState(false);
   const [plans, setPlans] = useState([]);
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const { register, login } = useAuth();
 
   useEffect(() => {
@@ -64,6 +66,16 @@ export default function Register({ onSwitchToLogin }) {
       .then((res) => setPlans(Array.isArray(res.data) ? res.data : []))
       .catch(() => setPlans([]));
   }, []);
+
+  useEffect(() => {
+    if (!inviteContext) return;
+    const mod = inviteContext?.module_access?.training && !inviteContext?.module_access?.d28d
+      ? 'training'
+      : inviteContext?.module_access?.food_plan || inviteContext?.module_access?.nutrition
+        ? 'food'
+        : 'd28d';
+    fetchPaymentMethods(mod).then(setPaymentMethods);
+  }, [inviteContext]);
 
   const filteredPlans = useMemo(() => {
     if (!inviteContext?.plan_scope) return plans;
@@ -169,12 +181,21 @@ export default function Register({ onSwitchToLogin }) {
       }
       if (selectedPlan) {
         try {
-          await api.post('/accounts', {
+          const mod = inviteContext?.module_access?.training && !inviteContext?.module_access?.d28d
+            ? 'training'
+            : inviteContext?.module_access?.food_plan || inviteContext?.module_access?.nutrition
+              ? 'food'
+              : 'd28d';
+          const planRes = await api.post('/accounts', {
             plan: selectedPlan.nombre,
             gym_id: inviteContext.gym_id || null,
             trainer_id: inviteContext.trainer_id || null,
             metodoPago: formData.metodoPago,
+            module_code: mod,
           });
+          if (formData.metodoPago === 'wompi_online' && planRes.data?.payment_url) {
+            openWompiCheckout(planRes.data.payment_url);
+          }
         } catch (planErr) {
           console.warn('Plan opcional no activado:', planErr?.response?.data || planErr.message);
         }
@@ -383,11 +404,23 @@ export default function Register({ onSwitchToLogin }) {
 
             <div className="form-group">
               <label className="label">Método de pago</label>
-              <select name="metodoPago" value={formData.metodoPago} onChange={handleChange} className="input">
-                <option value="tarjeta_credito">Tarjeta de crédito</option>
-                <option value="transferencia">Transferencia</option>
-                <option value="efectivo">Efectivo en sede</option>
-              </select>
+              <div className="space-y-2">
+                {(paymentMethods.length ? paymentMethods : [
+                  { id: 'wompi_online', label: 'Pago en línea (Wompi)' },
+                  { id: 'pago_sede', label: 'Pago en sede' },
+                ]).map((m) => (
+                  <label key={m.id} className="flex items-center gap-2 p-3 rounded-lg border border-stone-200 cursor-pointer">
+                    <input
+                      type="radio"
+                      name="metodoPago"
+                      value={m.id}
+                      checked={formData.metodoPago === m.id}
+                      onChange={handleChange}
+                    />
+                    <span>{m.label}</span>
+                  </label>
+                ))}
+              </div>
             </div>
 
             <div className="flex gap-3">

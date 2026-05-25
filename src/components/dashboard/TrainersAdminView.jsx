@@ -29,6 +29,11 @@ const CARDS = [
     when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_training', 'admin_entrenador', 'entrenador']),
   },
   {
+    id: 'modulevigencias',
+    view: 'modulevigencias',
+    when: (has) => has(['super_admin', 'admin_d28d', 'admin_training', 'admin_entrenador', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista']),
+  },
+  {
     id: 'progress',
     view: 'progress',
     when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_training', 'admin_entrenador', 'entrenador']),
