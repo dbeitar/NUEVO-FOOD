@@ -67,6 +67,8 @@ export const DASHBOARD_I18N_ES = {
   'panel.food-plan.cards.equivalentes.desc': 'Sustituciones manteniendo macros.',
   'panel.food-plan.cards.recipes.title': 'Recetas',
   'panel.food-plan.cards.recipes.desc': 'Biblioteca de recetas saludables.',
+  'panel.food-plan.cards.modulevigencias.title': 'Vigencias',
+  'panel.food-plan.cards.modulevigencias.desc': 'Confirmación de pagos y extensiones de licencia.',
 
   'panel.training.cards.training.title': 'Mi entrenamiento',
   'panel.training.cards.training.desc': 'Vista de la rutina del día con sustituciones asistidas.',
@@ -100,6 +102,10 @@ export const DASHBOARD_I18N_ES = {
   'panel.d28d.cards.liveclasses.desc': 'Programa plantillas y revisa el calendario con links de Zoom.',
   'panel.d28d.cards.programs.title': 'Programas D28D',
   'panel.d28d.cards.programs.desc': 'Ciclos y configuración de los 3 programas principales.',
+  'panel.d28d.cards.d28d-routines.title': 'Rutinas D28D',
+  'panel.d28d.cards.d28d-routines.desc': 'Plantillas de rutinas para clases en vivo y entrenamiento.',
+  'panel.d28d.cards.d28d-challenges-admin.title': 'Retos D28D',
+  'panel.d28d.cards.d28d-challenges-admin.desc': 'Crea retos, participantes, evidencias y podio de ganadores.',
   'panel.d28d.cards.admingallery.title': 'Galería de videos',
   'panel.d28d.cards.admingallery.desc': 'Videos por ejercicio para rutinas y clases.',
   'panel.d28d.cards.admingyms.title': 'Gimnasios',
@@ -108,6 +114,11 @@ export const DASHBOARD_I18N_ES = {
   'panel.d28d.cards.adminusers.desc': 'Listado y gestión de personas afiliadas.',
   'panel.d28d.cards.admincompanies.title': 'Empresas y convenios',
   'panel.d28d.cards.admincompanies.desc': 'Convenios corporativos y agrupaciones de usuarios.',
+  'panel.d28d.cards.adminliveclasses.title': 'Clases en vivo (sede)',
+  'panel.d28d.cards.adminliveclasses.desc': 'Agenda y asistencia de clases para tu gimnasio.',
+
+  'panel.training.cards.admintrainers.title': 'Entrenadores',
+  'panel.training.cards.admintrainers.desc': 'Alta de coaches, capacidad y usuarios vinculados.',
 
   'appearance.title': 'Maestro de apariencia',
   'appearance.subtitle': 'Imágenes por URL o archivo subido. Tema claro/oscuro, marca, login, servicios y paneles internos.',
@@ -336,6 +347,8 @@ export const DASHBOARD_I18N_EN = {
   'panel.food-plan.cards.equivalentes.desc': 'Swaps while keeping macros.',
   'panel.food-plan.cards.recipes.title': 'Recipes',
   'panel.food-plan.cards.recipes.desc': 'Healthy recipe library.',
+  'panel.food-plan.cards.modulevigencias.title': 'Subscriptions',
+  'panel.food-plan.cards.modulevigencias.desc': 'Payment confirmation and license extensions.',
 
   'panel.training.cards.training.title': 'My training',
   'panel.training.cards.training.desc': 'Today’s routine with assisted substitutions.',
@@ -365,6 +378,10 @@ export const DASHBOARD_I18N_EN = {
   'panel.d28d.cards.liveclasses.desc': 'Schedule templates and calendar with Zoom links.',
   'panel.d28d.cards.programs.title': 'D28D programs',
   'panel.d28d.cards.programs.desc': 'Cycles and settings for the 3 main programs.',
+  'panel.d28d.cards.d28d-routines.title': 'D28D routines',
+  'panel.d28d.cards.d28d-routines.desc': 'Routine templates for live classes and training.',
+  'panel.d28d.cards.d28d-challenges-admin.title': 'D28D challenges',
+  'panel.d28d.cards.d28d-challenges-admin.desc': 'Create challenges, evidence and winner podium.',
   'panel.d28d.cards.admingallery.title': 'Video gallery',
   'panel.d28d.cards.admingallery.desc': 'Exercise videos for routines and classes.',
   'panel.d28d.cards.admingyms.title': 'Gyms',
@@ -373,6 +390,11 @@ export const DASHBOARD_I18N_EN = {
   'panel.d28d.cards.adminusers.desc': 'Affiliated people management.',
   'panel.d28d.cards.admincompanies.title': 'Companies & agreements',
   'panel.d28d.cards.admincompanies.desc': 'Corporate agreements and user groups.',
+  'panel.d28d.cards.adminliveclasses.title': 'Live classes (gym)',
+  'panel.d28d.cards.adminliveclasses.desc': 'Schedule and attendance for your gym.',
+
+  'panel.training.cards.admintrainers.title': 'Trainers',
+  'panel.training.cards.admintrainers.desc': 'Coach accounts, capacity and linked users.',
 
   'appearance.title': 'Appearance master',
   'appearance.subtitle': 'Images via URL or upload. Light/dark theme, brand, login, services and internal panels.',

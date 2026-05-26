@@ -1,7 +1,25 @@
 # Manual del ecosistema MVPFOOD / D28D
 
-**Versión:** 3.0 — Mayo 2026  
+**Versión:** 4.0 — Mayo 2026  
 **Audiencia:** operadores, administradores, coaches y usuarios finales que necesitan entender qué hace la plataforma, cómo fluye la información y dónde encontrar cada herramienta.
+
+> **Manuales por módulo:** la documentación operativa detallada vive en **[docs/MANUALES/](./MANUALES/README.md)** — nueve guías independientes (plataforma, D28D, Food, Training, pagos, comunicación, configuraciones, usuario final y despliegue). Este documento es el **índice maestro** y la visión de conjunto.
+
+---
+
+## Índice de manuales modulares
+
+| # | Manual | Cuándo leerlo |
+|---|--------|---------------|
+| 01 | [Plataforma y acceso](./MANUALES/01_PLATAFORMA_Y_ACCESO.md) | Login, registro, roles, maestros, SSO |
+| 02 | [Módulo D28D](./MANUALES/02_MODULO_D28D.md) | Programas, ciclos, clases, Zoom, retos |
+| 03 | [Plan de alimentación (Food)](./MANUALES/03_MODULO_FOOD.md) | Catálogo, recetas, registro diario |
+| 04 | [Entrenadores (Training)](./MANUALES/04_MODULO_TRAINING.md) | Rutinas, galería, seguimiento |
+| 05 | [Planes, pagos y vigencias](./MANUALES/05_PLANES_PAGOS_VIGENCIAS.md) | Oferta comercial, pareja, Wompi |
+| 06 | [Comunicación y WhatsApp](./MANUALES/06_COMUNICACION_Y_WHATSAPP.md) | Plantillas, eventos, soporte |
+| 07 | [Configuraciones y administración](./MANUALES/07_CONFIGURACIONES_ADMIN.md) | Apariencia, FAQ, auditoría |
+| 08 | [Guía usuario final](./MANUALES/08_USUARIO_FINAL.md) | Inicio, Mi cuenta, progreso |
+| 09 | [Despliegue y operación](./MANUALES/09_DESPLIEGUE_OPERACION.md) | Local, staging, E2E, backup |
 
 ---
 
@@ -352,9 +370,13 @@ Restore: ver script y `pg_restore` en la documentación del repositorio (`script
 
 | Comando | Qué valida |
 |---------|------------|
-| `npm run test:comm` | Registro, pagos, clases, WhatsApp, comunicación (17 checks) |
-| `npm run test:e2e` | Smoke general del sistema |
+| `npm run test:comm` | Comunicación, WhatsApp, registro (21 checks) |
+| `npm run test:commercial` | Planes, pareja, registro comercial (20 checks) |
+| `npm run test:ux` | Retos, FAQ, asistente, progreso (26 checks) |
 | `npm run test:phases` | Fases 1–6 por script bash |
+| `npm run test:e2e` | Smoke integral (14 checks) |
+
+**Total local validado:** 81/81. Checklist staging: [STAGING_READINESS.md](./STAGING_READINESS.md). Detalle operativo: [Manual 09](./MANUALES/09_DESPLIEGUE_OPERACION.md).
 
 ---
 
@@ -391,4 +413,4 @@ Restore: ver script y `pg_restore` en la documentación del repositorio (`script
 
 ---
 
-*Documento único de referencia. Instalación rápida del código: [README del repositorio](../README.md).*
+*Índice maestro del ecosistema. Manuales por módulo: [docs/MANUALES/](./MANUALES/README.md). Instalación del código: [README del repositorio](../README.md).*

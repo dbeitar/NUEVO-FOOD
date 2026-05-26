@@ -19,6 +19,7 @@ const DEFAULT_PANELS = {
       foodlog: card('Registro de comidas', 'Diario nutricional de los usuarios.'),
       equivalentes: card('Equivalentes por grupo', 'Sustituciones manteniendo macros.'),
       recipes: card('Recetas', 'Biblioteca de recetas saludables.'),
+      modulevigencias: card('Vigencias', 'Confirmación de pagos y extensiones de licencia.'),
     },
   },
   training: {
@@ -30,6 +31,8 @@ const DEFAULT_PANELS = {
     cards: {
       training: card('Mi entrenamiento', 'Vista de la rutina del día con sustituciones asistidas.'),
       admintraining: card('Rutinas', 'Plantillas, asignaciones y diario de entrenamiento.'),
+      admintrainers: card('Entrenadores', 'Alta de coaches, capacidad y usuarios vinculados.'),
+      coachai: card('Asistente IA', 'Genera rutinas y planes desde tu galería.'),
       admingallery: card('Galería de videos', 'Videos por ejercicio (referencia visual).'),
       adminusers: card('Usuarios asignados', 'Listado de personas y sus rutinas asignadas.'),
       progress: card('Seguimiento', 'Adherencia y avance de tus usuarios.'),
@@ -57,7 +60,10 @@ const DEFAULT_PANELS = {
     cards: {
       liveclasses: card('Clases en vivo y reuniones', 'Programa plantillas y calendario con links de Zoom.'),
       programs: card('Programas D28D', 'Ciclos y configuración de los 3 programas principales.'),
+      'd28d-routines': card('Rutinas D28D', 'Plantillas de rutinas para clases en vivo y entrenamiento.'),
+      'd28d-challenges-admin': card('Retos D28D', 'Crea retos, participantes, evidencias y podio de ganadores.'),
       admingallery: card('Galería de videos', 'Videos por ejercicio para rutinas y clases.'),
+      adminliveclasses: card('Clases en vivo (sede)', 'Agenda y asistencia de clases para tu gimnasio.'),
       admingyms: card('Gimnasios', 'Branding, equipo y configuración de marca blanca.'),
       adminusers: card('Usuarios de gimnasios', 'Listado y gestión de personas afiliadas.'),
       admincompanies: card('Empresas y convenios', 'Convenios corporativos y agrupaciones.'),

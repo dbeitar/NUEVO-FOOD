@@ -73,6 +73,7 @@ const EN_OVERLAY = {
         foodlog: { title_en: 'Food log', desc_en: 'Users’ nutrition diary.' },
         equivalentes: { title_en: 'Group equivalents', desc_en: 'Swaps keeping macros.' },
         recipes: { title_en: 'Recipes', desc_en: 'Healthy recipe library.' },
+        modulevigencias: { title_en: 'Subscriptions', desc_en: 'Payment confirmation and license extensions.' },
       },
     },
     training: {
@@ -80,6 +81,8 @@ const EN_OVERLAY = {
       cards: {
         training: { title_en: 'My training', desc_en: 'Today’s routine with substitutions.' },
         admintraining: { title_en: 'Routines', desc_en: 'Templates, assignments and log.' },
+        admintrainers: { title_en: 'Trainers', desc_en: 'Coach accounts, capacity and linked users.' },
+        coachai: { title_en: 'AI Assistant', desc_en: 'Build routines and plans from your gallery.' },
         admingallery: { title_en: 'Video gallery', desc_en: 'Exercise reference videos.' },
         adminusers: { title_en: 'Assigned users', desc_en: 'People and assigned routines.' },
         progress: { title_en: 'Tracking', desc_en: 'User adherence and progress.' },
@@ -105,7 +108,10 @@ const EN_OVERLAY = {
       cards: {
         liveclasses: { title_en: 'Live classes & meetings', desc_en: 'Templates and Zoom calendar.' },
         programs: { title_en: 'D28D programs', desc_en: 'Cycles and 3 main programs settings.' },
+        'd28d-routines': { title_en: 'D28D routines', desc_en: 'Routine templates for live classes and training.' },
+        'd28d-challenges-admin': { title_en: 'D28D challenges', desc_en: 'Create challenges, evidence and winner podium.' },
         admingallery: { title_en: 'Video gallery', desc_en: 'Exercise videos for routines.' },
+        adminliveclasses: { title_en: 'Live classes (gym)', desc_en: 'Schedule and attendance for your gym.' },
         admingyms: { title_en: 'Gyms', desc_en: 'Branding and white-label setup.' },
         adminusers: { title_en: 'Gym users', desc_en: 'Affiliated people management.' },
         admincompanies: { title_en: 'Companies & agreements', desc_en: 'Corporate agreements.' },
