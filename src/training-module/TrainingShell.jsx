@@ -72,9 +72,11 @@ function TrainingShellSsoGate() {
           if (b.secondary_color) document.documentElement.style.setProperty('--brand-secondary', b.secondary_color);
         }
 
+        const urlDest = params.get('dest');
         const storedDest = sessionStorage.getItem('d28d_training_dest');
         sessionStorage.removeItem('d28d_training_dest');
-        const dest = storedDest
+        const dest = urlDest
+          || storedDest
           || payload.destinationView
           || (payload.coach_mode ? '/coach' : '/athlete');
         navigate(dest.startsWith('/') ? dest : `/${dest}`, { replace: true });

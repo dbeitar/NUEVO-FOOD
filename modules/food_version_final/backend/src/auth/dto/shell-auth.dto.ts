@@ -10,6 +10,7 @@ export class ShellLinkDto {
   @ApiProperty() @IsNumber() shellUserId: number;
   @ApiProperty({ required: false }) @IsOptional() @IsString() foodUserId?: string;
   @ApiProperty({ required: false }) @IsOptional() @IsBoolean() active?: boolean;
+  @ApiProperty({ required: false }) @IsOptional() @IsBoolean() promoteTrainer?: boolean;
 }
 
 /** Sincroniza contraseña Food = puente D28D (requiere FOOD_SHELL_API_KEY). */

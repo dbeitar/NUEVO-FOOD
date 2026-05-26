@@ -1,4 +1,5 @@
 import api from '../services/api';
+import { isFinalUser } from '../components/dashboard/roles';
 
 /** UI legacy del monolito (TrainingModule, AdminTrainingManager en Dashboard). Por defecto OFF. */
 export function isTrainingLegacyMode() {
@@ -38,8 +39,15 @@ const TRAINING_MODULE_PATHS = {
   progress: '/coach/progress',
 };
 
+/** Ruta destino en /training-module según vista y rol. */
+export function resolveTrainingDest(viewId, user) {
+  if (viewId === 'training') return isFinalUser(user) ? '/athlete' : '/coach';
+  if (typeof viewId === 'string' && viewId.startsWith('/')) return viewId;
+  return TRAINING_MODULE_PATHS[viewId] || (isFinalUser(user) ? '/athlete' : '/coach');
+}
+
 /** Abre módulo Entrenadores embebido con SSO (shell → training-module/exchange). */
-export async function openTrainingModule(returnPath = '/dashboard', subPath = '') {
+export async function openTrainingModule(returnPath = '/dashboard', subPath = '', user = null) {
   if (isTrainingLegacyMode()) {
     return { mode: 'legacy' };
   }
@@ -56,8 +64,9 @@ export async function openTrainingModule(returnPath = '/dashboard', subPath = ''
       localStorage.setItem('d28d_shell_label', import.meta.env.VITE_BRAND_NAME || 'D28D Gimnasio Virtual');
     }
 
+    const destHint = subPath || resolveTrainingDest('training', user);
     const { data } = await api.get('/training-module/launch', {
-      params: { return_url: returnUrl },
+      params: { return_url: returnUrl, dest: destHint },
     });
     let url = data?.data?.url;
     if (!url) {
@@ -68,13 +77,17 @@ export async function openTrainingModule(returnPath = '/dashboard', subPath = ''
       const handoff = new URL(url, window.location.origin).searchParams.get('token');
       if (handoff) sessionStorage.setItem('d28d_training_handoff', handoff);
     } catch { /* noop */ }
-    if (subPath) {
-      const base = url.split('?')[0];
-      const qs = url.includes('?') ? url.slice(url.indexOf('?')) : '';
-      const dest = subPath.startsWith('/') ? subPath : `/${subPath}`;
-      sessionStorage.setItem('d28d_training_dest', dest);
-      url = `${base}${qs}`;
-    }
+    const dest = subPath
+      ? (subPath.startsWith('/') ? subPath : `/${subPath}`)
+      : (data?.data?.destinationView?.startsWith('/')
+        ? data.data.destinationView
+        : resolveTrainingDest(data?.data?.destinationView || 'training', user));
+    sessionStorage.setItem('d28d_training_dest', dest);
+    try {
+      const u = new URL(url, window.location.origin);
+      u.searchParams.set('dest', dest);
+      url = u.toString();
+    } catch { /* noop */ }
     window.location.href = url;
     return data?.data;
   } catch (e) {
@@ -86,9 +99,9 @@ export async function openTrainingModule(returnPath = '/dashboard', subPath = ''
 }
 
 /** Navegación desde shell D28D hacia una pantalla del módulo embebido. */
-export function openTrainingModuleView(viewId) {
-  const sub = TRAINING_MODULE_PATHS[viewId] || '/coach';
-  return openTrainingModule('/dashboard', sub);
+export function openTrainingModuleView(viewId, user = null) {
+  const sub = resolveTrainingDest(viewId, user);
+  return openTrainingModule('/dashboard', sub, user);
 }
 
 export function consumeTrainingLaunch(navigate, setOpenServicePanel, setCurrentView) {
@@ -105,7 +118,7 @@ export function consumeTrainingLaunch(navigate, setOpenServicePanel, setCurrentV
       const sub = destinationView?.startsWith('/')
         ? destinationView
         : TRAINING_MODULE_PATHS[destinationView] || '/coach';
-      openTrainingModule('/dashboard', sub);
+      openTrainingModule('/dashboard', sub, null);
       return true;
     }
     if (destinationView?.startsWith('service:')) {

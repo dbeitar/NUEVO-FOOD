@@ -9,6 +9,7 @@ const BLOCK_LABELS = {
 };
 
 function DayPreviewCard({ day }) {
+  const [mode, setMode] = useState('RPE');
   const grouped = (day.ejercicios || []).reduce((acc, ex) => {
     const key = ex.block_type || 'principal';
     if (!acc[key]) acc[key] = [];
@@ -16,16 +17,38 @@ function DayPreviewCard({ day }) {
     return acc;
   }, {});
 
+  const intensityText = (ex) => {
+    const eq = ex.intensity_equiv || {};
+    const rpe = eq.RPE ?? (ex.intensity_type === 'RPE' ? ex.intensity_value : null);
+    const rir = eq.RIR ?? (ex.intensity_type === 'RIR' ? ex.intensity_value : null);
+    if (mode === 'RIR') return (rir != null ? `RIR ${rir} → RPE ${rpe ?? '—'}` : `RIR → RPE ${rpe ?? '—'}`);
+    return (rpe != null ? `RPE ${rpe} → RIR ${rir ?? '—'}` : `RPE → RIR ${rir ?? '—'}`);
+  };
+
   return (
     <div className="border border-stone-200 rounded-xl p-3 mb-3 bg-white">
       <h4 className="font-bold text-stone-900 text-sm mb-1">
         Día {day.dia}: {day.nombre}
       </h4>
-      {day.coach_brief && (
-        <p className="text-xs text-stone-600 mb-2 leading-relaxed border-l-2 border-lime-400 pl-2">
-          {day.coach_brief}
-        </p>
-      )}
+      <div className="flex items-center justify-between gap-2 mb-2">
+        {day.dia === 1 && day.coach_brief && (
+          <p className="text-xs text-stone-600 leading-relaxed border-l-2 border-lime-400 pl-2">
+            {day.coach_brief}
+          </p>
+        )}
+        <button
+          type="button"
+          className="text-xs font-bold px-2 py-1 rounded-full border border-stone-200 bg-stone-50 text-stone-700"
+          onClick={() => setMode((m) => (m === 'RPE' ? 'RIR' : 'RPE'))}
+          title="Alternar escala de intensidad"
+        >
+          {mode === 'RPE' ? 'RPE → RIR' : 'RIR → RPE'}
+        </button>
+      </div>
+      <p className="text-[11px] text-stone-500 mb-2">
+        <strong>RPE</strong>: esfuerzo percibido (10 = fallo). <strong>RIR</strong>: repeticiones en reserva (0 = fallo).
+        Equivalencia práctica: <strong>RIR ≈ 10 − RPE</strong>.
+      </p>
       {Object.entries(grouped).map(([type, list]) => (
         <div key={type} className="mb-2">
           <p className="text-[10px] font-bold uppercase tracking-wide text-lime-800 mb-1">
@@ -37,8 +60,8 @@ function DayPreviewCard({ day }) {
                 <strong>{ex.exercise_name}</strong>
                 {' '}
                 — {ex.sets}×{ex.reps}
-                {ex.intensity_type ? ` · ${ex.intensity_type} ${ex.intensity_value}` : ''}
-                {ex.rest_seconds ? ` · desc ${ex.rest_seconds}s` : ''}
+                {ex.intensity_equiv ? ` · ${intensityText(ex)}` : (ex.intensity_type ? ` · ${ex.intensity_type} ${ex.intensity_value}` : '')}
+                {ex.rest_minutes ? ` · desc ${ex.rest_minutes}` : (ex.rest_seconds ? ` · desc ${ex.rest_seconds}s` : '')}
               </li>
             ))}
           </ul>
@@ -64,6 +87,8 @@ export default function CoachRoutineAssistant({ onBack = null }) {
     notas: '',
   });
   const [suggestion, setSuggestion] = useState(null);
+  const [selectedRoutineId, setSelectedRoutineId] = useState('');
+  const [libraryOpen, setLibraryOpen] = useState(true);
 
   const loadData = useCallback(async () => {
     setLoading(true);
@@ -117,9 +142,10 @@ export default function CoachRoutineAssistant({ onBack = null }) {
     }
   };
 
-  const assignPlan = async () => {
-    if (!suggestion?.routine_id || !assignUserId) {
-      setError('Selecciona un cliente y genera una sugerencia primero.');
+  const assignPlan = async (routineIdOverride = null) => {
+    const routineId = routineIdOverride || suggestion?.routine_id;
+    if (!routineId || !assignUserId) {
+      setError('Selecciona un cliente y una rutina (generada o guardada).');
       return;
     }
     setBusy(true);
@@ -127,13 +153,41 @@ export default function CoachRoutineAssistant({ onBack = null }) {
     setSuccess('');
     try {
       await api.post('/training/coach/ai-assign-plan', {
-        routine_id: suggestion.routine_id,
+        routine_id: routineId,
         user_id: Number(assignUserId),
         dias: form.dias,
       });
       setSuccess('Plan asignado correctamente. El cliente lo verá en Mi entrenamiento.');
     } catch (err) {
       setError(err.response?.data?.error || 'Error al asignar el plan.');
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const previewSavedRoutine = async (routineId) => {
+    if (!routineId) return;
+    setBusy(true);
+    setError('');
+    setSuccess('');
+    try {
+      const res = await api.post('/training/coach/ai-preview-plan', {
+        routine_id: Number(routineId),
+        dias: form.dias,
+      });
+      const data = res.data?.data;
+      if (!data) throw new Error('No se pudo cargar la rutina');
+      setSelectedRoutineId(String(routineId));
+      setSuggestion({
+        routine_id: data.routine_id,
+        nombre: data.nombre,
+        motivo: 'Rutina reutilizada desde tu biblioteca guardada.',
+        dias_preview: data.dias,
+      });
+      setPreview({ dias: data.dias, nombre: data.nombre });
+      setSuccess(`Rutina «${data.nombre}» lista para asignar a otro cliente.`);
+    } catch (err) {
+      setError(err.response?.data?.error || 'No se pudo abrir la rutina guardada.');
     } finally {
       setBusy(false);
     }
@@ -161,7 +215,7 @@ export default function CoachRoutineAssistant({ onBack = null }) {
       {error && <div className="bg-red-50 text-red-700 p-3 rounded-lg mb-4 text-sm">{error}</div>}
       {success && <div className="bg-lime-50 text-lime-900 p-3 rounded-lg mb-4 text-sm">{success}</div>}
 
-      <div className="grid lg:grid-cols-2 gap-6">
+      <div className="grid lg:grid-cols-2 gap-6 items-start">
         <form onSubmit={suggest} className="card p-5 space-y-4">
           <h3 className="font-bold text-stone-900">Parámetros del plan</h3>
           <label className="block">
@@ -235,12 +289,73 @@ export default function CoachRoutineAssistant({ onBack = null }) {
                   ))}
                 </select>
               </label>
-              <button type="button" className="btn-primary w-full" disabled={busy || !assignUserId} onClick={assignPlan}>
+              <button type="button" className="btn-primary w-full" disabled={busy || !assignUserId} onClick={() => assignPlan()}>
                 {busy ? 'Asignando…' : '2. Asignar plan al cliente'}
               </button>
             </>
           )}
         </div>
+      </div>
+
+      <div className="card p-5 space-y-3 mt-6">
+        <button
+          type="button"
+          className="w-full flex items-center justify-between text-left"
+          onClick={() => setLibraryOpen((o) => !o)}
+        >
+          <h3 className="font-bold text-stone-900">
+            Biblioteca de rutinas guardadas ({loading ? '…' : routines.length})
+          </h3>
+          <span className="text-stone-500 text-sm">{libraryOpen ? '▲' : '▼'}</span>
+        </button>
+        {libraryOpen && (
+          <>
+            <p className="text-xs text-stone-600">
+              Cada rutina que generas con la IA queda guardada aquí. Reutilízala: vista previa → elige cliente arriba → asignar.
+              También en el menú <strong>Asignar planes</strong>.
+            </p>
+            {routines.length === 0 ? (
+              <p className="text-sm text-stone-500">Aún no hay rutinas. Genera la primera con el formulario.</p>
+            ) : (
+              <div className="max-h-64 overflow-y-auto border border-stone-200 rounded-xl divide-y divide-stone-100">
+                {routines.map((r) => (
+                  <div
+                    key={r.id}
+                    className={`flex flex-wrap items-center justify-between gap-2 px-3 py-2 text-sm ${
+                      String(selectedRoutineId) === String(r.id) ? 'bg-lime-50' : 'bg-white'
+                    }`}
+                  >
+                    <div>
+                      <p className="font-semibold text-stone-900">{r.nombre || r.name || `Rutina #${r.id}`}</p>
+                      <p className="text-xs text-stone-500">
+                        {r.categoria || r.category || 'General'}
+                        {r.objetivo ? ` · ${r.objetivo}` : ''}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <button
+                        type="button"
+                        className="text-xs font-semibold px-2 py-1 rounded-lg border border-stone-200 hover:bg-stone-50"
+                        disabled={busy}
+                        onClick={() => previewSavedRoutine(r.id)}
+                      >
+                        Vista previa
+                      </button>
+                      <button
+                        type="button"
+                        className="text-xs font-semibold px-2 py-1 rounded-lg bg-stone-900 text-white hover:bg-stone-800 disabled:opacity-50"
+                        disabled={busy || !assignUserId}
+                        onClick={() => assignPlan(r.id)}
+                      >
+                        Asignar a cliente
+                      </button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

@@ -15,6 +15,30 @@ const LEVEL_RULES = {
   avanzado: { minMain: 7, sets: 4, rest: 120, rpe: 8, cardioMin: 18, hrZone: '70-80% FC máx' },
 };
 
+function rpeToRir(rpe) {
+  const n = Number(rpe);
+  if (!Number.isFinite(n)) return null;
+  // Aproximación estándar: RIR ≈ 10 - RPE
+  const rir = Math.max(0, Math.round((10 - n) * 10) / 10);
+  return rir;
+}
+
+function rirToRpe(rir) {
+  const n = Number(rir);
+  if (!Number.isFinite(n)) return null;
+  const rpe = Math.min(10, Math.max(0, Math.round((10 - n) * 10) / 10));
+  return rpe;
+}
+
+function restToMinutes(restSeconds) {
+  const s = Number(restSeconds) || 0;
+  if (!s) return '0 min';
+  const min = s / 60;
+  // 90s -> 1.5 min, 105s -> 1.75 min
+  const rounded = Math.round(min * 4) / 4;
+  return `${rounded} min`;
+}
+
 const SPLIT_TEMPLATES = {
   2: [
     { key: 'full_a', label: 'Full Body A', tags: ['legs', 'push', 'pull'], ratio: [0.35, 0.35, 0.3] },
@@ -67,6 +91,12 @@ function classifyExercise(ex) {
   if (/bicep|tricep|copa|curl|extension tricep/.test(blob)) tags.add('arms');
   if (/abdomen|core|crunch|plancha|oblicuo/.test(blob)) tags.add('core');
   if (/calentamiento|movilidad|activacion/.test(blob)) tags.add('mobility');
+  if (/apertura/.test(blob)) tags.add('chest_iso');
+  if (/press|empuje|banca|fondos/.test(blob)) tags.add('chest_press');
+  if (/remo|jalon|dorsal|espalda/.test(blob)) tags.add('back');
+  if (/curl|bicep/.test(blob)) tags.add('biceps');
+  if (/tricep|copa|extension/.test(blob)) tags.add('triceps');
+  if (/elevacion|deltoid|hombro|abduccion/.test(blob)) tags.add('shoulder');
   if (!tags.size) tags.add('push');
   return { ...ex, tags: [...tags] };
 }
@@ -85,7 +115,7 @@ function warmupForDay(dayLabel, tags) {
     : tags.includes('pull') ? 'escápulas, dorsal y movilidad torácica'
     : 'hombros, muñecas y columna torácica';
   return {
-    nombre: 'Calentamiento específico',
+    nombre: tags.includes('legs') ? 'Calentamiento tren inferior' : 'Calentamiento tren superior',
     series: '1',
     repeticiones: '6-8 min',
     descanso: '0s',
@@ -96,39 +126,35 @@ function warmupForDay(dayLabel, tags) {
 }
 
 function cardioForDay(levelRule) {
+  const bpm = levelRule.hrZone.includes('60') ? '110-130 lpm'
+    : levelRule.hrZone.includes('65') ? '120-145 lpm'
+      : '130-155 lpm';
   return {
     nombre: 'Cardio zona 2 + control de pulsaciones',
     series: '1',
     repeticiones: `${levelRule.cardioMin}-${levelRule.cardioMin + 5} min`,
     descanso: '0s',
-    observaciones: `Mantén ${levelRule.hrZone}. Regla práctica: puedes hablar en frases cortas. Si no tienes pulsómetro, escala 1-10 → zona 5-6/10.`,
+    observaciones: `Zona 2: ${bpm} (referencia) o ${levelRule.hrZone}. Si no tienes pulsómetro: esfuerzo 5-6/10, puedes hablar en frases cortas.`,
     tempo: '—',
     block_type: 'cardio',
   };
 }
 
 function stretchForDay(dayLabel) {
+  const isLower = /inferior|pierna|legs/i.test(String(dayLabel || ''));
   return {
-    nombre: 'Estiramiento y vuelta a la calma',
+    nombre: isLower ? 'Estiramiento tren inferior' : 'Estiramiento tren superior',
     series: '1',
     repeticiones: '5-8 min',
     descanso: '0s',
-    observaciones: `Estira los grupos trabajados en ${dayLabel}. 20-40s por posición, sin rebote. Cierra la clase virtual recordando hidratación y sueño.`,
+    observaciones: '20-40s por posición, sin rebote. Cierra la clase virtual recordando hidratación y sueño.',
     tempo: '—',
     block_type: 'estiramiento',
   };
 }
 
 function virtualClassBrief(day, exercises, params) {
-  const main = exercises.filter((e) => e.block_type === 'principal');
-  const names = main.map((e) => e.exercise_name).slice(0, 6).join(', ');
-  return [
-    `${SPECIALIST_PERSONA.split('\n')[0]}`,
-    `Día ${day.dia} — ${day.nombre}: objetivo ${params.objetivo}, nivel ${params.nivel}.`,
-    `Estructura en vivo: (1) Calentamiento guiado 6-8 min, (2) Bloque principal ${main.length} ejercicios (${names}), (3) Cardio con control de pulsaciones, (4) Estiramiento.`,
-    `Indicaciones: prioriza técnica, usa RPE/RIR ${LEVEL_RULES[normalizeText(params.nivel)]?.rpe || 8}, descansos ${LEVEL_RULES[normalizeText(params.nivel)]?.rest || 90}s en compuestos.`,
-    params.notas ? `Nota del coach: ${params.notas}` : null,
-  ].filter(Boolean).join(' ');
+  return `Día ${day.dia}: objetivo ${params.objetivo}, nivel ${params.nivel}.`;
 }
 
 const DAY_TAG_ALLOW = {
@@ -194,6 +220,31 @@ function pickForTags(pool, tags, count, used, dayKey = null) {
   return picked;
 }
 
+function diversifyMainList(list, levelRule) {
+  // Evita duplicar patrones muy similares en upper:
+  // - máximo 1 de chest_iso (aperturas)
+  // - máximo 1 de chest_press (press/empuje)
+  // - máximo 1 de biceps
+  // - asegura al menos 1 back si hay upper
+  const out = [];
+  let chestIso = 0;
+  let chestPress = 0;
+  let biceps = 0;
+  for (const ex of list) {
+    const isChestIso = ex.tags?.includes('chest_iso');
+    const isChestPress = ex.tags?.includes('chest_press');
+    const isBiceps = ex.tags?.includes('biceps');
+    if (isChestIso && chestIso >= 1) continue;
+    if (isChestPress && chestPress >= 1) continue;
+    if (isBiceps && biceps >= 1) continue;
+    if (isChestIso) chestIso += 1;
+    if (isChestPress) chestPress += 1;
+    if (isBiceps) biceps += 1;
+    out.push(ex);
+  }
+  return out.slice(0, levelRule.minMain);
+}
+
 function distributeExercises(pool, daysCount, nivel) {
   const template = SPLIT_TEMPLATES[daysCount] || SPLIT_TEMPLATES[4];
   const levelRule = LEVEL_RULES[normalizeText(nivel)] || LEVEL_RULES.intermedio;
@@ -212,14 +263,69 @@ function distributeExercises(pool, daysCount, nivel) {
     }
 
     const mainExercises = [];
-    dayTpl.tags.forEach((tag, ti) => {
-      const picked = pickForTags(classified, [tag], counts[ti] || 1, used, dayTpl.key);
-      mainExercises.push(...picked);
-    });
+    const dayKey = dayTpl.key;
+
+    // === Reglas de balance experto (evitar duplicidades) ===================
+    // Upper days: 1 push + 1 pull + 1 shoulders. Arms máximo 1.
+    // Lower days: prioriza legs, y core si aplica.
+    const isUpper = dayKey.includes('upper') || ['push', 'pull', 'push2', 'pull2', 'upper_acc'].includes(dayKey);
+    const isLower = dayKey.includes('lower') || ['legs', 'legs2'].includes(dayKey);
+    const wantsCore = dayTpl.tags.includes('core') || dayKey.includes('conditioning');
+
+    if (isUpper) {
+      // 1 pecho (press o iso), 1 espalda (remo/jalón), 1 hombro, 1 bíceps opcional (máx 1)
+      mainExercises.push(...pickForTags(classified, ['chest_press', 'chest_iso', 'push'], 1, used, dayKey));
+      mainExercises.push(...pickForTags(classified, ['back', 'pull'], 1, used, dayKey));
+      mainExercises.push(...pickForTags(classified, ['shoulder', 'shoulders'], 1, used, dayKey));
+      if (dayTpl.tags.includes('arms')) {
+        mainExercises.push(...pickForTags(classified, ['biceps', 'arms'], 1, used, dayKey));
+      }
+    } else if (isLower) {
+      mainExercises.push(...pickForTags(classified, ['legs'], Math.min(3, levelRule.minMain - 1), used, dayKey));
+      if (wantsCore) mainExercises.push(...pickForTags(classified, ['core'], 1, used, dayKey));
+    } else {
+      // Full body / conditioning: respetar tags pero limitar arms a 1
+      const tags = dayTpl.tags.includes('arms')
+        ? [...dayTpl.tags.filter((t) => t !== 'arms'), 'arms']
+        : dayTpl.tags;
+      tags.forEach((tag, ti) => {
+        const need = tag === 'arms' ? 1 : (counts[ti] || 1);
+        const picked = pickForTags(classified, [tag], need, used, dayKey);
+        mainExercises.push(...picked);
+      });
+    }
+
+    const safeTags = isUpper
+      ? ['back', 'pull', 'shoulder', 'shoulders', 'core', 'triceps'] // evita llenar de push otra vez
+      : dayTpl.tags.filter((t) => t !== 'arms');
     while (mainExercises.length < levelRule.minMain) {
-      const extra = pickForTags(classified, dayTpl.tags, 1, used, dayTpl.key);
+      const extra = pickForTags(classified, safeTags.length ? safeTags : dayTpl.tags, 1, used, dayKey);
       if (!extra.length) break;
       mainExercises.push(...extra);
+    }
+
+    if (isUpper) {
+      const diversified = diversifyMainList(mainExercises, levelRule);
+      mainExercises.length = 0;
+      mainExercises.push(...diversified);
+      while (mainExercises.length < levelRule.minMain) {
+        const extra = pickForTags(classified, safeTags, 1, used, dayKey);
+        if (!extra.length) break;
+        mainExercises.push(...extra);
+      }
+    }
+
+    if (isUpper) {
+      const armsIdx = mainExercises.map((e, i) => (e.tags.includes('arms') ? i : -1)).filter((i) => i >= 0);
+      while (armsIdx.length > 1) {
+        const drop = armsIdx.pop();
+        mainExercises.splice(drop, 1);
+      }
+      while (mainExercises.length < levelRule.minMain) {
+        const extra = pickForTags(classified, safeTags, 1, used, dayKey);
+        if (!extra.length) break;
+        mainExercises.push(...extra);
+      }
     }
 
     dayPlans.push({
@@ -236,13 +342,18 @@ function distributeExercises(pool, daysCount, nivel) {
 
 function toPlanExercise(ex, params, levelRule, blockType = 'principal') {
   const sets = blockType === 'principal' ? String(levelRule.sets) : '1';
+  const intensityValue = blockType === 'principal' ? levelRule.rpe : 5;
+  const rir = rpeToRir(intensityValue);
   return {
     exercise_name: ex.name,
     sets: Number.parseInt(sets, 10) || 3,
     reps: blockType === 'principal' ? repsForGoal(params.objetivo, params.nivel) : ex.repeticiones || '—',
     rest_seconds: blockType === 'principal' ? levelRule.rest : 0,
-    intensity_type: 'RPE/RIR',
-    intensity_value: blockType === 'principal' ? levelRule.rpe : 5,
+    rest_minutes: restToMinutes(blockType === 'principal' ? levelRule.rest : 0),
+    intensity_mode: 'RPE', // UI puede alternar a RIR
+    intensity_type: 'RPE',
+    intensity_value: intensityValue,
+    intensity_equiv: { RIR: rir, RPE: intensityValue },
     tempo: ex.tempo || '2-1-2-0',
     youtube_url: ex.youtube_url || null,
     notes: ex.observaciones || (ex.muscle_group ? `Grupo: ${ex.muscle_group}.` : ''),
@@ -271,15 +382,19 @@ function buildDaysFromGallery(gallery, params) {
 
   dayPlans.forEach((dp) => {
     const dayNombre = `Día ${dp.dia} · ${dp.label}`;
-    const warmup = warmupForDay(dp.label, dp.tags);
+    const warmupUpper = warmupForDay('Tren superior', ['push', 'pull', 'shoulders']);
+    const warmupLower = warmupForDay('Tren inferior', ['legs']);
     const cardio = cardioForDay(levelRule);
-    const stretch = stretchForDay(dp.label);
+    const stretchUpper = stretchForDay('Tren superior');
+    const stretchLower = stretchForDay('Tren inferior');
 
     const ejercicios = [
-      toPlanExercise({ name: warmup.nombre, ...warmup }, params, levelRule, 'calentamiento'),
+      toPlanExercise({ name: warmupUpper.nombre, ...warmupUpper }, params, levelRule, 'calentamiento'),
+      toPlanExercise({ name: warmupLower.nombre, ...warmupLower }, params, levelRule, 'calentamiento'),
       ...dp.mainExercises.map((ex) => toPlanExercise(ex, params, levelRule, 'principal')),
       toPlanExercise({ name: cardio.nombre, ...cardio }, params, levelRule, 'cardio'),
-      toPlanExercise({ name: stretch.nombre, ...stretch }, params, levelRule, 'estiramiento'),
+      toPlanExercise({ name: stretchUpper.nombre, ...stretchUpper }, params, levelRule, 'estiramiento'),
+      toPlanExercise({ name: stretchLower.nombre, ...stretchLower }, params, levelRule, 'estiramiento'),
     ];
 
     const coach_brief = virtualClassBrief({ dia: dp.dia, nombre: dp.label }, ejercicios, params);

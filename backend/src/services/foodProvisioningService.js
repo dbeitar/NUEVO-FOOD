@@ -28,14 +28,49 @@ function ssoSecret() {
   return process.env.FOOD_SSO_SECRET || process.env.JWT_SECRET || '';
 }
 
-/** Contraseña determinística shell↔Food para login tras provisionamiento. */
-function foodBridgePassword(email) {
+function foodBridgePasswordDeterministic(email) {
   const secret = ssoSecret();
   if (!secret) return `D28d!${Date.now().toString(36).slice(-8)}`;
   const h = crypto.createHmac('sha256', secret)
     .update(String(email || '').toLowerCase().trim())
     .digest('hex');
   return `Fp8!${h.slice(0, 12)}`;
+}
+
+/** Contraseña preferida shell↔Food (override global o determinística). */
+function foodBridgePassword(email) {
+  const override = String(process.env.FOOD_BRIDGE_PASSWORD_OVERRIDE || '').trim();
+  if (override.length >= 6) return override;
+  return foodBridgePasswordDeterministic(email);
+}
+
+/** Candidatos de contraseña para SSO (dev: varias claves de prueba por coach). */
+function foodBridgePasswordCandidates(email) {
+  const seen = new Set();
+  const out = [];
+  const push = (p) => {
+    const s = String(p || '').trim();
+    if (s.length < 6 || seen.has(s)) return;
+    seen.add(s);
+    out.push(s);
+  };
+  push(process.env.FOOD_BRIDGE_PASSWORD_OVERRIDE);
+  push(foodBridgePasswordDeterministic(email));
+  if (process.env.NODE_ENV === 'development') {
+    const extras = String(process.env.FOOD_DEV_BRIDGE_PASSWORDS || 'nicolas123,ceyorica1');
+    for (const part of extras.split(',')) push(part.trim());
+  }
+  return out;
+}
+
+async function tryFoodLogins(email, passwords) {
+  let lastError = 'Credenciales incorrectas';
+  for (const password of passwords) {
+    const login = await foodApiLogin(email, password);
+    if (login.ok) return login;
+    lastError = login.error || lastError;
+  }
+  return { ok: false, error: lastError };
 }
 
 function mapFoodAuthResponse(data) {
@@ -235,14 +270,37 @@ async function foodSessionForShell({
   if (handoffToken) {
     const exchanged = await foodApiShellExchange(handoffToken);
     if (exchanged.ok) {
+      const refreshed = await ensureFoodTrainerRoleForCoach({
+        userId,
+        email,
+        roles,
+        rol,
+        foodUserId: exchanged.user?.id,
+      });
+      if (refreshed?.ok && refreshed.user?.role === 'TRAINER') {
+        auditFood(userId, 'food.sso.exchange', 'Sesión Food vía shell-exchange (TRAINER)', {});
+        return refreshed;
+      }
       auditFood(userId, 'food.sso.exchange', 'Sesión Food vía shell-exchange', {});
       return exchanged;
     }
   }
 
-  const bridge = foodBridgePassword(email);
-  let login = await foodApiLogin(email, bridge);
+  const passwords = foodBridgePasswordCandidates(email);
+  const bridge = passwords[0] || foodBridgePassword(email);
+  let login = await tryFoodLogins(email, passwords);
   if (login.ok) {
+    const refreshed = await ensureFoodTrainerRoleForCoach({
+      userId,
+      email,
+      roles,
+      rol,
+      foodUserId: login.user?.id,
+    });
+    if (refreshed?.ok) {
+      auditFood(userId, 'food.sso.login', 'Sesión Food vía login puente (TRAINER)', {});
+      return refreshed;
+    }
     auditFood(userId, 'food.sso.login', 'Sesión Food vía login puente', {});
     return login;
   }
@@ -256,8 +314,19 @@ async function foodSessionForShell({
     source: 'sso',
   });
 
-  login = await foodApiLogin(email, bridge);
+  login = await tryFoodLogins(email, passwords);
   if (login.ok) {
+    const refreshed = await ensureFoodTrainerRoleForCoach({
+      userId,
+      email,
+      roles,
+      rol,
+      foodUserId: login.user?.id,
+    });
+    if (refreshed?.ok) {
+      auditFood(userId, 'food.sso.login_after_provision', 'Sesión Food tras provisionamiento (TRAINER)', {});
+      return refreshed;
+    }
     auditFood(userId, 'food.sso.login_after_provision', 'Sesión Food tras provisionamiento', {});
     return login;
   }
@@ -292,7 +361,7 @@ async function linkExistingFoodUserByEmail(userId, email) {
   return { ok: true, skipped: true, reason: 'email ya existe en Food' };
 }
 
-async function pushShellLinkToFood(shellUserId, foodUserId, email, active) {
+async function pushShellLinkToFood(shellUserId, foodUserId, email, active, { promoteTrainer = false } = {}) {
   const key = internalKey();
   if (!key) return;
   await fetchJson(`${apiBase()}/auth/shell-link`, {
@@ -303,8 +372,23 @@ async function pushShellLinkToFood(shellUserId, foodUserId, email, active) {
       shellUserId,
       foodUserId,
       active,
+      promoteTrainer: promoteTrainer || undefined,
     }),
   }).catch(() => {});
+}
+
+function shellUserIsFoodCoach(roles = [], rol = '') {
+  const list = Array.isArray(roles) && roles.length ? roles : [rol].filter(Boolean);
+  return list.some((r) => ['entrenador', 'nutricionista', 'admin_training', 'admin_entrenador'].includes(r));
+}
+
+async function ensureFoodTrainerRoleForCoach({ userId, email, roles, rol, foodUserId }) {
+  if (!shellUserIsFoodCoach(roles, rol)) return null;
+  await pushShellLinkToFood(userId, foodUserId, email, true, { promoteTrainer: true });
+  if (foodUserId) {
+    return tryFoodLogins(email, foodBridgePasswordCandidates(email));
+  }
+  return null;
 }
 
 async function syncBrandingToFood(shellUserId, foodUserId) {

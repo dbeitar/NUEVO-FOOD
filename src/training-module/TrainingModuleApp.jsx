@@ -6,7 +6,7 @@ import AdminTrainingManager from '../components/AdminTrainingManager';
 import AdminTrainingGallery from '../components/AdminTrainingGallery';
 import AdminUsers from '../components/AdminUsers';
 import CoachRoutineAssistant from '../components/coach/CoachRoutineAssistant';
-import TrainingExpertProgress from './TrainingExpertProgress';
+import CoachEcosystemTracking from '../components/coach/CoachEcosystemTracking';
 
 const COACH_CARDS = [
   { id: 'training', view: '/athlete' },
@@ -135,7 +135,7 @@ export default function TrainingModuleApp() {
         <Route
           path="/coach/progress"
           element={(
-            <TrainingExpertProgress onBack={() => window.history.back()} />
+            <CoachEcosystemTracking onBack={() => window.history.back()} />
           )}
         />
         <Route

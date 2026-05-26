@@ -93,9 +93,9 @@ function FoodShellSsoGate() {
             );
             payload = data?.data || data;
           } catch (handoffErr) {
-            if (handoffErr.response?.status !== 401 || !shellToken) {
-              throw handoffErr;
-            }
+            // Si el exchange falla (401/502/etc) pero tenemos sesión del shell,
+            // hacemos fallback al exchange por sesión para evitar caídas del endpoint shell-exchange remoto.
+            if (!shellToken) throw handoffErr;
           }
         }
 
@@ -117,7 +117,11 @@ function FoodShellSsoGate() {
         }
 
         applyFoodSession(dispatch, payload);
-        navigate('/dashboard', { replace: true });
+        const dest = params.get('dest')
+          || sessionStorage.getItem('d28d_food_dest')
+          || '/dashboard';
+        sessionStorage.removeItem('d28d_food_dest');
+        navigate(dest.startsWith('/') ? dest : `/${dest}`, { replace: true });
       } catch (err) {
         const msg = err.response?.data?.error || err.message || 'Error conectando con Food Plan';
         setError(msg);

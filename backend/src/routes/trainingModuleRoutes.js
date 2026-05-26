@@ -91,6 +91,7 @@ router.get('/launch', auth, async (req, res) => {
     const user = await userRepo.findById(req.user.id);
     const branding = await resolveBrandingForUser(req.user.id);
     const returnUrl = req.query.return_url || process.env.SHELL_PUBLIC_URL || 'http://localhost:5175/dashboard';
+    const dest = String(req.query.dest || '').trim();
     const token = createHandoffToken({
       sub: user.id,
       email: user.email,
@@ -99,8 +100,8 @@ router.get('/launch', auth, async (req, res) => {
     });
     const embedded = useEmbeddedTrainingLaunch() && !isTrainingExternalMode();
     const url = embedded
-      ? buildEmbeddedLaunchUrl(returnUrl, token)
-      : buildExternalLaunchUrl(publicTrainingUrl(), token, returnUrl);
+      ? buildEmbeddedLaunchUrl(returnUrl, token, dest)
+      : buildExternalLaunchUrl(publicTrainingUrl(), token, returnUrl, dest);
 
     auditTraining(req.user.id, 'training.launch', 'URL módulo training generada', {
       training_user_id: user.training_user_id,

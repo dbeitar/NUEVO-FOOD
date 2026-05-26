@@ -37,6 +37,7 @@ import {
   isTrainingLegacyView,
   openTrainingModule,
   openTrainingModuleView,
+  resolveTrainingDest,
   consumeTrainingLaunch,
 } from '../utils/trainingModule';
 import MyPlanView from './dashboard/MyPlanView';
@@ -53,6 +54,7 @@ import D28dZoomAccountsMaster from './d28d/D28dZoomAccountsMaster';
 import TrainingExpertProgress from '../training-module/TrainingExpertProgress';
 import CoachTrainersAdmin from './dashboard/CoachTrainersAdmin';
 import CoachRoutineAssistant from './coach/CoachRoutineAssistant';
+import CoachEcosystemTracking from './coach/CoachEcosystemTracking';
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { t, lang, setLang } = useI18n();
@@ -118,17 +120,25 @@ export default function Dashboard() {
       && !roles.some((r) => ['admin_gimnasio', 'admin_marca', 'entrenador'].includes(r)),
     [roles],
   );
+  const coachUsesShellTraining = useMemo(
+    () => roles.includes('entrenador') || roles.includes('nutricionista'),
+    [roles],
+  );
 
   useEffect(() => {
     if (!user?.id || bootRouted) return;
     if (isPureCoach || isTrainingOps) {
       setOpenServicePanel('training');
-      setCurrentView(isPureCoach ? 'admingallery' : 'admintrainers');
+      setCurrentView(isPureCoach ? 'progress' : 'admintrainers');
       setBootRouted(true);
       return;
     }
     if (isFinal && services.length === 1 && services[0]?.id === 'training') {
-      setCurrentView('training');
+      if (isTrainingExternal()) {
+        openTrainingModule('/dashboard', '/athlete', user);
+      } else {
+        setCurrentView('training');
+      }
       setBootRouted(true);
     }
   }, [user?.id, bootRouted, isPureCoach, isTrainingOps, isFinal, services]);
@@ -215,9 +225,9 @@ export default function Dashboard() {
       openFoodModule('/dashboard');
       return;
     }
-    // Solo relanzar SSO al entrar por módulo externo; dentro del shell los maestros navegan directo.
-    if (isTrainingExternal() && isTrainingLegacyView(view)) {
-      openTrainingModuleView(view);
+    // Coaches: galería, IA, seguimiento, etc. dentro del shell (dashboard unificado).
+    if (isTrainingExternal() && isTrainingLegacyView(view) && !coachUsesShellTraining) {
+      openTrainingModuleView(view, user);
       return;
     }
     setCurrentView(view);
@@ -246,12 +256,21 @@ export default function Dashboard() {
       return;
     }
     if (service.destinationView === 'external:training' || (service.moduleLaunch === 'training' && isTrainingExternal())) {
-      await openTrainingModule('/dashboard', '/coach');
+      const sub = isFinal ? '/athlete' : '/coach';
+      await openTrainingModule('/dashboard', sub, user);
       return;
     }
     if (service.moduleLaunch === 'training' && isTrainingLegacyMode()) {
+      if (isFinal) {
+        navigate('training');
+        return;
+      }
       setOpenServicePanel('training');
       setCurrentView('servicePanel');
+      return;
+    }
+    if (service.id === 'training' && isFinal) {
+      navigate('training');
       return;
     }
     if (service.destinationView?.startsWith('service:')) {
@@ -528,9 +547,7 @@ export default function Dashboard() {
       case 'progress':
         if (hasAnyRole(['entrenador', 'nutricionista', 'admin_training', 'admin_entrenador'])) {
           return (
-            <TrainingExpertProgress
-              onBack={(isPureCoach || isTrainingOps) ? backToTrainingPanel : undefined}
-            />
+            <CoachEcosystemTracking onBack={(isPureCoach || isTrainingOps) ? backToTrainingPanel : undefined} />
           );
         }
         return <Progress />;
