@@ -1,0 +1,12 @@
+node_modules/
+.env
+.env.local
+.env.bak
+.env.*.bak
+.env.backup
+.DS_Store
+*.log
+uploads/frontend/*
+!uploads/frontend/.gitkeep
+*.pem
+*.crt

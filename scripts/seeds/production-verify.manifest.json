@@ -1,0 +1,70 @@
+{
+  "version": 1,
+  "description": "Semilla de verificación post-deploy. Ejecutar: node scripts/seed_production_verify.cjs",
+  "default_password": "Demo!2026",
+  "d28d_invite_codes": ["D28D", "D28D-PILOTO", "D28D-PILOTO-2026"],
+  "gym_invite_codes": [
+    { "gym_id": 1, "invite_code": "GYM-PRO-001" },
+    { "gym_id": 2, "invite_code": "GYM-HUB-002" },
+    { "gym_id": 4, "invite_code": "GYM-D28D-004" },
+    { "gym_id": 5, "invite_code": "GYM-JABEL-005" }
+  ],
+  "trainer_invite_codes": [
+    { "trainer_id": 1, "invite_code": "COACH-CARLOS-001" },
+    { "trainer_id": 2, "invite_code": "COACH-MARIA-002" },
+    { "trainer_id": 3, "invite_code": "COACH-JUAN-003" }
+  ],
+  "admin_accounts": [
+    { "email": "admin@d28d.local", "nombre": "Super Admin", "rol": "super_admin" },
+    { "email": "d28d.admin@d28d.local", "nombre": "Admin D28D", "rol": "admin_d28d" },
+    { "email": "food.admin@d28d.local", "nombre": "Admin Plan Alim.", "rol": "admin_food" },
+    { "email": "coach.admin@d28d.local", "nombre": "Admin Entrenadores", "rol": "admin_entrenador" },
+    {
+      "email": "host.d28d@d28d.local",
+      "nombre": "Alejo",
+      "rol": "entrenador_d28d",
+      "roles": ["entrenador_d28d"],
+      "module_access": { "d28d": true, "live_classes": true, "training": false, "food_plan": false }
+    }
+  ],
+  "end_users_verification": [
+    {
+      "email": "final.d28d@d28d.local",
+      "nombre": "Verificación — Usuario D28D",
+      "invite_code": "D28D-PILOTO",
+      "expected_modules": ["d28d", "training", "food_plan", "live_classes"],
+      "dashboard_note": "Debe ver D28D, Plan alimentación, Entrenamiento y Clases en vivo"
+    },
+    {
+      "email": "final.gym@d28d.local",
+      "nombre": "Verificación — Usuario Gimnasio",
+      "invite_code": "GYM-D28D-004",
+      "expected_modules": ["gym", "d28d", "live_classes"],
+      "dashboard_note": "Debe ver D28D y Clases en vivo (sin training ni food)"
+    },
+    {
+      "email": "final.coach@d28d.local",
+      "nombre": "Verificación — Usuario Entrenador",
+      "invite_code": "COACH-CARLOS-001",
+      "expected_modules": ["training", "food_plan", "live_classes"],
+      "dashboard_note": "Debe ver Entrenamiento, Plan alimentación y Clases en vivo (sin D28D)"
+    }
+  ],
+  "public_registration_examples": [
+    {
+      "step": "Código en registro público",
+      "code": "D28D-PILOTO",
+      "result": "Módulos D28D completos"
+    },
+    {
+      "step": "Código en registro público",
+      "code": "GYM-D28D-004",
+      "result": "Gimnasio D28D Marca Blanca — D28D + clases en vivo"
+    },
+    {
+      "step": "Código en registro público",
+      "code": "COACH-CARLOS-001",
+      "result": "Entrenador Carlos — training + food + clases"
+    }
+  ]
+}

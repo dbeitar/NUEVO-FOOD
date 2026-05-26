@@ -1,0 +1,64 @@
+# Dependencias (nunca versionar)
+node_modules/
+/backend/node_modules
+/backend-nest/node_modules
+/MVPFOOD_backend_temp
+
+# Archivos de compilación
+/dist
+/build
+.parcel-cache/
+
+# Variables de entorno
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Archivos de registro
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+backend/logs/
+
+# Evidencias de pruebas (queremos versionarlas)
+!docs/test-runs/*.log
+
+# Archivos temporales y de sistema
+.DS_Store
+*.swp
+*.bak
+tmp/
+temp/
+
+# Archivos de backup y temporales específicos del proyecto
+PROYECTOFOOD_PLAN-backup-*.zip
+ca.pem
+temp_design_preview.html
+
+# Vercel
+.vercel/
+
+# IDEs
+.vscode/
+.idea/
+
+# Otros
+package-lock.json
+
+# Bases de datos JSON locales (no versionar; usar .example.json como semilla)
+backend/data/*.json
+backend/data/*.bak
+backend/data/backups/
+backend/data/localStorage_backup.json
+# Excepción: sí versionamos los archivos de ejemplo
+!backend/data/*.example.json
+!backend/data/d28d_routines_import.json
+
+# Temp files
+temp_token.json
+*.docx
+*.xlsx
+

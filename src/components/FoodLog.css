@@ -1,0 +1,307 @@
+@reference "tailwindcss";
+
+.food-log-container {
+  @apply min-h-screen bg-stone-50 p-6;
+}
+
+.page-header {
+  @apply mb-6;
+}
+
+.plan-summary {
+  @apply bg-white p-6 rounded-3xl shadow-sm border border-slate-200 mb-6;
+}
+
+.two-col-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 gap-6;
+}
+
+.left-col {
+  @apply space-y-6;
+}
+
+.right-col {
+  @apply space-y-6;
+}
+
+.plan-summary h2 {
+  @apply text-xl font-bold text-stone-900 mb-3;
+}
+
+.totals-card {
+  @apply space-y-3;
+}
+
+.range-card {
+  @apply p-6 bg-white rounded-3xl shadow-sm border border-slate-200;
+}
+
+.range-grid {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4;
+}
+
+.weekly-card {
+  @apply p-6 bg-white rounded-3xl shadow-sm border border-slate-200;
+}
+
+.weekly-row {
+  @apply flex items-center gap-3 py-1;
+}
+
+.weekly-date {
+  @apply w-28 text-sm text-stone-600;
+}
+
+.weekly-progress {
+  @apply flex-1;
+}
+
+.progress-item label {
+  @apply block text-sm font-medium text-stone-700;
+}
+
+.progress-bar {
+  @apply w-full bg-slate-200 rounded-full h-2;
+}
+
+.progress-fill {
+  @apply h-full bg-lime-400 rounded-full;
+}
+
+.progress-item span {
+  @apply text-sm text-stone-600;
+}
+
+.date-selector {
+  @apply mb-6;
+}
+
+.date-selector label {
+  @apply block text-sm font-semibold text-stone-700 mb-1;
+}
+
+.date-selector input {
+  @apply w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors;
+}
+
+.search-section {
+  @apply mb-6 p-6 bg-white rounded-3xl shadow-sm border border-slate-200;
+}
+
+.search-section h2 {
+  @apply text-xl font-bold text-stone-900 mb-3;
+}
+
+.search-filters {
+  @apply grid grid-cols-1 md:grid-cols-2 gap-4 mb-4;
+}
+
+.search-filters input,
+.search-filters select {
+  @apply w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors;
+}
+
+.barcode-section {
+  @apply flex gap-3 mb-4;
+}
+
+.barcode-section input {
+  @apply w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors flex-grow;
+}
+
+.scan-box {
+  @apply mb-4 p-4 border border-slate-300 rounded-2xl flex justify-center items-center relative;
+}
+
+.scan-video {
+  @apply w-full h-48 object-cover rounded-xl;
+}
+
+.scan-error {
+  @apply absolute bottom-2 left-2 bg-red-500 text-white text-sm px-2 py-1 rounded-md;
+}
+
+.quick-create-form {
+  @apply bg-slate-50 p-4 rounded-2xl border border-slate-200 mb-4;
+}
+
+.quick-create-form h3 {
+  @apply text-lg font-semibold text-stone-900 mb-3;
+}
+
+.quick-create-form .grid input,
+.quick-create-form .grid select {
+  @apply w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors;
+}
+
+.group-tabs {
+  @apply flex gap-2 mb-4 overflow-x-auto;
+}
+
+.group-tabs .tab {
+  @apply px-4 py-2 rounded-2xl text-sm font-medium transition-colors;
+}
+
+.group-tabs .tab.active {
+  @apply bg-lime-500 text-black;
+}
+
+.group-tabs .tab:not(.active) {
+  @apply bg-slate-100 text-stone-700 hover:bg-slate-200;
+}
+
+.foods-grid {
+  @apply grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 mb-4;
+}
+
+.food-card {
+  @apply bg-white p-6 rounded-3xl shadow-sm border border-slate-200 hover:scale-[1.02] transition-transform duration-200 cursor-pointer;
+}
+
+.food-card.active {
+  @apply ring-2 ring-lime-500;
+}
+
+.food-card h3 {
+  @apply text-lg font-semibold text-stone-900 mb-1;
+}
+
+.food-card .category {
+  @apply text-sm text-stone-600 mb-2;
+}
+
+.food-card .macros-preview {
+  @apply flex justify-between text-sm text-stone-700;
+}
+
+.text-center button {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-2xl font-medium transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed;
+  @apply bg-white text-stone-700 border border-slate-300 hover:bg-slate-100 focus:ring-slate-300 shadow-sm;
+}
+
+.selected-food-detail {
+  @apply bg-lime-50 p-6 rounded-3xl border border-lime-200 mt-6;
+}
+
+.selected-food-detail h3 {
+  @apply text-xl font-bold text-stone-900 mb-1;
+}
+
+.selected-food-detail .portion {
+  @apply text-sm text-stone-500 mb-3;
+}
+
+.selected-food-detail .quantity-picker label,
+.selected-food-detail .form-group label {
+  @apply block text-sm font-semibold text-stone-700 mb-1;
+}
+
+.selected-food-detail .quantity-picker input,
+.selected-food-detail .form-group input,
+.selected-food-detail .form-group select {
+  @apply w-full px-4 py-2 rounded-2xl border border-slate-300 bg-white text-stone-800 placeholder-slate-400 focus:border-lime-400 focus:ring-2 focus:ring-lime-400 outline-none transition-colors;
+}
+
+.selected-food-detail .quantity-picker input {
+  @apply w-32;
+}
+
+.selected-food-detail .form-group select {
+  @apply w-48;
+}
+
+.selected-food-detail .quantity-picker span {
+  @apply ml-2 text-stone-600;
+}
+
+.detail-macros {
+  @apply grid grid-cols-2 sm:grid-cols-4 gap-4 mb-6;
+}
+
+.detail-macros .macro-box {
+  @apply bg-white p-3 rounded-xl border border-slate-200 text-center;
+}
+
+.detail-macros .macro-box span {
+  @apply text-sm text-stone-600;
+}
+
+.detail-macros .macro-box strong {
+  @apply block text-xl font-bold text-stone-900;
+}
+
+.detail-macros .macro-box .text-xs {
+  @apply text-xs text-stone-500;
+}
+
+.btn-add-food {
+  @apply inline-flex items-center justify-center px-4 py-2 rounded-2xl font-semibold transition-all duration-200 focus:outline-none focus:ring-2 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed bg-lime-500 text-black hover:bg-lime-400 focus:ring-lime-400 shadow-2xl shadow-black w-full;
+}
+
+.message.success-message {
+  @apply bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-xl p-3 mt-4;
+}
+
+.message.error-message {
+  @apply bg-red-50 text-red-700 border border-red-200 rounded-xl p-3 mt-4;
+}
+
+.day-summary-section {
+  @apply mb-6 p-6 bg-white rounded-3xl shadow-sm border border-slate-200;
+}
+
+.day-summary-section h2 {
+  @apply text-xl font-bold text-stone-900 mb-3;
+}
+
+.meal-logs-section {
+  @apply space-y-6;
+}
+
+.meal-group {
+  @apply p-6 bg-white rounded-3xl shadow-sm border border-slate-200;
+}
+
+.meal-group h3 {
+  @apply text-xl font-bold text-stone-900 mb-3;
+}
+
+.no-foods {
+  @apply text-stone-500 italic;
+}
+
+.logs-list {
+  @apply space-y-3;
+}
+
+.log-item {
+  @apply flex items-center justify-between p-3 bg-slate-50 rounded-xl border border-slate-200;
+}
+
+.log-item .log-info {
+  @apply flex-1;
+}
+
+.log-item .log-info h4 {
+  @apply font-medium text-stone-800;
+}
+
+.log-item .log-info .portion {
+  @apply text-sm text-stone-600;
+}
+
+.log-item .log-macros {
+  @apply flex items-center gap-4 text-sm text-stone-700;
+}
+
+.log-item .btn-delete {
+  @apply ml-4 text-red-500 hover:text-red-700;
+}
+
+.ai-suggestions-section {
+  @apply mt-6 p-6 bg-white rounded-3xl shadow-sm border border-slate-200;
+}
+
+.ai-suggestions-section h2 {
+  @apply text-xl font-bold text-stone-900 mb-3;
+}

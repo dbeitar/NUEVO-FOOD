@@ -1,0 +1,39 @@
+# Desarrollo local — PostgreSQL + backend MVPFOOD
+# Uso: docker compose up -d postgres
+#      cp backend/.env.docker.example backend/.env
+#      cd backend && npm install && npx prisma migrate deploy && npm run dev
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: mvpfood-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: mvpfood
+      POSTGRES_PASSWORD: mvpfood_dev_secret
+      POSTGRES_DB: mvpfood
+    ports:
+      - "5434:5432"
+    volumes:
+      - mvpfood_pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U mvpfood -d mvpfood"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  # Opcional: panel SQL (http://localhost:8080)
+  adminer:
+    image: adminer:4
+    container_name: mvpfood-adminer
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    environment:
+      ADMINER_DEFAULT_SERVER: postgres
+    depends_on:
+      postgres:
+        condition: service_healthy
+
+volumes:
+  mvpfood_pgdata:

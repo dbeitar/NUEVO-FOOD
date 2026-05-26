@@ -1,0 +1,93 @@
+{
+  "name": "proyectofood-plan",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "engines": {
+    "node": "20.x"
+  },
+  "scripts": {
+    "dev": "vite",
+    "dev:all": "concurrently -k -n front,back -c green,cyan \"npm run dev\" \"sh -c 'PORT=3002 npm --prefix backend run dev'\"",
+    "docker:up": "docker compose up -d postgres",
+    "docker:down": "docker compose down",
+    "autosave": "node scripts/autosave.js",
+    "build": "vite build",
+    "preview": "vite preview --host 0.0.0.0 --port 10000",
+    "doc:gen": "node scripts/md-to-docx.mjs",
+    "lint": "eslint \"src/**/*.{js,jsx}\"",
+    "test": "vitest run --passWithNoTests",
+    "seed:verify": "node scripts/seed_production_verify.cjs",
+    "seed:invites": "node scripts/seed_invite_codes.cjs",
+    "seed:pilot": "node scripts/reset_pilot_passwords.cjs",
+    "db:migrate-json": "node scripts/migrate_json_to_postgres.cjs",
+    "db:prisma-deploy": "node scripts/prisma_deploy.cjs",
+    "test:phases": "bash scripts/test_all_phases.sh http://localhost:3002/api",
+    "test:e2e": "node scripts/e2e_full_system_test.mjs http://localhost:3002/api"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "module",
+  "dependencies": {
+    "@reduxjs/toolkit": "^2.5.1",
+    "@zxing/browser": "^0.2.0",
+    "axios": "1.13.5",
+    "date-fns": "^4.1.0",
+    "jspdf": "^2.5.1",
+    "lucide-react": "0.575.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-hot-toast": "^2.5.2",
+    "react-redux": "^9.2.0",
+    "react-router-dom": "7.13.0",
+    "recharts": "^2.15.4",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@eslint/js": "^9.14.0",
+    "@tailwindcss/postcss": "4.2.0",
+    "@tailwindcss/vite": "4.2.0",
+    "@vitejs/plugin-react": "5.1.4",
+    "artillery": "^2.0.31",
+    "autoprefixer": "10.4.24",
+    "concurrently": "9.1.2",
+    "docx": "^8.5.0",
+    "eslint": "^9.14.0",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.0.0",
+    "eslint-plugin-react-refresh": "^0.4.14",
+    "globals": "^15.12.0",
+    "postcss": "8.5.6",
+    "tailwindcss": "4.2.0",
+    "typescript": "^5.7.3",
+    "vite": "7.3.1",
+    "vitest": "^2.1.5"
+  },
+  "eslintConfig": {
+    "env": {
+      "browser": true,
+      "es2021": true,
+      "node": false
+    },
+    "extends": [
+      "eslint:recommended",
+      "plugin:react/recommended"
+    ],
+    "parserOptions": {
+      "ecmaVersion": 2021,
+      "sourceType": "module",
+      "ecmaFeatures": {
+        "jsx": true
+      }
+    },
+    "settings": {
+      "react": {
+        "version": "detect"
+      }
+    },
+    "rules": {
+      "react/prop-types": "off"
+    }
+  }
+}

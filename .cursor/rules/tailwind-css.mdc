@@ -1,0 +1,29 @@
+---
+description: Reglas para Tailwind v4 en src/index.css y componentes; evita error "unknown utility class"
+globs: src/index.css,src/**/*.jsx
+alwaysApply: false
+---
+
+# Tailwind CSS v4 en Food Plan
+
+## Regla obligatoria en `src/index.css`
+
+En **Tailwind v4**, dentro de `@layer components` **solo** se puede usar `@apply` con **utilidades nativas de Tailwind** (por ejemplo: `bg-white`, `rounded-2xl`, `text-stone-700`).
+
+- **NO** usar `@apply` con clases propias del mismo archivo (por ejemplo: `@apply btn-secondary`, `@apply btn-primary`, `@apply auth-box`).
+- Eso provoca el error: `Cannot apply unknown utility class` y rompe el diseño del front.
+
+Si una clase debe verse igual que otra (por ejemplo `.btn-logout` como `.btn-secondary`), **copiar las mismas utilidades** en lugar de referenciar la clase:
+
+```css
+/* Incorrecto (rompe en Tailwind v4): */
+.btn-logout { @apply btn-secondary px-3 py-1.5; }
+
+/* Correcto: */
+.btn-logout {
+  @apply inline-flex items-center justify-center px-3 py-1.5 rounded-2xl font-medium ...;
+  @apply bg-white text-stone-700 border border-slate-300 hover:bg-slate-100 ...;
+}
+```
+
+Al cambiar lógica o estilos, no modificar las clases existentes en `index.css` de forma que reintroduzcan `@apply` con nombres de clases propias.

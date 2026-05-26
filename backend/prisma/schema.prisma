@@ -1,0 +1,425 @@
+// MVPFOOD — modelo relacional (producción). Roles y module_access en User.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                    Int       @id @default(autoincrement())
+  nombre                String
+  email                 String    @unique
+  telefono              String?
+  fechaNacimiento       DateTime? @map("fecha_nacimiento") @db.Date
+  peso                  Decimal?  @db.Decimal(10, 2)
+  altura                Decimal?  @db.Decimal(10, 2)
+  objetivo              String?
+  claveHash             String    @map("clave_hash")
+  rol                   String    @default("usuario_final")
+  roles                 Json      @default("[]")
+  permissions           Json      @default("[]")
+  moduleAccess          Json      @default("{}") @map("module_access")
+  genero                String?
+  tieneRestricciones    Boolean   @default(false) @map("tiene_restricciones")
+  restriccionesDetalles String?   @map("restricciones_detalles") @db.Text
+  medidasBiomecanicas   Json?     @map("medidas_biomecanicas")
+  experiencia           String?   @default("principiante")
+  metodoEntrenamiento   String?   @map("metodo_entrenamiento")
+  gymId                 Int?      @map("gym_id")
+  trainerId             Int?      @map("trainer_id")
+  planId                String?   @map("plan_id")
+  foodUserId            String?   @map("food_user_id") @db.VarChar(64)
+  trainingUserId        String?   @map("training_user_id") @db.VarChar(64)
+  activo                Boolean   @default(true)
+  fechaRegistro         DateTime  @default(now()) @map("fecha_registro")
+  actualizadoEn         DateTime  @updatedAt @map("actualizado_en")
+
+  gym                   Gym?      @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  trainer               Trainer?  @relation(fields: [trainerId], references: [id], onDelete: SetNull)
+  accounts              UserAccount[]
+  userPlan              UserPlan?
+  moduleLicenses        ModuleLicense[]
+
+  @@index([rol])
+  @@index([gymId])
+  @@index([trainerId])
+  @@map("users")
+}
+
+model Gym {
+  id                Int       @id @default(autoincrement())
+  nombre            String
+  direccion         String?
+  telefono          String?
+  email             String?
+  ciudad            String?
+  pais              String?   @default("Colombia")
+  latitude          Decimal?  @db.Decimal(10, 6)
+  longitude         Decimal?  @db.Decimal(10, 6)
+  capacidadUsuarios Int?      @default(50) @map("capacidad_usuarios")
+  logoUrl           String?   @map("logo_url")
+  brandName         String?   @map("brand_name")
+  brandSlug         String?   @map("brand_slug")
+  whiteLabelEnabled Boolean   @default(false) @map("white_label_enabled")
+  welcomeMessage    String?   @map("welcome_message") @db.Text
+  supportWhatsapp   String?   @map("support_whatsapp")
+  primaryColor      String?   @map("primary_color")
+  secondaryColor    String?   @map("secondary_color")
+  faviconUrl        String?   @map("favicon_url")
+  coverUrl          String?   @map("cover_url")
+  socialLinks       Json?     @default("{}") @map("social_links")
+  customDomain      String?   @map("custom_domain") @db.VarChar(255)
+  status            String    @default("active")
+  planId            String?   @map("plan_id")
+  inviteCode        String?   @unique @map("invite_code")
+  activo            Boolean   @default(true)
+  creado            DateTime  @default(now())
+
+  trainers          Trainer[]
+  users             User[]
+  liveClasses       LiveClass[]
+  accounts          UserAccount[]
+
+  @@index([activo, status])
+  @@map("gyms")
+}
+
+model Trainer {
+  id                Int      @id @default(autoincrement())
+  nombre            String
+  email             String   @unique
+  telefono          String?
+  especialidad      String?
+  certificaciones   Json     @default("[]")
+  experienciaAnos   Int?     @map("experiencia_anos")
+  gymId             Int?     @map("gym_id")
+  horarioDisponible String?  @map("horario_disponible")
+  tarifaSesion      Int?     @map("tarifa_sesion")
+  capacidadUsuarios Int?     @default(50) @map("capacidad_usuarios")
+  planId            String?  @map("plan_id")
+  inviteCode        String?  @unique @map("invite_code")
+  logoUrl           String?  @map("logo_url")
+  brandName         String?  @map("brand_name")
+  brandSlug         String?  @map("brand_slug")
+  whiteLabelEnabled Boolean  @default(false) @map("white_label_enabled")
+  welcomeMessage    String?  @map("welcome_message") @db.Text
+  supportWhatsapp   String?  @map("support_whatsapp")
+  primaryColor      String?  @map("primary_color")
+  secondaryColor    String?  @map("secondary_color")
+  faviconUrl        String?  @map("favicon_url")
+  coverUrl          String?  @map("cover_url")
+  socialLinks       Json?    @default("{}") @map("social_links")
+  customDomain      String?  @map("custom_domain") @db.VarChar(255)
+  activo            Boolean  @default(true)
+  creado            DateTime @default(now())
+
+  gym               Gym?     @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  users             User[]
+  accounts          UserAccount[]
+
+  @@index([gymId])
+  @@map("trainers")
+}
+
+model ModuleLicense {
+  id         Int       @id @default(autoincrement())
+  userId     Int       @map("user_id")
+  moduleCode String    @map("module_code") @db.VarChar(32)
+  active     Boolean   @default(true)
+  validFrom  DateTime  @default(now()) @map("valid_from")
+  validUntil DateTime? @map("valid_until")
+  source     String    @default("invite") @db.VarChar(32)
+  metadata   Json?
+  createdAt  DateTime  @default(now()) @map("created_at")
+  updatedAt  DateTime  @updatedAt @map("updated_at")
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, moduleCode])
+  @@index([userId, active])
+  @@map("module_licenses")
+}
+
+model PaymentLink {
+  id         Int      @id @default(autoincrement())
+  moduleCode String   @map("module_code") @db.VarChar(32)
+  label      String?
+  paymentUrl String   @map("payment_url") @db.Text
+  active     Boolean  @default(true)
+  sortOrder  Int      @default(0) @map("sort_order")
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([moduleCode])
+  @@map("payment_links")
+}
+
+model TrainingPlanRow {
+  id        Int      @id @default(autoincrement())
+  userId    Int      @map("user_id")
+  trainerId Int?     @map("trainer_id")
+  payload   Json
+  activo    Boolean  @default(true)
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@index([userId])
+  @@index([trainerId])
+  @@map("training_plan_rows")
+}
+
+model Cycle {
+  id        Int      @id
+  name      String
+  startDate String   @map("start_date") @db.VarChar(10)
+  label     String   @default("")
+
+  @@map("cycles")
+}
+
+model ProgramSetting {
+  id             String  @id
+  name           String
+  color          String  @default("#64748b")
+  active         Boolean @default(true)
+  activeCycleId  Int     @default(1) @map("active_cycle_id")
+  zoomEmail      String? @map("zoom_email")
+  zoomAccounts   Json?   @map("zoom_accounts")
+
+  @@map("program_settings")
+}
+
+model SubscriptionPlan {
+  nombre          String  @id
+  programId       String  @default("virtual_d28d") @map("program_id")
+  descripcion     String? @db.Text
+  precioMensual   Int     @default(0) @map("precio_mensual")
+  features        Json    @default("[]")
+  maxUsuarios     Int     @default(0) @map("max_usuarios")
+  usuariosActivos Int     @default(0) @map("usuarios_activos")
+
+  accounts        UserAccount[]
+
+  @@map("subscription_plans")
+}
+
+model UserAccount {
+  id                Int      @id @default(autoincrement())
+  userId            Int      @map("user_id")
+  planNombre        String   @map("plan_nombre")
+  gymId             Int?     @map("gym_id")
+  trainerId         Int?     @map("trainer_id")
+  fechaInicio       DateTime @default(now()) @map("fecha_inicio")
+  fechaVencimiento  DateTime? @map("fecha_vencimiento")
+  estado            String   @default("activo")
+  sesionesRestantes Int      @default(0) @map("sesiones_restantes")
+  sesionesTotales   Int      @default(0) @map("sesiones_totales")
+  precioMensual     Int      @default(0) @map("precio_mensual")
+  metodoPago        String?  @map("metodo_pago")
+  activo            Boolean  @default(true)
+
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  plan              SubscriptionPlan @relation(fields: [planNombre], references: [nombre])
+  gym               Gym?     @relation(fields: [gymId], references: [id], onDelete: SetNull)
+  trainer           Trainer? @relation(fields: [trainerId], references: [id], onDelete: SetNull)
+
+  @@index([userId])
+  @@map("user_accounts")
+}
+
+model LiveClass {
+  id                 Int      @id @default(autoincrement())
+  title              String
+  description        String?  @db.Text
+  zoomLink           String?  @map("zoom_link")
+  gymId              Int?     @map("gym_id")
+  isGlobal           Boolean  @default(true) @map("is_global")
+  dayLabel           String?  @map("day_label")
+  programId          String?  @map("program_id")
+  classType          String?  @map("class_type")
+  coach              String?
+  capacity           Int      @default(40)
+  enrolledUserIds    Json     @default("[]") @map("enrolled_user_ids")
+  attendanceUserIds  Json     @default("[]") @map("attendance_user_ids")
+  attendanceEvents   Json     @default("[]") @map("attendance_events")
+  sourceModule       String   @default("d28d") @map("source_module")
+  locked             Boolean  @default(false)
+  startTime          DateTime @map("start_time")
+  endTime            DateTime @map("end_time")
+  active             Boolean  @default(true)
+  createdAt          DateTime @default(now()) @map("created_at")
+
+  gym                Gym?     @relation(fields: [gymId], references: [id], onDelete: SetNull)
+
+  @@index([gymId])
+  @@index([startTime])
+  @@map("live_classes")
+}
+
+model FoodItem {
+  id            Int      @id @default(autoincrement())
+  nombre        String
+  barcode       String?  @unique
+  categoria     String?
+  marca         String?
+  cantidad      Decimal? @db.Decimal(10, 2)
+  unidad        String?
+  calorias      Decimal? @db.Decimal(10, 2)
+  proteina      Decimal? @db.Decimal(10, 2)
+  carbohidratos Decimal? @db.Decimal(10, 2)
+  grasas        Decimal? @db.Decimal(10, 2)
+  activo        Boolean  @default(true)
+  creadoEn      DateTime @default(now()) @map("creado_en")
+
+  @@index([categoria])
+  @@index([nombre])
+  @@map("food_items")
+}
+
+model Recipe {
+  id       Int      @id @default(autoincrement())
+  payload  Json
+  activo   Boolean  @default(true)
+
+  @@map("recipes")
+}
+
+model UserPlan {
+  userId    Int      @id @map("user_id")
+  payload   Json
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("user_plans")
+}
+
+/// Documentos JSON por tipo (training_plans, training_log, exercises_gallery, etc.)
+model DomainDocument {
+  id         Int      @id @default(autoincrement())
+  collection String   @db.VarChar(64)
+  docKey     String   @default("") @map("doc_key") @db.VarChar(128)
+  payload    Json
+  updatedAt  DateTime @updatedAt @map("updated_at")
+
+  @@unique([collection, docKey])
+  @@index([collection])
+  @@map("domain_documents")
+}
+
+model AuditLog {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  level     String?  @db.VarChar(20)
+  event     String?  @db.VarChar(255)
+  traceId   String?  @map("trace_id") @db.VarChar(100)
+  metadata  Json?
+  message   String?  @db.Text
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([traceId])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("audit_logs")
+}
+
+/// Maestro de Rutinas D28D — plantillas reutilizables (clases en vivo, futuro Training/WL)
+model D28dRoutineCategory {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @unique @db.VarChar(120)
+  orden     Int      @default(0)
+  activo    Boolean  @default(true)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  @@map("d28d_routine_categories")
+}
+
+model D28dRoutine {
+  id            Int      @id @default(autoincrement())
+  rootId        Int      @map("root_id")
+  version       Int      @default(1)
+  isCurrent     Boolean  @default(true) @map("is_current")
+  nombre        String   @db.VarChar(255)
+  categoria     String   @db.VarChar(120)
+  subcategoria  String?  @db.VarChar(120)
+  objetivo      String?  @db.VarChar(64)
+  nivel         String?  @db.VarChar(64)
+  duracion      String?  @db.VarChar(64)
+  descripcion   String?  @db.Text
+  notasTecnicas String?  @map("notas_tecnicas") @db.Text
+  equipamiento  Json     @default("[]")
+  estado        String   @default("activa") @db.VarChar(32)
+  scope         String   @default("d28d_platform") @db.VarChar(64)
+  createdBy     Int?     @map("created_by")
+  createdAt     DateTime @default(now()) @map("created_at")
+  updatedAt     DateTime @updatedAt @map("updated_at")
+
+  blocks        D28dRoutineBlock[]
+  hostNotes     D28dRoutineHostNote[]
+
+  @@index([rootId, isCurrent])
+  @@index([categoria, estado])
+  @@map("d28d_routines")
+}
+
+model D28dRoutineBlock {
+  id            Int      @id @default(autoincrement())
+  routineId     Int      @map("routine_id")
+  tipo          String   @db.VarChar(32)
+  orden         Int      @default(0)
+  nombre        String?  @db.VarChar(255)
+  tecnica       String?  @db.VarChar(120)
+  duracion      String?  @db.VarChar(64)
+  descanso      String?  @db.VarChar(64)
+  observaciones String?  @db.Text
+  config        Json     @default("{}")
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  routine   D28dRoutine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+  exercises D28dRoutineExercise[]
+
+  @@index([routineId])
+  @@map("d28d_routine_blocks")
+}
+
+model D28dRoutineExercise {
+  id            Int      @id @default(autoincrement())
+  blockId       Int      @map("block_id")
+  nombre        String   @db.VarChar(255)
+  orden         Int      @default(0)
+  series        String?  @db.VarChar(64)
+  repeticiones  String?  @db.VarChar(64)
+  duracion      String?  @db.VarChar(64)
+  descanso      String?  @db.VarChar(64)
+  tempo         String?  @db.VarChar(64)
+  intensidad    String?  @db.VarChar(64)
+  observaciones String?  @db.Text
+  variantes     Json     @default("{}")
+  videoUrl      String?  @map("video_url") @db.VarChar(512)
+  imagenUrl     String?  @map("imagen_url") @db.VarChar(512)
+  createdAt     DateTime @default(now()) @map("created_at")
+
+  block         D28dRoutineBlock @relation(fields: [blockId], references: [id], onDelete: Cascade)
+
+  @@index([blockId])
+  @@map("d28d_routine_exercises")
+}
+
+/// Observaciones del anfitrión (no modifica la plantilla maestra)
+model D28dRoutineHostNote {
+  id          Int      @id @default(autoincrement())
+  routineId   Int      @map("routine_id")
+  liveClassId Int?     @map("live_class_id")
+  userId      Int      @map("user_id")
+  texto       String   @db.Text
+  createdAt   DateTime @default(now()) @map("created_at")
+
+  routine     D28dRoutine @relation(fields: [routineId], references: [id], onDelete: Cascade)
+
+  @@index([routineId])
+  @@index([liveClassId])
+  @@map("d28d_routine_host_notes")
+}
