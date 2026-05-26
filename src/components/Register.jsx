@@ -80,6 +80,10 @@ export default function Register({ onSwitchToLogin }) {
   const filteredPlans = useMemo(() => {
     if (!inviteContext?.plan_scope) return plans;
     const scope = inviteContext.plan_scope;
+    if (inviteContext?.type === 'program' && inviteContext?.program_id) {
+      const pid = String(inviteContext.program_id);
+      return plans.filter((p) => String(p.program_id || '') === pid && String(p.kind || 'd28d') === 'd28d');
+    }
     if (scope === 'trainer') {
       return plans.filter((p) => {
         const pid = String(p.program_id || '').toLowerCase();
@@ -94,6 +98,23 @@ export default function Register({ onSwitchToLogin }) {
     }
     return plans;
   }, [plans, inviteContext]);
+
+  useEffect(() => {
+    if (!inviteContext) return;
+    if (!filteredPlans.length) return;
+    // Autoselección por suggested_plan (program invite codes) o por primer plan del programa
+    const suggested = inviteContext?.suggested_plan
+      ? filteredPlans.find((p) => p.nombre === inviteContext.suggested_plan)
+      : null;
+    if (suggested) {
+      setSelectedPlan(suggested);
+      return;
+    }
+    if (inviteContext?.type === 'program' && inviteContext?.program_id) {
+      const first = filteredPlans[0] || null;
+      if (first) setSelectedPlan(first);
+    }
+  }, [inviteContext, filteredPlans]);
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -181,6 +202,13 @@ export default function Register({ onSwitchToLogin }) {
       }
       if (selectedPlan) {
         try {
+          // Si el código es de pareja, el backend crea la cuenta heredando del titular.
+          if (inviteContext?.type === 'couple' && inviteContext?.couple_code) {
+            await api.post('/accounts/couple/redeem', { couple_code: inviteContext.couple_code });
+            setSuccess('¡Registro completado! Entrando a tu cuenta...');
+            window.location.assign('/');
+            return;
+          }
           const mod = inviteContext?.module_access?.training && !inviteContext?.module_access?.d28d
             ? 'training'
             : inviteContext?.module_access?.food_plan || inviteContext?.module_access?.nutrition
@@ -190,6 +218,7 @@ export default function Register({ onSwitchToLogin }) {
             plan: selectedPlan.nombre,
             gym_id: inviteContext.gym_id || null,
             trainer_id: inviteContext.trainer_id || null,
+            cycle_id: Array.isArray(selectedPlan.cycle_ids) && selectedPlan.cycle_ids.length ? selectedPlan.cycle_ids[0] : null,
             metodoPago: formData.metodoPago,
             module_code: mod,
           });

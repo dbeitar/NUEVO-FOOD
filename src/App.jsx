@@ -3,6 +3,9 @@ import { useAuth } from './context/useAuth'
 import { useI18n } from './context/useI18n'
 import ModernLogin from './components/ModernLogin'
 import Register from './components/Register'
+import RegisterCommercialWizard from './components/RegisterCommercialWizard'
+
+const useCommercialRegister = import.meta.env.VITE_REGISTER_WIZARD_V2 !== 'false'
 import Dashboard from './components/Dashboard'
 
 function App() {
@@ -16,7 +19,11 @@ function App() {
 
   if (!user) {
     return showRegister ? (
-      <Register onSwitchToLogin={() => setShowRegister(false)} />
+      useCommercialRegister ? (
+        <RegisterCommercialWizard onSwitchToLogin={() => setShowRegister(false)} />
+      ) : (
+        <Register onSwitchToLogin={() => setShowRegister(false)} />
+      )
     ) : (
       <ModernLogin onSwitchToRegister={() => setShowRegister(true)} />
     )

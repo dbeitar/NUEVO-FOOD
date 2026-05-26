@@ -22,6 +22,7 @@ async function hydrateAll() {
     accountsDB.hydrate?.(),
     liveDB.hydrate?.(),
     programDB.hydrate?.(),
+    require('../models/D28dChallengeStore').hydrate?.(),
     hydrateFoods?.(),
     userPlanStore.hydrate?.(),
     hydrateDomainStores(),

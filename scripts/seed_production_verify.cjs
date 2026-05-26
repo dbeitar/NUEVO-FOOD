@@ -88,7 +88,7 @@ async function seedEndUser(spec) {
     rol: 'usuario_final',
     roles: ['usuario_final'],
     gym_id: data.gym_id,
-    trainer_id: data.trainer_id,
+    trainer_id: spec.trainer_id ?? data.trainer_id,
     module_access: data.module_access,
   });
 }
@@ -129,6 +129,7 @@ async function main() {
       nombre: acc.nombre,
       rol: acc.rol,
       roles: acc.roles || [acc.rol],
+      trainer_id: acc.trainer_id ?? null,
       module_access: acc.module_access || {},
     });
     await licenseService.syncFromModuleAccess(r.id, acc.module_access || {}, 'seed');
@@ -156,7 +157,7 @@ async function main() {
   }
 
   console.log('\n✓ Listo. Reinicia el backend y prueba login con las cuentas del manifiesto.');
-  console.log('  Documentación: docs/manuales/03_PRODUCTO_Y_OPERACION.md');
+  console.log('  Documentación: docs/MANUAL_ECOSISTEMA.md');
 }
 
 main().catch((err) => {

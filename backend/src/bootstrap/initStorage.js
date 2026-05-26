@@ -23,6 +23,9 @@ async function initStorage() {
 
   await connectPrisma();
 
+  const { syncPostgresSequences } = require('../db/syncPostgresSequences');
+  await syncPostgresSequences(getPrisma());
+
   const backendRoot = path.join(__dirname, '../..');
   try {
     execSync('npx prisma migrate deploy', { cwd: backendRoot, stdio: 'inherit' });

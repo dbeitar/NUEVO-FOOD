@@ -115,7 +115,7 @@ exports.confirmPayment = async (req, res) => {
 
     const until = new Date();
     until.setDate(until.getDate() + Number(days) || 30);
-    const updated = AccountsDatabase.update(accountId, {
+    const updated = await AccountsDatabase.update(accountId, {
       estado: 'activo',
       fecha_vencimiento: until,
       metodoPago: req.body?.metodo_pago || account.metodoPago || 'confirmado_admin',
@@ -134,9 +134,87 @@ exports.confirmPayment = async (req, res) => {
       meta: { account_id: accountId, module_code, valid_until: until.toISOString() },
     });
 
+    // Communication Center: evento de pago aprobado (usa plantillas + email/in_app + auditoría).
+    try {
+      const comms = require('../services/communicationCenterService');
+      await comms.dispatchEvent({
+        evento: 'payment.approved',
+        modulo: module_code === 'training' ? 'training' : module_code === 'food' ? 'food' : 'd28d',
+        userId: account.user_id,
+        targetEmail: user?.email || null,
+        vars: {
+          user: { id: user?.id, nombre: user?.nombre, email: user?.email },
+          payment: { account_id: accountId, module_code, valid_until: until.toISOString() },
+        },
+      });
+      // Reactivación (si venía vencida / suspendida): evento separado para comunicaciones.
+      await comms.dispatchEvent({
+        evento: 'license.reactivated',
+        modulo: module_code === 'training' ? 'training' : module_code === 'food' ? 'food' : 'd28d',
+        userId: account.user_id,
+        targetEmail: user?.email || null,
+        vars: {
+          user: { id: user?.id, nombre: user?.nombre, email: user?.email },
+          license: { module_code, valid_until: until.toISOString(), source: 'payment_confirm' },
+        },
+        preferChannels: ['in_app', 'email'],
+      });
+    } catch (e) {
+      console.warn('comm.payment.approved:', e.message);
+    }
+
     return res.json({ success: true, data: { account: updated } });
   } catch (e) {
     return res.status(500).json({ error: 'Error confirmando pago' });
+  }
+};
+
+exports.rejectPayment = async (req, res) => {
+  try {
+    if (!canManagePayments(req.user)) {
+      return res.status(403).json({ error: 'Sin permiso' });
+    }
+    const accountId = Number(req.params.accountId);
+    const account = AccountsDatabase.getById(accountId);
+    if (!account) return res.status(404).json({ error: 'Cuenta no encontrada' });
+    if (!scopeFilter(req.user, [account]).length) {
+      return res.status(403).json({ error: 'Sin permiso sobre esta cuenta' });
+    }
+
+    const updated = await AccountsDatabase.update(accountId, {
+      estado: 'rechazado',
+      metodoPago: req.body?.metodo_pago || account.metodoPago || 'rechazado_admin',
+    });
+
+    const user = await userRepo.findById(account.user_id);
+    const moduleCode = req.body?.module_code || 'd28d';
+
+    NotificationDatabase.create({
+      user_id: account.user_id,
+      tipo: 'pago_rechazado',
+      mensaje: req.body?.mensaje || 'Tu pago no pudo ser confirmado. Contacta a soporte si necesitas ayuda.',
+      meta: { account_id: accountId, module_code: moduleCode },
+    });
+
+    try {
+      const comms = require('../services/communicationCenterService');
+      await comms.dispatchEvent({
+        evento: 'payment.rejected',
+        modulo: moduleCode === 'training' ? 'training' : moduleCode === 'food' ? 'food' : 'd28d',
+        userId: account.user_id,
+        targetEmail: user?.email || null,
+        vars: {
+          user: { id: user?.id, nombre: user?.nombre, email: user?.email },
+          payment: { account_id: accountId, module_code: moduleCode, reason: req.body?.reason || null },
+        },
+      });
+    } catch (e) {
+      console.warn('comm.payment.rejected:', e.message);
+    }
+
+    return res.json({ success: true, data: { account: updated } });
+  } catch (e) {
+    return res.status(500).json({ error: 'Error rechazando pago' });
   }
 };
 
@@ -160,7 +238,7 @@ exports.extendVigencia = async (req, res) => {
 
     const account = AccountsDatabase.getByUserId(userId);
     if (account) {
-      AccountsDatabase.update(account.id, {
+      await AccountsDatabase.update(account.id, {
         fecha_vencimiento: until,
         estado: 'activo',
       });
@@ -172,6 +250,23 @@ exports.extendVigencia = async (req, res) => {
       mensaje: `Tu acceso a ${MODULE_LABELS[module_code] || module_code} fue extendido hasta ${until.toLocaleDateString()}.`,
       meta: { module_code, valid_until: until.toISOString() },
     });
+
+    // Communication Center: reactivación / extensión (plantillas + auditoría).
+    try {
+      const comms = require('../services/communicationCenterService');
+      await comms.dispatchEvent({
+        evento: 'license.reactivated',
+        modulo: module_code === 'training' ? 'training' : module_code === 'food' ? 'food' : 'd28d',
+        userId,
+        targetEmail: user?.email || null,
+        vars: {
+          user: { id: user?.id, nombre: user?.nombre, email: user?.email },
+          license: { module_code, valid_until: until.toISOString(), source: 'admin_extend' },
+        },
+      });
+    } catch (e) {
+      console.warn('comm.license.reactivated:', e.message);
+    }
 
     return res.json({ success: true, data: { licenses, valid_until: until.toISOString() } });
   } catch (e) {

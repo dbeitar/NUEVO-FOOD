@@ -25,6 +25,8 @@ const fitnessTestRoutes = require('./src/routes/fitnessTestRoutes');
 const ecosystemRoutes = require('./src/routes/ecosystemRoutes');
 const trainerMastersRoutes = require('./src/routes/trainerMastersRoutes');
 const programRoutes = require('./src/routes/programRoutes');
+const programInviteRoutes = require('./src/routes/programInviteRoutes');
+const communicationRoutes = require('./src/routes/communicationRoutes');
 const cycleRoutes = require('./src/routes/cycleRoutes');
 const seedD28DData = require('./src/seedD28DData');
 const authMiddleware = require('./src/middleware/auth');
@@ -39,6 +41,11 @@ const foodProvisioning = require('./src/services/foodProvisioningService');
 const trainingModuleRoutes = require('./src/routes/trainingModuleRoutes');
 const d28dRoutineRoutes = require('./src/routes/d28dRoutineRoutes');
 const d28dCoachRoutes = require('./src/routes/d28dCoachRoutes');
+const d28dChallengeRoutes = require('./src/routes/d28dChallengeRoutes');
+const d28dProgressRoutes = require('./src/routes/d28dProgressRoutes');
+const trainingProgressRoutes = require('./src/routes/trainingProgressRoutes');
+const faqRoutes = require('./src/routes/faqRoutes');
+const helpRoutes = require('./src/routes/helpRoutes');
 const notificationRoutes = require('./src/routes/notificationRoutes');
 const trainingProvisioning = require('./src/services/trainingProvisioningService');
 
@@ -98,78 +105,7 @@ const USE_DB_AUTH = useDbAuth();
 const USE_RELATIONAL = useRelationalStorage();
 const USE_PRISMA = usePrisma();
 const ENABLE_DEV_ROUTES = !IS_PROD && String(process.env.ENABLE_DEV_ROUTES || '').toLowerCase() === 'true';
-const SEED_DEMO = String(process.env.SEED_DEMO || '').toLowerCase() === 'true';
-
-// Matriz de cuentas piloto. Cada entrada se sincroniza al arrancar
-// cuando SEED_DEMO=true (crea o actualiza la contraseña). El email
-// `demo` (público) usa DEMO_PASSWORD; el resto, CORE_PASSWORD.
-const PILOT_ACCOUNTS = [
-  { email: 'admin@foodplan.local',           nombre: 'Super Admin',         rol: 'super_admin',     bucket: 'core' },
-  { email: 'admin.d28d@foodplan.local',      nombre: 'Admin D28D',          rol: 'admin_d28d',      bucket: 'core' },
-  { email: 'admin.food@foodplan.local',      nombre: 'Admin Plan Alim.',    rol: 'admin_food_plan', bucket: 'core' },
-  { email: 'admin.entrenador@foodplan.local',nombre: 'Admin Entrenadores',  rol: 'admin_training',  bucket: 'core' },
-  { email: 'gym.demo@foodplan.local',        nombre: 'Admin Gym Demo',      rol: 'admin_gimnasio',  bucket: 'core' },
-  { email: 'coach.demo@foodplan.local',      nombre: 'Coach Demo',          rol: 'entrenador',      bucket: 'core' },
-  { email: 'usuario.demo@foodplan.local',    nombre: 'Usuario Demo',        rol: 'usuario_final',   bucket: 'core' },
-  { email: 'demo+20260302@foodplan.local',   nombre: 'Demo Público',        rol: 'usuario_final',   bucket: 'demo' },
-];
-
-async function syncDemoAndCoreAccounts() {
-  // Opt-in. Sin SEED_DEMO=true este bloque no toca usuarios.
-  if (!SEED_DEMO) return;
-  // Exigir contraseñas explícitas: nunca usar fallbacks como 'Admin!234'.
-  const demoPassword = (process.env.DEMO_PASSWORD || '').trim();
-  const corePassword = (process.env.CORE_PASSWORD || '').trim();
-  if (!demoPassword || !corePassword || demoPassword.length < 8 || corePassword.length < 8) {
-    console.warn('[SEED_DEMO] DEMO_PASSWORD y CORE_PASSWORD requeridas (>=8 chars). Sync abortado.');
-    return;
-  }
-  try {
-    // Cuentas extra opcionales heredadas de CORE_ACCOUNT_EMAILS.
-    const extraCore = (process.env.CORE_ACCOUNT_EMAILS || '')
-      .split(',')
-      .map((s) => s.trim())
-      .filter(Boolean)
-      .filter((e) => !PILOT_ACCOUNTS.some((a) => a.email === e))
-      .map((e) => ({ email: e, nombre: e, rol: 'super_admin', bucket: 'core' }));
-
-    const all = [...PILOT_ACCOUNTS, ...extraCore];
-    const demoHash = await bcryptjs.hash(demoPassword, 10);
-    const coreHash = await bcryptjs.hash(corePassword, 10);
-
-    let created = 0, updated = 0;
-    if (USE_DB_AUTH) {
-      for (const acc of all) {
-        const hash = acc.bucket === 'demo' ? demoHash : coreHash;
-        try {
-          const r = await db.query('SELECT id FROM users WHERE email = $1', [acc.email]);
-          if (r.rows && r.rows.length > 0) {
-            await db.query('UPDATE users SET clave_hash = $1, rol = $2 WHERE email = $3', [hash, acc.rol, acc.email]);
-            updated++;
-          } else {
-            await db.query('INSERT INTO users (nombre, email, clave_hash, rol) VALUES ($1, $2, $3, $4)', [acc.nombre, acc.email, hash, acc.rol]);
-            created++;
-          }
-        } catch { /* noop */ }
-      }
-    } else {
-      for (const acc of all) {
-        const hash = acc.bucket === 'demo' ? demoHash : coreHash;
-        const existing = userDB.getByEmail(acc.email);
-        if (existing) {
-          userDB.update(existing.id, { clave_hash: hash, rol: acc.rol, roles: [acc.rol] });
-          updated++;
-        } else {
-          userDB.create({ nombre: acc.nombre, email: acc.email, clave_hash: hash, rol: acc.rol, roles: [acc.rol] });
-          created++;
-        }
-      }
-    }
-    console.log(`[SEED_DEMO] Cuentas piloto sincronizadas: ${created} creadas, ${updated} actualizadas.`);
-  } catch (e) {
-    console.error('[SEED_DEMO] Error:', e.message);
-  }
-}
+const { syncPilotAccounts } = require('./src/seed/syncPilotAccounts');
 
 // Rate limiting global en producción
 if (IS_PROD) {
@@ -217,11 +153,23 @@ if (ENABLE_DEV_ROUTES) {
       }
       const hash = await bcryptjs.hash(password, 10);
       const updated = [];
-      for (const email of emails) {
-        const u = userDB.getByEmail(email);
-        if (u) {
-          userDB.update(u.id, { clave_hash: hash });
-          updated.push({ id: u.id, email: u.email });
+      if (USE_RELATIONAL) {
+        const { getPrisma } = require('./src/lib/prisma');
+        const prisma = getPrisma();
+        for (const email of emails) {
+          const row = await prisma.user.updateMany({
+            where: { email: String(email).trim() },
+            data: { claveHash: hash },
+          });
+          if (row.count > 0) updated.push({ email });
+        }
+      } else {
+        for (const email of emails) {
+          const u = userDB.getByEmail(email);
+          if (u) {
+            userDB.update(u.id, { clave_hash: hash });
+            updated.push({ id: u.id, email: u.email });
+          }
         }
       }
       res.json({ success: true, updated });
@@ -231,8 +179,8 @@ if (ENABLE_DEV_ROUTES) {
   });
   app.post('/api/dev/sync-demo', async (_req, res) => {
     try {
-      await syncDemoAndCoreAccounts();
-      res.json({ success: true });
+      const result = await syncPilotAccounts({ force: true });
+      res.json({ success: true, data: result });
     } catch {
       res.status(500).json({ error: 'Error sincronizando cuentas demo' });
     }
@@ -921,9 +869,11 @@ app.use('/api/fitness-tests', fitnessTestRoutes);
 app.use('/api/ecosystem', ecosystemRoutes);
 app.use('/api/trainer-masters', trainerMastersRoutes);
 app.use('/api/programs', programRoutes);
+app.use('/api/program-invites', programInviteRoutes);
 app.use('/api/cycles', cycleRoutes);
 app.use('/api/licenses', licenseRoutes);
 app.use('/api/payment-links', paymentLinkRoutes);
+app.use('/api/communications', communicationRoutes);
 const paymentAdminRoutes = require('./src/routes/paymentAdminRoutes');
 app.use('/api/payment-admin', paymentAdminRoutes);
 app.use('/api/frontend-config', frontendConfigRoutes);
@@ -931,6 +881,14 @@ app.use('/api/food-module', foodModuleRoutes);
 app.use('/api/training-module', trainingModuleRoutes);
 app.use('/api/d28d/routines', d28dRoutineRoutes);
 app.use('/api/d28d/coach', d28dCoachRoutes);
+app.use('/api/d28d/challenges', d28dChallengeRoutes);
+app.use('/api/d28d/progress', d28dProgressRoutes);
+app.use('/api/training/progress', trainingProgressRoutes);
+app.use('/api/faq', faqRoutes);
+app.use('/api/help', helpRoutes);
+const platformAuditController = require('./src/controllers/platformAuditController');
+app.get('/api/platform/audit', require('./src/middleware/auth'), platformAuditController.list);
+app.use('/uploads/challenges', express.static(require('path').join(__dirname, 'uploads/challenges')));
 app.use('/api/notifications', notificationRoutes);
 
 // Manejo de errores final (incluye CORS rechazado)
@@ -943,9 +901,7 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: 'Error interno del servidor' });
 });
 
-// Seed/sync controlados por env.
-// El seed D28D solo corre cuando SEED_DEMO=true (por defecto: false en piloto/prod).
-syncDemoAndCoreAccounts();
+// Seed D28D (gym/programas). Cuentas piloto se sincronizan en server.js tras initStorage.
 const shouldSeedDemo = String(process.env.SEED_DEMO || '').toLowerCase() === 'true'
   || (NODE_ENV === 'development' && process.env.SEED_DEMO === undefined);
 if (shouldSeedDemo) {
@@ -969,11 +925,32 @@ const server = app.listen(PORT, () => {
     console.log(`[server] Persistencia: archivos JSON (dev)${USE_DB_AUTH ? ' + auth parcial en PG' : ''}`);
     if (USE_DB_AUTH) {
       console.warn(
-        '[CONFIG] USE_DB_AUTH=true sin USE_PG_STORAGE: solo login en PG. Ver docs/manuales/04_TECNICO_Y_DESPLIEGUE.md',
+        '[CONFIG] USE_DB_AUTH=true sin USE_PG_STORAGE: solo login en PG. Ver docs/MANUAL_ECOSISTEMA.md',
       );
     }
   }
 });
+
+// Seed plantillas de comunicación (si está vacío)
+try {
+  const { seedCommunicationTemplatesIfEmpty, ensureRequiredCommunicationTemplates } = require('./src/seed/seedCommunicationTemplates');
+  seedCommunicationTemplatesIfEmpty().catch(() => {});
+  ensureRequiredCommunicationTemplates().then((out) => {
+    if (out?.created) console.log(`[comm] plantillas requeridas creadas: ${out.created}`);
+  }).catch(() => {});
+} catch (e) {
+  console.warn('[comm] seed plantillas falló:', e.message);
+}
+
+// Scheduler comunicaciones (licencias/ciclos). Solo shell; Food no se toca.
+try {
+  const { startCommunicationScheduler } = require('./src/jobs/communicationScheduler');
+  const out = startCommunicationScheduler();
+  if (out?.started) console.log(`[comm.scheduler] activo (hora=${out.hour})`);
+  else console.log(`[comm.scheduler] desactivado (${out?.reason || 'n/a'})`);
+} catch (e) {
+  console.warn('[comm.scheduler] no inició:', e.message);
+}
 
 if (USE_RELATIONAL) {
   const pgCollectionCache = require('./src/utils/pgCollectionCache');

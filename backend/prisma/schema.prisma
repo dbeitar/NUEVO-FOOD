@@ -41,6 +41,7 @@ model User {
   gym                   Gym?      @relation(fields: [gymId], references: [id], onDelete: SetNull)
   trainer               Trainer?  @relation(fields: [trainerId], references: [id], onDelete: SetNull)
   accounts              UserAccount[]
+  paymentRequests       PaymentRequest[]
   userPlan              UserPlan?
   moduleLicenses        ModuleLicense[]
 
@@ -152,6 +153,9 @@ model PaymentLink {
   paymentUrl       String   @map("payment_url") @db.Text
   active           Boolean  @default(true)
   inPersonEnabled  Boolean  @default(true) @map("in_person_enabled")
+  onlineActive     Boolean  @default(true) @map("online_active")
+  onsiteEnabled    Boolean  @default(true) @map("onsite_enabled")
+  onsiteLabel      String?  @map("onsite_label") @db.VarChar(120)
   inPersonLabel    String?  @map("in_person_label") @db.VarChar(120)
   onlineLabel      String?  @map("online_label") @db.VarChar(120)
   sortOrder        Int      @default(0) @map("sort_order")
@@ -159,6 +163,22 @@ model PaymentLink {
 
   @@unique([moduleCode])
   @@map("payment_links")
+}
+
+model PaymentRequest {
+  id         Int      @id @default(autoincrement())
+  userId     Int?     @map("user_id")
+  moduleCode String   @default("d28d") @map("module_code") @db.VarChar(32)
+  planNombre String?  @map("plan_nombre") @db.VarChar(255)
+  status     String   @default("pending") @db.VarChar(32)
+  metadata   Json?
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([userId, status])
+  @@index([moduleCode, status])
+  @@map("payment_requests")
 }
 
 model TrainingPlanRow {
@@ -180,6 +200,9 @@ model Cycle {
   startDate String   @map("start_date") @db.VarChar(10)
   label     String   @default("")
 
+  accounts  UserAccount[]
+  planLinks SubscriptionPlanCycle[]
+
   @@map("cycles")
 }
 
@@ -198,23 +221,92 @@ model ProgramSetting {
 model SubscriptionPlan {
   nombre          String  @id
   programId       String  @default("virtual_d28d") @map("program_id")
+  kind            String  @default("d28d") @map("kind") @db.VarChar(32)
   descripcion     String? @db.Text
-  precioMensual   Int     @default(0) @map("precio_mensual")
+  precioMensual   Int     @default(0) @map("precio_mensual") // COP (legacy)
+  precioMensualUsd Int    @default(0) @map("precio_mensual_usd")
   features        Json    @default("[]")
   maxUsuarios     Int     @default(0) @map("max_usuarios")
   usuariosActivos Int     @default(0) @map("usuarios_activos")
+  moduleAccess    Json    @default("{}") @map("module_access")
+  isCouple        Boolean @default(false) @map("is_couple")
+  includedSeats   Int     @default(1) @map("included_seats")
+  activo          Boolean @default(true)
+  visible         Boolean @default(true)
+  sortOrder       Int     @default(0) @map("sort_order")
+  cyclesCount     Int?    @map("cycles_count")
+  supportWhatsapp String? @map("support_whatsapp") @db.VarChar(32)
+  supportName     String? @map("support_name") @db.VarChar(64)
+  supportMessage  String? @map("support_message") @db.Text
+  supportActivo   Boolean @default(true) @map("support_activo")
 
   accounts        UserAccount[]
+  allowedCycles   SubscriptionPlanCycle[]
 
+  @@index([programId])
+  @@index([kind])
   @@map("subscription_plans")
+}
+
+model CommunicationTemplate {
+  id        Int      @id @default(autoincrement())
+  nombre    String   @db.VarChar(120)
+  evento    String   @db.VarChar(120)
+  modulo    String   @db.VarChar(32)
+  canal     String   @db.VarChar(32)
+  asunto    String?  @db.VarChar(200)
+  contenido String   @db.Text
+  activo    Boolean  @default(true)
+  editable  Boolean  @default(true)
+  orden     Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+
+  logs      CommunicationEventLog[]
+
+  @@index([evento])
+  @@index([modulo])
+  @@index([canal])
+  @@index([activo])
+  @@map("communication_templates")
+}
+
+model CommunicationEventLog {
+  id           Int      @id @default(autoincrement())
+  evento       String   @db.VarChar(120)
+  modulo       String   @db.VarChar(32)
+  canal        String   @db.VarChar(32)
+  estado       String   @db.VarChar(24)
+  userId       Int?     @map("user_id")
+  target       String?  @db.VarChar(160)
+  templateId   Int?     @map("template_id")
+  payload      Json?    @default("{}")
+  error        String?  @db.Text
+  message      String?  @db.Text
+  clickedAt    DateTime? @map("clicked_at")
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  template     CommunicationTemplate? @relation(fields: [templateId], references: [id], onDelete: SetNull)
+
+  @@index([evento])
+  @@index([modulo])
+  @@index([canal])
+  @@index([estado])
+  @@index([userId])
+  @@index([createdAt])
+  @@map("communication_event_logs")
 }
 
 model UserAccount {
   id                Int      @id @default(autoincrement())
   userId            Int      @map("user_id")
   planNombre        String   @map("plan_nombre")
+  primaryAccountId  Int?     @map("primary_account_id")
+  coupleInviteCode  String?  @unique @map("couple_invite_code") @db.VarChar(64)
+  coupleInviteUsedByUserId Int? @map("couple_invite_used_by_user_id")
   gymId             Int?     @map("gym_id")
   trainerId         Int?     @map("trainer_id")
+  cycleId           Int?     @map("cycle_id")
   fechaInicio       DateTime @default(now()) @map("fecha_inicio")
   fechaVencimiento  DateTime? @map("fecha_vencimiento")
   estado            String   @default("activo")
@@ -228,9 +320,39 @@ model UserAccount {
   plan              SubscriptionPlan @relation(fields: [planNombre], references: [nombre])
   gym               Gym?     @relation(fields: [gymId], references: [id], onDelete: SetNull)
   trainer           Trainer? @relation(fields: [trainerId], references: [id], onDelete: SetNull)
+  cycle             Cycle?   @relation(fields: [cycleId], references: [id], onDelete: SetNull)
+  primaryAccount    UserAccount? @relation("AccountLink", fields: [primaryAccountId], references: [id], onDelete: SetNull)
+  linkedAccounts    UserAccount[] @relation("AccountLink")
 
   @@index([userId])
+  @@index([primaryAccountId])
+  @@index([cycleId])
   @@map("user_accounts")
+}
+
+model SubscriptionPlanCycle {
+  planNombre String @map("plan_nombre") @db.VarChar(255)
+  cycleId    Int    @map("cycle_id")
+
+  plan  SubscriptionPlan @relation(fields: [planNombre], references: [nombre], onDelete: Cascade)
+  cycle Cycle            @relation(fields: [cycleId], references: [id], onDelete: Cascade)
+
+  @@id([planNombre, cycleId])
+  @@index([cycleId])
+  @@map("subscription_plan_cycles")
+}
+
+model ProgramInviteCode {
+  code         String  @id @db.VarChar(64)
+  programId    String  @map("program_id") @db.VarChar(64)
+  label        String? @db.VarChar(120)
+  suggestedPlanNombre String? @map("suggested_plan_nombre") @db.VarChar(255)
+  modulePreset Json    @default("{}") @map("module_preset")
+  active       Boolean @default(true)
+  createdAt    DateTime @default(now()) @map("created_at")
+
+  @@index([programId])
+  @@map("program_invite_codes")
 }
 
 model LiveClass {
@@ -428,4 +550,169 @@ model D28dRoutineHostNote {
   @@index([routineId])
   @@index([liveClassId])
   @@map("d28d_routine_host_notes")
+}
+
+// ─── Retos D28D ─────────────────────────────────────────────────────────────
+
+model D28dChallenge {
+  id                Int       @id @default(autoincrement())
+  nombre            String    @db.VarChar(255)
+  descripcion       String    @db.Text
+  objetivo          String?   @db.Text
+  premio            String?   @db.VarChar(500)
+  imagenUrl         String?   @map("imagen_url") @db.VarChar(512)
+  programId         String?   @map("program_id") @db.VarChar(64)
+  cycleId           Int?      @map("cycle_id")
+  fechaInicio       DateTime  @map("fecha_inicio")
+  fechaFin          DateTime  @map("fecha_fin")
+  estado            String    @default("draft") @db.VarChar(32)
+  reglas            Json?
+  cantidadGanadores  Int      @default(3) @map("cantidad_ganadores")
+  visible           Boolean   @default(true)
+  activo            Boolean   @default(true)
+  creadoPorId       Int       @map("creado_por_id")
+  publicadoAt       DateTime? @map("publicado_at")
+  createdAt         DateTime  @default(now()) @map("created_at")
+  updatedAt         DateTime  @updatedAt @map("updated_at")
+  entries           D28dChallengeEntry[]
+  podium            D28dChallengePodium[]
+
+  @@index([programId, estado])
+  @@index([fechaInicio, fechaFin])
+  @@map("d28d_challenges")
+}
+
+model D28dChallengeEntry {
+  id          Int       @id @default(autoincrement())
+  challengeId Int       @map("challenge_id")
+  userId      Int       @map("user_id")
+  estado      String    @default("registered") @db.VarChar(32)
+  puntuacion  Decimal?  @db.Decimal(5, 2)
+  comentario  String?   @db.Text
+  enrolledAt  DateTime  @default(now()) @map("enrolled_at")
+  withdrawnAt DateTime? @map("withdrawn_at")
+  submittedAt DateTime? @map("submitted_at")
+  challenge   D28dChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+  evidences   D28dChallengeEvidence[]
+
+  @@unique([challengeId, userId])
+  @@index([userId])
+  @@map("d28d_challenge_entries")
+}
+
+model D28dChallengeEvidence {
+  id        Int      @id @default(autoincrement())
+  entryId   Int      @map("entry_id")
+  tipo      String   @db.VarChar(32)
+  url       String?  @db.Text
+  contenido String?  @db.Text
+  mime      String?  @db.VarChar(128)
+  sizeBytes Int?     @map("size_bytes")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  entry     D28dChallengeEntry @relation(fields: [entryId], references: [id], onDelete: Cascade)
+
+  @@index([entryId])
+  @@map("d28d_challenge_evidences")
+}
+
+model D28dChallengePodium {
+  id          Int      @id @default(autoincrement())
+  challengeId Int      @map("challenge_id")
+  lugar       Int
+  entryId     Int      @map("entry_id")
+  challenge   D28dChallenge @relation(fields: [challengeId], references: [id], onDelete: Cascade)
+
+  @@unique([challengeId, lugar])
+  @@map("d28d_challenge_podium")
+}
+
+model D28dUserProgressSnapshot {
+  id               Int      @id @default(autoincrement())
+  userId           Int      @map("user_id")
+  programId        String?  @map("program_id") @db.VarChar(64)
+  classesScheduled Int      @default(0) @map("classes_scheduled")
+  classesAttended  Int      @default(0) @map("classes_attended")
+  attendancePct    Decimal  @default(0) @map("attendance_pct") @db.Decimal(5, 2)
+  challengesJoined Int      @default(0) @map("challenges_joined")
+  challengesDone   Int      @default(0) @map("challenges_done")
+  challengesWon    Int      @default(0) @map("challenges_won")
+  activeDays       Int      @default(0) @map("active_days")
+  trafficLight     String   @default("yellow") @map("traffic_light") @db.VarChar(16)
+  computedAt       DateTime @default(now()) @map("computed_at")
+
+  @@index([userId, computedAt])
+  @@map("d28d_user_progress_snapshots")
+}
+
+model TrainingTrafficLightSnapshot {
+  id           Int      @id @default(autoincrement())
+  userId       Int      @map("user_id")
+  trainerId    Int?     @map("trainer_id")
+  status       String   @db.VarChar(16)
+  adherencePct Decimal  @map("adherence_pct") @db.Decimal(5, 2)
+  windowDays   Int      @default(7) @map("window_days")
+  computedAt   DateTime @default(now()) @map("computed_at")
+
+  @@index([userId, computedAt])
+  @@index([trainerId])
+  @@map("training_traffic_light_snapshots")
+}
+
+model FaqCategory {
+  id      Int      @id @default(autoincrement())
+  modulo  String   @db.VarChar(32)
+  nombre  String   @db.VarChar(120)
+  orden   Int      @default(0)
+  activo  Boolean  @default(true)
+  items   FaqItem[]
+
+  @@index([modulo, activo])
+  @@map("faq_categories")
+}
+
+model FaqItem {
+  id           Int      @id @default(autoincrement())
+  categoryId   Int      @map("category_id")
+  pregunta     String   @db.VarChar(500)
+  respuesta    String   @db.Text
+  tags         String[] @default([])
+  orden        Int      @default(0)
+  activo       Boolean  @default(true)
+  visibleRoles Json?    @map("visible_roles")
+  utilCount    Int      @default(0) @map("util_count")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  category     FaqCategory @relation(fields: [categoryId], references: [id], onDelete: Cascade)
+
+  @@index([categoryId, activo])
+  @@map("faq_items")
+}
+
+model HelpAssistantLog {
+  id                Int      @id @default(autoincrement())
+  userId            Int?     @map("user_id")
+  modulo            String   @db.VarChar(32)
+  query             String   @db.Text
+  matchedFaqId      Int?     @map("matched_faq_id")
+  escalatedWhatsapp Boolean  @default(false) @map("escalated_whatsapp")
+  createdAt         DateTime @default(now()) @map("created_at")
+
+  @@index([modulo, createdAt])
+  @@map("help_assistant_logs")
+}
+
+model PlatformAuditEvent {
+  id        Int      @id @default(autoincrement())
+  userId    Int?     @map("user_id")
+  modulo    String   @db.VarChar(32)
+  action    String   @db.VarChar(64)
+  entity    String?  @db.VarChar(64)
+  entityId  String?  @map("entity_id") @db.VarChar(64)
+  metadata  Json?
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@index([modulo, action])
+  @@index([userId, createdAt])
+  @@map("platform_audit_events")
 }
