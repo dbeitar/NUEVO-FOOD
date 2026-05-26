@@ -1,5 +1,6 @@
 const ProgramSettingsDatabase = require('../models/ProgramSettingsDatabase');
 const { hasRole } = require('../utils/accessControl');
+const zoomMeetingService = require('../services/zoomMeetingService');
 
 exports.getAllPrograms = (req, res) => {
   try {
@@ -43,6 +44,21 @@ exports.createProgram = (req, res) => {
     res.status(201).json({ success: true, data: result.data });
   } catch (error) {
     res.status(500).json({ error: 'Error creando programa' });
+  }
+};
+
+exports.getZoomMaster = (req, res) => {
+  try {
+    if (!hasRole(req.user, ['super_admin', 'admin_d28d'])) {
+      return res.status(403).json({ error: 'Solo administradores D28D' });
+    }
+    return res.json({
+      success: true,
+      data: zoomMeetingService.listProgramZoomAccounts(),
+      zoom_api_enabled: zoomMeetingService.isZoomS2SConfigured(),
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error obteniendo cuentas Zoom' });
   }
 };
 

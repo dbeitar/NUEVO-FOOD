@@ -3,6 +3,8 @@ const fs = require('fs');
 const { randomUUID } = require('crypto');
 const ExercisesGalleryStore = require('../models/ExercisesGalleryStore');
 const TrainingLogStore = require('../models/TrainingLogStore');
+const TrainingPlansStore = require('../models/TrainingPlansStore');
+const userDB = require('../models/UserDatabase');
 const { filterGalleryItems } = require('../utils/trainingTenantScope');
 const { isPlatformAdmin, getUserGymId } = require('../utils/tenantScope');
 
@@ -445,7 +447,19 @@ function splitDayNames(splitType, days) {
   return Array.from({ length: days }, (_, i) => order[i % order.length]);
 }
 
-function attachGalleryData(exerciseObj) {
+function attachGalleryData(exerciseObj, user = null) {
+  if (user) {
+    const items = filterGalleryItems(ExercisesGalleryStore.getAll(), user);
+    const key = normalize(exerciseObj.exercise_name);
+    const scoped = items.find((i) => normalize(i.name) === key);
+    if (scoped) {
+      return {
+        ...exerciseObj,
+        youtube_url: scoped.youtube_url || null,
+        muscle_group: scoped.muscle_group || null,
+      };
+    }
+  }
   const item = ExercisesGalleryStore.getByExerciseName(exerciseObj.exercise_name);
   return {
     ...exerciseObj,
@@ -483,7 +497,7 @@ const generateDailyPlan = async (req, res) => {
         dia: i + 1,
         nombre: names[i],
         completado: false,
-        ejercicios: routine.exercise_sequence.slice(start, end).map(attachGalleryData),
+        ejercicios: routine.exercise_sequence.slice(start, end).map((ex) => attachGalleryData(ex, req.user)),
       });
     }
 
@@ -509,13 +523,58 @@ const generateDailyPlan = async (req, res) => {
   }
 };
 
+function enrichPlanDaysWithGallery(plan, user) {
+  if (!plan?.dias?.length) return plan;
+  return {
+    ...plan,
+    dias: plan.dias.map((d) => ({
+      ...d,
+      ejercicios: (d.ejercicios || []).map((ex) => {
+        const enriched = attachGalleryData(
+          { exercise_name: ex.exercise_name, youtube_url: ex.youtube_url },
+          user,
+        );
+        return {
+          ...ex,
+          youtube_url: enriched.youtube_url || ex.youtube_url || null,
+          muscle_group: enriched.muscle_group || ex.muscle_group || null,
+        };
+      }),
+    })),
+  };
+}
+
+const getMyAssignedPlan = async (req, res) => {
+  try {
+    const assigned = TrainingPlansStore.getActiveByUserId(req.user?.id);
+    if (!assigned) {
+      return res.json({ success: true, plan: null });
+    }
+    return res.json({
+      success: true,
+      plan: enrichPlanDaysWithGallery(assigned, req.user),
+      source: 'coach_assigned',
+    });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error obteniendo plan asignado.' });
+  }
+};
+
 const getMyCurrentPlan = async (req, res) => {
   try {
+    const assigned = TrainingPlansStore.getActiveByUserId(req.user?.id);
+    if (assigned) {
+      return res.json({
+        success: true,
+        plan: enrichPlanDaysWithGallery(assigned, req.user),
+        source: 'coach_assigned',
+      });
+    }
     const current = CURRENT_PLANS.get(req.user?.id);
     if (!current) {
-      return res.json({ success: true, plan: null, message: 'Aún no tienes un plan generado en esta sesión.' });
+      return res.json({ success: true, plan: null, message: 'Tu entrenador aún no te ha asignado un plan.' });
     }
-    return res.json({ success: true, plan: current });
+    return res.json({ success: true, plan: enrichPlanDaysWithGallery(current, req.user), source: 'session' });
   } catch (error) {
     return res.status(500).json({ error: 'Error obteniendo el plan actual.' });
   }
@@ -524,36 +583,50 @@ const getMyCurrentPlan = async (req, res) => {
 const substituteExercise = async (req, res) => {
   try {
     const { exercise, cause } = req.body;
-    // Fallback deterministico gratuito/local: no usa proveedores pagos ni claves externas.
-    const substitutions = {
-      'SENTADILLA LIBRE': 'PRENSA 45 DOBLE',
-      'PRESS BANCA': 'EMPUJE PLANO MANCUERNA',
-      'PESO MUERTO CONVENCIONAL': 'PESO MUERTO RUMANO MANCUERNA',
-    };
-    const normalized = normalize(exercise || '');
-    const substituteName = substitutions[normalized] || 'EMPUJE PLANO EN MÁQUINA';
-    const gallery = ExercisesGalleryStore.getByExerciseName(substituteName);
+    await ExercisesGalleryStore.hydrate?.();
+    const all = ExercisesGalleryStore.getAll();
+    const gallery = filterGalleryItems(all, req.user);
+    const athleteSubstitution = require('../services/athleteSubstitutionService');
+    const result = athleteSubstitution.suggestSubstitutions({
+      galleryItems: gallery,
+      exerciseName: exercise,
+      cause,
+      limit: 4,
+    });
 
     return res.json({
       success: true,
-      substitution: {
-        exercise_name: substituteName,
-        sets: 3,
-        reps: '10-12',
-        youtube_url: gallery?.youtube_url || null,
-        reason: cause ? `Adaptado debido a: ${cause}` : 'Variante equivalente recomendada.'
-      }
+      substitution: result.primary,
+      alternatives: result.alternatives,
+      meta: result.meta,
     });
   } catch (error) {
-    return res.status(500).json({ error: 'Error al consultar el asistente IA.' });
+    return res.status(error.status || 500).json({ error: error.message || 'Error al consultar el asistente IA.' });
   }
 };
 
+const { isCoachUser, getCoachTrainerId, sanitizeModuleAccessForCoachClient } = require('../utils/coachScope');
+const { buildListFilter } = require('../utils/d28dRoutineAccess');
+const routineService = require('../services/d28dRoutineService');
+
+const GALLERY_VIEW_ROLES = [
+  'super_admin', 'admin_gimnasio', 'admin_marca', 'admin_d28d',
+  'admin_training', 'admin_entrenador', 'entrenador', 'nutricionista',
+];
+const GALLERY_WRITE_ROLES = [
+  'super_admin', 'admin_gimnasio', 'admin_marca',
+  'admin_training', 'admin_entrenador', 'entrenador', 'nutricionista',
+];
+
+function userHasGalleryRole(user, rolesList) {
+  if (!user) return false;
+  const roles = Array.isArray(user.roles) && user.roles.length ? user.roles : [user.rol];
+  return roles.some((r) => rolesList.includes(r));
+}
+
 const getAdminGallery = async (req, res) => {
   try {
-    const roles = Array.isArray(req.user?.roles) ? req.user.roles : [req.user?.rol];
-    const allowed = roles.some((r) => ['super_admin', 'admin_gimnasio', 'admin_marca', 'admin_training', 'admin_entrenador', 'entrenador'].includes(r));
-    if (!req.user || !allowed) {
+    if (!userHasGalleryRole(req.user, GALLERY_VIEW_ROLES)) {
       return res.status(403).json({ error: 'No tienes permisos para ver la galería' });
     }
     const data = filterGalleryItems(ExercisesGalleryStore.getAll(), req.user);
@@ -565,20 +638,25 @@ const getAdminGallery = async (req, res) => {
 
 const createAdminGallery = async (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!userHasGalleryRole(req.user, GALLERY_WRITE_ROLES)) {
       return res.status(403).json({ error: 'No tienes permisos para crear en la galería' });
     }
     const { name, muscle_group = '', youtube_url, is_global = true } = req.body || {};
     if (!name || !youtube_url) {
       return res.status(400).json({ error: 'name y youtube_url son requeridos' });
     }
+    const coachTid = getCoachTrainerId(req.user);
+    if (isCoachUser(req.user) && coachTid == null) {
+      return res.status(400).json({ error: 'Cuenta sin entrenador vinculado' });
+    }
     const created = ExercisesGalleryStore.create({
       name,
       muscle_group,
       youtube_url,
-      is_global: isPlatformAdmin(req.user) ? is_global : false,
+      is_global: isCoachUser(req.user) ? false : (isPlatformAdmin(req.user) ? is_global : false),
       created_by: req.user.id,
-      gym_id: getUserGymId(req.user),
+      gym_id: isCoachUser(req.user) ? null : getUserGymId(req.user),
+      trainer_id: coachTid,
     });
     if (created?.error) {
       return res.status(409).json({ error: created.error });
@@ -589,10 +667,56 @@ const createAdminGallery = async (req, res) => {
   }
 };
 
+const updateAdminGallery = async (req, res) => {
+  try {
+    if (!userHasGalleryRole(req.user, GALLERY_WRITE_ROLES)) {
+      return res.status(403).json({ error: 'No tienes permisos para editar la galería' });
+    }
+    const id = Number(req.params.id);
+    const current = ExercisesGalleryStore.getById(id);
+    if (!current) {
+      return res.status(404).json({ error: 'Registro no encontrado' });
+    }
+    const visible = filterGalleryItems([current], req.user);
+    if (!visible.length) {
+      return res.status(403).json({ error: 'No puedes editar este registro' });
+    }
+    const { name, muscle_group, youtube_url, is_global } = req.body || {};
+    const patch = {};
+    if (name !== undefined) patch.name = name;
+    if (muscle_group !== undefined) patch.muscle_group = muscle_group;
+    if (youtube_url !== undefined) patch.youtube_url = youtube_url;
+    if (isCoachUser(req.user)) {
+      patch.is_global = false;
+      patch.trainer_id = getCoachTrainerId(req.user);
+    } else if (is_global !== undefined && isPlatformAdmin(req.user)) {
+      patch.is_global = is_global;
+    }
+    const updated = ExercisesGalleryStore.update(id, patch);
+    if (updated?.error) {
+      return res.status(409).json({ error: updated.error });
+    }
+    if (!updated) {
+      return res.status(404).json({ error: 'Registro no encontrado' });
+    }
+    return res.json({ success: true, data: updated });
+  } catch (error) {
+    return res.status(500).json({ error: 'Error actualizando registro de galería' });
+  }
+};
+
 const deleteAdminGallery = async (req, res) => {
   try {
-    if (!req.user || !['super_admin', 'admin_gimnasio'].includes(req.user.rol)) {
+    if (!userHasGalleryRole(req.user, GALLERY_WRITE_ROLES)) {
       return res.status(403).json({ error: 'No tienes permisos para eliminar en la galería' });
+    }
+    const current = ExercisesGalleryStore.getById(Number(req.params.id));
+    if (!current) {
+      return res.status(404).json({ error: 'Registro no encontrado' });
+    }
+    const visible = filterGalleryItems([current], req.user);
+    if (!visible.length) {
+      return res.status(403).json({ error: 'No puedes eliminar este registro' });
     }
     const ok = ExercisesGalleryStore.delete(req.params.id);
     if (!ok) return res.status(404).json({ error: 'Registro no encontrado' });
@@ -604,7 +728,9 @@ const deleteAdminGallery = async (req, res) => {
 
 const getPublicGallery = async (req, res) => {
   try {
-    return res.json({ success: true, data: ExercisesGalleryStore.getPublic() });
+    const all = ExercisesGalleryStore.getAll();
+    const data = filterGalleryItems(all, req.user);
+    return res.json({ success: true, data });
   } catch (error) {
     return res.status(500).json({ error: 'Error obteniendo galería' });
   }
@@ -613,7 +739,7 @@ const getPublicGallery = async (req, res) => {
 const createUserLog = (req, res) => {
   try {
     const user_id = req.user.id;
-    const { plan_id, dia, ejercicios, completado, duration_minutes } = req.body;
+    const { plan_id, dia, ejercicios, completado, duration_minutes, wellness } = req.body;
 
     const log = TrainingLogStore.create({
       user_id,
@@ -622,8 +748,15 @@ const createUserLog = (req, res) => {
       ejercicios,
       completado,
       duration_minutes,
-      trainer_notes: ''
+      trainer_notes: '',
+      wellness,
     });
+
+    const athlete = userDB.getById(user_id);
+    if (athlete) {
+      const { notifyCoachOnAthleteLog } = require('../services/coachTrainingService');
+      notifyCoachOnAthleteLog(athlete, log);
+    }
 
     res.status(201).json({ success: true, data: log });
   } catch (error) {
@@ -632,14 +765,103 @@ const createUserLog = (req, res) => {
   }
 };
 
+const coachAiSuggestRoutine = async (req, res) => {
+  try {
+    if (!isCoachUser(req.user)) {
+      return res.status(403).json({ error: 'Solo entrenadores pueden usar este asistente' });
+    }
+    const tid = getCoachTrainerId(req.user);
+    if (tid == null) {
+      return res.status(400).json({ error: 'Cuenta sin entrenador vinculado' });
+    }
+    const {
+      objetivo = 'hipertrofia',
+      nivel = 'intermedio',
+      dias = 4,
+      notas = '',
+    } = req.body || {};
+    const ExercisesGalleryStore = require('../models/ExercisesGalleryStore');
+    const coachAi = require('../services/coachAiTrainingService');
+    await ExercisesGalleryStore.hydrate?.();
+    const { filterGalleryItems } = require('../utils/trainingTenantScope');
+    const gallery = filterGalleryItems(ExercisesGalleryStore.getAll(), req.user)
+      .filter((g) => g?.name)
+      .map((g) => ({
+        name: String(g.name).replace(/\s+/g, ' ').trim(),
+        muscle_group: String(g.muscle_group || '').replace(/\s+/g, ' ').trim(),
+        youtube_url: g.youtube_url || null,
+      }));
+
+    const params = { objetivo, nivel, dias, notas };
+    const built = coachAi.buildDaysFromGallery(gallery, params);
+    const daysCount = built.daysCount;
+    const routineName = `IA · ${objetivo} · ${nivel} · ${daysCount} días`;
+
+    const { normalizeRoutineInput } = require('../shared/routineTemplateModel');
+    const payload = normalizeRoutineInput({
+      nombre: routineName,
+      categoria: 'IA',
+      subcategoria: 'Clase virtual',
+      objetivo,
+      nivel,
+      duracion: '60-75 min',
+      descripcion: [
+        built.motivo,
+        `Especialista: ${coachAi.SPECIALIST_PERSONA.slice(0, 140)}…`,
+      ].join(' '),
+      scope: 'coach_wl',
+      blocks: built.blocks,
+    });
+
+    const created = await routineService.createRoutine(payload, req.user.id, tid);
+    const mainCount = built.dias.reduce(
+      (s, d) => s + d.ejercicios.filter((e) => e.block_type === 'principal').length,
+      0,
+    );
+
+    return res.json({
+      success: true,
+      data: {
+        routine_id: created?.id,
+        nombre: created?.nombre || routineName,
+        categoria: created?.categoria || 'IA',
+        nivel,
+        duracion: '60-75 min',
+        objetivo,
+        bloques_count: built.blocks.length,
+        ejercicios_count: mainCount,
+        ejercicios_preview: built.dias.flatMap((d) =>
+          d.ejercicios.filter((e) => e.block_type === 'principal').map((e) => e.exercise_name),
+        ).slice(0, 12),
+        motivo: built.motivo,
+        dias_sugeridos: daysCount,
+        reglas: {
+          min_ejercicios_por_dia: built.levelRule.minMain,
+          incluye: ['calentamiento', 'principal', 'cardio_pulsaciones', 'estiramiento'],
+          intensidad: 'RPE/RIR',
+        },
+        specialist_prompt: built.specialist_prompt,
+        split: built.split,
+        dias_preview: built.dias,
+      },
+    });
+  } catch (error) {
+    console.error('coachAiSuggestRoutine:', error);
+    return res.status(error.status || 500).json({ error: error.message || 'Error del asistente IA' });
+  }
+};
+
 module.exports = {
   generatePlanJson,
   generateDailyPlan,
+  getMyAssignedPlan,
   getMyCurrentPlan,
   substituteExercise,
   getAdminGallery,
   createAdminGallery,
+  updateAdminGallery,
   deleteAdminGallery,
   getPublicGallery,
-  createUserLog
+  createUserLog,
+  coachAiSuggestRoutine,
 };

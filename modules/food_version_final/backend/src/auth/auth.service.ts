@@ -262,6 +262,14 @@ export class AuthService {
     if (!user.isActive) {
       throw new UnauthorizedException('Cuenta Food suspendida');
     }
+    if (payload.coach === true && user.role === UserRole.USER) {
+      user.role = UserRole.TRAINER;
+      if (!user.trainerCode) {
+        const code = `T${String(payload.sub || user.shellUserId || '').padStart(4, '0')}`.slice(0, 12);
+        user.trainerCode = code.toUpperCase();
+      }
+      await this.userRepo.save(user);
+    }
     if (payload.branding && typeof payload.branding === 'object') {
       user.shellBranding = payload.branding;
       user.shellUserId = Number(payload.sub) || user.shellUserId;
@@ -299,6 +307,13 @@ export class AuthService {
       return { ok: false, foodUserId: null, message: 'Usuario no encontrado en Food' };
     }
     user.shellUserId = dto.shellUserId;
+    if (dto.promoteTrainer === true && user.role === UserRole.USER) {
+      user.role = UserRole.TRAINER;
+      if (!user.trainerCode) {
+        const code = `T${String(dto.shellUserId || user.shellUserId || '').padStart(4, '0')}`.slice(0, 12);
+        user.trainerCode = code.toUpperCase();
+      }
+    }
     if (dto.active === false) {
       user.isActive = false;
       const subs = await this.subRepo.find({ where: { userId: user.id, status: SubscriptionStatus.ACTIVE } });

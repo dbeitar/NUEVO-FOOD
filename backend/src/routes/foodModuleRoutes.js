@@ -116,16 +116,23 @@ router.get('/launch', auth, async (req, res) => {
     const user = await userRepo.findById(req.user.id);
     const branding = await resolveBrandingForUser(req.user.id);
     const returnUrl = req.query.return_url || process.env.SHELL_PUBLIC_URL || 'http://localhost:5175';
+    const dest = String(req.query.dest || '').trim() || (req.query.panel === 'trainer' ? '/trainer' : '');
+    const roles = Array.isArray(ctx?.roles) ? ctx.roles : [ctx?.rol].filter(Boolean);
+    const isFoodCoach = roles.some((r) => [
+      'entrenador', 'nutricionista', 'admin_training', 'admin_entrenador',
+    ].includes(r));
     const token = createHandoffToken({
       sub: user.id,
       email: user.email,
       food_user_id: user.food_user_id || null,
       branding,
+      coach: isFoodCoach,
     });
-    const embedded = useEmbeddedFoodLaunch();
+    const wantsTrainerPanel = dest === '/trainer' || req.query.panel === 'trainer';
+    const embedded = useEmbeddedFoodLaunch() && !wantsTrainerPanel;
     const url = embedded
-      ? buildEmbeddedLaunchUrl(returnUrl, token)
-      : buildLaunchUrl(publicFoodUrl(), token, returnUrl);
+      ? buildEmbeddedLaunchUrl(returnUrl, token, dest)
+      : buildLaunchUrl(publicFoodUrl(), token, returnUrl, dest);
     auditFood(req.user.id, 'food.launch', 'URL de ingreso Food generada', {
       food_user_id: user.food_user_id,
       embedded,

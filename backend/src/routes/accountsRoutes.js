@@ -9,6 +9,7 @@ router.get('/plans', accountsController.getPlans);
 
 // Rutas autenticadas
 router.get('/my-account', authenticateToken, accountsController.getMyAccount);
+router.get('/me', authenticateToken, accountsController.getMyAccount);
 router.post('/', authenticateToken, accountsController.createAccount);
 router.put('/:id', authenticateToken, accountsController.updateAccount);
 router.delete('/:id', authenticateToken, accountsController.cancelAccount);

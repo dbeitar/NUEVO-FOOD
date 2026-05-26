@@ -36,6 +36,11 @@ const OPERATION_CARDS = [
     when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d']),
   },
   {
+    id: 'd28dzoom',
+    view: 'd28dzoom',
+    when: (has) => has(['super_admin', 'admin_d28d']),
+  },
+  {
     id: 'programs',
     view: 'programs',
     when: (has) => has(['super_admin', 'admin_d28d']),
@@ -43,7 +48,7 @@ const OPERATION_CARDS = [
   {
     id: 'admingallery',
     view: 'admingallery',
-    when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training', 'admin_entrenador']),
+    when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'admin_training', 'admin_entrenador']),
   },
 ];
 

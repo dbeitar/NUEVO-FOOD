@@ -1,0 +1,160 @@
+/**
+ * Legibilidad global D28D: fondo oscuro + texto blanco.
+ * Anula utilidades Tailwind claras (text-gray-*, fondos blancos) en shell y Food embebido.
+ */
+body,
+body #root,
+.food-plan-root {
+  --app-bg: var(--d28d-black, #000000);
+  --app-surface: var(--d28d-surface-2, #141414);
+  --app-surface-2: var(--d28d-surface-3, #1a1a1a);
+  --app-border: var(--d28d-border, #2a2a2a);
+  --app-text: #ffffff;
+  --app-muted: rgba(255, 255, 255, 0.72);
+}
+
+/* Grises / pizarra / piedra → blanco */
+body :is(
+  .text-gray-900,
+  .text-gray-800,
+  .text-gray-700,
+  .text-gray-600,
+  .text-gray-500,
+  .text-gray-400,
+  .text-gray-300,
+  .text-slate-900,
+  .text-slate-800,
+  .text-slate-700,
+  .text-slate-600,
+  .text-slate-500,
+  .text-slate-400,
+  .text-stone-900,
+  .text-stone-800,
+  .text-stone-700,
+  .text-stone-600,
+  .text-stone-500,
+  .text-stone-400,
+  .text-zinc-900,
+  .text-zinc-800,
+  .text-zinc-700,
+  .text-zinc-600,
+  .text-neutral-900,
+  .text-neutral-800,
+  .text-neutral-700,
+  .text-black
+),
+.food-plan-root :is(
+  .text-gray-900,
+  .text-gray-800,
+  .text-gray-700,
+  .text-gray-600,
+  .text-gray-500,
+  .text-gray-400,
+  .text-gray-300,
+  .text-slate-900,
+  .text-slate-800,
+  .text-slate-700,
+  .text-slate-600,
+  .text-slate-500,
+  .text-slate-400,
+  .text-stone-900,
+  .text-stone-800,
+  .text-stone-700,
+  .text-stone-600,
+  .text-stone-500,
+  .text-stone-400,
+  .text-black
+) {
+  color: var(--app-text) !important;
+}
+
+/* Botones con fondo amarillo/verde: mantener contraste oscuro sobre fondo claro */
+body :is(.btn-primary, .btn-card),
+body :is(.btn-primary, .btn-card) :is(span, p, strong),
+.food-plan-root .btn-primary {
+  color: var(--d28d-black, #000000) !important;
+}
+
+body .btn-success,
+body .btn-success * {
+  color: #000000 !important;
+}
+
+/* Fondos claros → superficies oscuras */
+body :is(
+  .bg-white,
+  .bg-gray-50,
+  .bg-gray-100,
+  .bg-slate-50,
+  .bg-slate-100,
+  .bg-stone-50,
+  .bg-stone-100,
+  .bg-zinc-50
+),
+.food-plan-root :is(.bg-white, .bg-gray-50, .bg-gray-100) {
+  background-color: var(--app-surface-2) !important;
+  color: var(--app-text) !important;
+}
+
+body :is(
+  .bg-green-50,
+  .bg-yellow-50,
+  .bg-red-50,
+  .bg-blue-50,
+  .bg-orange-50,
+  .bg-orange-100,
+  .bg-amber-50
+) {
+  background-color: var(--app-surface-2) !important;
+}
+
+/* Textos semánticos de alerta en tonos claros */
+body :is(
+  .text-green-700,
+  .text-green-800,
+  .text-yellow-700,
+  .text-yellow-800,
+  .text-red-700,
+  .text-red-800,
+  .text-orange-700,
+  .text-blue-700,
+  .text-amber-800
+) {
+  color: var(--app-text) !important;
+}
+
+body :is(.text-green-500, .text-green-600) {
+  color: #86efac !important;
+}
+
+body :is(.text-yellow-500, .text-yellow-600) {
+  color: #fde047 !important;
+}
+
+body :is(.text-red-500, .text-red-600) {
+  color: #fca5a5 !important;
+}
+
+body :is(.text-primary-600, .text-primary-700) {
+  color: #86efac !important;
+}
+
+body :is(
+  .border-gray-100,
+  .border-gray-200,
+  .border-gray-300,
+  .border-slate-200,
+  .border-stone-200
+) {
+  border-color: var(--app-border) !important;
+}
+
+body :is(.hover\:bg-gray-50:hover, .hover\:bg-gray-100:hover, .hover\:bg-stone-50:hover) {
+  background-color: var(--app-surface-2) !important;
+}
+
+body .input::placeholder,
+body input::placeholder,
+body textarea::placeholder {
+  color: rgba(255, 255, 255, 0.45) !important;
+}

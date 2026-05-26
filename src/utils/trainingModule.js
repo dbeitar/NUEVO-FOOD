@@ -1,17 +1,27 @@
 import api from '../services/api';
+import { isFinalUser } from '../components/dashboard/roles';
 
+/** UI legacy del monolito (TrainingModule, AdminTrainingManager en Dashboard). Por defecto OFF. */
+export function isTrainingLegacyMode() {
+  return String(import.meta.env.VITE_TRAINING_LEGACY || '').toLowerCase() === 'true';
+}
+
+/** Módulo entrenadores embebido (/training-module), paridad con Food Plan. */
 export function isTrainingExternal() {
-  return String(import.meta.env.VITE_TRAINING_EXTERNAL || '').toLowerCase() === 'true';
+  return !isTrainingLegacyMode();
 }
 
 export function getTrainingModulePublicUrl() {
-  const url = import.meta.env.VITE_TRAINING_MODULE_URL || import.meta.env.VITE_API_BASE_URL?.replace(/\/api\/?$/, '') || 'http://localhost:5175';
+  const url = import.meta.env.VITE_TRAINING_MODULE_URL
+    || import.meta.env.VITE_API_BASE_URL?.replace(/\/api\/?$/, '')
+    || 'http://localhost:5175';
   return String(url).replace(/\/$/, '');
 }
 
 export const TRAINING_LEGACY_VIEWS = new Set([
   'training',
   'admintraining',
+  'coachai',
   'admingallery',
   'progress',
 ]);
@@ -20,37 +30,78 @@ export function isTrainingLegacyView(viewId) {
   return TRAINING_LEGACY_VIEWS.has(viewId);
 }
 
-/** Launch training: SSO interno (panel shell) o externo futuro. */
-export async function openTrainingModule(returnPath = '/dashboard') {
-  try {
-    const returnUrl = returnPath.startsWith('http')
-      ? returnPath
-      : `${window.location.origin}${returnPath.startsWith('/') ? returnPath : `/${returnPath}`}`;
-    const { data } = await api.get('/training-module/launch', { params: { return_url: returnUrl } });
-    const payload = data?.data;
-    if (!payload) throw new Error('Sin datos launch');
+const TRAINING_MODULE_PATHS = {
+  training: '/athlete',
+  admintraining: '/coach/planning',
+  coachai: '/coach/ai',
+  admingallery: '/coach/gallery',
+  adminusers: '/coach/users',
+  progress: '/coach/progress',
+};
 
-    if (payload.mode === 'external' && payload.url) {
-      window.location.href = payload.url;
-      return payload;
-    }
+/** Ruta destino en /training-module según vista y rol. */
+export function resolveTrainingDest(viewId, user) {
+  if (viewId === 'training') return isFinalUser(user) ? '/athlete' : '/coach';
+  if (typeof viewId === 'string' && viewId.startsWith('/')) return viewId;
+  return TRAINING_MODULE_PATHS[viewId] || (isFinalUser(user) ? '/athlete' : '/coach');
+}
 
-    if (payload.branding) {
-      sessionStorage.setItem('shellTrainingBranding', JSON.stringify(payload.branding));
-      const b = payload.branding;
-      if (b.primary_color) document.documentElement.style.setProperty('--brand-primary', b.primary_color);
-      if (b.secondary_color) document.documentElement.style.setProperty('--brand-secondary', b.secondary_color);
-    }
-    sessionStorage.setItem('shellTrainingLaunch', JSON.stringify({
-      destinationView: payload.destinationView || 'training',
-      token: payload.token,
-      at: Date.now(),
-    }));
-    return payload;
-  } catch (e) {
-    console.warn('[training] launch:', e.response?.data?.error || e.message);
-    throw e;
+/** Abre módulo Entrenadores embebido con SSO (shell → training-module/exchange). */
+export async function openTrainingModule(returnPath = '/dashboard', subPath = '', user = null) {
+  if (isTrainingLegacyMode()) {
+    return { mode: 'legacy' };
   }
+
+  const returnUrl = returnPath.startsWith('http')
+    ? returnPath
+    : `${window.location.origin}${returnPath.startsWith('/') ? returnPath : `/${returnPath}`}`;
+
+  try {
+    const shellToken = localStorage.getItem('token');
+    if (shellToken) {
+      localStorage.setItem('d28d_token', shellToken);
+      localStorage.setItem('d28d_shell', 'true');
+      localStorage.setItem('d28d_shell_label', import.meta.env.VITE_BRAND_NAME || 'D28D Gimnasio Virtual');
+    }
+
+    const destHint = subPath || resolveTrainingDest('training', user);
+    const { data } = await api.get('/training-module/launch', {
+      params: { return_url: returnUrl, dest: destHint },
+    });
+    let url = data?.data?.url;
+    if (!url) {
+      window.alert('No se recibió URL del módulo Entrenadores. Verifica licencia training activa.');
+      return;
+    }
+    try {
+      const handoff = new URL(url, window.location.origin).searchParams.get('token');
+      if (handoff) sessionStorage.setItem('d28d_training_handoff', handoff);
+    } catch { /* noop */ }
+    const dest = subPath
+      ? (subPath.startsWith('/') ? subPath : `/${subPath}`)
+      : (data?.data?.destinationView?.startsWith('/')
+        ? data.data.destinationView
+        : resolveTrainingDest(data?.data?.destinationView || 'training', user));
+    sessionStorage.setItem('d28d_training_dest', dest);
+    try {
+      const u = new URL(url, window.location.origin);
+      u.searchParams.set('dest', dest);
+      url = u.toString();
+    } catch { /* noop */ }
+    window.location.href = url;
+    return data?.data;
+  } catch (e) {
+    const msg = e.response?.data?.error || e.message || 'No se pudo abrir Entrenadores';
+    console.warn('[training] launch:', msg);
+    window.alert(msg);
+    return null;
+  }
+}
+
+/** Navegación desde shell D28D hacia una pantalla del módulo embebido. */
+export function openTrainingModuleView(viewId, user = null) {
+  const sub = resolveTrainingDest(viewId, user);
+  return openTrainingModule('/dashboard', sub, user);
 }
 
 export function consumeTrainingLaunch(navigate, setOpenServicePanel, setCurrentView) {
@@ -63,9 +114,15 @@ export function consumeTrainingLaunch(navigate, setOpenServicePanel, setCurrentV
       return false;
     }
     sessionStorage.removeItem('shellTrainingLaunch');
+    if (isTrainingExternal()) {
+      const sub = destinationView?.startsWith('/')
+        ? destinationView
+        : TRAINING_MODULE_PATHS[destinationView] || '/coach';
+      openTrainingModule('/dashboard', sub, null);
+      return true;
+    }
     if (destinationView?.startsWith('service:')) {
-      const panel = destinationView.split(':')[1];
-      setOpenServicePanel(panel);
+      setOpenServicePanel(destinationView.split(':')[1]);
       setCurrentView('servicePanel');
     } else if (typeof navigate === 'function') {
       navigate(destinationView || 'training');

@@ -50,10 +50,10 @@ export default defineConfig(() => {
       },
     },
     server: {
+      host: true,
       port,
       strictPort: false,
       open: true,
-      allowedHosts: true,
       proxy: {
         '/food-api': {
           target: foodApiOrigin,

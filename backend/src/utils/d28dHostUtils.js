@@ -32,6 +32,10 @@ function isD28dOperationalClass(classItem) {
 
 function isClassAssignedToHost(classItem, user) {
   if (!classItem || !user) return false;
+  if (!isD28dOperationalClass(classItem)) return false;
+  if (classItem.d28d_host_user_id != null && Number(classItem.d28d_host_user_id) === Number(user.id)) {
+    return true;
+  }
   const coachKey = classCoachKey(classItem);
   if (!coachKey) return false;
   const keys = coachKeysForUser(user);

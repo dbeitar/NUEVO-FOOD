@@ -154,14 +154,17 @@ export function getEnabledServiceIds(user) {
   if (roles.includes('entrenador_d28d') && roles.length === 1) {
     return ['live-classes'];
   }
+  if (roles.includes('entrenador') && roles.length === 1) {
+    return ['training'];
+  }
 
   // 3) Licencias + module_access (dual-read).
   if (hasAccessKeys) {
     const mapped = [];
-    if (access.gym || access.d28d) mapped.push('d28d');
+    if (!roles.includes('entrenador') && (access.gym || access.d28d)) mapped.push('d28d');
     if (access.food_plan || access.nutrition) mapped.push('food-plan');
     if (access.training) mapped.push('training');
-    if (access.live_classes) mapped.push('live-classes');
+    if (!roles.includes('entrenador') && access.live_classes) mapped.push('live-classes');
     if (mapped.length > 0) return orderServiceIds([...new Set(mapped)]);
   }
 
@@ -183,8 +186,6 @@ export function getEnabledServiceIds(user) {
   }
   if (roles.includes('entrenador')) {
     ids.add('training');
-    ids.add('food-plan');
-    ids.add('live-classes');
   }
   if (roles.includes('nutricionista')) {
     ids.add('food-plan');
@@ -222,7 +223,7 @@ export function getServicesFor(user, frontendConfig = null, lang = 'es') {
         ? adminDestination
         : userFacingDestinationFor(s.id);
       if (externalUrl && s.id === 'food-plan') destinationView = 'external:food';
-      if (s.id === 'training') destinationView = 'external:training';
+      if (s.id === 'training' && isTrainingExternal()) destinationView = 'external:training';
       return {
         ...merged,
         externalUrl,
@@ -237,7 +238,7 @@ export { SERVICE_DEFS };
 function userFacingDestinationFor(serviceId) {
   switch (serviceId) {
     case 'food-plan': return isFoodExternal() ? 'external:food' : 'myplan';
-    case 'training': return 'training';
+    case 'training': return isTrainingExternal() ? 'external:training' : 'training';
     case 'd28d':
     case 'live-classes':
       return 'liveclasses';

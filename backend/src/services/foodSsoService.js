@@ -23,11 +23,12 @@ function verifyHandoffToken(token) {
   return jwt.verify(token, secret);
 }
 
-function buildLaunchUrl(publicBase, token, returnUrl) {
+function buildLaunchUrl(publicBase, token, returnUrl, dest = '') {
   const base = String(publicBase || '').replace(/\/$/, '');
   const u = new URL(`${base}/shell-sso`);
   u.searchParams.set('token', token);
   if (returnUrl) u.searchParams.set('return', returnUrl);
+  if (dest) u.searchParams.set('dest', dest);
   return u.toString();
 }
 
@@ -42,10 +43,11 @@ function shellOriginFromReturnUrl(returnUrl) {
 }
 
 /** Food Plan embebido en el shell D28D (/food-plan/shell-sso). */
-function buildEmbeddedLaunchUrl(returnUrl, token) {
+function buildEmbeddedLaunchUrl(returnUrl, token, dest = '') {
   const origin = shellOriginFromReturnUrl(returnUrl);
   const u = new URL(`${origin}/food-plan/shell-sso`);
   u.searchParams.set('token', token);
+  if (dest) u.searchParams.set('dest', dest);
   return u.toString();
 }
 

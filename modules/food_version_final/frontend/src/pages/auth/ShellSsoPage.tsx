@@ -35,7 +35,16 @@ export default function ShellSsoPage() {
             }
           } catch { /* external return */ }
         }
-        navigate('/dashboard', { replace: true });
+        const destParam = params.get('dest')
+          || (typeof sessionStorage !== 'undefined' ? sessionStorage.getItem('d28d_food_dest') : null)
+          || '';
+        if (typeof sessionStorage !== 'undefined') {
+          sessionStorage.removeItem('d28d_food_dest');
+        }
+        const role = data.user?.role;
+        const target = destParam
+          || (role === 'TRAINER' ? '/trainer' : '/dashboard');
+        navigate(target.startsWith('/') ? target : `/${target}`, { replace: true });
       } catch (err: any) {
         setError(err.response?.data?.message || err.message || 'Error SSO');
       }

@@ -6,6 +6,8 @@ node_modules/
 
 # Archivos de compilación
 /dist
+modules/training_version_final/backend/dist/
+modules/training_version_final/frontend/dist/
 /build
 .parcel-cache/
 

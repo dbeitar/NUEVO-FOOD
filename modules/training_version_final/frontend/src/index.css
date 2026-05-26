@@ -1,0 +1,46 @@
+:root {
+  --brand-primary: #0d9488;
+  --brand-secondary: #134e4a;
+  --bg: #0f172a;
+  --card: #1e293b;
+  --text: #f8fafc;
+  --muted: #94a3b8;
+}
+
+* { box-sizing: border-box; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+  background: var(--bg);
+  color: var(--text);
+}
+a { color: var(--brand-primary); text-decoration: none; }
+.muted { color: var(--muted); font-size: 0.9rem; }
+.app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+.app-header {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 1rem 1.25rem; border-bottom: 1px solid #334155;
+}
+.app-nav {
+  display: flex; gap: 0.5rem; padding: 0.75rem 1rem; flex-wrap: wrap;
+}
+.app-nav a {
+  padding: 0.4rem 0.75rem; border-radius: 8px; color: var(--muted);
+}
+.app-nav a.active { background: var(--brand-primary); color: #fff; }
+.app-main { padding: 1rem 1.25rem 2rem; flex: 1; }
+.card {
+  background: var(--card); border-radius: 12px; padding: 1rem 1.25rem;
+  margin-bottom: 1rem; border: 1px solid #334155;
+}
+.btn, button.btn {
+  background: var(--brand-primary); color: #fff; border: none;
+  padding: 0.5rem 1rem; border-radius: 8px; cursor: pointer;
+}
+.btn-ghost { background: transparent; color: var(--muted); border: 1px solid #475569; }
+input, textarea, select {
+  width: 100%; padding: 0.5rem; border-radius: 8px; border: 1px solid #475569;
+  background: #0f172a; color: var(--text); margin-top: 0.25rem;
+}
+.grid-2 { display: grid; gap: 1rem; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+.stat { font-size: 1.75rem; font-weight: 700; color: var(--brand-primary); }

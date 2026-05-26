@@ -5,6 +5,7 @@ import api from '../services/api';
 import { emitToast } from '../context/toast';
 import { useI18n } from '../context/useI18n';
 import CoachBrandingPanel from './CoachBrandingPanel';
+import { fetchPaymentMethods, openWompiCheckout } from '../utils/paymentMethods';
 
 export default function MyAccount() {
   const { user, refreshProfile } = useAuth();
@@ -30,8 +31,10 @@ export default function MyAccount() {
   const [formData, setFormData] = useState({
     gym_id: '',
     trainer_id: '',
-    metodoPago: 'tarjeta_credito'
+    metodoPago: 'wompi_online',
+    module_code: 'd28d',
   });
+  const [paymentMethods, setPaymentMethods] = useState([]);
   const [profileData, setProfileData] = useState({
     telefono: user?.telefono || '',
     fecha_nacimiento: user?.fecha_nacimiento || '',
@@ -90,6 +93,7 @@ export default function MyAccount() {
   useEffect(() => {
     fetchData();
     fetchOptions();
+    fetchPaymentMethods('d28d').then(setPaymentMethods);
   }, [fetchData, fetchOptions]);
 
   // Auto-suscripción si viene con plan pendiente desde el registro
@@ -148,10 +152,22 @@ export default function MyAccount() {
         plan: selectedPlan.nombre,
         gym_id: formData.gym_id ? parseInt(formData.gym_id) : null,
         trainer_id: formData.trainer_id ? parseInt(formData.trainer_id) : null,
-        metodoPago: formData.metodoPago
+        metodoPago: formData.metodoPago,
+        module_code: formData.module_code || 'd28d',
       });
-      emitToast({ type: 'success', title: 'Suscripción exitosa', message: `Plan ${selectedPlan.nombre.toUpperCase()} activado` });
-      setCurrentPlan(res.data?.account || null);
+      const payload = res.data || {};
+      if (formData.metodoPago === 'wompi_online' && payload.payment_url) {
+        openWompiCheckout(payload.payment_url);
+      }
+      const pending = payload.pending;
+      emitToast({
+        type: 'success',
+        title: pending ? 'Solicitud registrada' : 'Suscripción exitosa',
+        message: pending
+          ? 'Tu coach o administrador confirmará el pago en sede, o completa Wompi en la pestaña abierta.'
+          : `Plan ${selectedPlan.nombre.toUpperCase()} activado`,
+      });
+      setCurrentPlan(payload.account || null);
       setShowModal(false);
       if (isPlanSelection) window.location.assign('/my-account');
     } catch (err) {
@@ -353,15 +369,33 @@ export default function MyAccount() {
 
               <div>
                 <label className="label">{t('myaccount.method', 'Método de Pago')}</label>
-                <select 
-                  value={formData.metodoPago}
-                  onChange={(e) => setFormData({...formData, metodoPago: e.target.value})}
-                  className="input"
-                >
-                  <option value="tarjeta_credito">Tarjeta de Crédito</option>
-                  <option value="transferencia">Transferencia Bancaria</option>
-                  <option value="efectivo">Efectivo en Sede</option>
-                </select>
+                <div className="space-y-2 mt-1">
+                  {(paymentMethods.length ? paymentMethods : [
+                    { id: 'wompi_online', label: 'Pago en línea (Wompi)' },
+                    { id: 'pago_sede', label: 'Pago en sede' },
+                  ]).map((m) => (
+                    <label key={m.id} className="flex items-center gap-2 p-3 rounded-lg border border-stone-200 cursor-pointer hover:bg-stone-50">
+                      <input
+                        type="radio"
+                        name="metodoPago"
+                        value={m.id}
+                        checked={formData.metodoPago === m.id}
+                        onChange={() => setFormData({ ...formData, metodoPago: m.id })}
+                      />
+                      <span>{m.label}</span>
+                    </label>
+                  ))}
+                </div>
+                {formData.metodoPago === 'wompi_online' && (
+                  <p className="text-xs text-stone-500 mt-2">
+                    {t('myaccount.wompi_hint', 'Al confirmar se abrirá el checkout Wompi en una nueva pestaña.')}
+                  </p>
+                )}
+                {formData.metodoPago === 'pago_sede' && (
+                  <p className="text-xs text-stone-500 mt-2">
+                    {t('myaccount.sede_hint', 'Tu entrenador o administrador recibirá la notificación y activará tu vigencia.')}
+                  </p>
+                )}
               </div>
 
               <div className="flex items-center justify-end gap-3">

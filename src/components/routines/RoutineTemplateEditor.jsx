@@ -214,7 +214,7 @@ export default function RoutineTemplateEditor({
                     <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-2">
                       <input className="input sm:col-span-2" disabled={disabled} placeholder="Ejercicio" value={ex.nombre} onChange={(e) => updateExercise(bIdx, eIdx, { nombre: e.target.value })} />
                       <input className="input" disabled={disabled} placeholder="Series" value={ex.series || ''} onChange={(e) => updateExercise(bIdx, eIdx, { series: e.target.value })} />
-                      <input className="input" disabled={disabled} placeholder="Reps" value={ex.repeticiones || ''} onChange={(e) => updateExercise(bIdx, eIdx, { repeticiones: e.target.value })} />
+                      <input className="input" disabled={disabled} placeholder="Repeticiones" value={ex.repeticiones || ''} onChange={(e) => updateExercise(bIdx, eIdx, { repeticiones: e.target.value })} />
                       <input className="input" disabled={disabled} placeholder="Tiempo" value={ex.duracion || ''} onChange={(e) => updateExercise(bIdx, eIdx, { duracion: e.target.value })} />
                       <input className="input" disabled={disabled} placeholder="Descanso" value={ex.descanso || ''} onChange={(e) => updateExercise(bIdx, eIdx, { descanso: e.target.value })} />
                       <input className="input" disabled={disabled} placeholder="Tempo" value={ex.tempo || ''} onChange={(e) => updateExercise(bIdx, eIdx, { tempo: e.target.value })} />
@@ -237,12 +237,19 @@ export default function RoutineTemplateEditor({
                         ))}
                       </div>
                       <div className="grid grid-cols-3 gap-2">
-                        {['series', 'repeticiones', 'duracion', 'descanso', 'tempo', 'intensidad'].map((field) => (
+                        {[
+                          { field: 'series', label: 'Series' },
+                          { field: 'repeticiones', label: 'Repeticiones' },
+                          { field: 'duracion', label: 'Tiempo' },
+                          { field: 'descanso', label: 'Descanso' },
+                          { field: 'tempo', label: 'Tempo' },
+                          { field: 'intensidad', label: 'Intensidad' },
+                        ].map(({ field, label }) => (
                           <input
                             key={field}
                             className="input text-xs"
                             disabled={disabled}
-                            placeholder={field}
+                            placeholder={label}
                             value={ex.variantes?.[activeVariant]?.[field] || ''}
                             onChange={(e) => updateVariant(bIdx, eIdx, activeVariant, field, e.target.value)}
                           />

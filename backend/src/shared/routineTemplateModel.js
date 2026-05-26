@@ -96,8 +96,10 @@ function normalizeBlockInput(b = {}, orden = 0) {
   };
 }
 
-function normalizeRoutineInput(payload = {}) {
-  return {
+function normalizeRoutineInput(payload = {}, { partial = false } = {}) {
+  const has = (key) => Object.prototype.hasOwnProperty.call(payload, key);
+
+  const out = {
     nombre: String(payload.nombre || '').trim(),
     categoria: String(payload.categoria || '').trim(),
     subcategoria: payload.subcategoria ? String(payload.subcategoria) : null,
@@ -109,10 +111,18 @@ function normalizeRoutineInput(payload = {}) {
       ? String(payload.notas_tecnicas || payload.notasTecnicas)
       : null,
     equipamiento: normalizeEquipment(payload.equipamiento),
-    estado: ROUTINE_STATES.includes(payload.estado) ? payload.estado : 'activa',
-    scope: ROUTINE_SCOPES.includes(payload.scope) ? payload.scope : 'd28d_platform',
     blocks: (Array.isArray(payload.blocks) ? payload.blocks : []).map(normalizeBlockInput),
   };
+
+  if (!partial || has('estado')) {
+    out.estado = ROUTINE_STATES.includes(payload.estado) ? payload.estado : 'activa';
+  }
+  if (!partial || has('scope')) {
+    const rawScope = payload.scope != null ? String(payload.scope).trim() : '';
+    out.scope = ROUTINE_SCOPES.includes(rawScope) ? rawScope : 'd28d_platform';
+  }
+
+  return out;
 }
 
 /** Migra bloques legacy: campos sueltos en config → columnas explícitas. */

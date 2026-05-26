@@ -1,55 +1,59 @@
 import PanelAdminSection from './PanelAdminSection';
+import { openTrainingModule } from '../../utils/trainingModule';
 
-const CARDS = [
-  { id: 'training', view: 'training' },
-  {
-    id: 'admintraining',
-    view: 'admintraining',
-    when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'entrenador', 'admin_training', 'admin_entrenador']),
-  },
-  {
-    id: 'admingallery',
-    view: 'admingallery',
-    when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_d28d', 'entrenador', 'admin_training', 'admin_entrenador']),
-  },
-  {
-    id: 'adminusers',
-    view: 'adminusers',
-    when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_training', 'admin_entrenador', 'entrenador']),
-  },
-  {
-    id: 'progress',
-    view: 'progress',
-    when: (has) => has(['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_training', 'admin_entrenador', 'entrenador']),
-  },
+/** Panel del entrenador (marca blanca): orden operativo — galería primero. */
+const COACH_CARDS = [
+  { id: 'admingallery', view: 'admingallery' },
+  { id: 'coachai', view: 'coachai' },
+  { id: 'admintraining', view: 'admintraining' },
+  { id: 'adminusers', view: 'adminusers' },
+  { id: 'progress', view: 'progress' },
 ];
 
-export default function TrainersAdminView({ hasAnyRole, onNavigate, onBack, trainingExternal, trainingExternalUrl }) {
+/** Admin de entrenadores (operaciones): coaches + usuarios vinculados. */
+const OPS_CARDS = [
+  { id: 'admintrainers', view: 'admintrainers' },
+  { id: 'adminusers', view: 'adminusers' },
+  { id: 'progress', view: 'progress' },
+];
+
+export default function TrainersAdminView({
+  hasAnyRole,
+  onNavigate,
+  onBack,
+  trainingExternal,
+  trainingExternalUrl,
+  variant = 'coach',
+}) {
   if (trainingExternal) {
-    const url = trainingExternalUrl || 'http://localhost:5175';
     return (
       <div className="dashboard-main-view p-6 max-w-xl">
         <button type="button" className="text-sm text-stone-600 mb-4 hover:underline" onClick={onBack}>
           ← Volver
         </button>
-        <h3 className="text-xl font-bold text-stone-900 mb-2">Entrenamiento (módulo externo)</h3>
+        <h3 className="text-xl font-bold text-stone-900 mb-2">Módulo Entrenadores</h3>
         <p className="text-stone-600 mb-4">
-          El módulo training externo se activa con <code className="text-xs">VITE_TRAINING_EXTERNAL=true</code>.
-          Por defecto el shell abre el panel interno con licencia y branding centralizado.
+          Opera en el módulo embebido (<code className="text-xs">/training-module</code>), igual que Food Plan.
+          El panel legacy del shell requiere <code className="text-xs">VITE_TRAINING_LEGACY=true</code>.
         </p>
-        <a href={url} target="_blank" rel="noopener noreferrer" className="btn-primary inline-block">
-          Abrir módulo training
-        </a>
+        <button type="button" className="btn-primary" onClick={() => openTrainingModule('/dashboard', '/coach')}>
+          Abrir módulo Entrenadores
+        </button>
       </div>
     );
   }
+
+  const cards = variant === 'ops' ? OPS_CARDS : COACH_CARDS;
+  const backLabelKey = variant === 'ops' ? 'panel.back_services' : 'panel.back_panel';
+
   return (
     <PanelAdminSection
       panelId="training"
       onBack={onBack}
+      backLabelKey={backLabelKey}
       hasAnyRole={hasAnyRole}
       onNavigate={onNavigate}
-      cards={CARDS}
+      cards={cards}
     />
   );
 }

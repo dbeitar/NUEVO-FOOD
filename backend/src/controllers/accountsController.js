@@ -1,5 +1,7 @@
 const AccountsDatabase = require('../models/AccountsDatabase');
 const { hasRole } = require('../utils/accessControl');
+const paymentNotify = require('../services/paymentNotifyService');
+const paymentLinkController = require('./paymentLinkController');
 
 const tokenGymId = (user) => {
   if (!user) return null;
@@ -137,7 +139,7 @@ const deletePlan = (req, res) => {
 };
 
 // Crear nueva suscripción
-const createAccount = (req, res) => {
+const createAccount = async (req, res) => {
   try {
     const { plan, gym_id: bodyGymId, trainer_id: bodyTrainerId } = req.body;
 
@@ -176,24 +178,55 @@ const createAccount = (req, res) => {
       finalTrainerId = bodyTrainerId || null;
     }
 
+    const metodoPago = req.body.metodoPago || 'pago_sede';
+    const defer = paymentNotify.shouldDeferActivation(metodoPago);
+    const moduleCode = req.body.module_code || 'd28d';
+
     const newAccount = AccountsDatabase.create({
       user_id: req.user.id,
       plan,
       gym_id: finalGymId,
       trainer_id: finalTrainerId,
-      estado: 'activo',
+      estado: defer ? paymentNotify.mapPaymentState(metodoPago) : 'activo',
       sesiones_restantes: plan === 'premium' ? 24 : plan === 'elite' ? 48 : 0,
       sesiones_totales: plan === 'premium' ? 24 : plan === 'elite' ? 48 : 0,
       precio_mensual: planData.precio_mensual,
-      fecha_vencimiento: new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000),
-      metodoPago: req.body.metodoPago || 'pendiente',
+      fecha_vencimiento: defer
+        ? new Date(new Date().getTime() + 3 * 24 * 60 * 60 * 1000)
+        : new Date(new Date().getTime() + 30 * 24 * 60 * 60 * 1000),
+      metodoPago,
     });
 
     AccountsDatabase.incPlanUsers(plan);
 
-    res.status(201).json({ 
-      message: 'Suscripción creada exitosamente', 
-      account: newAccount 
+    let payment_url = null;
+    if (metodoPago === 'wompi_online') {
+      const methods = await paymentLinkController.getModuleMethods(moduleCode);
+      const wompi = methods.methods?.find((m) => m.id === 'wompi_online');
+      payment_url = wompi?.url || paymentNotify.WOMPI_DEFAULT;
+    }
+
+    if (defer) {
+      await paymentNotify.notifyPaymentPending({
+        payerUserId: req.user.id,
+        accountId: newAccount.id,
+        moduleCode,
+        method: metodoPago,
+        planName: plan,
+        amount: planData.precio_mensual,
+        gymId: finalGymId,
+        trainerId: finalTrainerId,
+      });
+    }
+
+    res.status(201).json({
+      message: defer
+        ? 'Solicitud registrada. Un administrador confirmará tu pago o completa el pago en línea.'
+        : 'Suscripción creada exitosamente',
+      account: newAccount,
+      payment_url,
+      metodo_pago: metodoPago,
+      pending: defer,
     });
   } catch (error) {
     console.error('Error creando suscripción:', error);
@@ -327,11 +360,20 @@ const renewPlan = (req, res) => {
 // Obtener cuentas próximas a vencer
 const getExpiringAccounts = (req, res) => {
   try {
-    if (!hasRole(req.user, ['super_admin'])) {
-      return res.status(403).json({ error: 'Solo super admin puede ver esta información' });
+    if (!hasRole(req.user, ['super_admin', 'admin_d28d', 'admin_training', 'admin_entrenador', 'admin_gimnasio', 'admin_marca', 'entrenador', 'nutricionista'])) {
+      return res.status(403).json({ error: 'Sin permiso' });
     }
 
-    const expiring = AccountsDatabase.getExpiringSoon();
+    let expiring = AccountsDatabase.getExpiringSoon();
+    if (!hasRole(req.user, ['super_admin', 'admin_d28d'])) {
+      const gymId = req.user.gym_id;
+      const trainerId = req.user.trainer_id || req.user.id;
+      if (hasRole(req.user, ['admin_gimnasio', 'admin_marca']) && gymId) {
+        expiring = expiring.filter((a) => Number(a.gym_id) === Number(gymId));
+      } else {
+        expiring = expiring.filter((a) => Number(a.trainer_id) === Number(trainerId));
+      }
+    }
     res.json(expiring);
   } catch (error) {
     console.error('Error obteniendo cuentas próximas a vencer:', error);

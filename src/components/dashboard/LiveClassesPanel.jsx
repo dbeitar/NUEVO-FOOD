@@ -45,6 +45,7 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
   const [selectedProgram, setSelectedProgram] = useState(forcedProgramId || '');
   const [hostClasses, setHostClasses] = useState([]);
   const [hostClassId, setHostClassId] = useState('');
+  const [hostNotifications, setHostNotifications] = useState([]);
   const isHostOnly = !canProgram && userIsD28dHost(user);
 
   // Programa fijo para usuario final (no admin).
@@ -65,6 +66,20 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
     })();
     return () => { active = false; };
   }, [canProgram]);
+
+  useEffect(() => {
+    if (!isHostOnly) return;
+    let active = true;
+    (async () => {
+      try {
+        const n = await api.get('/notifications');
+        if (active) setHostNotifications((n.data?.data || []).slice(0, 5));
+      } catch {
+        if (active) setHostNotifications([]);
+      }
+    })();
+    return () => { active = false; };
+  }, [isHostOnly]);
 
   useEffect(() => {
     if (!isHostOnly) return;
@@ -232,6 +247,18 @@ export default function LiveClassesPanel({ user = null, canProgram = false, prog
       {/* Contenido */}
       <div role="tabpanel">
         {tab === TABS.PROGRAM && canProgram && <AdminLiveClasses />}
+        {isHostOnly && hostNotifications.length > 0 && (
+          <div className="card p-4 mb-4 border border-lime-200 bg-lime-50/40">
+            <h3 className="font-bold text-sm text-stone-900 mb-2">Notificaciones de clases</h3>
+            <ul className="text-sm space-y-2">
+              {hostNotifications.map((n) => (
+                <li key={n.id} className="whitespace-pre-wrap text-stone-700 border-b border-lime-100 pb-2 last:border-0">
+                  {n.mensaje}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
         {isHostOnly && hostClasses.length > 0 && (
           <div className="card p-4 mb-6">
             <label className="text-sm font-semibold block mb-2">Clase asignada (rutina D28D)</label>

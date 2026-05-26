@@ -52,6 +52,7 @@ function mapRoutine(row) {
     equipamiento: Array.isArray(row.equipamiento) ? row.equipamiento : [],
     estado: row.estado,
     scope: row.scope,
+    trainer_id: row.trainerId,
     created_by: row.createdBy,
     created_at: row.createdAt,
     updated_at: row.updatedAt,
@@ -79,6 +80,7 @@ function routineCoreData(normalized, createdBy) {
     equipamiento: normalized.equipamiento,
     estado: normalized.estado,
     scope: normalized.scope,
+    trainerId: normalized.trainer_id != null ? Number(normalized.trainer_id) : undefined,
     createdBy: createdBy ?? undefined,
   };
 }
@@ -133,11 +135,24 @@ async function upsertCategory({ id, nombre, orden, activo }) {
   return { id: row.id, nombre: row.nombre, orden: row.orden, activo: row.activo };
 }
 
-async function listRoutines({ estado, categoria, currentOnly = true } = {}) {
+async function listRoutines({
+  estado,
+  categoria,
+  currentOnly = true,
+  scopes,
+  coachTrainerId,
+} = {}) {
   const where = {};
   if (estado) where.estado = estado;
   if (categoria) where.categoria = categoria;
   if (currentOnly) where.isCurrent = true;
+
+  if (coachTrainerId != null) {
+    where.scope = { in: ['coach_wl', 'training'] };
+    where.trainerId = Number(coachTrainerId);
+  } else if (Array.isArray(scopes) && scopes.length) {
+    where.scope = { in: scopes };
+  }
 
   const rows = await getPrisma().d28dRoutine.findMany({
     where,
@@ -207,16 +222,18 @@ async function createBlocks(tx, routineId, blocks = []) {
   }
 }
 
-async function createRoutine(payload, createdBy) {
+async function createRoutine(payload, createdBy, trainerId = null) {
   const normalized = normalizeRoutineInput(payload);
   const prisma = getPrisma();
+  const core = routineCoreData(normalized, createdBy);
+  if (trainerId != null) core.trainerId = Number(trainerId);
   return prisma.$transaction(async (tx) => {
     const draft = await tx.d28dRoutine.create({
       data: {
         rootId: 0,
         version: 1,
         isCurrent: true,
-        ...routineCoreData(normalized, createdBy),
+        ...core,
       },
     });
     const rootId = draft.id;
@@ -234,25 +251,32 @@ async function createRoutine(payload, createdBy) {
 }
 
 async function updateRoutineInPlace(id, payload) {
-  const normalized = normalizeRoutineInput({ ...payload, nombre: payload.nombre || ' ', categoria: payload.categoria || ' ' });
+  const has = (key) => Object.prototype.hasOwnProperty.call(payload || {}, key);
+  const normalized = normalizeRoutineInput(
+    { ...payload, nombre: payload.nombre || ' ', categoria: payload.categoria || ' ' },
+    { partial: true },
+  );
   const prisma = getPrisma();
+  const data = {};
+  if (has('nombre')) data.nombre = normalized.nombre || undefined;
+  if (has('categoria')) data.categoria = normalized.categoria || undefined;
+  if (has('subcategoria')) data.subcategoria = normalized.subcategoria;
+  if (has('objetivo')) data.objetivo = normalized.objetivo;
+  if (has('nivel')) data.nivel = normalized.nivel;
+  if (has('duracion')) data.duracion = normalized.duracion;
+  if (has('descripcion')) data.descripcion = normalized.descripcion;
+  if (has('notas_tecnicas') || has('notasTecnicas')) data.notasTecnicas = normalized.notas_tecnicas;
+  if (has('equipamiento')) data.equipamiento = normalized.equipamiento;
+  if (has('estado')) data.estado = normalized.estado;
+  if (has('scope')) data.scope = normalized.scope;
+
   return prisma.$transaction(async (tx) => {
-    await tx.d28dRoutine.update({
-      where: { id: Number(id) },
-      data: {
-        nombre: normalized.nombre || undefined,
-        categoria: normalized.categoria || undefined,
-        subcategoria: payload.subcategoria !== undefined ? normalized.subcategoria : undefined,
-        objetivo: payload.objetivo !== undefined ? normalized.objetivo : undefined,
-        nivel: payload.nivel !== undefined ? normalized.nivel : undefined,
-        duracion: payload.duracion !== undefined ? normalized.duracion : undefined,
-        descripcion: payload.descripcion !== undefined ? normalized.descripcion : undefined,
-        notasTecnicas: payload.notas_tecnicas !== undefined ? normalized.notas_tecnicas : undefined,
-        equipamiento: payload.equipamiento !== undefined ? normalized.equipamiento : undefined,
-        estado: payload.estado || undefined,
-        scope: payload.scope || undefined,
-      },
-    });
+    if (Object.keys(data).length) {
+      await tx.d28dRoutine.update({
+        where: { id: Number(id) },
+        data,
+      });
+    }
     if (Array.isArray(payload.blocks)) {
       await tx.d28dRoutineBlock.deleteMany({ where: { routineId: Number(id) } });
       await createBlocks(tx, Number(id), normalized.blocks);
@@ -306,6 +330,9 @@ async function cloneRoutine(sourceId, { versionBump = false, createdBy, override
         equipamiento: merged.equipamiento,
         estado: merged.estado,
         scope: merged.scope,
+        trainerId: overrides.trainer_id != null
+          ? Number(overrides.trainer_id)
+          : (source.trainer_id != null ? Number(source.trainer_id) : undefined),
         createdBy: createdBy || source.created_by,
       },
     });
@@ -371,6 +398,26 @@ async function listHostNotes({ routineId, liveClassId } = {}) {
   }));
 }
 
+async function listHostNotesForHost({ hostUserId, liveClassIds } = {}) {
+  const where = { userId: Number(hostUserId) };
+  if (Array.isArray(liveClassIds) && liveClassIds.length > 0) {
+    where.liveClassId = { in: liveClassIds.map(Number) };
+  }
+  const rows = await getPrisma().d28dRoutineHostNote.findMany({
+    where,
+    orderBy: { createdAt: 'desc' },
+    take: 200,
+  });
+  return rows.map((r) => ({
+    id: r.id,
+    routine_id: r.routineId,
+    live_class_id: r.liveClassId,
+    user_id: r.userId,
+    texto: r.texto,
+    created_at: r.createdAt,
+  }));
+}
+
 module.exports = {
   mapRoutine,
   ensureDefaultCategories,
@@ -385,4 +432,5 @@ module.exports = {
   archiveRoutine,
   addHostNote,
   listHostNotes,
+  listHostNotesForHost,
 };

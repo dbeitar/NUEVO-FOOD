@@ -8,6 +8,7 @@ const {
   getUserGymId,
   getUserTrainerId,
 } = require('./tenantScope');
+const { isCoachUser, getCoachTrainerId } = require('./coachScope');
 
 function rolesOf(user) {
   if (!user) return [];
@@ -36,7 +37,8 @@ function canAccessTargetUser(actor, targetUserId) {
     return userIdsInGym(gymId).has(Number(targetUserId));
   }
   if (isCoachRole(actor)) {
-    const coachTrainerId = getUserTrainerId(actor) || actor.id;
+    const coachTrainerId = getCoachTrainerId(actor);
+    if (coachTrainerId == null) return false;
     const target = UserDatabase.getById(Number(targetUserId));
     return target && Number(target.trainer_id) === Number(coachTrainerId);
   }
@@ -66,12 +68,24 @@ function filterTrainingLogs(logs, actor) {
 function filterGalleryItems(items, actor) {
   if (!Array.isArray(items)) return [];
   if (isPlatformAdmin(actor)) return items;
+  if (isCoachUser(actor)) {
+    const tid = getCoachTrainerId(actor);
+    if (tid == null) return [];
+    return items.filter((i) => Number(i.trainer_id) === Number(tid));
+  }
+  const coachTid = getUserTrainerId(actor) ?? actor?.trainer_id ?? null;
+  if (coachTid != null) {
+    return items.filter(
+      (i) => Number(i.trainer_id) === Number(coachTid)
+        || (i.is_global !== false && i.trainer_id == null),
+    );
+  }
   const gymId = getUserGymId(actor);
   if (gymId == null) {
-    return items.filter((i) => i.is_global !== false);
+    return items.filter((i) => i.is_global !== false && i.trainer_id == null);
   }
   return items.filter(
-    (i) => i.is_global !== false || String(i.gym_id ?? '') === String(gymId),
+    (i) => (i.is_global !== false && i.trainer_id == null) || String(i.gym_id ?? '') === String(gymId),
   );
 }
 

@@ -25,6 +25,11 @@ const CARDS = [
   { id: 'foodlog', view: 'foodlog' },
   { id: 'equivalentes', view: 'equivalentes' },
   { id: 'recipes', view: 'recipes' },
+  {
+    id: 'modulevigencias',
+    view: 'modulevigencias',
+    when: (has) => has(['super_admin', 'admin_d28d', 'admin_food_plan', 'admin_food', 'admin_marca', 'admin_gimnasio', 'entrenador', 'nutricionista']),
+  },
 ];
 
 export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack, foodExternal, foodExternalUrl }) {

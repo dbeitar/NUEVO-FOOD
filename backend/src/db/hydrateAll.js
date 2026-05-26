@@ -43,8 +43,12 @@ async function hydrateDomainStores() {
 
   if (trainingPlans.hydrate) await trainingPlans.hydrate();
   if (trainingLog.hydrateFromRelational) await trainingLog.hydrateFromRelational();
+  const coachTraining = require('../services/coachTrainingService');
+  if (coachTraining.hydrateCoachNotifications) await coachTraining.hydrateCoachNotifications();
   if (dailyFood.hydrateFromRelational) await dailyFood.hydrateFromRelational();
   if (exercises.hydrate) await exercises.hydrate();
+  const bodyMeas = require('../models/BodyMeasurementStore');
+  if (bodyMeas.hydrate) await bodyMeas.hydrate();
   if (fitness.hydrate) await fitness.hydrate();
   if (masters.hydrate) await masters.hydrate();
   if (ecosystem.hydrate) await ecosystem.hydrate();

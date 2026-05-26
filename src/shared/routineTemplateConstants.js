@@ -100,7 +100,7 @@ export function emptyBlock(orden = 0) {
   };
 }
 
-export function emptyRoutine() {
+export function emptyRoutine({ scope = 'd28d_platform' } = {}) {
   return {
     nombre: '',
     categoria: 'Full Body',
@@ -112,6 +112,7 @@ export function emptyRoutine() {
     notas_tecnicas: '',
     equipamiento: [],
     estado: 'activa',
+    scope,
     blocks: [emptyBlock(0)],
   };
 }
@@ -129,6 +130,7 @@ export function routineFromApi(data) {
     notas_tecnicas: data.notas_tecnicas || '',
     equipamiento: Array.isArray(data.equipamiento) ? data.equipamiento : [],
     estado: data.estado || 'activa',
+    scope: data.scope || 'd28d_platform',
     blocks: (data.blocks || []).map((b, i) => ({
       ...b,
       orden: b.orden ?? i,

@@ -9,6 +9,8 @@ const COLLECTIONS = [
   'fitness_tests',
   'trainer_masters',
   'ecosystem_modules',
+  'coach_notifications',
+  'body_measurements',
 ];
 
 async function getPayload(collection, docKey = 'default') {

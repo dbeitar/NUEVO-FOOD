@@ -65,6 +65,7 @@ class LiveClassDatabase {
         d28d_routine_id: item.d28d_routine_id != null ? Number(item.d28d_routine_id) : null,
         d28d_routine_version: item.d28d_routine_version != null ? Number(item.d28d_routine_version) : null,
         d28d_routine_snapshot: item.d28d_routine_snapshot || null,
+        d28d_host_user_id: item.d28d_host_user_id != null ? Number(item.d28d_host_user_id) : null,
       };
     });
   }
@@ -101,6 +102,7 @@ class LiveClassDatabase {
       d28d_routine_id: data.d28d_routine_id != null ? Number(data.d28d_routine_id) : null,
       d28d_routine_version: data.d28d_routine_version != null ? Number(data.d28d_routine_version) : null,
       d28d_routine_snapshot: data.d28d_routine_snapshot || null,
+      d28d_host_user_id: data.d28d_host_user_id != null ? Number(data.d28d_host_user_id) : null,
       created_at: new Date().toISOString(),
     };
     this.rows.push(newClass);
@@ -134,6 +136,9 @@ class LiveClassDatabase {
     }
     if (updates.d28d_routine_snapshot !== undefined) {
       item.d28d_routine_snapshot = updates.d28d_routine_snapshot || null;
+    }
+    if (updates.d28d_host_user_id !== undefined) {
+      item.d28d_host_user_id = updates.d28d_host_user_id != null ? Number(updates.d28d_host_user_id) : null;
     }
     this._persist();
     return item;

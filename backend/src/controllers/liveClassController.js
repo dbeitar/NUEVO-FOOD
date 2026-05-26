@@ -15,6 +15,8 @@ const {
   enrichMany,
   enrichClassWithRoutine,
 } = require('../utils/d28dLiveClassRoutine');
+const zoomMeetingService = require('../services/zoomMeetingService');
+const { notifyD28dHostAssigned } = require('../utils/d28dHostNotification');
 
 const LIVE_ADMIN_ROLES = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym', 'admin_d28d'];
 const LIVE_PLATFORM_WRITE_ROLES = ['super_admin', 'admin_d28d'];
@@ -39,6 +41,47 @@ const canAccessClass = (classItem, user) => canUserAccessD28dLiveClass(classItem
 const matchesProgram = (item, programId) => {
   if (!programId) return true;
   return String(item.program_id || '') === String(programId);
+};
+
+function userRoles(user) {
+  if (!user) return [];
+  return Array.isArray(user.roles) && user.roles.length ? user.roles : [user.rol].filter(Boolean);
+}
+
+function resolveD28dHostFields(body = {}) {
+  const rawId = body.d28d_host_user_id;
+  if (rawId === '' || rawId === undefined || rawId === null) {
+    return {
+      d28d_host_user_id: null,
+      coach: String(body.coach || '').trim(),
+    };
+  }
+  const hostId = Number(rawId);
+  const host = userDB.getById(hostId);
+  if (!host || !userRoles(host).includes(D28D_HOST_ROLE)) {
+    return {
+      d28d_host_user_id: null,
+      coach: String(body.coach || '').trim(),
+    };
+  }
+  const coachLabel = String(host.nombre || host.email || '').trim();
+  return { d28d_host_user_id: hostId, coach: coachLabel };
+}
+
+const getD28dHosts = (req, res) => {
+  try {
+    if (!isLiveAdmin(req)) {
+      return res.status(403).json({ error: 'No tienes permiso' });
+    }
+    const data = userDB.getAll()
+      .filter((u) => userRoles(u).includes(D28D_HOST_ROLE))
+      .map((u) => ({ id: u.id, nombre: u.nombre, email: u.email }))
+      .sort((a, b) => String(a.nombre).localeCompare(String(b.nombre)));
+    return res.json({ success: true, data });
+  } catch (error) {
+    console.error('Error listando hosts D28D:', error);
+    return res.status(500).json({ error: 'Error listando entrenadores D28D' });
+  }
 };
 
 const getPublicClasses = (req, res) => {
@@ -139,17 +182,80 @@ const getAttendanceReport = (req, res) => {
   }
 };
 
+async function resolveZoomLinkForClass(body, hostFields, resolvedTitle) {
+  let zoomLink = String(body.zoom_link || '').trim();
+  let zoomMeta = null;
+  const wantsAuto = body.auto_zoom === true || body.auto_zoom === 'true';
+  if (wantsAuto && body.program_id) {
+    const hostUser = hostFields.d28d_host_user_id
+      ? userDB.getById(Number(hostFields.d28d_host_user_id))
+      : null;
+    const zoomResult = await zoomMeetingService.createScheduledMeeting({
+      programId: body.program_id,
+      zoomAccountId: body.zoom_account_id || null,
+      topic: resolvedTitle,
+      startTime: body.start_time,
+      endTime: body.end_time,
+      alternativeHostEmail: hostUser?.email || '',
+    });
+    if (zoomResult.ok) {
+      zoomLink = zoomResult.join_url;
+      zoomMeta = zoomResult;
+    } else if (!zoomLink) {
+      return { error: zoomResult.message || 'No se pudo generar el enlace Zoom', status: 400, zoomMeta };
+    }
+  }
+  if (!zoomLink) {
+    return { error: 'zoom_link es requerido (o activa generar enlace Zoom)', status: 400 };
+  }
+  return { zoomLink, zoomMeta };
+}
+
+const createZoomMeeting = async (req, res) => {
+  try {
+    if (!canManageLiveTemplates(req)) {
+      return res.status(403).json({ error: 'Solo D28D puede generar enlaces Zoom' });
+    }
+    const routineLink = await buildRoutineLinkFields(req.body || {});
+    const hostFields = resolveD28dHostFields(req.body || {});
+    const title = req.body.title || routineLink.title;
+    if (!title || !req.body.start_time || !req.body.end_time || !req.body.program_id) {
+      return res.status(400).json({ error: 'program_id, start_time, end_time y título (o rutina) son requeridos' });
+    }
+    const resolved = await resolveZoomLinkForClass(req.body, hostFields, title);
+    if (resolved.error) {
+      return res.status(resolved.status || 400).json({ error: resolved.error, zoom: resolved.zoomMeta });
+    }
+    return res.json({
+      success: true,
+      data: {
+        zoom_link: resolved.zoomLink,
+        zoom: resolved.zoomMeta,
+      },
+    });
+  } catch (error) {
+    console.error('Error generando Zoom:', error);
+    return res.status(500).json({ error: 'Error generando enlace Zoom' });
+  }
+};
+
 const createClass = async (req, res) => {
   try {
     if (!canManageLiveTemplates(req)) {
       return res.status(403).json({ error: 'Solo D28D puede crear o programar clases en vivo' });
     }
-    const { title, description = '', zoom_link, start_time, end_time, gym_id: bodyGymId = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40, source_module = 'd28d' } = req.body || {};
+    const { title, description = '', start_time, end_time, gym_id: bodyGymId = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40, source_module = 'd28d' } = req.body || {};
     const routineLink = await buildRoutineLinkFields(req.body || {});
+    const hostFields = resolveD28dHostFields(req.body || {});
     const resolvedTitle = title || routineLink.title;
-    if (!resolvedTitle || !zoom_link || !start_time || !end_time) {
-      return res.status(400).json({ error: 'title (o rutina D28D), zoom_link, start_time y end_time son requeridos' });
+    if (!resolvedTitle || !start_time || !end_time) {
+      return res.status(400).json({ error: 'title (o rutina D28D), start_time y end_time son requeridos' });
     }
+    const zoomResolved = await resolveZoomLinkForClass(req.body, hostFields, resolvedTitle);
+    if (zoomResolved.error) {
+      return res.status(zoomResolved.status || 400).json({ error: zoomResolved.error });
+    }
+    const zoom_link = zoomResolved.zoomLink;
     if (source_module === 'd28d' && !hasRole(req.user, ['super_admin', 'admin_d28d'])) {
       return res.status(403).json({ error: 'Solo D28D puede crear clases globales' });
     }
@@ -169,15 +275,27 @@ const createClass = async (req, res) => {
       is_global,
       day_label,
       class_type,
-      coach,
+      coach: hostFields.coach || coach,
       capacity,
       source_module,
       locked: source_module === 'd28d',
       program_id: req.body.program_id || null,
       ...routineLink,
+      d28d_host_user_id: hostFields.d28d_host_user_id,
     });
     const enriched = await enrichClassWithRoutine(created);
-    return res.status(201).json({ success: true, data: enriched });
+    if (hostFields.d28d_host_user_id) {
+      notifyD28dHostAssigned({
+        hostUserId: hostFields.d28d_host_user_id,
+        classTitle: resolvedTitle,
+        startTime: start_time,
+        zoomLink: zoom_link,
+        startUrl: zoomResolved.zoomMeta?.start_url || zoom_link,
+        programId: req.body.program_id || null,
+        hostZoomEmail: zoomResolved.zoomMeta?.host_email || null,
+      });
+    }
+    return res.status(201).json({ success: true, data: enriched, zoom: zoomResolved.zoomMeta || null });
   } catch (error) {
     console.error('Error creando clase en vivo:', error);
     return res.status(500).json({ error: 'Error creando clase en vivo' });
@@ -237,12 +355,50 @@ const updateClass = async (req, res) => {
       return res.status(403).json({ error: 'No puedes editar clases D28D bloqueadas' });
     }
     const routineLink = await buildRoutineLinkFields(req.body || {}, current);
-    const updated = LiveClassDatabase.update(id, { ...(req.body || {}), ...routineLink });
+    const hostFields = resolveD28dHostFields(req.body || {});
+    const resolvedTitle = req.body.title || routineLink.title || current.title;
+    let zoom_link = req.body.zoom_link !== undefined ? req.body.zoom_link : current.zoom_link;
+    let zoomMeta = null;
+    const wantsAuto = req.body.auto_zoom === true || req.body.auto_zoom === 'true';
+    if (wantsAuto && (req.body.program_id || current.program_id)) {
+      const zoomResolved = await resolveZoomLinkForClass(
+        { ...req.body, program_id: req.body.program_id || current.program_id, start_time: req.body.start_time || current.start_time, end_time: req.body.end_time || current.end_time },
+        hostFields,
+        resolvedTitle,
+      );
+      if (zoomResolved.error && !zoom_link) {
+        return res.status(zoomResolved.status || 400).json({ error: zoomResolved.error });
+      }
+      if (zoomResolved.zoomLink) {
+        zoom_link = zoomResolved.zoomLink;
+        zoomMeta = zoomResolved.zoomMeta;
+      }
+    }
+    const updated = LiveClassDatabase.update(id, {
+      ...(req.body || {}),
+      ...routineLink,
+      zoom_link,
+      coach: hostFields.coach !== undefined ? hostFields.coach : req.body?.coach,
+      d28d_host_user_id: hostFields.d28d_host_user_id,
+    });
     if (!updated) {
       return res.status(404).json({ error: 'Clase no encontrada' });
     }
     const enriched = await enrichClassWithRoutine(updated);
-    return res.json({ success: true, data: enriched });
+    const hostChanged = hostFields.d28d_host_user_id != null
+      && Number(hostFields.d28d_host_user_id) !== Number(current.d28d_host_user_id);
+    if (hostChanged || wantsAuto) {
+      notifyD28dHostAssigned({
+        hostUserId: hostFields.d28d_host_user_id || updated.d28d_host_user_id,
+        classTitle: resolvedTitle,
+        startTime: updated.start_time,
+        zoomLink: zoom_link,
+        startUrl: zoomMeta?.start_url || zoom_link,
+        programId: updated.program_id,
+        hostZoomEmail: zoomMeta?.host_email || null,
+      });
+    }
+    return res.json({ success: true, data: enriched, zoom: zoomMeta });
   } catch (error) {
     console.error('Error actualizando clase en vivo:', error);
     return res.status(500).json({ error: 'Error actualizando clase en vivo' });
@@ -292,6 +448,8 @@ module.exports = {
   getPublicClasses,
   getAdminClasses,
   getAttendanceReport,
+  getD28dHosts,
+  createZoomMeeting,
   createClass,
   updateClass,
   deleteClass,
