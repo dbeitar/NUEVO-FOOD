@@ -7,14 +7,12 @@ const emptyForm = () => ({
   name: '',
   muscle_group: '',
   youtube_url: '',
-  is_global: true,
 });
 
 const emptyDraft = () => ({
   name: '',
   muscle_group: '',
   youtube_url: '',
-  is_global: true,
 });
 
 const PLATFORM_LABELS = {
@@ -100,6 +98,8 @@ export default function AdminTrainingGallery() {
   const [draft, setDraft] = useState(emptyDraft());
   const [previewItem, setPreviewItem] = useState(null);
   const [error, setError] = useState('');
+  const [search, setSearch] = useState('');
+  const [muscleFilter, setMuscleFilter] = useState('');
 
   const fetchGallery = useCallback(async () => {
     try {
@@ -120,7 +120,6 @@ export default function AdminTrainingGallery() {
       name: ex.name || '',
       muscle_group: ex.muscle_group || '',
       youtube_url: ex.youtube_url || '',
-      is_global: ex.is_global !== false,
     });
     setError('');
   };
@@ -162,7 +161,6 @@ export default function AdminTrainingGallery() {
         name: draft.name.trim(),
         muscle_group: draft.muscle_group.trim(),
         youtube_url: draft.youtube_url.trim(),
-        is_global: draft.is_global,
       });
       await fetchGallery();
       cancelEdit();
@@ -184,19 +182,36 @@ export default function AdminTrainingGallery() {
     }
   };
 
-  const sorted = useMemo(
-    () => [...exercises].sort((a, b) => String(a.name).localeCompare(String(b.name), 'es')),
-    [exercises],
-  );
+  const muscleOptions = useMemo(() => {
+    const set = new Set(exercises.map((e) => e.muscle_group).filter(Boolean));
+    return [...set].sort((a, b) => a.localeCompare(b, 'es'));
+  }, [exercises]);
+
+  const sorted = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return [...exercises]
+      .filter((ex) => {
+        if (muscleFilter && ex.muscle_group !== muscleFilter) return false;
+        if (!q) return true;
+        return String(ex.name).toLowerCase().includes(q)
+          || String(ex.muscle_group || '').toLowerCase().includes(q);
+      })
+      .sort((a, b) => String(a.name).localeCompare(String(b.name), 'es'));
+  }, [exercises, search, muscleFilter]);
 
   return (
     <div className="card">
       <h2 className="text-2xl font-bold text-stone-900 mb-2">Galería de videos</h2>
       <p className="text-stone-600 mb-4 text-sm">
         {isCoach
-          ? 'Tu galería privada de videos por ejercicio (solo visible para tus clientes).'
+          ? 'Paso 1: sube tus videos por ejercicio. Tus clientes los verán al entrenar; sin galería no hay referencia visual.'
           : 'Agrega enlaces de YouTube, Vimeo u otras plataformas por ejercicio. Edita en la tabla y usa Vista previa en un modal.'}
       </p>
+      {isCoach && exercises.length < 3 && (
+        <div className="bg-lime-50 border border-lime-300 rounded-xl p-4 mb-4 text-sm text-lime-900">
+          <strong>Onboarding:</strong> agrega al menos 5 ejercicios con video antes de crear rutinas y asignar planes.
+        </div>
+      )}
 
       {error && (
         <div className="bg-red-50 text-red-700 text-sm p-3 rounded-lg mb-4">{error}</div>
@@ -239,24 +254,36 @@ export default function AdminTrainingGallery() {
           />
         </label>
         <div className="flex flex-wrap items-center gap-4 md:col-span-2 lg:col-span-4">
-          {!isCoach && (
-            <label className="flex items-center gap-2 text-sm text-stone-700">
-              <input
-                type="checkbox"
-                checked={form.is_global}
-                onChange={(e) => setForm({ ...form, is_global: e.target.checked })}
-                className="h-4 w-4"
-              />
-              Global (todos los gimnasios)
-            </label>
-          )}
           <button type="submit" className="btn-primary" disabled={loading}>
             + Agregar a la galería
           </button>
         </div>
       </form>
 
-      <div className="overflow-x-auto rounded-xl border border-stone-200">
+      <div className="flex flex-wrap gap-3 mb-4">
+        <input
+          type="search"
+          className="input flex-1 min-w-[200px]"
+          placeholder="Buscar por nombre o grupo…"
+          value={search}
+          onChange={(e) => setSearch(e.target.value)}
+        />
+        <select
+          className="input min-w-[180px]"
+          value={muscleFilter}
+          onChange={(e) => setMuscleFilter(e.target.value)}
+        >
+          <option value="">Todos los grupos</option>
+          {muscleOptions.map((g) => (
+            <option key={g} value={g}>{g}</option>
+          ))}
+        </select>
+        <span className="text-sm text-stone-500 self-center">
+          {sorted.length} / {exercises.length} ejercicios
+        </span>
+      </div>
+
+      <div className="overflow-x-auto rounded-xl border border-stone-200 max-h-[70vh] overflow-y-auto">
         <table className="w-full text-left text-sm min-w-[720px]">
           <thead className="bg-stone-100/80">
             <tr>
@@ -264,7 +291,6 @@ export default function AdminTrainingGallery() {
               <th className="px-3 py-3 text-xs font-semibold text-stone-500 uppercase">Músculo</th>
               <th className="px-3 py-3 text-xs font-semibold text-stone-500 uppercase">Enlace video</th>
               <th className="px-3 py-3 text-xs font-semibold text-stone-500 uppercase">Plataforma</th>
-              <th className="px-3 py-3 text-xs font-semibold text-stone-500 uppercase">Visibilidad</th>
               <th className="px-3 py-3 text-xs font-semibold text-stone-500 uppercase">Acciones</th>
             </tr>
           </thead>
@@ -315,20 +341,6 @@ export default function AdminTrainingGallery() {
                     <span className="inline-block text-xs font-semibold px-2 py-0.5 rounded-full bg-stone-100 text-stone-700">
                       {PLATFORM_LABELS[platform] || platform}
                     </span>
-                  </td>
-                  <td className="px-3 py-2">
-                    {isEditing ? (
-                      <label className="flex items-center gap-1 text-xs">
-                        <input
-                          type="checkbox"
-                          checked={draft.is_global}
-                          onChange={(e) => setDraft({ ...draft, is_global: e.target.checked })}
-                        />
-                        Global
-                      </label>
-                    ) : (
-                      <span>{isCoach ? 'Mi marca' : (ex.is_global !== false ? 'Global' : 'Gym')}</span>
-                    )}
                   </td>
                   <td className="px-3 py-2 whitespace-nowrap">
                     <div className="flex flex-wrap gap-1">

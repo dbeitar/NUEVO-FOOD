@@ -1,19 +1,18 @@
 import { Navigate, Route, Routes, useNavigate } from 'react-router-dom';
 import { useAuth } from '../context/useAuth';
-import { useI18n } from '../context/useI18n';
 import PanelAdminSection from '../components/dashboard/PanelAdminSection';
 import TrainingModule from '../components/TrainingModule';
 import AdminTrainingManager from '../components/AdminTrainingManager';
 import AdminTrainingGallery from '../components/AdminTrainingGallery';
 import AdminUsers from '../components/AdminUsers';
-import D28dRoutinesMaster from '../components/admin/D28dRoutinesMaster';
+import CoachRoutineAssistant from '../components/coach/CoachRoutineAssistant';
 import TrainingExpertProgress from './TrainingExpertProgress';
 
 const COACH_CARDS = [
   { id: 'training', view: '/athlete' },
-  { id: 'coachroutines', view: '/coach/routines' },
   { id: 'admintraining', view: '/coach/planning' },
   { id: 'admingallery', view: '/coach/gallery' },
+  { id: 'coachai', view: '/coach/ai' },
   { id: 'adminusers', view: '/coach/users' },
   { id: 'progress', view: '/coach/progress' },
 ];
@@ -30,7 +29,7 @@ function hasAnyRoleFactory(roles) {
 
 function coachCardsFilter(hasAnyRole) {
   return COACH_CARDS.filter((c) => {
-    if (c.id === 'coachroutines' || c.id === 'admintraining' || c.id === 'adminusers' || c.id === 'progress') {
+    if (c.id === 'admintraining' || c.id === 'adminusers' || c.id === 'progress' || c.id === 'coachai') {
       return hasAnyRole(['entrenador', 'nutricionista', 'admin_training', 'admin_entrenador', 'super_admin', 'admin_marca', 'admin_gimnasio']);
     }
     if (c.id === 'admingallery') {
@@ -42,7 +41,6 @@ function coachCardsFilter(hasAnyRole) {
 
 function TrainingCoachHome() {
   const { user } = useAuth();
-  const { t } = useI18n();
   const navigate = useNavigate();
   const roles = rolesOf(user);
   const hasAnyRole = hasAnyRoleFactory(roles);
@@ -64,16 +62,15 @@ function TrainingCoachHome() {
 }
 
 function ModuleChrome({ children, title }) {
-  const { t } = useI18n();
   const navigate = useNavigate();
   return (
     <div>
       <div className="flex items-center gap-3 mb-4 px-2">
         <button type="button" className="btn-secondary text-sm" onClick={() => navigate('/coach')}>
-          {t('training.back_panel', '← Capacitación')}
+          ← Capacitación
         </button>
         <button type="button" className="btn-secondary text-sm" onClick={() => { window.location.href = '/'; }}>
-          {t('training.back_d28d', '← D28D')}
+          ← D28D
         </button>
         {title && <h2 className="d28d-page-title text-lg">{title}</h2>}
       </div>
@@ -112,10 +109,10 @@ export default function TrainingModuleApp() {
           )}
         />
         <Route
-          path="/coach/routines"
+          path="/coach/ai"
           element={(
-            <ModuleChrome title="Plantillas">
-              <D28dRoutinesMaster variant="coach" readOnly={false} onBack={() => window.history.back()} />
+            <ModuleChrome title="Asistente IA">
+              <CoachRoutineAssistant onBack={() => window.history.back()} />
             </ModuleChrome>
           )}
         />

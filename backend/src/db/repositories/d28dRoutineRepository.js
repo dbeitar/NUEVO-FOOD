@@ -251,25 +251,32 @@ async function createRoutine(payload, createdBy, trainerId = null) {
 }
 
 async function updateRoutineInPlace(id, payload) {
-  const normalized = normalizeRoutineInput({ ...payload, nombre: payload.nombre || ' ', categoria: payload.categoria || ' ' });
+  const has = (key) => Object.prototype.hasOwnProperty.call(payload || {}, key);
+  const normalized = normalizeRoutineInput(
+    { ...payload, nombre: payload.nombre || ' ', categoria: payload.categoria || ' ' },
+    { partial: true },
+  );
   const prisma = getPrisma();
+  const data = {};
+  if (has('nombre')) data.nombre = normalized.nombre || undefined;
+  if (has('categoria')) data.categoria = normalized.categoria || undefined;
+  if (has('subcategoria')) data.subcategoria = normalized.subcategoria;
+  if (has('objetivo')) data.objetivo = normalized.objetivo;
+  if (has('nivel')) data.nivel = normalized.nivel;
+  if (has('duracion')) data.duracion = normalized.duracion;
+  if (has('descripcion')) data.descripcion = normalized.descripcion;
+  if (has('notas_tecnicas') || has('notasTecnicas')) data.notasTecnicas = normalized.notas_tecnicas;
+  if (has('equipamiento')) data.equipamiento = normalized.equipamiento;
+  if (has('estado')) data.estado = normalized.estado;
+  if (has('scope')) data.scope = normalized.scope;
+
   return prisma.$transaction(async (tx) => {
-    await tx.d28dRoutine.update({
-      where: { id: Number(id) },
-      data: {
-        nombre: normalized.nombre || undefined,
-        categoria: normalized.categoria || undefined,
-        subcategoria: payload.subcategoria !== undefined ? normalized.subcategoria : undefined,
-        objetivo: payload.objetivo !== undefined ? normalized.objetivo : undefined,
-        nivel: payload.nivel !== undefined ? normalized.nivel : undefined,
-        duracion: payload.duracion !== undefined ? normalized.duracion : undefined,
-        descripcion: payload.descripcion !== undefined ? normalized.descripcion : undefined,
-        notasTecnicas: payload.notas_tecnicas !== undefined ? normalized.notas_tecnicas : undefined,
-        equipamiento: payload.equipamiento !== undefined ? normalized.equipamiento : undefined,
-        estado: payload.estado || undefined,
-        scope: payload.scope || undefined,
-      },
-    });
+    if (Object.keys(data).length) {
+      await tx.d28dRoutine.update({
+        where: { id: Number(id) },
+        data,
+      });
+    }
     if (Array.isArray(payload.blocks)) {
       await tx.d28dRoutineBlock.deleteMany({ where: { routineId: Number(id) } });
       await createBlocks(tx, Number(id), normalized.blocks);

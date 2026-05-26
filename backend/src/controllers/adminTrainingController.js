@@ -2,6 +2,7 @@ const TrainingPlansStore = require('../models/TrainingPlansStore');
 const TrainingLogStore = require('../models/TrainingLogStore');
 const UserDatabase = require('../models/UserDatabase');
 const { canManageTraining } = require('../utils/accessControl');
+const { getCoachTrainerId } = require('../utils/coachScope');
 const {
   filterTrainingPlans,
   filterTrainingLogs,
@@ -75,9 +76,10 @@ const adminTrainingController = {
               return res.status(403).json({ error: 'No puedes asignar plan a este usuario' });
             }
 
+            const coachTrainerId = getCoachTrainerId(req.user);
             const newPlan = TrainingPlansStore.create({
                 user_id,
-                trainer_id: req.user.id,
+                trainer_id: coachTrainerId ?? req.user.trainer_id ?? null,
                 level,
                 method,
                 split_type,

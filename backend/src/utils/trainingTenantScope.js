@@ -73,6 +73,13 @@ function filterGalleryItems(items, actor) {
     if (tid == null) return [];
     return items.filter((i) => Number(i.trainer_id) === Number(tid));
   }
+  const coachTid = getUserTrainerId(actor) ?? actor?.trainer_id ?? null;
+  if (coachTid != null) {
+    return items.filter(
+      (i) => Number(i.trainer_id) === Number(coachTid)
+        || (i.is_global !== false && i.trainer_id == null),
+    );
+  }
   const gymId = getUserGymId(actor);
   if (gymId == null) {
     return items.filter((i) => i.is_global !== false && i.trainer_id == null);

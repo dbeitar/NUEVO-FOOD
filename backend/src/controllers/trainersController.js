@@ -15,8 +15,17 @@ const {
   suggestTrainerInviteCode,
 } = require('../utils/inviteCodeUtils');
 
-const TRAINER_MANAGE_ROLES = ['super_admin', 'admin_gimnasio', 'admin_marca', 'admin_gym'];
-const isTrainerManager = (user) => Boolean(user) && TRAINER_MANAGE_ROLES.includes(user.rol);
+const TRAINER_MANAGE_ROLES = [
+  'super_admin', 'admin_gimnasio', 'admin_marca', 'admin_gym',
+  'admin_training', 'admin_entrenador',
+];
+
+function rolesOf(user) {
+  if (!user) return [];
+  return Array.isArray(user.roles) && user.roles.length ? user.roles : [user.rol].filter(Boolean);
+}
+
+const isTrainerManager = (user) => rolesOf(user).some((r) => TRAINER_MANAGE_ROLES.includes(r));
 
 const getAllTrainers = (req, res) => {
   try {
@@ -96,8 +105,11 @@ const createTrainer = (req, res) => {
       return res.status(400).json({ error: 'Nombre y email son requeridos' });
     }
     // Forzar gym_id al del admin (salvo super_admin que puede elegir cualquiera).
-    const finalGymId = isSuperAdmin(req.user) ? (gym_id ?? null) : getUserGymId(req.user);
-    if (!isSuperAdmin(req.user) && finalGymId == null) {
+    const isTrainingOps = rolesOf(req.user).some((r) => ['admin_training', 'admin_entrenador'].includes(r));
+    const finalGymId = (isSuperAdmin(req.user) || isTrainingOps)
+      ? (gym_id ?? null)
+      : getUserGymId(req.user);
+    if (!isSuperAdmin(req.user) && !isTrainingOps && finalGymId == null) {
       return res.status(400).json({ error: 'No es posible determinar el gym destino' });
     }
 

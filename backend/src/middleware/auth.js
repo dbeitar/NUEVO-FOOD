@@ -3,6 +3,7 @@ const { hydrateAccess } = require('../utils/accessControl');
 const userRepo = require('../db/repositories/userRepository');
 const licenseService = require('../services/licenseService');
 const { useRelationalStorage } = require('../utils/storageMode');
+const { getCoachTrainerId } = require('../utils/coachScope');
 
 const JWT_SECRET = process.env.JWT_SECRET;
 if (!JWT_SECRET || String(JWT_SECRET).trim().length < 32) {
@@ -33,6 +34,9 @@ const authenticateToken = async (req, res, next) => {
       roles = dbUser.roles;
       gym_id = dbUser.gym_id ?? dbUser.gymId ?? null;
       trainer_id = dbUser.trainer_id ?? null;
+      if (trainer_id == null) {
+        trainer_id = getCoachTrainerId({ ...dbUser, email: dbUser.email || payload.email });
+      }
       module_access = await licenseService.resolveModuleAccess(
         dbUser.id,
         dbUser.module_access || {},

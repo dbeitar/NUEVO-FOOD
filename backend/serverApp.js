@@ -557,6 +557,14 @@ const PRIVILEGED_USER_ROLES = new Set([
 function filterUsersForActor(users, actor) {
   if (!Array.isArray(users)) return [];
   if (hasUserRole(actor, ['super_admin'])) return users;
+  if (hasUserRole(actor, ['admin_training', 'admin_entrenador'])
+    && !hasUserRole(actor, ['admin_d28d'])) {
+    return users.filter((u) => {
+      const roles = Array.isArray(u.roles) && u.roles.length ? u.roles : [u.rol];
+      if (roles.some((r) => PRIVILEGED_USER_ROLES.has(r))) return false;
+      return u.trainer_id != null;
+    });
+  }
   const coachTid = getCoachTrainerId(actor);
   if (isCoachUser(actor) && coachTid != null) {
     return users.filter((u) => {
@@ -712,6 +720,27 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
       finalGymId = ownGym;
     }
 
+    const needsFoodPlan = nextRoles.includes('usuario_final') && !isCoachUser(req.user);
+    if (needsFoodPlan && !planId) {
+      return res.status(400).json({ error: 'Plan de suscripción requerido para usuarios finales' });
+    }
+
+    if (nextRoles.includes('entrenador')) {
+      const { trainerIdFromEmail } = require('./src/utils/coachScope');
+      let linkedTrainerId = trainerIdFromEmail(email);
+      if (linkedTrainerId == null) {
+        const createdTrainer = TrainersDatabase.create({
+          nombre,
+          email,
+          telefono: telefono || null,
+          gym_id: finalGymId,
+          capacidad_usuarios: 100,
+        });
+        linkedTrainerId = createdTrainer.id;
+      }
+      finalTrainerId = linkedTrainerId;
+    }
+
     const pwd = password && String(password).length >= 6 ? password : Math.random().toString(36).slice(-8);
     const hashedPassword = await bcryptjs.hash(pwd, 10);
     const created = await userDB.create({
@@ -730,7 +759,7 @@ app.post('/api/admin/users', authMiddleware, async (req, res) => {
       gym_id: finalGymId,
       trainer_id: finalTrainerId,
       gymId: finalGymId,
-      planId: planId || null,
+      planId: isCoachUser(req.user) || nextRoles.includes('entrenador') ? null : (planId || null),
     });
     await licenseService.syncFromModuleAccess(created.id, finalModuleAccess, 'admin');
     res.status(201).json({ success: true, data: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol } });

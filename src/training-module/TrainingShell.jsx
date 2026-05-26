@@ -1,9 +1,9 @@
 import { useEffect, useRef, useState } from 'react';
 import { BrowserRouter, Routes, Route, useSearchParams, useNavigate } from 'react-router-dom';
 import api from '../services/api';
-import { AuthProvider } from '../context/AuthContext';
-import { I18nProvider } from '../context/I18nContext';
-import { FrontendConfigProvider } from '../context/FrontendConfigContext';
+import { AuthProvider } from '../context/AuthContext.jsx';
+import { I18nProvider } from '../context/I18nContext.jsx';
+import { FrontendConfigProvider } from '../context/FrontendConfigContext.jsx';
 import ErrorBoundary from '../components/ErrorBoundary';
 import TrainingModuleApp from './TrainingModuleApp';
 

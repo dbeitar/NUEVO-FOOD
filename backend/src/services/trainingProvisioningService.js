@@ -9,9 +9,21 @@ const planRowRepo = require('../db/repositories/trainingPlanRowRepository');
 const { useTrainingPlanSql } = require('../utils/storageMode');
 const { resolveBrandingForUser } = require('./trainingBrandingService');
 const { auditTraining } = require('./trainingAudit');
+const { userHasModule } = require('../middleware/requireModuleLicense');
 
 function trainingModuleEnabled() {
   return Boolean(String(process.env.TRAINING_MODULE_URL || '').trim());
+}
+
+function isTrainingExternalMode() {
+  return String(
+    process.env.TRAINING_EXTERNAL_MODE || process.env.VITE_TRAINING_EXTERNAL || 'false',
+  ).toLowerCase() === 'true';
+}
+
+/** API Nest independiente (:3003) solo en modo external; embebido usa perfil interno del shell. */
+function useExternalTrainingApi() {
+  return trainingModuleEnabled() && isTrainingExternalMode();
 }
 
 function apiBase() {
@@ -164,7 +176,7 @@ async function provisionTrainingUser({
 
   try {
     const branding = await resolveBrandingForUser(userId);
-    if (trainingModuleEnabled()) {
+    if (useExternalTrainingApi()) {
       const ext = await pushExternalProvision(user, branding);
       if (ext.ok && ext.training_user_id) {
         auditTraining(userId, 'training.provision.success', 'Provision externo training', {
@@ -241,29 +253,38 @@ async function trainingSessionForShell({
   if (!user) return { ok: false, error: 'Usuario no encontrado' };
 
   const module_access = await licenseService.resolveModuleAccess(user.id, user.module_access || {});
-  if (!hasTrainingLicense(module_access)) {
+  const roles = rolesOf(user);
+  const licensed = await userHasModule(
+    { ...user, module_access, roles, rol: roles[0] || user.rol },
+    'training',
+  );
+  if (!licensed) {
     return { ok: false, error: 'Módulo training no licenciado o vencido' };
   }
 
-  await provisionTrainingUser({ userId: user.id, moduleAccess: module_access, source: 'session' });
+  try {
+    await provisionTrainingUser({ userId: user.id, moduleAccess: module_access, source: 'session' });
+  } catch (provErr) {
+    auditTraining(user.id, 'training.provision.warn', provErr.message, { source: 'session' }, 'warn');
+  }
   const refreshed = await userRepo.findById(user.id);
-  const roles = rolesOf(refreshed);
+  const rolesAfter = rolesOf(refreshed);
   const branding = brandingIn || await resolveBrandingForUser(user.id);
-  const coachMode = isCoachish(roles);
+  const coachMode = isCoachish(rolesAfter);
 
   const shellUser = {
     id: refreshed.id,
     email: refreshed.email,
     nombre: refreshed.nombre,
-    rol: roles[0] || refreshed.rol,
-    roles,
+    rol: rolesAfter[0] || refreshed.rol,
+    roles: rolesAfter,
     trainer_id: refreshed.trainer_id,
     gym_id: refreshed.gym_id,
     training_user_id: refreshed.training_user_id,
     module_access,
   };
 
-  if (trainingModuleEnabled()) {
+  if (useExternalTrainingApi()) {
     if (handoffToken) {
       const exchanged = await trainingApiShellExchange(handoffToken);
       if (exchanged.ok) {

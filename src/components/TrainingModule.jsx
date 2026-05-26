@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import { useAuth } from '../context/useAuth';
+import TrainingBodyMeasurements from './training/TrainingBodyMeasurements';
 
 function toEmbedUrl(url) {
   if (!url) return '';
@@ -40,6 +41,15 @@ export default function TrainingModule() {
   const [assistantReason, setAssistantReason] = useState('');
   const [assistantLoading, setAssistantLoading] = useState(false);
   const [assistantResult, setAssistantResult] = useState(null);
+  const [substituteAlternatives, setSubstituteAlternatives] = useState([]);
+
+  const CAUSE_PRESETS = [
+    'Dolor de hombro',
+    'Dolor de rodilla',
+    'Equipo no disponible',
+    'Fatiga articular',
+    'Poco tiempo',
+  ];
 
   // === WORKOUT LOGGING STATE ===
   const [workoutLog, setWorkoutLog] = useState({ 
@@ -56,6 +66,9 @@ export default function TrainingModule() {
   });
   const [savingLog, setSavingLog] = useState(false);
 
+  const [galleryByName, setGalleryByName] = useState({});
+  const [subView, setSubView] = useState('workout');
+
   useEffect(() => {
     const fetchCurrentPlan = async () => {
       try {
@@ -68,6 +81,24 @@ export default function TrainingModule() {
       }
     };
     fetchCurrentPlan();
+  }, []);
+
+  useEffect(() => {
+    let active = true;
+    (async () => {
+      try {
+        const res = await api.get('/training/gallery');
+        const map = {};
+        for (const item of res.data?.data || []) {
+          const key = String(item.name || '').trim().toLowerCase();
+          if (key) map[key] = item;
+        }
+        if (active) setGalleryByName(map);
+      } catch {
+        if (active) setGalleryByName({});
+      }
+    })();
+    return () => { active = false; };
   }, []);
 
   // Carga del entrenador asignado para el botón "Ver entrenador".
@@ -120,12 +151,49 @@ export default function TrainingModule() {
     return list[selectedExerciseIndex] || null;
   }, [day, selectedExerciseIndex]);
 
-  const currentVideoEmbed = useMemo(() => toEmbedUrl(currentExercise?.youtube_url), [currentExercise]);
+  const currentVideoUrl = useMemo(() => {
+    if (!currentExercise) return '';
+    if (currentExercise.youtube_url) return currentExercise.youtube_url;
+    const key = String(currentExercise.exercise_name || '').trim().toLowerCase();
+    return galleryByName[key]?.youtube_url || '';
+  }, [currentExercise, galleryByName]);
+
+  const currentVideoEmbed = useMemo(() => toEmbedUrl(currentVideoUrl), [currentVideoUrl]);
 
   const askAssistant = (exerciseName) => {
     setAssistantExercise(exerciseName);
     setAssistantReason('');
     setAssistantResult(null);
+    setSubstituteAlternatives([]);
+  };
+
+  const applySubstitution = (substitution) => {
+    if (!substitution?.exercise_name || !assistantExercise) return;
+    setPlan((prev) => {
+      if (!prev?.dias?.length) return prev;
+      const next = { ...prev, dias: prev.dias.map((d) => ({ ...d, ejercicios: [...(d.ejercicios || [])] })) };
+      const d = next.dias[selectedDayIndex];
+      if (!d) return prev;
+      const idx = (d.ejercicios || []).findIndex((e) => e.exercise_name === assistantExercise);
+      if (idx === -1) return prev;
+      const old = d.ejercicios[idx];
+      d.ejercicios[idx] = {
+        ...old,
+        exercise_name: substitution.exercise_name,
+        youtube_url: substitution.youtube_url || old.youtube_url || null,
+        muscle_group: substitution.muscle_group || old.muscle_group,
+        intensity_type: substitution.intensity_type || 'RPE/RIR',
+        intensity_value: substitution.intensity_value ?? old.intensity_value ?? 7,
+        prescription: {
+          ...old.prescription,
+          sets: substitution.sets || old.prescription?.sets || old.sets || 3,
+          reps: substitution.reps || old.prescription?.reps || old.reps || '10-12',
+          target_rpe: substitution.intensity_value ?? old.prescription?.target_rpe ?? 7,
+        },
+      };
+      return next;
+    });
+    setAssistantResult(substitution);
   };
 
   const submitSubstitution = async () => {
@@ -138,32 +206,13 @@ export default function TrainingModule() {
       });
       if (resp.data?.success) {
         const substitution = resp.data.substitution;
-        setAssistantResult(substitution);
-
-        setPlan((prev) => {
-          if (!prev?.dias?.length) return prev;
-          const next = { ...prev, dias: prev.dias.map((d) => ({ ...d, ejercicios: [...(d.ejercicios || [])] })) };
-          const d = next.dias[selectedDayIndex];
-          if (!d) return prev;
-          const idx = (d.ejercicios || []).findIndex((e) => e.exercise_name === assistantExercise);
-          if (idx === -1) return prev;
-          const old = d.ejercicios[idx];
-          d.ejercicios[idx] = {
-            ...old,
-            exercise_name: substitution.exercise_name,
-            youtube_url: substitution.youtube_url || old.youtube_url || null,
-            prescription: {
-              ...old.prescription,
-              sets: substitution.sets || old.prescription?.sets || 3,
-              reps: substitution.reps || old.prescription?.reps || '10-12',
-            },
-          };
-          return next;
-        });
+        setSubstituteAlternatives(resp.data.alternatives || []);
+        applySubstitution(substitution);
       }
     } catch (e) {
       console.error(e);
-      setAssistantResult({ error: 'Error al contactar al asistente. Intenta de nuevo.' });
+      setAssistantResult({ error: e.response?.data?.error || 'No hay alternativa en la galería de tu entrenador.' });
+      setSubstituteAlternatives([]);
     } finally {
       setAssistantLoading(false);
     }
@@ -172,6 +221,7 @@ export default function TrainingModule() {
   const closeModal = () => {
     setAssistantExercise(null);
     setAssistantResult(null);
+    setSubstituteAlternatives([]);
   };
 
   const toggleDayDone = (dayIdx) => {
@@ -244,13 +294,33 @@ export default function TrainingModule() {
     }
   };
 
+  if (subView === 'measurements') {
+    return (
+      <div className="card max-w-7xl mx-auto">
+        <TrainingBodyMeasurements onBack={() => setSubView('workout')} />
+      </div>
+    );
+  }
+
   return (
     <div className="card max-w-7xl mx-auto relative min-h-[80vh]">
-      <h2 className="text-3xl font-bold text-stone-900 mb-2">Mi Dashboard de Entrenamiento</h2>
-      <p className="text-stone-600 mb-6 font-medium">
-        Tu plan por días con sustitución guiada por tu coach y video de ejecución por ejercicio.
-      </p>
+      <div className="flex flex-wrap items-start justify-between gap-3 mb-4">
+        <div>
+          <h2 className="text-3xl font-bold text-stone-900 mb-2">Mi Dashboard de Entrenamiento</h2>
+          <p className="text-stone-600 font-medium">
+            Tu plan por días con sustitución guiada por tu coach y video de ejecución por ejercicio.
+          </p>
+        </div>
+        <button
+          type="button"
+          className="btn-secondary text-sm"
+          onClick={() => setSubView('measurements')}
+        >
+          Medidas corporales
+        </button>
+      </div>
 
+      {!plan?.dias?.length && (
       <div className="bg-stone-50 border border-stone-200 p-5 rounded-2xl mb-8">
         <h3 className="text-lg font-bold text-stone-900 mb-4">Configuración</h3>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
@@ -287,6 +357,13 @@ export default function TrainingModule() {
           </div>
         </div>
       </div>
+      )}
+
+      {plan?.dias?.length > 0 && (
+        <p className="text-sm text-lime-800 bg-lime-50 border border-lime-200 rounded-xl px-4 py-3 mb-6">
+          Plan asignado por tu entrenador. Registra series, repeticiones y pesos; los videos salen de su galería.
+        </p>
+      )}
 
       {error && <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-4 font-semibold">{error}</div>}
 
@@ -472,7 +549,7 @@ export default function TrainingModule() {
                     )}
                   </div>
                   <p className="text-xs text-stone-600 mt-2">
-                    {ex.prescription?.sets || 3} series x {ex.prescription?.reps || 10} repeticiones | RPE {ex.prescription?.target_rpe || 8}
+                    {ex.prescription?.sets || 3} series x {ex.prescription?.reps || 10} repeticiones | RPE/RIR {ex.prescription?.target_rpe || 8}
                   </p>
                   <div className="mt-3 flex flex-wrap gap-2">
                     {ex.youtube_url ? (
@@ -489,9 +566,9 @@ export default function TrainingModule() {
                     )}
                     <button
                       onClick={() => askAssistant(ex.exercise_name)}
-                      className="text-xs px-3 py-1 rounded-lg bg-stone-200 text-stone-800 font-semibold hover:bg-stone-300"
+                      className="text-xs px-3 py-1 rounded-lg bg-lime-100 text-lime-900 font-semibold hover:bg-lime-200"
                     >
-                      Sustituir
+                      Sustituir (IA gratis)
                     </button>
                   </div>
                   <div className="mt-4 p-3 bg-white border border-stone-200 rounded-lg shadow-sm">
@@ -528,7 +605,7 @@ export default function TrainingModule() {
                         />
                       </div>
                       <div>
-                        <label className="block text-[10px] text-stone-400 uppercase tracking-wide">{ex.intensity_type || 'RPE'} sentido</label>
+                        <label className="block text-[10px] text-stone-400 uppercase tracking-wide">{ex.intensity_type || 'RPE/RIR'} sentido</label>
                         <input
                           type="text"
                           className="w-full bg-stone-50 border border-stone-200 rounded px-2 py-1 text-sm outline-none focus:border-lime-400"
@@ -579,32 +656,69 @@ export default function TrainingModule() {
             <button type="button" onClick={closeModal} className="form-close-btn" aria-label="Cerrar">×</button>
             </div>
             <div className="form-modal-content">
-            <p className="text-stone-600 text-sm mb-4">
+            <p className="text-xs text-lime-800 bg-lime-50 border border-lime-200 rounded-lg px-3 py-2 mb-3">
+              Asistente gratuito: busca alternativas solo en la galería de tu entrenador (sin costo de API).
+            </p>
+            <p className="text-stone-600 text-sm mb-3">
               ¿Por qué quieres reemplazar <strong>{assistantExercise}</strong>?
             </p>
+            <div className="flex flex-wrap gap-2 mb-3">
+              {CAUSE_PRESETS.map((preset) => (
+                <button
+                  key={preset}
+                  type="button"
+                  className={`text-xs px-2 py-1 rounded-full border ${assistantReason === preset ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-stone-300'}`}
+                  onClick={() => setAssistantReason(preset)}
+                >
+                  {preset}
+                </button>
+              ))}
+            </div>
             <textarea
-              className="input mb-4 h-24"
-              placeholder="Ej: dolor de hombro, equipo no disponible, fatiga articular..."
+              className="input mb-4 h-20"
+              placeholder="Detalle opcional: dolor, equipo, fatiga…"
               value={assistantReason}
               onChange={(e) => setAssistantReason(e.target.value)}
             />
             {!assistantResult ? (
               <button className="btn-primary w-full" onClick={submitSubstitution} disabled={assistantLoading}>
-                {assistantLoading ? 'Buscando alternativa…' : 'Buscar sustitución'}
+                {assistantLoading ? 'Buscando en galería…' : 'Buscar sustitución'}
               </button>
             ) : (
-              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mt-2">
+              <div className="bg-green-50 border border-green-200 rounded-xl p-4 mt-2 space-y-3">
                 {assistantResult.error ? (
-                  <p className="text-red-500">{assistantResult.error}</p>
+                  <p className="text-red-600 text-sm">{assistantResult.error}</p>
                 ) : (
                   <>
-                    <h4 className="font-bold text-green-900 mb-1">Sustitución aplicada</h4>
-                    <p className="text-green-800 text-sm mb-2"><strong>Nuevo ejercicio:</strong> {assistantResult.exercise_name}</p>
-                    <div className="flex gap-4">
-                      <span className="text-xs bg-green-200 text-green-900 px-2 py-1 rounded font-bold">Series: {assistantResult.sets}</span>
-                      <span className="text-xs bg-green-200 text-green-900 px-2 py-1 rounded font-bold">Reps: {assistantResult.reps}</span>
+                    <h4 className="font-bold text-green-900">Sustitución aplicada</h4>
+                    <p className="text-green-800 text-sm"><strong>{assistantResult.exercise_name}</strong></p>
+                    <div className="flex flex-wrap gap-2">
+                      <span className="text-xs bg-green-200 text-green-900 px-2 py-1 rounded font-bold">{assistantResult.sets}×{assistantResult.reps}</span>
+                      {assistantResult.intensity_type && (
+                        <span className="text-xs bg-green-200 text-green-900 px-2 py-1 rounded font-bold">
+                          {assistantResult.intensity_type} {assistantResult.intensity_value}
+                        </span>
+                      )}
                     </div>
-                    <p className="text-neutral-600 text-xs mt-3 italic">{assistantResult.reason}</p>
+                    <p className="text-neutral-600 text-xs italic">{assistantResult.reason}</p>
+                    {substituteAlternatives.length > 1 && (
+                      <div>
+                        <p className="text-xs font-bold text-stone-700 mb-2">Otras opciones de la galería:</p>
+                        <div className="space-y-2 max-h-32 overflow-y-auto">
+                          {substituteAlternatives.slice(1).map((alt) => (
+                            <button
+                              key={alt.exercise_name}
+                              type="button"
+                              className="w-full text-left text-xs px-3 py-2 rounded-lg border border-stone-200 bg-white hover:bg-stone-50"
+                              onClick={() => applySubstitution({ ...assistantResult, ...alt, sets: assistantResult.sets, reps: assistantResult.reps })}
+                            >
+                              {alt.exercise_name}
+                              {alt.muscle_group ? ` · ${alt.muscle_group}` : ''}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+                    )}
                   </>
                 )}
               </div>

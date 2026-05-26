@@ -57,11 +57,14 @@ export default function D28dRoutinesMaster({ onBack, readOnly = false, variant =
     try {
       setSaving(true);
       setError('');
-      const payload = { ...form, new_version: newVersion };
+      const saveBody = {
+        ...form,
+        scope: form.scope || (isCoach ? 'coach_wl' : 'd28d_platform'),
+      };
       if (selectedId) {
-        await api.put(`/d28d/routines/${selectedId}`, payload);
+        await api.put(`/d28d/routines/${selectedId}`, { ...saveBody, new_version: newVersion });
       } else {
-        const res = await api.post('/d28d/routines', form);
+        const res = await api.post('/d28d/routines', saveBody);
         setSelectedId(res.data?.data?.id);
       }
       await loadList();
@@ -97,7 +100,7 @@ export default function D28dRoutinesMaster({ onBack, readOnly = false, variant =
   };
 
   const addCategory = async () => {
-    if (readOnly || isCoach || !newCategory.trim()) return;
+    if (readOnly || !newCategory.trim()) return;
     await api.post('/d28d/routines/categories', { nombre: newCategory.trim() });
     setNewCategory('');
     await loadList();
@@ -137,7 +140,7 @@ export default function D28dRoutinesMaster({ onBack, readOnly = false, variant =
         )}
         {!readOnly && isCoach && (
           <div className="flex gap-2 flex-wrap items-end">
-            <button type="button" className="btn-primary" onClick={() => { setSelectedId(null); setForm(emptyRoutine()); setHistory([]); }}>
+            <button type="button" className="btn-primary" onClick={() => { setSelectedId(null); setForm(emptyRoutine({ scope: 'coach_wl' })); setHistory([]); }}>
               Nueva rutina
             </button>
           </div>
@@ -155,7 +158,7 @@ export default function D28dRoutinesMaster({ onBack, readOnly = false, variant =
               <option key={c} value={c}>{c}</option>
             ))}
           </select>
-          {!readOnly && !isCoach && (
+          {!readOnly && (
             <div className="flex gap-2 mb-4">
               <input className="input flex-1 text-sm" placeholder="Nueva categoría" value={newCategory} onChange={(e) => setNewCategory(e.target.value)} />
               <button type="button" className="btn-secondary text-sm" onClick={addCategory}>+</button>

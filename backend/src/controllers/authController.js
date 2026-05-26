@@ -8,10 +8,12 @@ const licenseService = require('../services/licenseService');
 const userRepo = require('../db/repositories/userRepository');
 const { auditAuth } = require('../services/authAudit');
 const { useRelationalStorage } = require('../utils/storageMode');
+const { getCoachTrainerId } = require('../utils/coachScope');
 
 const USE_DB_AUTH = String(process.env.USE_DB_AUTH).toLowerCase() === 'true' || useRelationalStorage();
 
 function signAccessToken(user, access) {
+  const trainer_id = getCoachTrainerId(user) ?? user.trainer_id ?? user.trainerId ?? null;
   return jwt.sign(
     {
       id: user.id,
@@ -21,7 +23,7 @@ function signAccessToken(user, access) {
       permissions: access.permissions,
       module_access: access.module_access,
       gym_id: user.gym_id || user.gymId || null,
-      trainer_id: user.trainer_id || null,
+      trainer_id,
     },
     process.env.JWT_SECRET,
     { expiresIn: process.env.JWT_EXPIRES_IN || '7d' },
@@ -164,7 +166,7 @@ const loginUser = async (req, res) => {
         module_access: access.module_access,
         licenses: access.licenses || [],
         gym_id: user.gym_id || user.gymId || null,
-        trainer_id: user.trainer_id || null,
+        trainer_id: getCoachTrainerId(user) ?? user.trainer_id ?? null,
       },
     });
   } catch (error) {
@@ -209,7 +211,7 @@ const getProfile = async (req, res) => {
       module_access: access.module_access,
       licenses: access.licenses || [],
       gym_id: user.gym_id || user.gymId || null,
-      trainer_id: user.trainer_id || null,
+      trainer_id: getCoachTrainerId(user) ?? user.trainer_id ?? null,
     });
   } catch (error) {
     console.error('Error obteniendo perfil:', error);

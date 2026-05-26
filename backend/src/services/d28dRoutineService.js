@@ -103,11 +103,25 @@ module.exports = {
   },
   updateRoutine: (id, body, { newVersion = false, userId } = {}) => {
     assertRelational();
-    const normalized = normalizeRoutineInput(body);
+    const {
+      new_version: _nv,
+      id: _id,
+      root_id: _rootId,
+      version: _version,
+      is_current: _isCurrent,
+      created_at: _createdAt,
+      updated_at: _updatedAt,
+      trainer_id: _trainerId,
+      created_by: _createdBy,
+      history: _history,
+      ...clean
+    } = body || {};
+    const normalized = normalizeRoutineInput(clean, { partial: true });
     if (newVersion) {
-      return routineRepo.cloneRoutine(id, { versionBump: true, createdBy: userId, overrides: normalized });
+      const full = normalizeRoutineInput(clean);
+      return routineRepo.cloneRoutine(id, { versionBump: true, createdBy: userId, overrides: full });
     }
-    return routineRepo.updateRoutineInPlace(id, normalized);
+    return routineRepo.updateRoutineInPlace(id, clean);
   },
   duplicateRoutine: (id, userId, overrides = {}) => {
     assertRelational();

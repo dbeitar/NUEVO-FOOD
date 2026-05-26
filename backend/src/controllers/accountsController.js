@@ -139,7 +139,7 @@ const deletePlan = (req, res) => {
 };
 
 // Crear nueva suscripción
-const createAccount = (req, res) => {
+const createAccount = async (req, res) => {
   try {
     const { plan, gym_id: bodyGymId, trainer_id: bodyTrainerId } = req.body;
 

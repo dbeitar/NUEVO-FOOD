@@ -20,7 +20,7 @@ export function getTrainingModulePublicUrl() {
 export const TRAINING_LEGACY_VIEWS = new Set([
   'training',
   'admintraining',
-  'coachroutines',
+  'coachai',
   'admingallery',
   'progress',
 ]);
@@ -32,7 +32,7 @@ export function isTrainingLegacyView(viewId) {
 const TRAINING_MODULE_PATHS = {
   training: '/athlete',
   admintraining: '/coach/planning',
-  coachroutines: '/coach/routines',
+  coachai: '/coach/ai',
   admingallery: '/coach/gallery',
   adminusers: '/coach/users',
   progress: '/coach/progress',

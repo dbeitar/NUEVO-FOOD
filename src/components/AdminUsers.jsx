@@ -159,7 +159,10 @@ export default function AdminUsers() {
         });
       } else {
         // Validaciones obligatorias para nuevo usuario
-        if (!formData.planId) {
+        const needsPlan = !isCoachActor
+          && formData.roles.includes('usuario_final')
+          && !formData.roles.includes('entrenador');
+        if (needsPlan && !formData.planId) {
           setError(t('plans.subscription', 'Plan de Suscripción') + ' ' + t('common.name_required', 'Nombre *').replace('Nombre *','es obligatorio'));
           return;
         }
@@ -181,7 +184,7 @@ export default function AdminUsers() {
           gym_id: isCoachActor ? null : (formData.roles.includes('usuario_final') && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined),
           gymId: isCoachActor ? null : (formData.roles.includes('usuario_final') && formData.gym_id ? parseInt(formData.gym_id, 10) : undefined),
           trainer_id: isCoachActor ? (currentUser?.trainer_id || formData.trainer_id) : (formData.trainer_id || null),
-          planId: formData.planId,
+          planId: isCoachActor || formData.roles.includes('entrenador') ? null : formData.planId,
           module_access: formData.module_access,
         });
       }
@@ -378,6 +381,7 @@ export default function AdminUsers() {
               />
             </div>
           )}
+          {!isCoachActor && !formData.roles.includes('entrenador') && formData.roles.includes('usuario_final') && (
           <div>
             <label className="label">{t('plans.subscription', 'Plan de Suscripción')}</label>
             <select 
@@ -391,6 +395,7 @@ export default function AdminUsers() {
               {plans.map(p => <option key={p.nombre} value={p.nombre}>{p.nombre.toUpperCase()}</option>)}
             </select>
           </div>
+          )}
           <div className="md:col-span-2">
             <div className="flex items-baseline justify-between flex-wrap gap-2">
               <label className="label">{t('common.roles', 'Roles')}</label>
@@ -507,8 +512,8 @@ export default function AdminUsers() {
                   !formData.nombre ||
                   !formData.email ||
                   !formData.password ||
-                  !formData.planId ||
-                  (formData.roles.includes('usuario_final') && !formData.gym_id) ||
+                  (!isCoachActor && formData.roles.includes('usuario_final') && !formData.roles.includes('entrenador') && !formData.planId) ||
+                  (formData.roles.includes('usuario_final') && !isCoachActor && !formData.gym_id) ||
                   users.some(u => String(u.email).toLowerCase() === String(formData.email).toLowerCase())
                 )) || formData.roles.length === 0
               }

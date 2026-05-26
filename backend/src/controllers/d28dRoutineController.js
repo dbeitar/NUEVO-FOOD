@@ -1,5 +1,11 @@
 const routineService = require('../services/d28dRoutineService');
-const { isCoachUser } = require('../utils/coachScope');
+const {
+  isCoachUser,
+  getCoachTrainerId,
+  coachCategoryStorageKey,
+  coachCategoryDisplayName,
+  isCoachCategoryStorageKey,
+} = require('../utils/coachScope');
 const {
   canListRoutines,
   canListRoutinesForLive,
@@ -27,9 +33,24 @@ exports.getMeta = async (_req, res) => {
   }
 };
 
-exports.listCategories = async (_req, res) => {
+exports.listCategories = async (req, res) => {
   try {
-    const data = await routineService.listCategories();
+    const coachTid = isCoachUser(req.user) && !canManagePlatform(req.user)
+      ? getCoachTrainerId(req.user)
+      : null;
+    const raw = await routineService.listCategories();
+    let data = raw;
+    if (coachTid != null) {
+      data = raw
+        .map((c) => {
+          const display = coachCategoryDisplayName(c.nombre, coachTid);
+          if (display) return { ...c, nombre: display, coach_owned: true };
+          return null;
+        })
+        .filter(Boolean);
+    } else if (!canManagePlatform(req.user)) {
+      data = raw.filter((c) => !isCoachCategoryStorageKey(c.nombre));
+    }
     return res.json({ success: true, data });
   } catch (err) {
     return sendError(res, err);
@@ -37,10 +58,30 @@ exports.listCategories = async (_req, res) => {
 };
 
 exports.upsertCategory = async (req, res) => {
-  if (!canManagePlatform(req.user)) return res.status(403).json({ success: false, message: 'Sin permiso' });
+  const coachTid = getCoachTrainerId(req.user);
+  const coachOnly = isCoachUser(req.user) && !canManagePlatform(req.user);
+  if (coachOnly) {
+    if (coachTid == null) {
+      return res.status(400).json({ success: false, message: 'Cuenta sin entrenador vinculado' });
+    }
+    if (!canManageCoachRoutines(req.user)) {
+      return res.status(403).json({ success: false, message: 'Sin permiso' });
+    }
+  } else if (!canManagePlatform(req.user)) {
+    return res.status(403).json({ success: false, message: 'Sin permiso' });
+  }
   try {
-    const data = await routineService.upsertCategory(req.body);
-    return res.json({ success: true, data });
+    const body = { ...req.body };
+    if (coachOnly) {
+      const storageName = coachCategoryStorageKey(coachTid, body.nombre);
+      if (!storageName) {
+        return res.status(400).json({ success: false, message: 'Nombre de categoría requerido' });
+      }
+      body.nombre = storageName;
+    }
+    const data = await routineService.upsertCategory(body);
+    const display = coachOnly ? coachCategoryDisplayName(data.nombre, coachTid) : data.nombre;
+    return res.json({ success: true, data: { ...data, nombre: display || data.nombre } });
   } catch (err) {
     return sendError(res, err);
   }
