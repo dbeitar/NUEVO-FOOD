@@ -70,7 +70,7 @@ function FoodShellSsoGate() {
 
     const shellToken = localStorage.getItem('d28d_token');
     if (!handoff && !shellToken) {
-      setError('Token SSO no recibido. Vuelve al inicio y abre Food Plan de nuevo.');
+      setError('Token SSO no recibido. Vuelve al inicio y abre FOOD_PLAN de nuevo.');
       return;
     }
 
@@ -112,7 +112,7 @@ function FoodShellSsoGate() {
         }
 
         if (!payload?.accessToken) {
-          setError('No se recibió sesión Food Plan. Cierra sesión, vuelve a entrar en D28D y abre Food Plan otra vez.');
+          setError('No se recibió sesión FOOD_PLAN. Cierra sesión, vuelve a entrar en D28D y abre FOOD_PLAN otra vez.');
           return;
         }
 
@@ -123,7 +123,7 @@ function FoodShellSsoGate() {
         sessionStorage.removeItem('d28d_food_dest');
         navigate(dest.startsWith('/') ? dest : `/${dest}`, { replace: true });
       } catch (err) {
-        const msg = err.response?.data?.error || err.message || 'Error conectando con Food Plan';
+        const msg = err.response?.data?.error || err.message || 'Error conectando con FOOD_PLAN';
         setError(msg);
       }
     })();
@@ -132,7 +132,7 @@ function FoodShellSsoGate() {
   return (
     <div className="min-h-screen grid place-items-center p-6 bg-gray-50">
       <div className="text-center max-w-md">
-        <h1 className="text-xl font-semibold text-primary-700 mb-2">Food Plan</h1>
+        <h1 className="text-xl font-semibold text-primary-700 mb-2">FOOD_PLAN</h1>
         {error ? (
           <>
             <p className="text-red-600 mb-4">{error}</p>
