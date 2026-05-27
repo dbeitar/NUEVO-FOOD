@@ -25,8 +25,11 @@ yarn-error.log*
 *.log
 backend/logs/
 
-# Evidencias de pruebas (queremos versionarlas)
-!docs/test-runs/*.log
+# Performance test artifacts (keep structure, ignore raw runs)
+performance/results/*.json
+performance/results/*.csv
+performance/results/*.md
+!performance/results/.gitkeep
 
 # Archivos temporales y de sistema
 .DS_Store

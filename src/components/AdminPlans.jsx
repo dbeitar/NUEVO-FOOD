@@ -240,7 +240,7 @@ export default function AdminPlans({
   const pageTitle = title || (fixedKind === 'training'
     ? 'Plan comercial Entrenadores'
     : fixedKind === 'food'
-      ? 'Plan comercial Alimentación'
+      ? 'Plan comercial FOOD_PLAN'
     : fixedKind === 'd28d'
       ? 'Planes D28D por programa'
       : t('plans.title', 'Planes de Suscripción'));
@@ -278,7 +278,7 @@ export default function AdminPlans({
       {singlePlanOnly && plans.length >= 1 && !showForm && (
         <p className="text-sm text-stone-600">
           {fixedKind === 'food'
-            ? 'Solo puede existir un plan comercial de Alimentación. Edita el existente.'
+            ? 'Solo puede existir un plan comercial de FOOD_PLAN. Edita el existente.'
             : 'Solo puede existir un plan comercial de Entrenadores. Edita el existente.'}
         </p>
       )}
@@ -345,7 +345,7 @@ export default function AdminPlans({
                 <label className="label">Tipo</label>
                 <select name="kind" value={formData.kind} onChange={handleInputChange} className="input">
                 <option value="d28d">D28D</option>
-                <option value="food">Alimentación</option>
+                <option value="food">FOOD_PLAN</option>
                 <option value="training">Entrenadores</option>
               </select>
               </div>
@@ -377,7 +377,7 @@ export default function AdminPlans({
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
-                <label className="label">{t('plans.monthly_price', 'Precio Mensual (COP)')}</label>
+                <label className="label">Precio COP</label>
                 <input 
                   name="precio_mensual" 
                   type="number" 
@@ -388,7 +388,7 @@ export default function AdminPlans({
                 />
               </div>
               <div>
-                <label className="label">Precio Mensual (USD)</label>
+                <label className="label">Precio USD</label>
                 <input
                   name="precio_mensual_usd"
                   type="number"

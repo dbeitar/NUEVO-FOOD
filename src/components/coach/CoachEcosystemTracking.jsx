@@ -21,7 +21,7 @@ function FoodCoachTrackingPanel() {
           params: { return_url: returnUrl, dest: foodDest, panel: 'trainer' },
         });
         let nextUrl = res.data?.data?.url || '';
-        if (!nextUrl) throw new Error('No se recibió URL del módulo Food');
+        if (!nextUrl) throw new Error('No se recibió URL del módulo FOOD_PLAN');
         try {
           const u = new URL(nextUrl, window.location.origin);
           u.searchParams.set('dest', foodDest);
@@ -29,7 +29,7 @@ function FoodCoachTrackingPanel() {
         } catch { /* noop */ }
         if (active) setUrl(nextUrl);
       } catch (e) {
-        const msg = e?.response?.data?.error || e?.message || 'No se pudo abrir Seguimiento Food';
+        const msg = e?.response?.data?.error || e?.message || 'No se pudo abrir Seguimiento FOOD_PLAN';
         if (active) setError(msg);
       } finally {
         if (active) setLoading(false);
@@ -39,17 +39,17 @@ function FoodCoachTrackingPanel() {
   }, []);
 
   if (loading) {
-    return <div className="card p-6 text-stone-600">Cargando Seguimiento Food…</div>;
+    return <div className="card p-6 text-stone-600">Cargando Seguimiento FOOD_PLAN…</div>;
   }
   if (error) {
     return (
       <div className="card p-6">
-        <h3 className="font-bold text-stone-900 mb-2">Seguimiento Food</h3>
+        <h3 className="font-bold text-stone-900 mb-2">Seguimiento FOOD_PLAN</h3>
         <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-xl p-3">
           {error}
         </p>
         <p className="text-xs text-stone-500 mt-3">
-          Nota: este panel requiere licencia activa del módulo <strong>food</strong>.
+          Nota: este panel requiere licencia activa de <strong>FOOD_PLAN</strong>.
         </p>
       </div>
     );
@@ -58,9 +58,9 @@ function FoodCoachTrackingPanel() {
   return (
     <div className="card overflow-hidden">
       <div className="px-4 py-3 border-b border-stone-200 bg-white">
-        <h3 className="font-bold text-stone-900">Seguimiento Food</h3>
+        <h3 className="font-bold text-stone-900">Seguimiento FOOD_PLAN</h3>
         <p className="text-xs text-stone-500">
-          Panel del entrenador en Food Plan (
+          Panel del entrenador en FOOD_PLAN (
           <a href="https://foodplan.tech/trainer" target="_blank" rel="noreferrer" className="underline">
             foodplan.tech/trainer
           </a>
@@ -84,7 +84,7 @@ export default function CoachEcosystemTracking({ onBack = null }) {
 
   const tabs = useMemo(() => ([
     { id: 'training', label: 'Seguimiento Training' },
-    { id: 'food', label: 'Seguimiento Food' },
+    { id: 'food', label: 'Seguimiento FOOD_PLAN' },
   ]), []);
 
   return (
@@ -98,7 +98,7 @@ export default function CoachEcosystemTracking({ onBack = null }) {
               </button>
             )}
             <h1 className="d28d-page-title">Seguimiento</h1>
-            <p className="d28d-text-muted subtitle">Dashboard profesional de coach (Training + Food).</p>
+            <p className="d28d-text-muted subtitle">Dashboard profesional de coach (Training + FOOD_PLAN).</p>
           </div>
           <div className="flex flex-wrap gap-2 items-end">
             {tabs.map((t) => (

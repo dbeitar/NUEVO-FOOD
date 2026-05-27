@@ -45,10 +45,10 @@ const VIRTUAL_PLANS = [
 
 const FOOD_TRAINING_PLANS = [
   {
-    nombre: 'Plan Alimentación',
+    nombre: 'FOOD_PLAN',
     program_id: 'food',
     kind: 'food',
-    descripcion: 'Acceso al módulo de plan de alimentación',
+    descripcion: 'Acceso al módulo FOOD_PLAN',
     precio_mensual: 79000,
     precio_mensual_usd: 20,
     features: ['Calculadora', 'Recetas', 'Registro diario'],

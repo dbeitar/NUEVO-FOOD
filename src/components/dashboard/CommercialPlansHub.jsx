@@ -6,7 +6,7 @@ import AdminProgramInvites from '../AdminProgramInvites';
 
 const TABS = [
   { id: 'd28d', label: 'Planes D28D' },
-  { id: 'food', label: 'Plan Alimentación' },
+  { id: 'food', label: 'FOOD_PLAN' },
   { id: 'training', label: 'Plan Entrenadores' },
   { id: 'invites', label: 'Códigos por programa' },
 ];
@@ -21,7 +21,7 @@ export default function CommercialPlansHub({ onBack, onOpenVigencias }) {
         <AdminPlans
           mode="food"
           singlePlanOnly
-          title="Plan comercial — Alimentación"
+          title="Plan comercial — FOOD_PLAN"
           embedded
         />
       );

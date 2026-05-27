@@ -52,7 +52,7 @@ async function deliverFoodSession(res, user, { handoffToken = null, auditAction 
     roles: ctx.roles,
   });
   if (!session.ok) {
-    return res.status(502).json({ error: session.error || 'No se pudo abrir Food Plan' });
+    return res.status(502).json({ error: session.error || 'No se pudo abrir FOOD_PLAN' });
   }
   auditFood(user.id, auditAction, 'Sesión Food entregada al shell embebido', {
     food_user_id: user.food_user_id,

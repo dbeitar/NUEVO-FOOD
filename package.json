@@ -30,7 +30,12 @@
     "test:e2e": "node scripts/e2e_full_system_test.mjs http://localhost:3002/api",
     "test:comm": "node scripts/test_communication_e2e.mjs http://localhost:3002/api",
     "test:commercial": "node scripts/test_commercial_consolidation_e2e.mjs http://localhost:3002/api",
-    "test:ux": "node scripts/test_ux_adherence_e2e.mjs http://localhost:3002/api"
+    "test:ux": "node scripts/test_ux_adherence_e2e.mjs http://localhost:3002/api",
+    "perf:postgres": "node performance/analyze/postgres-audit.mjs",
+    "perf:capacity": "node performance/analyze/capacity-estimate.mjs",
+    "perf:parse": "node performance/analyze/parse-k6-summaries.mjs",
+    "perf:smoke": "K6_PROFILE=smoke bash performance/run-suite.sh",
+    "perf:full": "K6_PROFILE=full bash performance/run-suite.sh"
   },
   "keywords": [],
   "author": "",

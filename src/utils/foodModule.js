@@ -30,7 +30,7 @@ export function isFoodLegacyView(viewId) {
   return FOOD_LEGACY_VIEWS.has(viewId);
 }
 
-/** Abre Food Plan embebido en /food-plan con SSO (shell → food-module/exchange). */
+/** Abre FOOD_PLAN embebido en /food-plan con SSO (shell → food-module/exchange). */
 export async function openFoodModule(returnPath) {
   if (isFoodLegacyMode()) {
     return;
@@ -61,10 +61,10 @@ export async function openFoodModule(returnPath) {
       return;
     }
   } catch (e) {
-    const msg = e.response?.data?.error || e.message || 'No se pudo abrir Food Plan';
+    const msg = e.response?.data?.error || e.message || 'No se pudo abrir FOOD_PLAN';
     console.warn('[food] launch SSO:', msg);
     window.alert(msg);
     return;
   }
-  window.alert('No se recibió URL de Food Plan. Comprueba que tienes licencia food activa.');
+  window.alert('No se recibió URL de FOOD_PLAN. Comprueba que tienes licencia food activa.');
 }

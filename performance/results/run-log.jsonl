@@ -1,0 +1,10 @@
+{"scenario":"01-health","script":"01-health.js","exit_code":0,"at":"2026-05-27T14:37:58Z"}
+{"scenario":"02-login","script":"02-login.js","exit_code":99,"at":"2026-05-27T14:39:59Z"}
+{"scenario":"06-communication","script":"06-communication.js","exit_code":0,"at":"2026-05-27T14:42:06Z"}
+{"scenario":"11-audit","script":"11-audit-writes.js","exit_code":99,"at":"2026-05-27T14:44:13Z"}
+{"scenario":"03-usuario-final","script":"03-usuario-final.js","exit_code":99,"at":"2026-05-27T14:47:21Z"}
+{"scenario":"04-d28d","script":"04-d28d.js","exit_code":0,"at":"2026-05-27T14:50:27Z"}
+{"scenario":"05-training","script":"05-training.js","exit_code":99,"at":"2026-05-27T14:53:35Z"}
+{"scenario":"07-stress","script":"07-stress.js","exit_code":0,"at":"2026-05-27T14:56:36Z"}
+{"scenario":"08-spike","script":"08-spike.js","exit_code":0,"at":"2026-05-27T14:58:39Z"}
+{"scenario":"09-endurance","script":"09-endurance.js","exit_code":99,"at":"2026-05-27T15:13:49Z"}

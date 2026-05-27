@@ -7,7 +7,7 @@ import { fetchPaymentMethods, openWompiCheckout } from '../utils/paymentMethods'
 
 const SERVICES = [
   { id: 'd28d', label: 'D28D', desc: 'Programas Vital, Pancitas o Virtual' },
-  { id: 'food', label: 'Plan de Alimentación', desc: 'Nutrición y registro de alimentos' },
+  { id: 'food', label: 'FOOD_PLAN', desc: 'Nutrición y registro de alimentos' },
   { id: 'training', label: 'Entrenadores', desc: 'Rutinas y seguimiento con coach' },
 ];
 

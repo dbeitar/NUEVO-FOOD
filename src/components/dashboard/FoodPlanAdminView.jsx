@@ -40,10 +40,9 @@ export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack, food
         <button type="button" className="text-sm text-stone-600 mb-4 hover:underline" onClick={onBack}>
           ← Volver
         </button>
-        <h3 className="text-xl font-bold text-stone-900 mb-2">Plan de Alimentación (Food Plan)</h3>
+        <h3 className="text-xl font-bold text-stone-900 mb-2">FOOD_PLAN</h3>
         <p className="text-stone-600 mb-4">
-          El módulo nutricional opera en Food Plan embebido (<code className="text-xs">/food-plan</code>).
-          Las rutas legacy del monolito requieren <code className="text-xs">VITE_FOOD_LEGACY=true</code>.
+          El módulo nutricional opera en FOOD_PLAN embebido (<code className="text-xs">/food-plan</code>).
         </p>
         <a
           href={url}
@@ -51,7 +50,7 @@ export default function FoodPlanAdminView({ hasAnyRole, onNavigate, onBack, food
           rel="noopener noreferrer"
           className="btn-primary inline-block"
         >
-          Abrir Food Plan
+          Abrir FOOD_PLAN
         </a>
       </div>
     );

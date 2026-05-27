@@ -119,9 +119,9 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
       </div>
       {DEV_PILOT_HINTS.length > 0 && (
         <div className="mt-6 p-4 rounded-xl border border-amber-200 bg-amber-50 text-left text-xs text-stone-700">
-          <p className="font-semibold text-stone-900 mb-2">Desarrollo — acceso rápido</p>
+          <p className="font-semibold text-stone-900 mb-2">Acceso rápido</p>
           <p className="mb-2">
-            Contraseña piloto (tras <code className="bg-white px-1 rounded">npm run seed:dev</code> o reiniciar backend):
+            Contraseña de demostración (si tu entorno fue inicializado con cuentas demo):
             <strong className="ml-1">{DEV_DEFAULT_PASSWORD}</strong>
           </p>
           <ul className="space-y-1 font-mono">

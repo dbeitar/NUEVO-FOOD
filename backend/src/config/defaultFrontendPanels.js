@@ -6,7 +6,7 @@ function card(title, desc, img = '', alt = '') {
 const DEFAULT_PANELS = {
   'food-plan': {
     hero: {
-      title: 'Plan de Alimentación',
+      title: 'FOOD_PLAN',
       subtitle: 'Planes, alimentos y herramientas nutricionales.',
       img: 'https://images.unsplash.com/photo-1490645935967-10de6ba17061?auto=format&fit=crop&w=800&q=80',
     },

@@ -274,7 +274,7 @@ export default function AdminProgramInvites({ onBack, embedded = false }) {
                   </td>
                 </tr>
               )) : (
-                <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-400">Sin códigos. Crea uno o ejecuta hydrate para seeds.</td></tr>
+                <tr><td colSpan={5} className="px-4 py-6 text-center text-slate-400">Sin códigos. Crea uno para este programa.</td></tr>
               )}
             </tbody>
           </table>

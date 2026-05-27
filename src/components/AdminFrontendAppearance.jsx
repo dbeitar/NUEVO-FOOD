@@ -8,7 +8,7 @@ import { resolveMediaUrl } from '../utils/mediaUrl';
 
 const SERVICE_IDS = [
   { id: 'd28d', label: 'D28D' },
-  { id: 'food-plan', label: 'Plan de Alimentación' },
+  { id: 'food-plan', label: 'FOOD_PLAN' },
   { id: 'training', label: 'Entrenadores' },
   { id: 'gym', label: 'Gimnasio' },
   { id: 'live-classes', label: 'Clases en Vivo' },
@@ -16,7 +16,7 @@ const SERVICE_IDS = [
 
 const MASTER_IDS = [
   { id: 'd28d', label: 'Maestro D28D' },
-  { id: 'food-plan', label: 'Maestro Alimentación' },
+  { id: 'food-plan', label: 'Maestro FOOD_PLAN' },
   { id: 'training', label: 'Maestro Entrenadores' },
 ];
 
@@ -27,7 +27,7 @@ const PROGRAM_IDS = [
 ];
 
 const PANEL_IDS = [
-  { id: 'food-plan', label: 'Panel Alimentación' },
+  { id: 'food-plan', label: 'Panel FOOD_PLAN' },
   { id: 'training', label: 'Panel Entrenadores' },
   { id: 'gym', label: 'Panel Gimnasio' },
   { id: 'd28d', label: 'Panel D28D' },

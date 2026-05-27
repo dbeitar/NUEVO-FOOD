@@ -128,7 +128,7 @@ const createPlan = async (req, res) => {
     if (planKind === 'food') {
       const existingFood = AccountsDatabase.getPlanes().filter((p) => String(p.kind) === 'food');
       if (existingFood.length >= 1) {
-        return res.status(409).json({ error: 'Solo puede existir un plan comercial de Alimentación' });
+        return res.status(409).json({ error: 'Solo puede existir un plan comercial de FOOD_PLAN' });
       }
     }
     const {
