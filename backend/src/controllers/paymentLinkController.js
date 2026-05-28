@@ -4,7 +4,7 @@ const JsonStore = require('../utils/JsonStore');
 const { WOMPI_DEFAULT } = require('../services/paymentNotifyService');
 
 const DEFAULT_LINKS = [
-  { module_code: 'food', label: 'Pago Plan Alimentación', payment_url: WOMPI_DEFAULT, active: true, in_person_enabled: true, in_person_label: 'Pago en sede', online_label: 'Pago en línea (Wompi)', sort_order: 1 },
+  { module_code: 'food', label: 'Pago FOOD_PLAN', payment_url: WOMPI_DEFAULT, active: true, in_person_enabled: true, in_person_label: 'Pago en sede', online_label: 'Pago en línea (Wompi)', sort_order: 1 },
   { module_code: 'training', label: 'Pago Entrenamiento', payment_url: WOMPI_DEFAULT, active: true, in_person_enabled: true, in_person_label: 'Pago en sede', online_label: 'Pago en línea (Wompi)', sort_order: 2 },
   { module_code: 'd28d', label: 'Pago D28D', payment_url: WOMPI_DEFAULT, active: true, in_person_enabled: true, in_person_label: 'Pago en sede', online_label: 'Pago en línea (Wompi)', sort_order: 3 },
   { module_code: 'gym', label: 'Pago Gimnasio', payment_url: WOMPI_DEFAULT, active: true, in_person_enabled: true, in_person_label: 'Pago en sede', online_label: 'Pago en línea (Wompi)', sort_order: 4 },

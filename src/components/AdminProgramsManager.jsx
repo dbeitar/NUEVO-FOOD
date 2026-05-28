@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import api from '../services/api';
+import ProgramEditorTabs from './ProgramEditorTabs';
 import {
   Settings, Save, ShieldCheck, Calendar, Info, Plus, Trash2, Pencil,
 } from 'lucide-react';
@@ -32,7 +33,7 @@ export default function AdminProgramsManager() {
   const [message, setMessage] = useState('');
 
   // Estado de edición de programa
-  const [editingProgramId, setEditingProgramId] = useState(null);
+  const [editingProgram, setEditingProgram] = useState(null);
   const [programForm, setProgramForm] = useState(emptyProgramForm);
   const [creatingProgram, setCreatingProgram] = useState(false);
 
@@ -78,7 +79,7 @@ export default function AdminProgramsManager() {
 
   const startEditProgram = (p) => {
     setCreatingProgram(false);
-    setEditingProgramId(p.id);
+    setEditingProgram(p);
     setProgramForm({
       id: p.id,
       name: p.name || '',
@@ -90,13 +91,13 @@ export default function AdminProgramsManager() {
   };
 
   const startCreateProgram = () => {
-    setEditingProgramId(null);
+    setEditingProgram(null);
     setCreatingProgram(true);
     setProgramForm({ ...emptyProgramForm, active_cycle_id: cycles[0]?.id ?? 1 });
   };
 
   const cancelProgramForm = () => {
-    setEditingProgramId(null);
+    setEditingProgram(null);
     setCreatingProgram(false);
     setProgramForm(emptyProgramForm);
   };
@@ -118,8 +119,8 @@ export default function AdminProgramsManager() {
           zoom_email: programForm.zoom_email.trim() || undefined,
         });
         setMessage('Programa creado');
-      } else if (editingProgramId) {
-        await api.put(`/programs/${editingProgramId}`, {
+      } else if (programForm.id) {
+        await api.put(`/programs/${programForm.id}`, {
           name: programForm.name.trim(),
           color: programForm.color,
           active: programForm.active,
@@ -223,7 +224,7 @@ export default function AdminProgramsManager() {
     <form onSubmit={submitProgram} className="bg-white rounded-3xl shadow-sm border border-slate-200 p-5 mb-6 space-y-4">
       <div className="flex items-center justify-between border-b border-slate-200 pb-2">
         <h4 className="text-md font-semibold text-stone-900">
-          {creatingProgram ? 'Nuevo programa D28D' : `Editar programa: ${programForm.name || editingProgramId}`}
+          {creatingProgram ? 'Nuevo programa D28D' : `Editar programa: ${programForm.name || programForm.id}`}
         </h4>
         <button type="button" className="btn-secondary text-xs" onClick={cancelProgramForm}>Cerrar</button>
       </div>
@@ -378,9 +379,18 @@ export default function AdminProgramsManager() {
           </button>
         </div>
 
-        {(creatingProgram || editingProgramId) && renderProgramForm()}
+        {(creatingProgram) && renderProgramForm()}
 
-        {programs.length === 0 ? (
+        {editingProgram && (
+          <ProgramEditorTabs
+            program={editingProgram}
+            cycles={cycles}
+            onClose={cancelProgramForm}
+            onSaved={fetchPrograms}
+          />
+        )}
+
+        {!editingProgram && (programs.length === 0 ? (
           <div className="bg-white rounded-3xl border border-dashed border-slate-300 p-8 text-center text-stone-600">
             Aún no hay programas. Crea el primero.
           </div>
@@ -451,7 +461,7 @@ export default function AdminProgramsManager() {
               );
             })}
           </div>
-        )}
+        ))}
       </section>
 
       {/* ============================ CICLOS ================================== */}

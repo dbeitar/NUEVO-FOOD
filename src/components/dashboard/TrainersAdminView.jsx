@@ -33,8 +33,7 @@ export default function TrainersAdminView({
         </button>
         <h3 className="text-xl font-bold text-stone-900 mb-2">Módulo Entrenadores</h3>
         <p className="text-stone-600 mb-4">
-          Opera en el módulo embebido (<code className="text-xs">/training-module</code>), igual que Food Plan.
-          El panel legacy del shell requiere <code className="text-xs">VITE_TRAINING_LEGACY=true</code>.
+          Opera en el módulo embebido (<code className="text-xs">/training-module</code>), igual que FOOD_PLAN.
         </p>
         <button type="button" className="btn-primary" onClick={() => openTrainingModule('/dashboard', '/coach')}>
           Abrir módulo Entrenadores

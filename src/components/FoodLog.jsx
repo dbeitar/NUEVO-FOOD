@@ -368,7 +368,7 @@ export default function FoodLog() {
       <div className="two-col-grid">
         <div className="left-col">
           <div className="plan-summary">
-            <h2>{t('foodlog.nutrition_plan', 'Plan Nutricional')}</h2>
+            <h2>{t('foodlog.nutrition_plan', 'FOOD_PLAN')}</h2>
             <div className="totals-card">
               <div className="progress-item">
                 <label>{t('ai.calories', 'Calorías')}</label>

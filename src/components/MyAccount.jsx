@@ -6,6 +6,7 @@ import { emitToast } from '../context/toast';
 import { useI18n } from '../context/useI18n';
 import CoachBrandingPanel from './CoachBrandingPanel';
 import { fetchPaymentMethods, openWompiCheckout } from '../utils/paymentMethods';
+import { buildWaMeUrl, resolvePlanSupport } from '../utils/whatsappSupport';
 
 export default function MyAccount() {
   const { user, refreshProfile } = useAuth();
@@ -19,6 +20,8 @@ export default function MyAccount() {
   })();
   const [plans, setPlans] = useState([]);
   const [currentPlan, setCurrentPlan] = useState(null);
+  const [myServices, setMyServices] = useState([]);
+  const [planSupport, setPlanSupport] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [handledPending, setHandledPending] = useState(false);
@@ -28,9 +31,11 @@ export default function MyAccount() {
   const [trainers, setTrainers] = useState([]);
   const [showModal, setShowModal] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState(null);
+  const [cycles, setCycles] = useState([]);
   const [formData, setFormData] = useState({
     gym_id: '',
     trainer_id: '',
+    cycle_id: '',
     metodoPago: 'wompi_online',
     module_code: 'd28d',
   });
@@ -51,10 +56,14 @@ export default function MyAccount() {
     return 'badge-slate';
   };
 
+  const userProgramId = user?.module_access?.d28d_program || null;
+
   const fetchData = useCallback(async () => {
     try {
       setLoading(true);
-      const plansRes = await api.get('/accounts/plans');
+      const planParams = { kind: 'd28d' };
+      if (userProgramId) planParams.program_id = userProgramId;
+      const plansRes = await api.get('/accounts/plans', { params: planParams });
       setPlans(plansRes.data || []);
       if (!isPlanSelection) {
         try {
@@ -62,6 +71,7 @@ export default function MyAccount() {
           const d = myAccountRes.data;
           if (d && typeof d === 'object' && ('hasAccount' in d)) {
             setCurrentPlan(d.hasAccount ? d.account : null);
+            setPlanSupport(d.plan_support || null);
           } else {
             // Compatibilidad con respuesta antigua (objeto cuenta directa)
             setCurrentPlan(d || null);
@@ -69,26 +79,79 @@ export default function MyAccount() {
         } catch {
           console.warn('Sin plan activo al consultar /accounts/me');
         }
+        try {
+          const svcRes = await api.get('/accounts/my-services');
+          setMyServices(svcRes.data?.services || []);
+        } catch {
+          setMyServices([]);
+        }
       }
     } catch (err) {
       console.error('Error fetching account data:', err);
     } finally {
       setLoading(false);
     }
-  }, [isPlanSelection]);
+  }, [isPlanSelection, userProgramId]);
 
   const fetchOptions = useCallback(async () => {
     try {
-      const [gymsRes, trainersRes] = await Promise.all([
+      const [gymsRes, trainersRes, cyclesRes] = await Promise.all([
         api.get('/gyms'),
-        api.get('/trainers')
+        api.get('/trainers'),
+        api.get('/cycles'),
       ]);
       setGyms(gymsRes.data || []);
       setTrainers(trainersRes.data || []);
+      setCycles(cyclesRes.data?.data || []);
     } catch (err) {
       console.error('Error cargando opciones:', err);
     }
   }, []);
+
+  const handleContactSupport = async () => {
+    let support = planSupport;
+    if (!support) {
+      try {
+        const res = await api.get('/communications/support');
+        support = res.data?.data;
+        setPlanSupport(support);
+      } catch {
+        const planName = currentPlan?.plan;
+        const fromList = plans.find((p) => p.nombre === planName);
+        support = resolvePlanSupport(fromList);
+      }
+    }
+    const url = support?.wa_url || buildWaMeUrl('573192635819', support?.support_message);
+    try {
+      await api.post('/communications/whatsapp/click', {
+        plan_nombre: currentPlan?.plan || null,
+        program_id: user?.module_access?.d28d_program || null,
+        kind: user?.module_access?.training ? 'training' : (user?.module_access?.food_plan ? 'food' : 'd28d'),
+        whatsapp: support?.support_whatsapp,
+        message: support?.support_message,
+      });
+    } catch {
+      /* no bloquear apertura */
+    }
+    window.open(url, '_blank', 'noopener,noreferrer');
+  };
+
+  const copyCoupleCode = async () => {
+    const code = currentPlan?.couple_invite_code;
+    if (!code) return;
+    try {
+      await navigator.clipboard.writeText(code);
+      emitToast({ type: 'success', title: 'Copiado', message: 'Código de pareja copiado al portapapeles' });
+    } catch {
+      emitToast({ type: 'info', title: code, message: 'Copia el código manualmente' });
+    }
+  };
+
+  const cyclesForPlan = (plan) => {
+    const ids = Array.isArray(plan?.cycle_ids) ? plan.cycle_ids : [];
+    if (!ids.length) return cycles;
+    return cycles.filter((c) => ids.includes(Number(c.id)));
+  };
 
   useEffect(() => {
     fetchData();
@@ -137,8 +200,10 @@ export default function MyAccount() {
 
   const openSubscribeModal = (plan) => {
     setSelectedPlan(plan);
+    const allowed = cyclesForPlan(plan);
+    const defaultCycle = allowed.length === 1 ? String(allowed[0].id) : '';
     setShowModal(true);
-    setFormData(prev => ({ ...prev, gym_id: '', trainer_id: '' }));
+    setFormData((prev) => ({ ...prev, gym_id: '', trainer_id: '', cycle_id: defaultCycle }));
   };
 
   const handleSubscribe = async (e) => {
@@ -150,8 +215,9 @@ export default function MyAccount() {
     try {
       const res = await api.post('/accounts', {
         plan: selectedPlan.nombre,
-        gym_id: formData.gym_id ? parseInt(formData.gym_id) : null,
-        trainer_id: formData.trainer_id ? parseInt(formData.trainer_id) : null,
+        gym_id: formData.gym_id ? parseInt(formData.gym_id, 10) : null,
+        trainer_id: formData.trainer_id ? parseInt(formData.trainer_id, 10) : null,
+        cycle_id: formData.cycle_id ? parseInt(formData.cycle_id, 10) : null,
         metodoPago: formData.metodoPago,
         module_code: formData.module_code || 'd28d',
       });
@@ -168,6 +234,7 @@ export default function MyAccount() {
           : `Plan ${selectedPlan.nombre.toUpperCase()} activado`,
       });
       setCurrentPlan(payload.account || null);
+      await refreshProfile();
       setShowModal(false);
       if (isPlanSelection) window.location.assign('/my-account');
     } catch (err) {
@@ -239,6 +306,53 @@ export default function MyAccount() {
 
       {error && <div className="card border border-red-800 text-red-400">{error}</div>}
 
+      {!isPlanSelection && myServices.length > 0 && (
+        <section className="space-y-4">
+          <h3 className="font-sans font-bold text-stone-900">Mis Servicios</h3>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+            {myServices.map((svc) => (
+              <div key={svc.service} className="card border border-slate-200">
+                <div className="flex items-center justify-between mb-2">
+                  <h4 className="text-lg font-bold text-stone-900">{svc.label}</h4>
+                  <span className={`badge ${getEstadoBadgeClass(svc.status)}`}>{svc.status}</span>
+                </div>
+                {svc.program_name && (
+                  <p className="text-sm text-stone-600">Programa: <strong>{svc.program_name}</strong></p>
+                )}
+                {svc.plan && (
+                  <p className="text-sm text-stone-600">Plan: <strong>{svc.plan}</strong></p>
+                )}
+                {svc.valid_from && (
+                  <p className="text-xs text-stone-500 mt-1">Inicio: {new Date(svc.valid_from).toLocaleDateString()}</p>
+                )}
+                {svc.valid_until && (
+                  <p className="text-xs text-stone-500">Vence: {new Date(svc.valid_until).toLocaleDateString()}</p>
+                )}
+                {svc.plan_support?.support_activo !== false && (
+                  <button
+                    type="button"
+                    className="btn-secondary text-xs mt-3 w-full"
+                    onClick={async () => {
+                      const url = svc.plan_support?.wa_url || buildWaMeUrl('573192635819', svc.plan_support?.support_message);
+                      try {
+                        await api.post('/communications/whatsapp/click', {
+                          plan_nombre: svc.plan,
+                          program_id: svc.program_id,
+                          kind: svc.service,
+                        });
+                      } catch { /* noop */ }
+                      window.open(url, '_blank', 'noopener,noreferrer');
+                    }}
+                  >
+                    WhatsApp soporte
+                  </button>
+                )}
+              </div>
+            ))}
+          </div>
+        </section>
+      )}
+
       {!isPlanSelection && (
         <section className="space-y-4">
           <h3 className="font-sans font-bold text-stone-900">{t('myaccount.current_subscription', 'Mi Suscripción Actual')}</h3>
@@ -249,8 +363,31 @@ export default function MyAccount() {
                 <p>{t('common.role', 'Rol')}: <span className={`badge ${getEstadoBadgeClass(currentPlan.estado)}`}>{currentPlan.estado}</span></p>
                 <p>{t('myaccount.expires', 'Vence')}: {new Date(currentPlan.fecha_vencimiento).toLocaleDateString()}</p>
                 <p>{t('myaccount.gym', 'Sede')}: {gyms.find(g => g.id === currentPlan.gym_id)?.nombre || 'N/A'}</p>
-                <p>{t('myaccount.trainer', 'Entrenador')}: {trainers.find(t => t.id === currentPlan.trainer_id)?.nombre || 'Ninguno'}</p>
+                <p>{t('myaccount.trainer', 'Entrenador')}: {trainers.find(tr => tr.id === currentPlan.trainer_id)?.nombre || 'Ninguno'}</p>
                 <p>{t('myaccount.sessions_left', 'Sesiones Restantes')}: {currentPlan.sesiones_restantes}</p>
+                {currentPlan.cycle_id ? (
+                  <p>Ciclo D28D: {cycles.find((c) => Number(c.id) === Number(currentPlan.cycle_id))?.name || currentPlan.cycle_id}</p>
+                ) : null}
+              </div>
+              {currentPlan.couple_invite_code && !currentPlan.couple_invite_used_by_user_id && (
+                <div className="mt-4 p-4 rounded-xl bg-lime-50 border border-lime-200">
+                  <p className="text-sm font-semibold text-stone-800 mb-1">Código para tu pareja (un solo uso)</p>
+                  <p className="font-mono text-lg text-lime-800 break-all">{currentPlan.couple_invite_code}</p>
+                  <button type="button" className="btn-secondary mt-2" onClick={copyCoupleCode}>
+                    Copiar código
+                  </button>
+                  <p className="text-xs text-stone-500 mt-2">Compártelo en el registro; heredará plan, programa y vigencia.</p>
+                </div>
+              )}
+              {currentPlan.primary_account_id && (
+                <p className="text-sm text-stone-500 mt-3">Cuenta vinculada a plan de pareja (invitado).</p>
+              )}
+              <div className="mt-4 pt-4 border-t border-stone-200">
+                <p className="text-sm font-semibold text-stone-800 mb-2">Soporte</p>
+                <button type="button" className="btn-primary" onClick={handleContactSupport}>
+                  CONTACTAR SOPORTE
+                </button>
+                <p className="text-xs text-stone-500 mt-2">Se abrirá WhatsApp con el mensaje configurado para tu plan.</p>
               </div>
             </div>
           ) : (
@@ -305,7 +442,16 @@ export default function MyAccount() {
               className={`card ${currentPlan?.plan === plan.nombre ? 'ring-2 ring-lime-400' : ''}`}
             >
               <h4 className="text-xl font-bold text-stone-900 mb-1">{plan.nombre.toUpperCase()}</h4>
-              <p className="text-2xl font-extrabold text-lime-600 mb-2">${plan.precio_mensual.toLocaleString()} <span className="text-sm text-stone-600 font-medium">/ mes</span></p>
+              <p className="text-2xl font-extrabold text-lime-600 mb-2">
+                ${plan.precio_mensual.toLocaleString()} COP
+                {plan.precio_mensual_usd > 0 && (
+                  <span className="text-base text-stone-600 font-semibold"> · USD {plan.precio_mensual_usd}</span>
+                )}
+                <span className="text-sm text-stone-600 font-medium"> / mes</span>
+              </p>
+              {plan.is_couple && (
+                <p className="text-xs text-lime-700 font-medium mb-2">Plan de pareja — incluye código para 2.ª persona</p>
+              )}
               <p className="text-stone-600 mb-4">{plan.descripcion}</p>
               <ul className="space-y-1 text-stone-600 mb-4">
                 {plan.features.map((feature, idx) => (
@@ -335,10 +481,29 @@ export default function MyAccount() {
           <div className="form-modal w-full max-w-lg" onClick={(e) => e.stopPropagation()}>
             <div className="form-modal-content">
             <h3 className="text-xl font-bold mb-1">{t('myaccount.subscribe_plan', 'Contratar Plan')} {selectedPlan.nombre.toUpperCase()}</h3>
-            <p className="text-lime-400 text-2xl font-extrabold mb-4">${selectedPlan.precio_mensual.toLocaleString()}</p>
-            
+            <p className="text-lime-400 text-2xl font-extrabold mb-4">
+              ${selectedPlan.precio_mensual.toLocaleString()} COP
+              {selectedPlan.precio_mensual_usd > 0 && ` · USD ${selectedPlan.precio_mensual_usd}`}
+            </p>
+
             <form onSubmit={handleSubscribe} className="space-y-4">
               <p className="text-stone-600 text-sm">{t('myaccount.plan_hint', 'Puedes elegir gimnasio, entrenador, ambos o ninguno. Solo el plan es obligatorio.')}</p>
+              {cyclesForPlan(selectedPlan).length > 0 && (
+                <div>
+                  <label className="label">Ciclo D28D</label>
+                  <select
+                    value={formData.cycle_id}
+                    onChange={(e) => setFormData({ ...formData, cycle_id: e.target.value })}
+                    className="input"
+                    required={cyclesForPlan(selectedPlan).length > 0}
+                  >
+                    <option value="">Selecciona ciclo</option>
+                    {cyclesForPlan(selectedPlan).map((c) => (
+                      <option key={c.id} value={c.id}>{c.name} ({c.startDate})</option>
+                    ))}
+                  </select>
+                </div>
+              )}
               <div>
                 <label className="label">Gimnasio (opcional)</label>
                 <select

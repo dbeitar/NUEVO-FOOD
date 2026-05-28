@@ -14,6 +14,7 @@ import FoodLog from './FoodLog';
 import AdminFoodsManager from './AdminFoodsManager';
 import AdminUsers from './AdminUsers';
 import AdminPlans from './AdminPlans';
+import AdminProgramInvites from './AdminProgramInvites';
 import AdminCompanies from './AdminCompanies';
 import AdminGyms from './AdminGyms';
 import MyAccount from './MyAccount';
@@ -47,10 +48,19 @@ import AdminModuleVigencias from './AdminModuleVigencias';
 import FoodPlanAdminView from './dashboard/FoodPlanAdminView';
 import D28DAdminView from './dashboard/D28DAdminView';
 import TrainersAdminView from './dashboard/TrainersAdminView';
-import MastersHub from './dashboard/MastersHub';
+import MastersHub, { LEGACY_MASTER_REDIRECTS } from './dashboard/MastersHub';
+import CommercialPlansHub from './dashboard/CommercialPlansHub';
+import ConfigurationsHub from './dashboard/ConfigurationsHub';
+import CommunicationCenterAdmin from './admin/CommunicationCenterAdmin';
 import D28dRoutinesMaster from './admin/D28dRoutinesMaster';
 import D28dCoachTracking from './d28d/D28dCoachTracking';
 import D28dZoomAccountsMaster from './d28d/D28dZoomAccountsMaster';
+import D28dChallengesAdmin from './d28d/D28dChallengesAdmin';
+import D28dChallengesPanel from './d28d/D28dChallengesPanel';
+import D28dProgressDashboard from './d28d/D28dProgressDashboard';
+import FaqCenterAdmin from './FaqCenterAdmin';
+import HelpAssistantWidget from './HelpAssistantWidget';
+import TrainingProgressPanel from './training/TrainingProgressPanel';
 import TrainingExpertProgress from '../training-module/TrainingExpertProgress';
 import CoachTrainersAdmin from './dashboard/CoachTrainersAdmin';
 import CoachRoutineAssistant from './coach/CoachRoutineAssistant';
@@ -437,9 +447,19 @@ export default function Dashboard() {
     if (openServicePanel === 'd28d') {
       const navigateD28d = (view) => {
         const d28dViews = new Set([
-          'liveclasses', 'programs', 'd28dzoom', 'admingyms', 'adminusers',
-          'admincompanies', 'admingallery', 'adminliveclasses',
+          'liveclasses', 'programs', 'd28dzoom', 'd28d-routines', 'd28d-challenges-admin',
+          'admingyms', 'adminusers', 'admincompanies', 'admingallery', 'adminliveclasses',
         ]);
+        if (view === 'd28d-routines') {
+          setOpenServicePanel('d28d-routines');
+          setCurrentView('servicePanel');
+          return;
+        }
+        if (view === 'd28d-challenges-admin') {
+          setOpenServicePanel('d28d');
+          setCurrentView(view);
+          return;
+        }
         if (d28dViews.has(view)) {
           setOpenServicePanel('d28d');
           setCurrentView(view);
@@ -491,8 +511,37 @@ export default function Dashboard() {
           variant="platform"
           readOnly={!hasAnyRole(['super_admin', 'admin_d28d'])}
           onBack={() => {
+            setOpenServicePanel('d28d');
+            setCurrentView('servicePanel');
+          }}
+        />
+      );
+    }
+    if (openServicePanel === 'commercial-plans'
+      || ['d28d-plans', 'training-plans', 'program-invites'].includes(openServicePanel)) {
+      if (!hasAnyRole(['super_admin'])) return renderHome();
+      return (
+        <CommercialPlansHub
+          onBack={() => {
             setOpenServicePanel(null);
             setCurrentView('masters');
+          }}
+          onOpenVigencias={() => navigate('modulevigencias')}
+        />
+      );
+    }
+    if (openServicePanel === 'configurations') {
+      if (!hasAnyRole(['super_admin'])) return renderHome();
+      return (
+        <ConfigurationsHub
+          hasAnyRole={hasAnyRole}
+          onBack={() => {
+            setOpenServicePanel(null);
+            setCurrentView('masters');
+          }}
+          onNavigate={(view) => {
+            setOpenServicePanel(null);
+            setCurrentView(view);
           }}
         />
       );
@@ -537,6 +586,19 @@ export default function Dashboard() {
       case 'admingyms': return <AdminGyms />;
       case 'myaccount': return <MyAccount />;
       case 'audit': return hasAnyRole(['super_admin']) ? <AuditDashboard /> : null;
+      case 'communication':
+        return hasAnyRole(['super_admin']) ? (
+          <CommunicationCenterAdmin
+            onBack={() => {
+              setOpenServicePanel('configurations');
+              setCurrentView('servicePanel');
+            }}
+          />
+        ) : null;
+      case 'faq-center':
+        return hasAnyRole(['super_admin', 'admin_d28d', 'admin_training', 'admin_entrenador']) ? (
+          <FaqCenterAdmin />
+        ) : null;
       case 'paymentlinks': return hasAnyRole(['super_admin']) ? <AdminPaymentLinks /> : null;
       case 'modulevigencias':
         return hasAnyRole([
@@ -550,6 +612,27 @@ export default function Dashboard() {
             <CoachEcosystemTracking onBack={(isPureCoach || isTrainingOps) ? backToTrainingPanel : undefined} />
           );
         }
+        if (isFinal) {
+          const hasFood = services.some((s) => s.id === 'food-plan') && !isFoodExternal();
+          const hasD28d = services.some((s) => s.id === 'd28d' || s.id === 'live-classes');
+          const hasTraining = services.some((s) => s.id === 'training');
+          return (
+            <div className="space-y-8">
+              {hasFood ? <Progress /> : null}
+              {hasD28d ? (
+                <>
+                  <D28dProgressDashboard />
+                  <D28dChallengesPanel />
+                </>
+              ) : null}
+              {hasTraining ? <TrainingProgressPanel /> : null}
+              {!hasFood && !hasD28d && !hasTraining ? (
+                <p className="text-stone-500">{t('services.no_services', 'Aún no tienes servicios activos.')}</p>
+              ) : null}
+              <HelpAssistantWidget modulo={hasD28d ? 'd28d' : hasTraining ? 'training' : 'platform'} />
+            </div>
+          );
+        }
         return <Progress />;
       case 'coachai':
         if (!isPureCoach && !hasAnyRole(['admin_training', 'admin_entrenador', 'nutricionista'])) return renderHome();
@@ -560,6 +643,19 @@ export default function Dashboard() {
       case 'd28dtracking':
         if (!hasAnyRole(['entrenador_d28d'])) return renderHome();
         return <D28dCoachTracking onBack={() => navigate('home')} />;
+      case 'd28d-challenges-admin':
+        if (!hasAnyRole(['super_admin', 'admin_d28d'])) return renderHome();
+        return <D28dChallengesAdmin onBack={() => { setOpenServicePanel('d28d'); setCurrentView('servicePanel'); }} />;
+      case 'd28d-challenges':
+        return (
+          <div className="space-y-6">
+            <D28dChallengesPanel />
+            <D28dProgressDashboard />
+            <HelpAssistantWidget modulo="d28d" />
+          </div>
+        );
+      case 'd28d-progress':
+        return <D28dProgressDashboard />;
       case 'equivalentes': return <Equivalentes />;
       case 'training': return <TrainingModule />;
       case 'admintraining':
@@ -589,7 +685,8 @@ export default function Dashboard() {
           <MastersHub
             hasAnyRole={hasAnyRole}
             onOpenMaster={(moduleId) => {
-              setOpenServicePanel(moduleId);
+              const id = LEGACY_MASTER_REDIRECTS[moduleId] || moduleId;
+              setOpenServicePanel(id);
               setCurrentView('servicePanel');
             }}
           />

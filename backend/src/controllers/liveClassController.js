@@ -190,9 +190,10 @@ async function resolveZoomLinkForClass(body, hostFields, resolvedTitle) {
     const hostUser = hostFields.d28d_host_user_id
       ? userDB.getById(Number(hostFields.d28d_host_user_id))
       : null;
+    const legacyManualZoom = String(process.env.ZOOM_LEGACY_MANUAL_ACCOUNT || '').toLowerCase() === 'true';
     const zoomResult = await zoomMeetingService.createScheduledMeeting({
       programId: body.program_id,
-      zoomAccountId: body.zoom_account_id || null,
+      zoomAccountId: legacyManualZoom ? (body.zoom_account_id || null) : null,
       topic: resolvedTitle,
       startTime: body.start_time,
       endTime: body.end_time,
@@ -295,6 +296,30 @@ const createClass = async (req, res) => {
         hostZoomEmail: zoomResolved.zoomMeta?.host_email || null,
       });
     }
+    // Communication Center: evento de clase programada (plantillas + auditoría).
+    try {
+      const comms = require('../services/communicationCenterService');
+      await comms.dispatchEvent({
+        evento: 'd28d.class.scheduled',
+        modulo: 'd28d',
+        userId: req.user?.id || null,
+        targetEmail: req.user?.email || null,
+        vars: {
+          class: {
+            id: created?.id,
+            title: resolvedTitle,
+            start_time,
+            end_time,
+            program_id: created?.program_id || null,
+            gym_id: finalGymId,
+            zoom_link,
+          },
+          user: { id: req.user?.id, email: req.user?.email, nombre: req.user?.nombre || null },
+        },
+      });
+    } catch (e) {
+      console.warn('comm.class.scheduled:', e.message);
+    }
     return res.status(201).json({ success: true, data: enriched, zoom: zoomResolved.zoomMeta || null });
   } catch (error) {
     console.error('Error creando clase en vivo:', error);
@@ -357,6 +382,11 @@ const updateClass = async (req, res) => {
     const routineLink = await buildRoutineLinkFields(req.body || {}, current);
     const hostFields = resolveD28dHostFields(req.body || {});
     const resolvedTitle = req.body.title || routineLink.title || current.title;
+    const prevStart = String(current.start_time || '');
+    const prevEnd = String(current.end_time || '');
+    const nextStart = req.body.start_time !== undefined ? String(req.body.start_time) : prevStart;
+    const nextEnd = req.body.end_time !== undefined ? String(req.body.end_time) : prevEnd;
+    const timeChanged = nextStart !== prevStart || nextEnd !== prevEnd;
     let zoom_link = req.body.zoom_link !== undefined ? req.body.zoom_link : current.zoom_link;
     let zoomMeta = null;
     const wantsAuto = req.body.auto_zoom === true || req.body.auto_zoom === 'true';
@@ -397,6 +427,30 @@ const updateClass = async (req, res) => {
         programId: updated.program_id,
         hostZoomEmail: zoomMeta?.host_email || null,
       });
+    }
+    // Communication Center: evento cambio horario / actualización (plantillas + auditoría).
+    try {
+      const comms = require('../services/communicationCenterService');
+      await comms.dispatchEvent({
+        evento: timeChanged ? 'd28d.class.time_changed' : 'd28d.class.updated',
+        modulo: 'd28d',
+        userId: req.user?.id || null,
+        targetEmail: req.user?.email || null,
+        vars: {
+          class: {
+            id: updated?.id,
+            title: resolvedTitle,
+            start_time: updated?.start_time,
+            end_time: updated?.end_time,
+            program_id: updated?.program_id || null,
+            auto_zoom: wantsAuto || null,
+            zoom_link,
+          },
+          user: { id: req.user?.id, email: req.user?.email, nombre: req.user?.nombre || null },
+        },
+      });
+    } catch (e) {
+      console.warn('comm.class.updated:', e.message);
     }
     return res.json({ success: true, data: enriched, zoom: zoomMeta });
   } catch (error) {

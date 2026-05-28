@@ -5,8 +5,8 @@ import { emitToast } from '../context/toast';
 
 const MODULE_TABS = [
   { code: '', label: 'Todos' },
-  { code: 'food', label: 'Food' },
-  { code: 'training', label: 'Training' },
+  { code: 'food', label: 'FOOD_PLAN' },
+  { code: 'training', label: 'TRAINING' },
   { code: 'd28d', label: 'D28D' },
   { code: 'gym', label: 'Gym' },
 ];
@@ -73,7 +73,7 @@ export default function AdminModuleVigencias() {
       <div>
         <h2 className="d28d-page-title">{t('vigencias.title', 'Pagos, vigencias y notificaciones')}</h2>
         <p className="d28d-text-muted">
-          {t('vigencias.subtitle', 'Confirma pagos en sede, revisa vencimientos y extiende licencias por módulo (patrón Food Plan).')}
+          {t('vigencias.subtitle', 'Confirma pagos en sede, revisa vencimientos y extiende licencias por módulo (patrón FOOD_PLAN).')}
         </p>
       </div>
 

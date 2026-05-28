@@ -6,7 +6,7 @@ const { hasRole } = require('../utils/accessControl');
 const WOMPI_DEFAULT = 'https://checkout.wompi.co/l/test_VPOS_Y0ivU1';
 
 const MODULE_LABELS = {
-  food: 'Food Plan',
+  food: 'FOOD_PLAN',
   training: 'Entrenamiento',
   d28d: 'D28D',
   gym: 'Gimnasio',

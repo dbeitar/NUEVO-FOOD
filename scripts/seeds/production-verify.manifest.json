@@ -17,8 +17,14 @@
   "admin_accounts": [
     { "email": "admin@d28d.local", "nombre": "Super Admin", "rol": "super_admin" },
     { "email": "d28d.admin@d28d.local", "nombre": "Admin D28D", "rol": "admin_d28d" },
-    { "email": "food.admin@d28d.local", "nombre": "Admin Plan Alim.", "rol": "admin_food" },
-    { "email": "coach.admin@d28d.local", "nombre": "Admin Entrenadores", "rol": "admin_entrenador" },
+    { "email": "food.admin@d28d.local", "nombre": "Admin Plan Alim.", "rol": "admin_food", "module_access": { "food_plan": true, "nutrition": true } },
+    {
+      "email": "coach.admin@d28d.local",
+      "nombre": "Admin Entrenadores",
+      "rol": "admin_entrenador",
+      "trainer_id": 1,
+      "module_access": { "training": true, "food_plan": true, "nutrition": true }
+    },
     {
       "email": "host.d28d@d28d.local",
       "nombre": "Alejo",
@@ -32,6 +38,7 @@
       "email": "final.d28d@d28d.local",
       "nombre": "Verificación — Usuario D28D",
       "invite_code": "D28D-PILOTO",
+      "trainer_id": 1,
       "expected_modules": ["d28d", "training", "food_plan", "live_classes"],
       "dashboard_note": "Debe ver D28D, Plan alimentación, Entrenamiento y Clases en vivo"
     },

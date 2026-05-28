@@ -334,7 +334,7 @@ async function foodSessionForShell({
   auditFood(userId, 'food.sso.error', login.error || 'No se pudo abrir sesión Food', { branding: !!branding }, 'error');
   return {
     ok: false,
-    error: login.error || 'No se pudo iniciar sesión en Food Plan. Si ya tenías cuenta, contacta al administrador.',
+    error: login.error || 'No se pudo iniciar sesión en FOOD_PLAN. Si ya tenías cuenta, contacta al administrador.',
   };
 }
 

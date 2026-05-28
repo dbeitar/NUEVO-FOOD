@@ -56,6 +56,48 @@ function normalizeCode(raw) {
   return String(raw || '').trim().toUpperCase();
 }
 
+async function findProgramInviteCodeAsync(code) {
+  if (!useRelationalStorage()) return null;
+  const { getPrisma } = require('../lib/prisma');
+  const row = await getPrisma().programInviteCode.findFirst({
+    where: { code, active: true },
+  });
+  if (!row) return null;
+  return {
+    code: row.code,
+    program_id: row.programId,
+    label: row.label || null,
+    suggested_plan_nombre: row.suggestedPlanNombre || null,
+    module_preset: row.modulePreset || {},
+  };
+}
+
+async function findCoupleInviteAsync(code) {
+  if (!useRelationalStorage()) return null;
+  const { getPrisma } = require('../lib/prisma');
+  const prisma = getPrisma();
+  const acc = await prisma.userAccount.findFirst({
+    where: {
+      coupleInviteCode: code,
+      activo: true,
+      coupleInviteUsedByUserId: null,
+    },
+  });
+  if (!acc) return null;
+  const plan = await prisma.subscriptionPlan.findFirst({
+    where: { nombre: acc.planNombre },
+  });
+  return {
+    primary_account_id: acc.id,
+    plan_nombre: acc.planNombre,
+    program_id: plan?.programId || 'virtual_d28d',
+    module_access: plan?.moduleAccess || {},
+    gym_id: acc.gymId || null,
+    trainer_id: acc.trainerId || null,
+    cycle_id: acc.cycleId || null,
+  };
+}
+
 async function findGymByCodeAsync(code) {
   if (useRelationalStorage()) {
     const { getPrisma } = require('../lib/prisma');
@@ -110,6 +152,55 @@ async function resolveInviteCodeAsync(rawCode) {
   const code = normalizeCode(rawCode);
   if (!code || code.length < 3) {
     return { ok: false, status: 400, error: 'Ingresa un código válido (mínimo 3 caracteres)' };
+  }
+
+  // 0) Invitación de pareja: el 2º usuario hereda plan/programa del titular
+  const couple = await findCoupleInviteAsync(code);
+  if (couple) {
+    const module_access = {
+      ...(couple.module_access && typeof couple.module_access === 'object' ? couple.module_access : {}),
+      d28d_program: couple.program_id,
+    };
+    if (typeof module_access.d28d === 'undefined') module_access.d28d = true;
+    return {
+      ok: true,
+      data: {
+        type: 'couple',
+        label: 'Invitación — Plan de pareja',
+        program_id: couple.program_id,
+        gym_id: couple.gym_id,
+        trainer_id: couple.trainer_id,
+        cycle_id: couple.cycle_id,
+        module_access,
+        plan_scope: 'd28d',
+        suggested_plan: couple.plan_nombre,
+        couple_code: code,
+        primary_account_id: couple.primary_account_id,
+      },
+    };
+  }
+
+  // 0) Código por programa (nuevo): asigna programa y preset de módulos
+  const program = await findProgramInviteCodeAsync(code);
+  if (program) {
+    const preset = (program.module_preset && typeof program.module_preset === 'object')
+      ? program.module_preset
+      : {};
+    const module_access = { ...preset, d28d_program: program.program_id };
+    if (typeof module_access.d28d === 'undefined') module_access.d28d = true;
+    return {
+      ok: true,
+      data: {
+        type: 'program',
+        label: program.label || `Programa: ${program.program_id}`,
+        program_id: program.program_id,
+        gym_id: null,
+        trainer_id: null,
+        module_access,
+        plan_scope: 'd28d',
+        suggested_plan: program.suggested_plan_nombre,
+      },
+    };
   }
 
   if (D28D_CODES.has(code)) {

@@ -6,13 +6,10 @@ Alimentación** (calculadora, catálogo, recetas, registro), **Entrenadores**
 (rutinas, asignación, galería de videos). Multi-tenant por `gym_id`,
 con white-label opcional por gym.
 
-> **Arquitectura:** evolución sin destrucción — no reescrituras; preservar
-> todo lo operativo y mejorar de forma incremental. Ver
-> [`docs/manuales/01_INDICE_MAESTRO.md`](docs/manuales/01_INDICE_MAESTRO.md).
+> **Documentación:** manual único del ecosistema en
+> [`docs/MANUAL_ECOSISTEMA.md`](docs/MANUAL_ECOSISTEMA.md).
 
-> Estado: **piloto controlado**. P0 y P1 aplicados. Ver
-> [`docs/manuales/05_RIESGOS_Y_AUDITORIA.md`](docs/manuales/05_RIESGOS_Y_AUDITORIA.md) para
-> riesgos, hallazgos y checklist de release.
+> Estado: **listo para producción** (Communication Center + hardening validado E2E).
 
 ---
 
@@ -42,7 +39,7 @@ proyectofoodplan/
 Persistencia:
 - **Producción y desarrollo con Docker (recomendado)**: PostgreSQL + Prisma
   (`USE_RELATIONAL_STORAGE=true`). Docker: `docker compose up -d postgres` (puerto **5434**).
-  Guía: [`docs/manuales/04_TECNICO_Y_DESPLIEGUE.md`](docs/manuales/04_TECNICO_Y_DESPLIEGUE.md).
+  Guía: [`docs/MANUAL_ECOSISTEMA.md`](docs/MANUAL_ECOSISTEMA.md).
 - **Solo dev sin Docker**: JSON en `backend/data/*.json` (JsonStore).
 - **Semilla post-deploy** (códigos invite + usuarios de prueba):
   `node scripts/seed_production_verify.cjs 'Demo!2026'` — ver doc 03 en manuales.
@@ -265,14 +262,10 @@ node scripts/md-to-docx-custom.mjs    # Exporta docs/* a .docx
 
 ---
 
-## 10. Documentación complementaria
+## 10. Documentación
 
-**Manuales (5 documentos maestros):**
-
-- [`docs/manuales/01_INDICE_MAESTRO.md`](docs/manuales/01_INDICE_MAESTRO.md) — **empieza aquí**
-- [`docs/manuales/README.md`](docs/manuales/README.md) — índice: negocio · producto · técnico · riesgos
-
-Otros: [`docs/README.md`](docs/README.md) (PDFs, testing, test-runs).
+- [`docs/MANUAL_ECOSISTEMA.md`](docs/MANUAL_ECOSISTEMA.md) — **manual único**: estructura, flujos, roles, reportes, despliegue
+- [`docs/README.md`](docs/README.md) — índice de materiales adicionales (PDFs, logs)
 
 ---
 

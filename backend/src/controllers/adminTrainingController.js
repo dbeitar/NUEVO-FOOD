@@ -65,7 +65,7 @@ const adminTrainingController = {
     },
 
     // Asignar (guardar) un plan nuevo
-    createPlan: (req, res) => {
+    createPlan: async (req, res) => {
         try {
             if (!isTrainerOrAdmin(req)) {
                 return res.status(403).json({ error: 'Permisos insuficientes' });
@@ -89,6 +89,24 @@ const adminTrainingController = {
               plan_id: newPlan.id,
               user_id,
             });
+            // Communication Center: evento asignación training (plantillas + auditoría).
+            try {
+              const comms = require('../services/communicationCenterService');
+              const userDB = require('../models/UserDatabase');
+              const target = userDB.getById(Number(user_id));
+              await comms.dispatchEvent({
+                evento: 'training.assigned',
+                modulo: 'training',
+                userId: Number(user_id),
+                targetEmail: target?.email || null,
+                vars: {
+                  user: { id: target?.id, nombre: target?.nombre, email: target?.email },
+                  training: { plan_id: newPlan.id, trainer_id: newPlan.trainer_id || null },
+                },
+              });
+            } catch (e) {
+              console.warn('comm.training.assigned:', e.message);
+            }
             res.status(201).json({ success: true, data: newPlan });
         } catch (error) {
             console.error('Error createPlan:', error);

@@ -36,80 +36,136 @@ const registerUser = async (req, res) => {
     const {
       nombre,
       email,
+      password,
       teléfono,
+      telefono,
       fecha_nacimiento,
       peso,
       altura,
       objetivo,
-      password,
+      genero = null,
       rol = 'usuario_final',
+      tiene_restricciones = false,
+      restricciones_detalles = '',
       medidas_biomecanicas,
       experiencia,
       metodo_entrenamiento,
       module_access,
       gym_id,
       trainer_id,
-    } = req.body;
+      invite_code,
+    } = req.body || {};
 
-    // Validar datos requeridos
     if (!nombre || !email) {
       return res.status(400).json({ error: 'Nombre y email son requeridos' });
     }
 
-    // Verificar si el usuario ya existe
-    const userExists = await db.query('SELECT * FROM users WHERE email = $1', [email]);
-
-    if (userExists.rows && userExists.rows.length > 0) {
+    const existing = await userRepo.findByEmail(email);
+    if (existing) {
       return res.status(409).json({ error: 'El email ya está registrado' });
     }
 
-    // Generar o usar contraseña proporcionada. Las temporales NUNCA se loggean
-    // ni se devuelven; el usuario debe restablecerla por flujo de admin.
-    const rawPassword = password && String(password).length >= 8
-      ? String(password)
-      : require('crypto').randomBytes(9).toString('base64url');
-    const hashedPassword = await bcrypt.hash(rawPassword, 10);
-
-    // Insertar usuario en la base de datos
-    const insertSql =
-      `INSERT INTO users (nombre, email, telefono, fecha_nacimiento, peso, altura, objetivo, clave_hash, rol, medidas_biomecanicas, experiencia, metodo_entrenamiento, module_access, gym_id, trainer_id)
-       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
-       RETURNING id, nombre, email, rol`;
-    const moduleAccessJson = JSON.stringify(module_access && typeof module_access === 'object' ? module_access : {});
-    const result = await db.query(insertSql, [
-      nombre, email, teléfono, fecha_nacimiento, peso, altura, objetivo, hashedPassword, rol,
-      medidas_biomecanicas ? JSON.stringify(medidas_biomecanicas) : null,
-      experiencia || 'principiante',
-      metodo_entrenamiento || null,
-      moduleAccessJson,
-      gym_id ?? null,
-      trainer_id ?? null,
-    ]);
-
-    let user;
-    // Si es MySQL, no soporta RETURNING: consultar por insertId
-    if (result && typeof result.insertId !== 'undefined') {
-      const read = await db.query('SELECT id, nombre, email, rol FROM users WHERE id = $1', [result.insertId]);
-      user = read.rows[0];
-    } else {
-      user = result.rows[0];
+    let finalPassword = password;
+    let usedTemp = false;
+    if (!finalPassword || String(finalPassword).length < 8) {
+      finalPassword = require('crypto').randomBytes(9).toString('base64url');
+      usedTemp = true;
     }
 
-    // TODO (futuro): enviar contraseña temporal por email (SendGrid).
-    // Hoy NO se loggea ni se devuelve por seguridad; admin la restablece manualmente.
+    const hashedPassword = await bcrypt.hash(finalPassword, 10);
 
-    if (user?.id && module_access) {
-      await licenseService.syncFromModuleAccess(user.id, module_access, 'register');
+    const { resolveInviteCodeAsync } = require('../utils/inviteResolver');
+    const resolvedInvite = invite_code ? await resolveInviteCodeAsync(invite_code) : null;
+    const inviteData = resolvedInvite?.ok ? resolvedInvite.data : null;
+
+    const finalModuleAccess = module_access && typeof module_access === 'object'
+      ? module_access
+      : (inviteData?.module_access || {});
+
+    const { hydrateAccess, normalizeRoles } = require('../utils/accessControl');
+    const roles = normalizeRoles({ rol: 'usuario_final', roles: ['usuario_final'] });
+    const access = hydrateAccess({ rol: 'usuario_final', roles, module_access: finalModuleAccess });
+
+    const created = await userRepo.createLegacy({
+      nombre,
+      email,
+      telefono: teléfono || telefono || null,
+      fecha_nacimiento,
+      peso,
+      altura,
+      objetivo,
+      genero,
+      tiene_restricciones: Boolean(tiene_restricciones),
+      restricciones_detalles: restricciones_detalles || '',
+      clave_hash: hashedPassword,
+      rol: 'usuario_final',
+      roles: access.roles,
+      permissions: access.permissions,
+      gym_id: gym_id ?? inviteData?.gym_id ?? null,
+      trainer_id: trainer_id ?? inviteData?.trainer_id ?? null,
+      module_access: finalModuleAccess,
+      medidas_biomecanicas,
+      experiencia,
+      metodo_entrenamiento,
+    });
+
+    await licenseService.applyInviteModules(created.id, finalModuleAccess, 'register');
+
+    const foodProvisioning = require('../services/foodProvisioningService');
+    const trainingProvisioning = require('../services/trainingProvisioningService');
+    foodProvisioning.provisionFoodUser({
+      userId: created.id,
+      email: created.email,
+      nombre: created.nombre,
+      password: finalPassword,
+      moduleAccess: finalModuleAccess,
+      telefono: teléfono || telefono,
+      peso,
+      altura,
+      genero,
+      source: 'register',
+    }).catch((e) => console.warn('[register] food provision:', e.message));
+
+    trainingProvisioning.provisionTrainingUser({
+      userId: created.id,
+      moduleAccess: finalModuleAccess,
+      source: 'register',
+    }).catch((e) => console.warn('[register] training provision:', e.message));
+
+    try {
+      const comms = require('../services/communicationCenterService');
+      const mod = finalModuleAccess?.training
+        ? 'training'
+        : (finalModuleAccess?.food_plan || finalModuleAccess?.nutrition)
+          ? 'food'
+          : 'd28d';
+      await comms.dispatchEvent({
+        evento: 'user.registered',
+        modulo: mod,
+        userId: created.id,
+        targetEmail: created.email,
+        vars: {
+          user: { id: created.id, nombre: created.nombre, email: created.email, rol },
+          module_access: finalModuleAccess,
+          gym_id: gym_id ?? inviteData?.gym_id ?? null,
+          trainer_id: trainer_id ?? inviteData?.trainer_id ?? null,
+        },
+      });
+    } catch (e) {
+      console.warn('comm.user.registered:', e.message);
     }
 
     res.status(201).json({
-      message: password
-        ? 'Usuario registrado exitosamente.'
-        : 'Usuario registrado. El administrador debe asignar una contraseña inicial.',
-      user,
+      message: usedTemp
+        ? 'Usuario registrado. Se generó una clave temporal; pídela al administrador o usa "Olvidé mi contraseña".'
+        : 'Usuario registrado exitosamente.',
+      user: { id: created.id, nombre: created.nombre, email: created.email, rol: created.rol },
     });
   } catch (error) {
     console.error('Error registrando usuario:', error);
+    if (error.code === 'P2002') {
+      return res.status(409).json({ error: 'El email ya está registrado' });
+    }
     res.status(500).json({ error: 'Error interno del servidor' });
   }
 };

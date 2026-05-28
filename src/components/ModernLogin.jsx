@@ -4,6 +4,14 @@ import AuthLayout from './AuthLayout';
 import { useI18n } from '../context/useI18n';
 import { PUBLIC_BRAND_NAME } from '../utils/branding';
 
+const DEV_PILOT_HINTS = import.meta.env.DEV ? [
+  { email: 'admin@foodplan.local', rol: 'super_admin' },
+  { email: 'admin.d28d@foodplan.local', rol: 'admin_d28d' },
+  { email: 'usuario.demo@foodplan.local', rol: 'usuario_final' },
+] : [];
+
+const DEV_DEFAULT_PASSWORD = 'Demo!2026';
+
 export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -109,6 +117,32 @@ export default function ModernLogin({ onSwitchToRegister, onForgotPassword }) {
           {t('auth.register_free', 'Regístrate gratis')}
         </button>
       </div>
+      {DEV_PILOT_HINTS.length > 0 && (
+        <div className="mt-6 p-4 rounded-xl border border-amber-200 bg-amber-50 text-left text-xs text-stone-700">
+          <p className="font-semibold text-stone-900 mb-2">Acceso rápido</p>
+          <p className="mb-2">
+            Contraseña de demostración (si tu entorno fue inicializado con cuentas demo):
+            <strong className="ml-1">{DEV_DEFAULT_PASSWORD}</strong>
+          </p>
+          <ul className="space-y-1 font-mono">
+            {DEV_PILOT_HINTS.map((row) => (
+              <li key={row.email}>
+                <button
+                  type="button"
+                  className="text-lime-800 hover:underline text-left"
+                  onClick={() => {
+                    setEmail(row.email);
+                    setPassword(DEV_DEFAULT_PASSWORD);
+                  }}
+                >
+                  {row.email}
+                </button>
+                <span className="text-stone-500 ml-1">({row.rol})</span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
     </AuthLayout>
   );
 }

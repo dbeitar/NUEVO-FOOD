@@ -400,7 +400,7 @@ export default function AdminUsers() {
             <div className="flex items-baseline justify-between flex-wrap gap-2">
               <label className="label">{t('common.roles', 'Roles')}</label>
               <p className="text-xs text-stone-500">
-                {t('users.multi_role_hint', 'Puedes asignar varios roles a la misma persona (ej: Entrenador + Admin Food).')}
+                {t('users.multi_role_hint', 'Puedes asignar varios roles a la misma persona (ej: Entrenador + Admin FOOD_PLAN).')}
               </p>
             </div>
             {formData.roles.length > 0 && (
@@ -419,7 +419,7 @@ export default function AdminUsers() {
                 { value: 'entrenador_d28d', label: 'Entrenador D28D (solo clases)' },
                 { value: 'nutricionista', label: 'Nutricionista' },
                 { value: 'admin_gimnasio', label: 'Admin Gimnasio' },
-                { value: 'admin_food_plan', label: 'Admin Food Plan' },
+                { value: 'admin_food_plan', label: 'Admin FOOD_PLAN' },
                 { value: 'admin_d28d', label: 'Admin D28D' },
                 { value: 'admin_training', label: 'Admin Entrenadores' },
                 { value: 'admin_gym', label: 'Admin Gym (multi-gimnasio)' },

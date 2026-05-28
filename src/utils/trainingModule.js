@@ -6,7 +6,7 @@ export function isTrainingLegacyMode() {
   return String(import.meta.env.VITE_TRAINING_LEGACY || '').toLowerCase() === 'true';
 }
 
-/** Módulo entrenadores embebido (/training-module), paridad con Food Plan. */
+/** Módulo entrenadores embebido (/training-module), paridad con FOOD_PLAN. */
 export function isTrainingExternal() {
   return !isTrainingLegacyMode();
 }

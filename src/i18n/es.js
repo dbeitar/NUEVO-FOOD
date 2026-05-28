@@ -181,7 +181,7 @@ export default {
   'foods.serving_ph': 'Porción (ej. 100)',
   'foodlog.title': 'Registro de Alimentos',
   'foodlog.subtitle': 'Añade tus comidas del día y controla tus metas',
-  'foodlog.nutrition_plan': 'Plan Nutricional',
+  'foodlog.nutrition_plan': 'FOOD_PLAN',
   'foodlog.range_title': 'Rango de Fechas',
   'foodlog.start': 'Inicio',
   'foodlog.end': 'Fin',

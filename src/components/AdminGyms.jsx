@@ -6,6 +6,18 @@ import { useAuth } from '../context/useAuth';
 import { getRolesArr } from './dashboard/userServices';
 import InviteCodeCell from './admin/InviteCodeCell';
 
+/** Acepta array directo o respuestas envueltas ({ data }, { gyms }, etc.). */
+function asArray(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === 'object') {
+    if (Array.isArray(payload.data)) return payload.data;
+    if (Array.isArray(payload.gyms)) return payload.gyms;
+    if (Array.isArray(payload.planes)) return payload.planes;
+    if (Array.isArray(payload.plans)) return payload.plans;
+  }
+  return [];
+}
+
 const emptyGymForm = {
   nombre: '',
   invite_code: '',
@@ -55,10 +67,13 @@ export default function AdminGyms() {
     try {
       setLoading(true);
       const res = await api.get('/gyms');
-      setGyms(res.data || []);
-      setFilteredGyms(res.data || []);
+      const list = asArray(res.data);
+      setGyms(list);
+      setFilteredGyms(list);
     } catch {
       setError(t('gyms.error_loading', 'Error cargando gimnasios'));
+      setGyms([]);
+      setFilteredGyms([]);
     } finally {
       setLoading(false);
     }
@@ -67,9 +82,10 @@ export default function AdminGyms() {
   const fetchPlans = useCallback(async () => {
     try {
       const res = await api.get('/accounts/plans');
-      setPlans(res.data || []);
+      setPlans(asArray(res.data));
     } catch {
       console.error('Error cargando planes');
+      setPlans([]);
     }
   }, []);
 
@@ -79,15 +95,18 @@ export default function AdminGyms() {
   }, [fetchGyms, fetchPlans]);
 
   useEffect(() => {
-    if (searchTerm) {
-      setFilteredGyms(gyms.filter(gym => 
-        gym.nombre.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        gym.ciudad.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        gym.direccion.toLowerCase().includes(searchTerm.toLowerCase())
-      ));
-    } else {
-      setFilteredGyms(gyms);
+    const list = asArray(gyms);
+    const q = searchTerm.trim().toLowerCase();
+    if (!q) {
+      setFilteredGyms(list);
+      return;
     }
+    setFilteredGyms(list.filter((gym) => {
+      const nombre = String(gym?.nombre || '').toLowerCase();
+      const ciudad = String(gym?.ciudad || '').toLowerCase();
+      const direccion = String(gym?.direccion || '').toLowerCase();
+      return nombre.includes(q) || ciudad.includes(q) || direccion.includes(q);
+    }));
   }, [searchTerm, gyms]);
 
   
@@ -405,7 +424,7 @@ export default function AdminGyms() {
                   onChange={handleInputChange}
                 >
                   <option value="">Sin plan</option>
-                  {plans.map((plan) => (
+                  {asArray(plans).map((plan) => (
                     <option key={plan.nombre} value={plan.nombre}>{plan.nombre}</option>
                   ))}
                 </select>
@@ -557,7 +576,7 @@ export default function AdminGyms() {
               <tbody className="bg-white divide-y divide-slate-200">
                 {loading ? (
                   <tr><td colSpan="6" className="px-6 py-8 text-center text-sm text-slate-400">{t('gyms.loading', 'Cargando gimnasios...')}</td></tr>
-                ) : filteredGyms.length === 0 ? (
+                ) : asArray(filteredGyms).length === 0 ? (
                   <tr>
                     <td colSpan="6" className="px-6 py-12 text-center text-slate-400">
                       <div className="flex flex-col items-center justify-center">
@@ -568,7 +587,7 @@ export default function AdminGyms() {
                     </td>
                   </tr>
                 ) : (
-                  filteredGyms.map(gym => (
+                  asArray(filteredGyms).map(gym => (
                     <tr key={gym.id} className="hover:bg-stone-100 transition-colors group">
                       <td className="px-6 py-4 whitespace-nowrap">
                         <div className="flex items-center gap-3">
@@ -621,7 +640,7 @@ export default function AdminGyms() {
                               defaultValue=""
                             >
                               <option value="" disabled>{t('common.select', 'Seleccionar...')}</option>
-                              {plans.map(plan => (
+                              {asArray(plans).map(plan => (
                                 <option key={plan.nombre} value={plan.nombre}>{plan.nombre}</option>
                               ))}
                             </select>

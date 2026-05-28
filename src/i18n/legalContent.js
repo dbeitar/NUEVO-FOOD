@@ -153,7 +153,7 @@ const TERMS_ES = `# Términos y Condiciones de Uso
 
 ## 1. Qué es esta plataforma
 
-**D28D Gimnasio Virtual** es una plataforma de acompañamiento fitness y nutricional con Plan de Alimentación, Entrenamiento y Clases en vivo. Tu gimnasio puede operar como marca blanca.
+**D28D Gimnasio Virtual** es una plataforma de acompañamiento fitness y nutricional con FOOD_PLAN, Entrenamiento y Clases en vivo. Tu gimnasio puede operar como marca blanca.
 
 ## 2. Aceptación
 
