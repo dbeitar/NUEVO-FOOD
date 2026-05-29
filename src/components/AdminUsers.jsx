@@ -23,6 +23,25 @@ const MODULE_OPTIONS = [
   { key: 'live_classes', label: 'Clases en vivo' },
 ];
 
+/** Roles asignables desde UI cuando el actor es coach (sin permisos globales). */
+const COACH_ASSIGNABLE_ROLES = [
+  { value: 'usuario_final', label: 'Usuario Final' },
+  { value: 'nutricionista', label: 'Nutricionista' },
+];
+
+const ALL_ASSIGNABLE_ROLES = [
+  { value: 'usuario_final', label: 'Usuario Final' },
+  { value: 'entrenador', label: 'Entrenador' },
+  { value: 'entrenador_d28d', label: 'Entrenador D28D (solo clases)' },
+  { value: 'nutricionista', label: 'Nutricionista' },
+  { value: 'admin_gimnasio', label: 'Admin Gimnasio' },
+  { value: 'admin_food_plan', label: 'Admin FOOD_PLAN' },
+  { value: 'admin_d28d', label: 'Admin D28D' },
+  { value: 'admin_training', label: 'Admin Entrenadores' },
+  { value: 'admin_gym', label: 'Admin Gym (multi-gimnasio)' },
+  { value: 'super_admin', label: 'Super Admin' },
+];
+
 const emptyForm = () => ({
   nombre: '',
   email: '',
@@ -70,6 +89,10 @@ export default function AdminUsers() {
   const coachModuleOptions = useMemo(
     () => MODULE_OPTIONS.filter((m) => !['gym', 'd28d', 'live_classes'].includes(m.key)),
     [],
+  );
+  const roleOptionsForForm = useMemo(
+    () => (isCoachActor ? COACH_ASSIGNABLE_ROLES : ALL_ASSIGNABLE_ROLES),
+    [isCoachActor],
   );
 
   const gymById = useMemo(
@@ -400,7 +423,9 @@ export default function AdminUsers() {
             <div className="flex items-baseline justify-between flex-wrap gap-2">
               <label className="label">{t('common.roles', 'Roles')}</label>
               <p className="text-xs text-stone-500">
-                {t('users.multi_role_hint', 'Puedes asignar varios roles a la misma persona (ej: Entrenador + Admin FOOD_PLAN).')}
+                {isCoachActor
+                  ? t('users.coach_role_hint', 'Como entrenador solo puedes crear usuarios finales o nutricionistas asignados a ti.')
+                  : t('users.multi_role_hint', 'Puedes asignar varios roles a la misma persona (ej: Entrenador + Admin FOOD_PLAN).')}
               </p>
             </div>
             {formData.roles.length > 0 && (
@@ -413,18 +438,7 @@ export default function AdminUsers() {
               </div>
             )}
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 mt-1">
-              {[
-                { value: 'usuario_final', label: 'Usuario Final' },
-                { value: 'entrenador', label: 'Entrenador' },
-                { value: 'entrenador_d28d', label: 'Entrenador D28D (solo clases)' },
-                { value: 'nutricionista', label: 'Nutricionista' },
-                { value: 'admin_gimnasio', label: 'Admin Gimnasio' },
-                { value: 'admin_food_plan', label: 'Admin FOOD_PLAN' },
-                { value: 'admin_d28d', label: 'Admin D28D' },
-                { value: 'admin_training', label: 'Admin Entrenadores' },
-                { value: 'admin_gym', label: 'Admin Gym (multi-gimnasio)' },
-                { value: 'super_admin', label: 'Super Admin' }
-              ].map(role => (
+              {roleOptionsForForm.map(role => (
                 <label key={role.value} className="flex items-center gap-2 text-sm text-stone-700 bg-stone-50 p-2 rounded-lg border border-stone-200 cursor-pointer hover:bg-stone-100">
                   <input
                     type="checkbox"
@@ -447,6 +461,7 @@ export default function AdminUsers() {
           </div>
           {formData.roles.includes('usuario_final') && (
             <>
+              {!isCoachActor && (
               <div>
                 <label className="label">{t('common.gym', 'Gimnasio')}</label>
                 <select 
@@ -460,6 +475,8 @@ export default function AdminUsers() {
                   {gyms.map(g => <option key={g.id} value={g.id}>{g.nombre}</option>)}
                 </select>
               </div>
+              )}
+              {!isCoachActor && (
               <div>
                 <label className="label">{t('common.trainer', 'Entrenador')}</label>
                 <select 
@@ -472,6 +489,7 @@ export default function AdminUsers() {
                   {trainers.map(tr => <option key={tr.id} value={tr.id}>{tr.nombre}</option>)}
                 </select>
               </div>
+              )}
               <div className="md:col-span-2">
                 <label className="label">{t('users.modules', 'Módulos activos')}</label>
                 <p className="text-xs text-stone-500 mb-2">

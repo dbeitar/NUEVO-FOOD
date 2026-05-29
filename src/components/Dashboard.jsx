@@ -113,6 +113,22 @@ export default function Dashboard() {
     [user, frontendConfig, lang],
   );
 
+  /** FOOD-only: no HelpAssistant shell; FAB nutricional solo en modo legacy embebido. */
+  const serviceShellUx = useMemo(() => {
+    const hasFoodLicense = services.some((s) => s.id === 'food-plan');
+    const hasD28d = services.some((s) => s.id === 'd28d' || s.id === 'live-classes');
+    const hasTraining = services.some((s) => s.id === 'training');
+    const foodOnly = hasFoodLicense && !hasD28d && !hasTraining;
+    return {
+      hasFoodLicense,
+      hasD28d,
+      hasTraining,
+      foodOnly,
+      showShellHelpAssistant: !foodOnly,
+      showNutritionChatFab: hasFoodLicense && !(foodOnly && isFoodExternal()),
+    };
+  }, [services]);
+
   useEffect(() => {
     consumeTrainingLaunch(navigate, setOpenServicePanel, setCurrentView);
   }, [user?.id]);
@@ -614,8 +630,7 @@ export default function Dashboard() {
         }
         if (isFinal) {
           const hasFood = services.some((s) => s.id === 'food-plan') && !isFoodExternal();
-          const hasD28d = services.some((s) => s.id === 'd28d' || s.id === 'live-classes');
-          const hasTraining = services.some((s) => s.id === 'training');
+          const { hasD28d, hasTraining, showShellHelpAssistant } = serviceShellUx;
           return (
             <div className="space-y-8">
               {hasFood ? <Progress /> : null}
@@ -629,7 +644,9 @@ export default function Dashboard() {
               {!hasFood && !hasD28d && !hasTraining ? (
                 <p className="text-stone-500">{t('services.no_services', 'Aún no tienes servicios activos.')}</p>
               ) : null}
-              <HelpAssistantWidget modulo={hasD28d ? 'd28d' : hasTraining ? 'training' : 'platform'} />
+              {showShellHelpAssistant ? (
+                <HelpAssistantWidget modulo={hasD28d ? 'd28d' : hasTraining ? 'training' : 'platform'} />
+              ) : null}
             </div>
           );
         }
@@ -651,7 +668,7 @@ export default function Dashboard() {
           <div className="space-y-6">
             <D28dChallengesPanel />
             <D28dProgressDashboard />
-            <HelpAssistantWidget modulo="d28d" />
+            {serviceShellUx.showShellHelpAssistant ? <HelpAssistantWidget modulo="d28d" /> : null}
           </div>
         );
       case 'd28d-progress':
@@ -760,8 +777,8 @@ export default function Dashboard() {
         {renderContent()}
       </div>
 
-      {/* Asistente nutricional flotante. Solo para el usuario final con plan. */}
-      {isFinal && services.find((s) => s.id === 'food-plan') && (
+      {/* Asistente nutricional legacy (shell). Oculto si FOOD-only usa módulo externo. */}
+      {isFinal && serviceShellUx.showNutritionChatFab && (
         <div className="fixed bottom-4 right-4 z-40">
           {!chatOpen && (
             <button

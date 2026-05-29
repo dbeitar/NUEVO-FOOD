@@ -1,0 +1,2777 @@
+{
+  "generated_at": "2026-05-29T23:55:46.478Z",
+  "base_url": "http://localhost:3002/api",
+  "total_users_admin": 146,
+  "food_candidates": 55,
+  "audited": 50,
+  "login_ok": 49,
+  "with_food_license": 48,
+  "food_module_enabled": 49,
+  "rows": [
+    {
+      "id": 1,
+      "email": "admin@foodplan.local",
+      "nombre": "Super Admin",
+      "rol": "super_admin",
+      "has_clave_hash": true,
+      "module_access": {
+        "gym": true,
+        "d28d": true,
+        "training": true,
+        "food_plan": true,
+        "nutrition": true,
+        "live_classes": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 223,
+          "user_id": 1,
+          "module_code": "d28d",
+          "active": true,
+          "valid_from": "2026-05-26T19:59:25.010Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 221,
+          "user_id": 1,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T19:59:25.005Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 224,
+          "user_id": 1,
+          "module_code": "gym",
+          "active": true,
+          "valid_from": "2026-05-26T19:59:25.011Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 225,
+          "user_id": 1,
+          "module_code": "live_classes",
+          "active": true,
+          "valid_from": "2026-05-26T19:59:25.013Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 222,
+          "user_id": 1,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T19:59:25.008Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "d28d",
+          "label": "D28D",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-26T19:59:25.010Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        },
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-26T19:59:25.008Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 34,
+      "email": "e2e.food.1779831253284@foodplan.local",
+      "nombre": "E2E Food",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 1906,
+          "user_id": 34,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T21:34:13.422Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 38,
+      "email": "e2e.food.1779831338456@foodplan.local",
+      "nombre": "E2E Food",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 2041,
+          "user_id": 38,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T21:35:38.597Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 41,
+      "email": "e2e.couple1.1779831338456@foodplan.local",
+      "nombre": "E2E Pareja Titular",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 2091,
+          "user_id": 41,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T21:35:38.925Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 42,
+      "email": "e2e.couple2.1779831338456@foodplan.local",
+      "nombre": "E2E Pareja Invitado",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 2101,
+          "user_id": 42,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T21:35:39.056Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 44,
+      "email": "e2e.food.1779831463717@foodplan.local",
+      "nombre": "E2E Food",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 2326,
+          "user_id": 44,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T21:37:43.861Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 47,
+      "email": "e2e.reject.1779831463717@foodplan.local",
+      "nombre": "E2E Reject",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 2376,
+          "user_id": 47,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T21:37:44.239Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T21:37:44.315Z",
+          "valid_until": "2026-05-29T21:37:44.315Z",
+          "status": "por_vencer",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 48,
+      "email": "e2e.couple1.1779831463717@foodplan.local",
+      "nombre": "E2E Pareja Titular",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": false,
+        "training": true,
+        "food_plan": false,
+        "nutrition": true,
+        "live_classes": false
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 2401,
+          "user_id": 48,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T21:37:44.408Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 2402,
+          "user_id": 48,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T21:37:44.411Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T21:37:44.480Z",
+          "valid_until": "2026-06-25T21:37:44.480Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": "PAREJA-DG0CPOE0IJWL"
+        }
+      ]
+    },
+    {
+      "id": 49,
+      "email": "e2e.couple2.1779831463717@foodplan.local",
+      "nombre": "E2E Pareja Invitado",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 2416,
+          "user_id": 49,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T21:37:44.553Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 2417,
+          "user_id": 49,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T21:37:44.554Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T21:37:44.624Z",
+          "valid_until": "2026-06-25T21:37:44.480Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 51,
+      "email": "e2e.food.1779834294799@foodplan.local",
+      "nombre": "E2E Food",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 3586,
+          "user_id": 51,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:24:54.949Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 54,
+      "email": "e2e.reject.1779834294799@foodplan.local",
+      "nombre": "E2E Reject",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 3641,
+          "user_id": 54,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:24:55.320Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:24:55.395Z",
+          "valid_until": "2026-05-29T22:24:55.395Z",
+          "status": "por_vencer",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 55,
+      "email": "e2e.couple1.1779834294799@foodplan.local",
+      "nombre": "E2E Pareja Titular",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": false,
+        "training": true,
+        "food_plan": false,
+        "nutrition": true,
+        "live_classes": false
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 3666,
+          "user_id": 55,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:24:55.504Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 3667,
+          "user_id": 55,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:24:55.505Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:24:55.578Z",
+          "valid_until": "2026-06-25T22:24:55.578Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": "PAREJA-_ORU31MA-IYF"
+        }
+      ]
+    },
+    {
+      "id": 56,
+      "email": "e2e.couple2.1779834294799@foodplan.local",
+      "nombre": "E2E Pareja Invitado",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 3681,
+          "user_id": 56,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:24:55.648Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 3682,
+          "user_id": 56,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:24:55.651Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:24:55.721Z",
+          "valid_until": "2026-06-25T22:24:55.578Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 58,
+      "email": "e2e.food.1779835102341@foodplan.local",
+      "nombre": "E2E Food",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4221,
+          "user_id": 58,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:38:27.219Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 61,
+      "email": "e2e.reject.1779835102341@foodplan.local",
+      "nombre": "E2E Reject",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4276,
+          "user_id": 61,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:38:35.163Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:38:35.239Z",
+          "valid_until": "2026-05-29T22:38:35.239Z",
+          "status": "por_vencer",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 62,
+      "email": "e2e.couple1.1779835102341@foodplan.local",
+      "nombre": "E2E Pareja Titular",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": false,
+        "training": true,
+        "food_plan": false,
+        "nutrition": true,
+        "live_classes": false
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4301,
+          "user_id": 62,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:38:35.339Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 4302,
+          "user_id": 62,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:38:35.341Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:38:35.423Z",
+          "valid_until": "2026-06-25T22:38:35.423Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": "PAREJA-NA7CYZKPJARN"
+        }
+      ]
+    },
+    {
+      "id": 63,
+      "email": "e2e.couple2.1779835102341@foodplan.local",
+      "nombre": "E2E Pareja Invitado",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4316,
+          "user_id": 63,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:38:35.498Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 4317,
+          "user_id": 63,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:38:35.500Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:38:35.576Z",
+          "valid_until": "2026-06-25T22:38:35.423Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 65,
+      "email": "e2e.food.1779835295247@foodplan.local",
+      "nombre": "E2E Food",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4501,
+          "user_id": 65,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:41:43.073Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 68,
+      "email": "e2e.reject.1779835295247@foodplan.local",
+      "nombre": "E2E Reject",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4556,
+          "user_id": 68,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:41:54.589Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:41:54.667Z",
+          "valid_until": "2026-05-29T22:41:54.667Z",
+          "status": "por_vencer",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 69,
+      "email": "e2e.couple1.1779835295247@foodplan.local",
+      "nombre": "E2E Pareja Titular",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": false,
+        "training": true,
+        "food_plan": false,
+        "nutrition": true,
+        "live_classes": false
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4581,
+          "user_id": 69,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:41:54.769Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 4582,
+          "user_id": 69,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:41:54.770Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:41:54.844Z",
+          "valid_until": "2026-06-25T22:41:54.844Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": "PAREJA-UE-WTNZQZM82"
+        }
+      ]
+    },
+    {
+      "id": 70,
+      "email": "e2e.couple2.1779835295247@foodplan.local",
+      "nombre": "E2E Pareja Invitado",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4596,
+          "user_id": 70,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:41:54.913Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 4597,
+          "user_id": 70,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:41:54.915Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:41:54.987Z",
+          "valid_until": "2026-06-25T22:41:54.844Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 72,
+      "email": "e2e.food.1779835419726@foodplan.local",
+      "nombre": "E2E Food",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4671,
+          "user_id": 72,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:43:49.485Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 75,
+      "email": "e2e.reject.1779835419726@foodplan.local",
+      "nombre": "E2E Reject",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4726,
+          "user_id": 75,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:44:00.795Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:44:00.874Z",
+          "valid_until": "2026-05-29T22:44:00.874Z",
+          "status": "por_vencer",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 76,
+      "email": "e2e.couple1.1779835419726@foodplan.local",
+      "nombre": "E2E Pareja Titular",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": false,
+        "training": true,
+        "food_plan": false,
+        "nutrition": true,
+        "live_classes": false
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4751,
+          "user_id": 76,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:44:00.975Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 4752,
+          "user_id": 76,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:44:00.977Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:44:01.054Z",
+          "valid_until": "2026-06-25T22:44:01.054Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": "PAREJA-TPYBJSYF-0M7"
+        }
+      ]
+    },
+    {
+      "id": 77,
+      "email": "e2e.couple2.1779835419726@foodplan.local",
+      "nombre": "E2E Pareja Invitado",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4766,
+          "user_id": 77,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:44:01.117Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 4767,
+          "user_id": 77,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:44:01.118Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:44:01.187Z",
+          "valid_until": "2026-06-25T22:44:01.054Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 79,
+      "email": "e2e.food.1779835528678@foodplan.local",
+      "nombre": "E2E Food",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4941,
+          "user_id": 79,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:45:40.502Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 82,
+      "email": "e2e.reject.1779835528678@foodplan.local",
+      "nombre": "E2E Reject",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 4996,
+          "user_id": 82,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:45:57.377Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:45:57.453Z",
+          "valid_until": "2026-05-29T22:45:57.453Z",
+          "status": "por_vencer",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 83,
+      "email": "e2e.couple1.1779835528678@foodplan.local",
+      "nombre": "E2E Pareja Titular",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": false,
+        "training": true,
+        "food_plan": false,
+        "nutrition": true,
+        "live_classes": false
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 5021,
+          "user_id": 83,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:45:57.559Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 5022,
+          "user_id": 83,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:45:57.561Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:45:57.638Z",
+          "valid_until": "2026-06-25T22:45:57.638Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": "PAREJA-E6J7SJ9AYL1U"
+        }
+      ]
+    },
+    {
+      "id": 84,
+      "email": "e2e.couple2.1779835528678@foodplan.local",
+      "nombre": "E2E Pareja Invitado",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 5036,
+          "user_id": 84,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:45:57.706Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 5037,
+          "user_id": 84,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:45:57.708Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:45:57.781Z",
+          "valid_until": "2026-06-25T22:45:57.638Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 86,
+      "email": "e2e.food.1779835802803@foodplan.local",
+      "nombre": "E2E Food",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 5151,
+          "user_id": 86,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:50:22.068Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 89,
+      "email": "e2e.reject.1779835802803@foodplan.local",
+      "nombre": "E2E Reject",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 5206,
+          "user_id": 89,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:50:42.587Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:50:42.660Z",
+          "valid_until": "2026-05-29T22:50:42.660Z",
+          "status": "por_vencer",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 90,
+      "email": "e2e.couple1.1779835802803@foodplan.local",
+      "nombre": "E2E Pareja Titular",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": false,
+        "training": true,
+        "food_plan": false,
+        "nutrition": true,
+        "live_classes": false
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 5231,
+          "user_id": 90,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:50:42.761Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 5232,
+          "user_id": 90,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:50:42.763Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:50:42.838Z",
+          "valid_until": "2026-06-25T22:50:42.838Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": "PAREJA-GUFFNZZ1ZF06"
+        }
+      ]
+    },
+    {
+      "id": 91,
+      "email": "e2e.couple2.1779835802803@foodplan.local",
+      "nombre": "E2E Pareja Invitado",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 5246,
+          "user_id": 91,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T22:50:42.907Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 5247,
+          "user_id": 91,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T22:50:42.908Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T22:50:42.979Z",
+          "valid_until": "2026-06-25T22:50:42.838Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 123,
+      "email": "food.admin@d28d.local",
+      "nombre": "Admin Plan Alim.",
+      "rol": "admin_food",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 1116,
+          "user_id": 123,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T20:42:55.790Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 124,
+      "email": "coach.admin@d28d.local",
+      "nombre": "Admin Entrenadores",
+      "rol": "admin_entrenador",
+      "has_clave_hash": true,
+      "module_access": {
+        "training": true,
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 1126,
+          "user_id": 124,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T20:42:55.825Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 1127,
+          "user_id": 124,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T20:42:55.826Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-26T20:42:55.826Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 127,
+      "email": "nutricionista@d28d.local",
+      "nombre": "Nutricionista",
+      "rol": "nutricionista",
+      "has_clave_hash": true,
+      "module_access": {},
+      "login_ok": true,
+      "licenses": [],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 128,
+      "email": "vital.user@d28d.local",
+      "nombre": "Usuario Vital",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": true,
+        "food_plan": true,
+        "d28d_program": "vital",
+        "live_classes": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 491279,
+          "user_id": 128,
+          "module_code": "d28d",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.157Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 491277,
+          "user_id": 128,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.152Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 491281,
+          "user_id": 128,
+          "module_code": "live_classes",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.161Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "d28d",
+          "label": "D28D",
+          "plan": null,
+          "program_id": true,
+          "program_name": null,
+          "valid_from": "2026-05-29T23:55:45.157Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 131,
+      "email": "cliente@d28d.local",
+      "nombre": "Cliente Sin Programa",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "training": true,
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 491297,
+          "user_id": 131,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.260Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 491298,
+          "user_id": 131,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.263Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-29T23:55:45.263Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 132,
+      "email": "admin.food@foodplan.local",
+      "nombre": "Admin Plan Alim.",
+      "rol": "admin_food_plan",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 1161,
+          "user_id": 132,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T20:49:42.913Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 133,
+      "email": "admin.entrenador@foodplan.local",
+      "nombre": "Admin Entrenadores",
+      "rol": "admin_training",
+      "has_clave_hash": true,
+      "module_access": {
+        "training": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 1166,
+          "user_id": 133,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T20:49:42.980Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 1167,
+          "user_id": 133,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T20:49:42.981Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-26T20:49:42.981Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 135,
+      "email": "coach.demo@foodplan.local",
+      "nombre": "Coach Demo",
+      "rol": "entrenador",
+      "has_clave_hash": true,
+      "module_access": {
+        "training": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 491347,
+          "user_id": 135,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.604Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 491348,
+          "user_id": 135,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.606Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-29T23:55:45.606Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 137,
+      "email": "reg-d28d-1779233858@test.local",
+      "nombre": "Usuario d28d",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": true,
+        "training": true,
+        "food_plan": true,
+        "nutrition": true,
+        "live_classes": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 491369,
+          "user_id": 137,
+          "module_code": "d28d",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.726Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 491367,
+          "user_id": 137,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.723Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 491371,
+          "user_id": 137,
+          "module_code": "live_classes",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.727Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 491368,
+          "user_id": 137,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.725Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "d28d",
+          "label": "D28D",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-29T23:55:45.726Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        },
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-29T23:55:45.725Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 139,
+      "email": "reg-coach-1779233860@test.local",
+      "nombre": "Usuario coach",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": false,
+        "training": true,
+        "food_plan": true,
+        "nutrition": true,
+        "live_classes": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 491387,
+          "user_id": 139,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.807Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 491391,
+          "user_id": 139,
+          "module_code": "live_classes",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.810Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 491388,
+          "user_id": 139,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-29T23:55:45.808Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "d28d",
+          "label": "D28D",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-29T23:55:45.810Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        },
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-29T23:55:45.808Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 140,
+      "email": "final.d28d@d28d.local",
+      "nombre": "Verificación — Usuario D28D",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": true,
+        "training": true,
+        "food_plan": true,
+        "nutrition": true,
+        "live_classes": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 1108,
+          "user_id": 140,
+          "module_code": "d28d",
+          "active": true,
+          "valid_from": "2026-05-26T20:42:55.768Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 1106,
+          "user_id": 140,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T20:42:55.761Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 1110,
+          "user_id": 140,
+          "module_code": "live_classes",
+          "active": true,
+          "valid_from": "2026-05-26T20:42:55.771Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 1107,
+          "user_id": 140,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T20:42:55.767Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "d28d",
+          "label": "D28D",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-26T20:42:55.768Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        },
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-26T20:42:55.767Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 142,
+      "email": "final.coach@d28d.local",
+      "nombre": "Verificación — Usuario Entrenador",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "gym": false,
+        "d28d": false,
+        "training": true,
+        "food_plan": true,
+        "nutrition": true,
+        "live_classes": false
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 6771,
+          "user_id": 142,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T23:36:52.760Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 6772,
+          "user_id": 142,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T23:36:52.762Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": null,
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": null,
+          "program_id": null,
+          "program_name": null,
+          "valid_from": "2026-05-26T23:36:52.762Z",
+          "valid_until": null,
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte D28D",
+            "support_message": "Hola, necesito ayuda con mi programa D28D.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20ayuda%20con%20mi%20programa%20D28D."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 145,
+      "email": "e2e.food.1779838582179@foodplan.local",
+      "nombre": "E2E Food",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true,
+        "nutrition": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 6311,
+          "user_id": 145,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T23:36:22.323Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": "f91e9d63-e711-476c-a802-056c79793096",
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": []
+    },
+    {
+      "id": 148,
+      "email": "e2e.reject.1779838582179@foodplan.local",
+      "nombre": "E2E Reject",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 6366,
+          "user_id": 148,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T23:36:22.736Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": "05f9db45-32ea-4516-94d6-be05897a7e4f",
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T23:36:22.822Z",
+          "valid_until": "2026-05-29T23:36:22.822Z",
+          "status": "por_vencer",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 149,
+      "email": "e2e.couple1.1779838582179@foodplan.local",
+      "nombre": "E2E Pareja Titular",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "d28d": false,
+        "training": true,
+        "food_plan": false,
+        "nutrition": true,
+        "live_classes": false
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 6391,
+          "user_id": 149,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T23:36:22.932Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 6392,
+          "user_id": 149,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T23:36:22.934Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": "25308341-c5e7-4100-b826-f47b389082b2",
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T23:36:23.024Z",
+          "valid_until": "2026-06-25T23:36:23.024Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": "PAREJA-JK38PSDLPEWX"
+        }
+      ]
+    },
+    {
+      "id": 150,
+      "email": "e2e.couple2.1779838582179@foodplan.local",
+      "nombre": "E2E Pareja Invitado",
+      "rol": "usuario_final",
+      "has_clave_hash": true,
+      "module_access": {
+        "food_plan": true
+      },
+      "login_ok": true,
+      "licenses": [
+        {
+          "id": 6406,
+          "user_id": 150,
+          "module_code": "food",
+          "active": true,
+          "valid_from": "2026-05-26T23:36:23.098Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        },
+        {
+          "id": 6407,
+          "user_id": 150,
+          "module_code": "training",
+          "active": true,
+          "valid_from": "2026-05-26T23:36:23.098Z",
+          "valid_until": null,
+          "source": "auth",
+          "metadata": null
+        }
+      ],
+      "food_module_status": {
+        "enabled": true,
+        "external": false,
+        "external_url": "https://foodplan.tech",
+        "food_user_id": "cb909d8c-61d6-49a0-826e-b07e411d961c",
+        "licensed": true,
+        "legacy_open": true,
+        "api_base": "https://foodplan.tech/api/v1"
+      },
+      "my_services": [
+        {
+          "service": "training",
+          "label": "TRAINING",
+          "plan": "Entrenadores Pro",
+          "program_id": "training",
+          "program_name": null,
+          "valid_from": "2026-05-26T23:36:23.171Z",
+          "valid_until": "2026-06-25T23:36:23.024Z",
+          "status": "activo",
+          "plan_support": {
+            "support_whatsapp": "573192635819",
+            "support_name": "Soporte Entrenadores",
+            "support_message": "Hola, necesito soporte de mi cuenta de entrenador.",
+            "support_activo": true,
+            "wa_url": "https://wa.me/573192635819?text=Hola%2C%20necesito%20soporte%20de%20mi%20cuenta%20de%20entrenador."
+          },
+          "couple_invite_code": null
+        }
+      ]
+    },
+    {
+      "id": 167,
+      "email": "nicolasdelrio@foodplan.local",
+      "nombre": "Nicolas del Rio",
+      "rol": "entrenador",
+      "has_clave_hash": true,
+      "module_access": {
+        "gym": false,
+        "d28d": false,
+        "training": true,
+        "food_plan": true,
+        "nutrition": true,
+        "live_classes": false
+      },
+      "login_ok": false,
+      "licenses": [],
+      "food_module_status": null,
+      "my_services": []
+    }
+  ]
+}

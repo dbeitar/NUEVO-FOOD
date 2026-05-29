@@ -2,11 +2,11 @@ import { useState } from 'react'
 import { useAuth } from './context/useAuth'
 import { useI18n } from './context/useI18n'
 import ModernLogin from './components/ModernLogin'
-import Register from './components/Register'
 import RegisterCommercialWizard from './components/RegisterCommercialWizard'
-
-const useCommercialRegister = import.meta.env.VITE_REGISTER_WIZARD_V2 !== 'false'
 import Dashboard from './components/Dashboard'
+
+/** Registro oficial único (wizard comercial). Requiere VITE_REGISTER_WIZARD_V2=true en prod. */
+const registerWizardEnabled = import.meta.env.VITE_REGISTER_WIZARD_V2 !== 'false'
 
 function App() {
   const { user, loading } = useAuth()
@@ -18,15 +18,17 @@ function App() {
   }
 
   if (!user) {
-    return showRegister ? (
-      useCommercialRegister ? (
-        <RegisterCommercialWizard onSwitchToLogin={() => setShowRegister(false)} />
-      ) : (
-        <Register onSwitchToLogin={() => setShowRegister(false)} />
-      )
-    ) : (
-      <ModernLogin onSwitchToRegister={() => setShowRegister(true)} />
-    )
+    if (showRegister) {
+      if (!registerWizardEnabled) {
+        return (
+          <div className="loading">
+            Registro no disponible. Contacta al administrador (VITE_REGISTER_WIZARD_V2 debe estar activo).
+          </div>
+        )
+      }
+      return <RegisterCommercialWizard onSwitchToLogin={() => setShowRegister(false)} />
+    }
+    return <ModernLogin onSwitchToRegister={() => setShowRegister(true)} />
   }
 
   return <Dashboard />
