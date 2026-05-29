@@ -27,8 +27,13 @@ export default function D28dRoutinesMaster({ onBack, readOnly = false, variant =
       ]);
       setRoutines(listRes.data?.data || []);
       setCategories(catRes.data?.data || []);
-    } catch {
-      setError('No se pudo cargar el maestro de rutinas (requiere PostgreSQL).');
+    } catch (e) {
+      const msg = e?.response?.data?.message || e?.message;
+      setError(
+        msg
+          ? `No se pudo cargar rutinas: ${msg}`
+          : 'No se pudo cargar el maestro de rutinas (requiere PostgreSQL).',
+      );
     } finally {
       setLoading(false);
     }

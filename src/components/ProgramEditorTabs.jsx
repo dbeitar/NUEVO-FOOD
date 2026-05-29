@@ -8,7 +8,7 @@ const TABS = [
   { id: 'general', label: 'General', icon: Settings },
   { id: 'ciclos', label: 'Ciclos', icon: Calendar },
   { id: 'zoom', label: 'Zoom', icon: Video },
-  { id: 'planes', label: 'Planes', icon: CreditCard },
+  { id: 'planes', label: 'Planes comerciales', icon: CreditCard },
 ];
 
 export default function ProgramEditorTabs({ program, cycles, onClose, onSaved }) {
@@ -98,7 +98,7 @@ export default function ProgramEditorTabs({ program, cycles, onClose, onSaved })
         </button>
       </div>
 
-      <div className="flex flex-wrap gap-1 p-2 border-b border-slate-100 bg-white">
+      <div className="flex flex-wrap gap-1 p-2 border-b border-slate-100 bg-white notranslate" translate="no">
         {TABS.map(({ id, label, icon: Icon }) => (
           <button
             key={id}
@@ -108,7 +108,8 @@ export default function ProgramEditorTabs({ program, cycles, onClose, onSaved })
             }`}
             onClick={() => setTab(id)}
           >
-            <Icon className="w-4 h-4" /> {label}
+            <Icon className="w-4 h-4" />
+            <span translate="no">{label}</span>
           </button>
         ))}
       </div>
@@ -244,13 +245,15 @@ export default function ProgramEditorTabs({ program, cycles, onClose, onSaved })
         )}
 
         {tab === 'planes' && (
-          <AdminPlans
-            embedded
-            mode="d28d"
-            programId={program.id}
-            hideProgramColumn
-            title={`Planes — ${program.name}`}
-          />
+          <div className="max-h-[70vh] overflow-y-auto pr-1">
+            <AdminPlans
+              embedded
+              mode="d28d"
+              programId={program.id}
+              hideProgramColumn
+              title={`Planes — ${program.name}`}
+            />
+          </div>
         )}
       </div>
     </div>

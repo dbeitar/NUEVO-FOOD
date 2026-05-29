@@ -168,9 +168,28 @@ class AccountsDatabase {
         await accountsRepo.upsertPlan(p);
       }
       const deprecated = ['D28D Vital - Bienestar', 'Pancitas Fit - Gestación'];
+      const planNameFixes = {
+        'Vital D28D - Menstrual': 'Vital D28D - Mensual',
+        'Vital D28D - mestrual': 'Vital D28D - Mensual',
+      };
+      for (const [wrong, right] of Object.entries(planNameFixes)) {
+        const old = this.planes.find((x) => x.nombre === wrong);
+        if (old && !this.planes.find((x) => x.nombre === right)) {
+          await accountsRepo.renamePlan(wrong, right);
+        }
+      }
+      const d28dPrograms = new Set(['vital', 'pancitas', 'virtual_d28d']);
       for (const name of deprecated) {
         const old = this.planes.find((x) => x.nombre === name);
         if (old) await accountsRepo.upsertPlan({ ...old, activo: false, visible: false });
+      }
+      // Planes D28D del catálogo (seed + personalizados): activos y visibles en registro, salvo legacy deprecados.
+      for (const p of this.planes) {
+        if (String(p.kind || 'd28d') !== 'd28d') continue;
+        if (deprecated.includes(p.nombre)) continue;
+        if (!d28dPrograms.has(String(p.program_id || ''))) continue;
+        if (p.activo !== false && p.visible !== false) continue;
+        await accountsRepo.upsertPlan({ ...p, activo: true, visible: true });
       }
       const synced = await accountsRepo.loadState();
       this.planes = synced.planes;
@@ -295,11 +314,25 @@ class AccountsDatabase {
   }
 
   async updatePlan(nombre, updates) {
-    const plan = this.getPlanByNombre(nombre);
+    let plan = this.getPlanByNombre(nombre);
     if (!plan) return null;
-    if (updates.nombre && updates.nombre !== nombre) {
-      if (this.getPlanByNombre(updates.nombre)) return null;
-      plan.nombre = updates.nombre;
+    const nextNombre = updates.nombre != null ? String(updates.nombre).trim() : '';
+    if (nextNombre && nextNombre !== nombre) {
+      if (this.getPlanByNombre(nextNombre)) return null;
+      if (useRelationalStorage()) {
+        const ok = await accountsRepo.renamePlan(nombre, nextNombre);
+        if (!ok) return null;
+        const reloaded = await accountsRepo.loadState();
+        this.planes = reloaded.planes;
+        plan = this.getPlanByNombre(nextNombre);
+        nombre = nextNombre;
+      } else {
+        this.accounts.forEach((a) => {
+          if (a.plan === nombre) a.plan = nextNombre;
+        });
+        plan.nombre = nextNombre;
+        nombre = nextNombre;
+      }
     }
     if (typeof updates.descripcion !== 'undefined') plan.descripcion = updates.descripcion;
     if (typeof updates.precio_mensual !== 'undefined') plan.precio_mensual = updates.precio_mensual;
@@ -357,14 +390,15 @@ class AccountsDatabase {
 
   getExpiringSoon() {
     const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
     const proximosMesT = new Date(hoy.getTime() + 30 * 24 * 60 * 60 * 1000);
-    
-    return this.accounts.filter(a => 
-      a.activo && 
-      a.fecha_vencimiento >= hoy && 
-      a.fecha_vencimiento <= proximosMesT &&
-      a.estado === 'activo'
-    );
+
+    return this.accounts.filter((a) => {
+      if (!a.activo || String(a.estado || '').toLowerCase() !== 'activo') return false;
+      const venc = a.fecha_vencimiento ? new Date(a.fecha_vencimiento) : null;
+      if (!venc || Number.isNaN(venc.getTime())) return false;
+      return venc >= hoy && venc <= proximosMesT;
+    });
   }
 
   renovarPlan(id, nuevosPlan) {

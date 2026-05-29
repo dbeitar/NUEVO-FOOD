@@ -47,7 +47,11 @@ export default function AdminPlans({
   const [error, setError] = useState('');
   const [editingPlan, setEditingPlan] = useState(null);
   const [showForm, setShowForm] = useState(false);
+  const [showAdvanced, setShowAdvanced] = useState(false);
   const { t } = useI18n();
+
+  const planKey = (nombre) => encodeURIComponent(String(nombre || ''));
+  const isPlanActive = (plan) => plan.activo !== false && plan.visible !== false;
 
   const initialForm = useMemo(() => ({
     ...DEFAULT_FORM,
@@ -141,12 +145,12 @@ export default function AdminPlans({
         support_activo: formData.support_activo !== false,
         cycles_count: Number(formData.cycles_count) || null,
         activo: formData.activo !== false,
-        visible: formData.visible !== false,
+        visible: formData.activo !== false,
         sort_order: Number(formData.sort_order) || 0,
       };
       if (editingPlan) {
         // Edit logic
-        await api.put(`/accounts/plans/${editingPlan.nombre}`, {
+        await api.put(`/accounts/plans/${planKey(editingPlan.nombre)}`, {
           ...payload,
         });
       } else {
@@ -160,7 +164,10 @@ export default function AdminPlans({
       setShowForm(false);
       fetchPlans();
     } catch (err) {
-      setError(err.response?.data?.error || 'Error al guardar plan');
+      const msg = err.response?.data?.error || 'Error al guardar plan';
+      setError(msg.includes('encontrado') || msg.includes('duplicad')
+        ? 'No se pudo guardar: revisa que el nombre del plan no esté repetido.'
+        : msg);
     }
   };
 
@@ -184,56 +191,41 @@ export default function AdminPlans({
       support_message: plan.support_message || '',
       support_activo: plan.support_activo !== false,
       cycles_count: plan.cycles_count ?? 1,
-      activo: plan.activo !== false,
-      visible: plan.visible !== false,
+      activo: isPlanActive(plan),
+      visible: isPlanActive(plan),
       sort_order: plan.sort_order || 0,
     });
+    setShowAdvanced(false);
+    setShowForm(true);
+  };
+
+  const openCreateForm = () => {
+    setEditingPlan(null);
+    setFormData({ ...initialForm });
+    setShowAdvanced(false);
     setShowForm(true);
   };
 
   const handleDelete = async (nombre) => {
     if (!window.confirm(t('plans.delete_confirm', '¿Seguro que deseas eliminar este plan?'))) return;
     try {
-      await api.delete(`/accounts/plans/${nombre}`);
+      await api.delete(`/accounts/plans/${planKey(nombre)}`);
       fetchPlans();
     } catch {
       setError(t('plans.delete_error', 'Error al eliminar plan'));
     }
   };
 
-  const handleDuplicate = async (plan) => {
+  const togglePlanActive = async (plan) => {
+    const next = !isPlanActive(plan);
     try {
-      await api.post(`/accounts/plans/${encodeURIComponent(plan.nombre)}/duplicate`, {
-        nombre: `${plan.nombre} (copia)`,
+      await api.put(`/accounts/plans/${planKey(plan.nombre)}`, {
+        activo: next,
+        visible: next,
       });
       fetchPlans();
     } catch (err) {
-      setError(err?.response?.data?.error || 'Error al duplicar');
-    }
-  };
-
-  const patchPlan = async (nombre, patch) => {
-    try {
-      await api.put(`/accounts/plans/${encodeURIComponent(nombre)}`, patch);
-      fetchPlans();
-    } catch (err) {
-      setError(err?.response?.data?.error || 'Error actualizando plan');
-    }
-  };
-
-  const movePlan = async (index, direction) => {
-    const target = index + direction;
-    if (target < 0 || target >= plans.length) return;
-    const reordered = [...plans];
-    const tmp = reordered[index];
-    reordered[index] = reordered[target];
-    reordered[target] = tmp;
-    const items = reordered.map((p, i) => ({ nombre: p.nombre, sort_order: i + 1 }));
-    try {
-      await api.put('/accounts/plans/reorder', { items });
-      fetchPlans();
-    } catch (err) {
-      setError(err?.response?.data?.error || 'Error reordenando');
+      setError(err?.response?.data?.error || 'Error al cambiar estado del plan');
     }
   };
 
@@ -248,33 +240,32 @@ export default function AdminPlans({
 
   return (
     <div className="space-y-6">
-      {!embedded && (
       <div className="flex flex-wrap justify-between items-center gap-3">
         <div className="flex items-center gap-3">
-          {onBack && (
+          {!embedded && onBack && (
             <button type="button" className="btn-secondary" onClick={onBack}>
               <ArrowLeft className="w-4 h-4 inline mr-1" />
               Volver
             </button>
           )}
-          <h3 className="text-lg font-bold text-stone-900">{pageTitle}</h3>
+          {!embedded && <h3 className="text-lg font-bold text-stone-900">{pageTitle}</h3>}
+          {embedded && (
+            <p className="text-sm text-stone-600">
+              Activo = visible en registro público. Inactivo = no aparece al crear usuario.
+            </p>
+          )}
         </div>
         {!showForm && canAddPlan && (
           <button
             type="button"
             className="btn-primary inline-flex items-center gap-2"
-            onClick={() => {
-              setEditingPlan(null);
-              setFormData({ ...initialForm });
-              setShowForm(true);
-            }}
+            onClick={openCreateForm}
           >
             <Plus className="w-4 h-4" />
-            {t('plans.new', 'Nuevo Plan')}
+            Crear plan
           </button>
         )}
       </div>
-      )}
       {singlePlanOnly && plans.length >= 1 && !showForm && (
         <p className="text-sm text-stone-600">
           {fixedKind === 'food'
@@ -290,9 +281,9 @@ export default function AdminPlans({
       )}
 
       {showForm ? (
-        <div className="card">
+        <div className="card admin-plans-form notranslate" translate="no">
           <div className="flex justify-between items-center mb-4 border-b border-slate-200 pb-2">
-            <h4 className="text-md font-semibold text-stone-900">{editingPlan ? t('plans.edit', 'Editar Plan') : t('plans.create', 'Crear Nuevo Plan')}</h4>
+            <h4 className="text-md font-semibold">{editingPlan ? t('plans.edit', 'Editar plan') : t('plans.create', 'Crear plan')}</h4>
             <button 
               className="text-sm text-stone-500 hover:text-stone-900" 
               onClick={() => setShowForm(false)}
@@ -329,15 +320,14 @@ export default function AdminPlans({
                 <input name="sort_order" type="number" className="input"
                   value={formData.sort_order} onChange={handleInputChange} />
               </div>
-              <label className="flex items-center gap-2 text-sm pt-6">
+              <label className="flex items-center gap-2 text-sm pt-6 md:col-span-2">
                 <input type="checkbox" checked={!!formData.activo}
-                  onChange={(e) => setFormData((p) => ({ ...p, activo: e.target.checked }))} />
-                Activo
-              </label>
-              <label className="flex items-center gap-2 text-sm pt-6">
-                <input type="checkbox" checked={!!formData.visible}
-                  onChange={(e) => setFormData((p) => ({ ...p, visible: e.target.checked }))} />
-                Visible en registro
+                  onChange={(e) => setFormData((p) => ({
+                    ...p,
+                    activo: e.target.checked,
+                    visible: e.target.checked,
+                  }))} />
+                Activo (disponible en registro de usuarios nuevos)
               </label>
             </div>
             {!fixedKind && (
@@ -354,15 +344,20 @@ export default function AdminPlans({
               <input type="hidden" name="kind" value="training" />
             )}
             <div>
-              <label className="label">{t('plans.name', 'Nombre del Plan')}</label>
-              <input 
-                name="nombre" 
-                value={formData.nombre} 
-                onChange={handleInputChange} 
-                disabled={!!editingPlan} 
-                required 
-                className="input disabled:bg-stone-100"
+              <label className="label" translate="no">{t('plans.name', 'Nombre del plan')}</label>
+              <input
+                name="nombre"
+                value={formData.nombre}
+                onChange={handleInputChange}
+                required
+                className="input"
+                placeholder="Ej: Vital D28D - Mensual"
               />
+              {editingPlan && (
+                <p className="text-xs text-stone-500 mt-1">
+                  Si cambias el nombre, las cuentas vinculadas se actualizan automáticamente.
+                </p>
+              )}
             </div>
             <div>
               <label className="label">{t('common.description', 'Descripción')}</label>
@@ -430,8 +425,18 @@ export default function AdminPlans({
               </select>
             </div>
             )}
-            <div className="md:col-span-2 border-t border-stone-200 pt-4 mt-2">
-              <p className="text-sm font-semibold text-stone-800 mb-3">Soporte WhatsApp (wa.me)</p>
+            <div className="border-t border-stone-200 pt-3">
+              <button
+                type="button"
+                className="text-sm font-medium text-indigo-700 hover:underline"
+                onClick={() => setShowAdvanced((v) => !v)}
+              >
+                {showAdvanced ? 'Ocultar opciones avanzadas' : 'Mostrar opciones avanzadas (WhatsApp, JSON módulos…)'}
+              </button>
+            </div>
+            {showAdvanced && (
+            <div className="border-t border-stone-200 pt-4 mt-2 space-y-4">
+              <p className="text-sm font-semibold text-stone-800">Soporte WhatsApp (wa.me)</p>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <input className="input" name="support_whatsapp" placeholder="+573192635819"
                   value={formData.support_whatsapp} onChange={handleInputChange} />
@@ -446,18 +451,55 @@ export default function AdminPlans({
                   Soporte activo
                 </label>
               </div>
+              {fixedKind !== 'training' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="flex items-center gap-3">
+                  <input
+                    id="is_couple"
+                    name="is_couple"
+                    type="checkbox"
+                    checked={!!formData.is_couple}
+                    onChange={(e) => setFormData((prev) => ({ ...prev, is_couple: e.target.checked }))}
+                  />
+                  <label htmlFor="is_couple" className="label" style={{ marginBottom: 0 }}>Plan de pareja</label>
+                </div>
+                <div>
+                  <label className="label">Cupos incluidos</label>
+                  <input
+                    name="included_seats"
+                    type="number"
+                    value={formData.included_seats}
+                    onChange={handleInputChange}
+                    className="input"
+                    min="1"
+                    max="2"
+                  />
+                </div>
+              </div>
+              )}
+              <div>
+                <label className="label">Acceso a módulos (JSON técnico)</label>
+                <textarea
+                  name="module_access"
+                  value={formData.module_access}
+                  onChange={handleInputChange}
+                  rows="5"
+                  className="input font-mono text-xs"
+                />
+              </div>
             </div>
-            {fixedKind !== 'training' && (
+            )}
+            {fixedKind !== 'training' && formData.kind !== 'training' && !showAdvanced && (
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex items-center gap-3">
                 <input
-                  id="is_couple"
+                  id="is_couple_simple"
                   name="is_couple"
                   type="checkbox"
                   checked={!!formData.is_couple}
                   onChange={(e) => setFormData((prev) => ({ ...prev, is_couple: e.target.checked }))}
                 />
-                <label htmlFor="is_couple" className="label" style={{ marginBottom: 0 }}>Plan de pareja</label>
+                <label htmlFor="is_couple_simple" className="label" style={{ marginBottom: 0 }}>Plan de pareja</label>
               </div>
               <div>
                 <label className="label">Cupos incluidos</label>
@@ -473,16 +515,6 @@ export default function AdminPlans({
               </div>
             </div>
             )}
-            <div>
-              <label className="label">module_access (JSON)</label>
-              <textarea
-                name="module_access"
-                value={formData.module_access}
-                onChange={handleInputChange}
-                rows="5"
-                className="input font-mono text-xs"
-              />
-            </div>
             <div>
               <label className="label">{t('plans.features', 'Características (separadas por coma)')}</label>
               <input 
@@ -511,8 +543,8 @@ export default function AdminPlans({
                   )}
                   <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.name', 'Plan')}</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Usuarios</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">COP</th>
-                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">USD</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider notranslate" translate="no">Precio COP</th>
+                  <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider notranslate" translate="no">Precio USD</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Ciclos</th>
                   <th scope="col" className="px-6 py-3 text-left text-xs font-semibold text-stone-600 uppercase tracking-wider">Estado</th>
                   <th scope="col" className="px-6 py-3 text-right text-xs font-semibold text-stone-600 uppercase tracking-wider">{t('common.actions', 'Acciones')}</th>
@@ -522,7 +554,7 @@ export default function AdminPlans({
                 {loading ? (
                   <tr><td colSpan={hideProgramColumn ? 7 : 8} className="px-6 py-4 text-center text-sm text-slate-400">{t('plans.loading', 'Cargando planes...')}</td></tr>
                 ) : plans.length > 0 ? (
-                  plans.map((plan, idx) => (
+                  plans.map((plan) => (
                     <tr key={plan.nombre} className="hover:bg-stone-100 transition-colors">
                       {!hideProgramColumn && (
                         <td className="px-6 py-4 whitespace-nowrap text-sm font-medium text-stone-900 capitalize">
@@ -535,26 +567,37 @@ export default function AdminPlans({
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{plan.precio_mensual_usd || '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-sm text-stone-600">{plan.cycles_count ?? '—'}</td>
                       <td className="px-6 py-4 whitespace-nowrap text-xs">
-                        <span className={`px-2 py-0.5 rounded-full ${plan.activo !== false ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-600'}`}>
-                          {plan.activo !== false ? 'Activo' : 'Inactivo'}
+                        <span className={`px-2 py-0.5 rounded-full ${isPlanActive(plan) ? 'bg-emerald-100 text-emerald-700' : 'bg-stone-200 text-stone-600'}`}>
+                          {isPlanActive(plan) ? 'Activo' : 'Inactivo'}
                         </span>
-                        {plan.visible === false && <span className="ml-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700">Oculto</span>}
                       </td>
                       <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                        <div className="flex justify-end gap-1 flex-wrap">
-                          <button type="button" className="text-xs px-2 py-1 rounded border" onClick={() => movePlan(idx, -1)} title="Subir">↑</button>
-                          <button type="button" className="text-xs px-2 py-1 rounded border" onClick={() => movePlan(idx, 1)} title="Bajar">↓</button>
-                          <button className="text-lime-700 hover:text-black bg-stone-100 hover:bg-lime-400 p-2 rounded-lg" onClick={() => handleEdit(plan)} title="Editar">
+                        <div className="flex justify-end gap-2 flex-wrap items-center">
+                          <button
+                            type="button"
+                            className="text-lime-800 hover:text-black bg-stone-100 hover:bg-lime-400 p-2 rounded-lg"
+                            onClick={() => handleEdit(plan)}
+                            title="Editar precio y características"
+                          >
                             <Pencil className="w-4 h-4" />
                           </button>
-                          <button className="text-stone-700 bg-stone-100 hover:bg-stone-200 p-2 rounded-lg text-xs" onClick={() => handleDuplicate(plan)} title="Duplicar">⧉</button>
-                          <button className="text-xs px-2 py-1 rounded border" onClick={() => patchPlan(plan.nombre, { activo: plan.activo === false })} title="Activar/Desactivar">
-                            {plan.activo === false ? 'On' : 'Off'}
+                          <button
+                            type="button"
+                            className={`text-xs px-3 py-1.5 rounded-lg border font-medium ${
+                              isPlanActive(plan)
+                                ? 'border-stone-300 text-stone-700 hover:bg-stone-100'
+                                : 'border-emerald-500 text-emerald-800 bg-emerald-50 hover:bg-emerald-100'
+                            }`}
+                            onClick={() => togglePlanActive(plan)}
+                          >
+                            {isPlanActive(plan) ? 'Desactivar' : 'Activar'}
                           </button>
-                          <button className="text-xs px-2 py-1 rounded border" onClick={() => patchPlan(plan.nombre, { visible: plan.visible === false })} title="Mostrar/Ocultar">
-                            {plan.visible === false ? 'Show' : 'Hide'}
-                          </button>
-                          <button className="text-white bg-red-600 hover:bg-red-700 p-2 rounded-lg" onClick={() => handleDelete(plan.nombre)} title="Eliminar">
+                          <button
+                            type="button"
+                            className="text-white bg-red-600 hover:bg-red-700 p-2 rounded-lg"
+                            onClick={() => handleDelete(plan.nombre)}
+                            title="Eliminar plan"
+                          >
                             <Trash2 className="w-4 h-4" />
                           </button>
                         </div>

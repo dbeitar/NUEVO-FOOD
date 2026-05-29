@@ -5,6 +5,7 @@ import { useI18n } from '../context/useI18n';
 import { useAuth } from '../context/useAuth';
 import { getRolesArr } from './dashboard/userServices';
 import InviteCodeCell from './admin/InviteCodeCell';
+import WhiteLabelFields from './admin/WhiteLabelFields';
 
 /** Acepta array directo o respuestas envueltas ({ data }, { gyms }, etc.). */
 function asArray(payload) {

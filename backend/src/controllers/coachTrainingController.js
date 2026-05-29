@@ -1,16 +1,20 @@
 const coachTraining = require('../services/coachTrainingService');
 const TrainingPlansStore = require('../models/TrainingPlansStore');
-const { isCoachUser, getCoachTrainerId } = require('../utils/coachScope');
+const {
+  isCoachUser,
+  canUseCoachTrainingAssistant,
+  resolveCoachTrainerId,
+} = require('../utils/coachScope');
 const { auditTraining } = require('../services/trainingAudit');
 const userDB = require('../models/UserDatabase');
 
 function denyIfNotCoach(req, res) {
-  if (!isCoachUser(req.user)) {
-    res.status(403).json({ error: 'Solo entrenadores pueden usar esta función' });
+  if (!canUseCoachTrainingAssistant(req.user)) {
+    res.status(403).json({ error: 'Sin permiso para herramientas de coach' });
     return true;
   }
-  if (getCoachTrainerId(req.user) == null) {
-    res.status(400).json({ error: 'Cuenta sin entrenador vinculado' });
+  if (resolveCoachTrainerId(req.user) == null) {
+    res.status(400).json({ error: 'Cuenta sin entrenador vinculado en el catálogo' });
     return true;
   }
   return false;

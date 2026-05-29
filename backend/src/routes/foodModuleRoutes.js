@@ -52,7 +52,13 @@ async function deliverFoodSession(res, user, { handoffToken = null, auditAction 
     roles: ctx.roles,
   });
   if (!session.ok) {
-    return res.status(502).json({ error: session.error || 'No se pudo abrir FOOD_PLAN' });
+    const status = session.error?.includes('FOOD_MODULE_URL') ? 503 : 502;
+    return res.status(status).json({
+      error: session.error || 'No se pudo abrir FOOD_PLAN',
+      hint: status === 503
+        ? 'Configura FOOD_MODULE_URL y FOOD_SHELL_API_KEY en el servidor del shell.'
+        : undefined,
+    });
   }
   auditFood(user.id, auditAction, 'Sesión Food entregada al shell embebido', {
     food_user_id: user.food_user_id,

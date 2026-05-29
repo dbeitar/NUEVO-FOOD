@@ -15,6 +15,32 @@ function isCoachUser(user) {
   return rolesOf(user).some((r) => COACH_ROLES.has(r));
 }
 
+const COACH_AI_PLATFORM_ROLES = new Set(['super_admin', 'admin_d28d']);
+
+/** Asistente IA coach: entrenadores + admins que prueban el módulo Training. */
+function canUseCoachTrainingAssistant(user) {
+  if (!user) return false;
+  return rolesOf(user).some(
+    (r) => COACH_ROLES.has(r) || COACH_AI_PLATFORM_ROLES.has(r),
+  );
+}
+
+/**
+ * trainer_id para APIs coach (IA, clientes). Entrenadores por JWT/email;
+ * super_admin/admin_d28d: primer entrenador activo del catálogo si no hay vínculo.
+ */
+function resolveCoachTrainerId(user) {
+  const direct = getCoachTrainerId(user);
+  if (direct != null) return direct;
+  const roles = rolesOf(user);
+  if (!roles.some((r) => COACH_AI_PLATFORM_ROLES.has(r))) return null;
+  const trainers = TrainersDatabase.getAll().filter((t) => t.activo !== false);
+  if (!trainers.length) return null;
+  const byEmail = trainerIdFromEmail(user.email);
+  if (byEmail != null) return byEmail;
+  return Number(trainers[0].id);
+}
+
 function isPureCoach(user) {
   const roles = rolesOf(user);
   return roles.includes('entrenador') && !roles.some((r) => ['super_admin', 'admin_d28d', 'admin_gimnasio', 'admin_marca'].includes(r));
@@ -84,6 +110,8 @@ function sanitizeModuleAccessForCoachClient(access = {}) {
 module.exports = {
   COACH_ROLES,
   isCoachUser,
+  canUseCoachTrainingAssistant,
+  resolveCoachTrainerId,
   isPureCoach,
   getCoachTrainerId,
   trainerIdFromEmail,

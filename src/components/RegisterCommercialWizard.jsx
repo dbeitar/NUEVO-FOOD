@@ -44,46 +44,130 @@ export default function RegisterCommercialWizard({ onSwitchToLogin }) {
   const [paymentMethods, setPaymentMethods] = useState([]);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [entryMode, setEntryMode] = useState('direct');
+  const [inviteCode, setInviteCode] = useState('');
+  const [inviteContext, setInviteContext] = useState(null);
+  const [validatingCode, setValidatingCode] = useState(false);
+
+  const effectiveService = useMemo(() => {
+    if (inviteContext) {
+      const ma = inviteContext.module_access || {};
+      if (ma.training && !ma.d28d) return 'training';
+      if (ma.food_plan || ma.nutrition) return 'food';
+      return 'd28d';
+    }
+    return service;
+  }, [inviteContext, service]);
+
+  const effectiveProgramId = useMemo(() => {
+    if (inviteContext?.program_id) return inviteContext.program_id;
+    return programId;
+  }, [inviteContext, programId]);
 
   useEffect(() => {
-    api.get('/programs')
+    api.get('/programs/public', { skipShellAuth: true })
       .then((res) => setPrograms(res.data?.data || []))
-      .catch(() => setPrograms([]));
+      .catch((err) => {
+        console.error('Error cargando programas para registro:', err);
+        setPrograms([]);
+        setError('No se pudieron cargar los programas. Recarga la página o intenta más tarde.');
+      });
   }, []);
 
   useEffect(() => {
-    if (!service) return;
-    const mod = service === 'food' ? 'food' : service === 'training' ? 'training' : 'd28d';
+    const svc = effectiveService;
+    if (!svc) return;
+    const mod = svc === 'food' ? 'food' : svc === 'training' ? 'training' : 'd28d';
     fetchPaymentMethods(mod).then(setPaymentMethods);
-  }, [service]);
+  }, [effectiveService]);
 
   const filteredPlans = useMemo(() => {
-    if (!service) return [];
-    const kind = service;
-    return plans.filter((p) => {
-      if (String(p.kind) !== kind) return false;
-      if (kind === 'd28d' && programId) {
-        return String(p.program_id) === String(programId);
+    const svc = effectiveService;
+    if (!svc) return [];
+    let list = plans.filter((p) => {
+      if (p.activo === false || p.visible === false) return false;
+      if (String(p.kind) !== svc) return false;
+      if (svc === 'd28d' && effectiveProgramId) {
+        return String(p.program_id) === String(effectiveProgramId);
       }
       return true;
     });
-  }, [plans, service, programId]);
+    if (inviteContext?.plan_scope) {
+      const scope = inviteContext.plan_scope;
+      if (inviteContext.type === 'program' && inviteContext.program_id) {
+        const pid = String(inviteContext.program_id);
+        list = list.filter((p) => String(p.program_id || '') === pid);
+      } else if (scope === 'trainer') {
+        list = list.filter((p) => {
+          const pid = String(p.program_id || '').toLowerCase();
+          return pid === 'virtual_d28d' || pid === 'vital' || !p.program_id;
+        });
+      } else if (scope === 'gym' || scope === 'd28d') {
+        list = list.filter((p) => {
+          const pid = String(p.program_id || '').toLowerCase();
+          return ['virtual_d28d', 'pancitas', 'vital'].includes(pid);
+        });
+      }
+    }
+    return list;
+  }, [plans, effectiveService, effectiveProgramId, inviteContext]);
 
   useEffect(() => {
-    if (step !== 3 || !service) return;
-    const params = { visible: 'true', kind: service };
-    if (service === 'd28d' && programId) params.program_id = programId;
-    api.get('/accounts/plans', { params })
-      .then((res) => setPlans(Array.isArray(res.data) ? res.data : []))
-      .catch(() => setPlans([]));
-  }, [step, service, programId]);
+    if (!inviteContext?.suggested_plan || selectedPlan) return;
+    const suggested = filteredPlans.find((p) => p.nombre === inviteContext.suggested_plan);
+    if (suggested) setSelectedPlan(suggested);
+  }, [inviteContext, filteredPlans, selectedPlan]);
 
-  const priceLabel = (plan) => {
+  useEffect(() => {
+    const svc = effectiveService;
+    if (!svc) return;
+    if (svc === 'd28d' && !effectiveProgramId && !inviteContext) return;
+    const params = { visible: 'true', kind: svc };
+    if (svc === 'd28d' && effectiveProgramId) params.program_id = effectiveProgramId;
+    api.get('/accounts/plans', { params, skipShellAuth: true })
+      .then((res) => {
+        const raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        setPlans(raw);
+      })
+      .catch((err) => {
+        console.error('Error cargando planes:', err);
+        setPlans([]);
+      });
+  }, [effectiveService, effectiveProgramId, inviteContext]);
+
+  const priceForCurrency = (plan, moneda) => {
     if (!plan) return '';
-    if (currency === 'USD' && plan.precio_mensual_usd > 0) {
-      return `USD ${plan.precio_mensual_usd} / mes`;
+    if (moneda === 'USD') {
+      const usd = Number(plan.precio_mensual_usd || 0);
+      return usd > 0 ? `USD ${usd.toLocaleString('en-US')} / mes` : 'Precio en USD no configurado';
     }
-    return `$${Number(plan.precio_mensual || 0).toLocaleString()} COP / mes`;
+    return `$${Number(plan.precio_mensual || 0).toLocaleString('es-CO')} COP / mes`;
+  };
+
+  const validateInviteCode = async (e) => {
+    e?.preventDefault?.();
+    setError('');
+    if (!inviteCode.trim()) {
+      setError('Ingresa tu código de invitación');
+      return;
+    }
+    setValidatingCode(true);
+    try {
+      const res = await api.post('/auth/resolve-invite', { code: inviteCode.trim() }, { skipShellAuth: true });
+      const ctx = res.data?.data;
+      if (!ctx) {
+        setError('Código no válido');
+        return;
+      }
+      setInviteContext(ctx);
+      setSelectedPlan(null);
+      if (ctx.program_id) setProgramId(ctx.program_id);
+      setStep(3);
+    } catch (err) {
+      setError(readApiError(err, 'No pudimos validar el código'));
+    } finally {
+      setValidatingCode(false);
+    }
   };
 
   const goNext = () => {
@@ -98,6 +182,10 @@ export default function RegisterCommercialWizard({ onSwitchToLogin }) {
     }
     if (step === 3 && !selectedPlan) {
       setError('Selecciona un plan');
+      return;
+    }
+    if (step === 3 && !currency) {
+      setError('Selecciona si pagarás en COP o USD');
       return;
     }
     if (step === 4 && !currency) {
@@ -128,9 +216,9 @@ export default function RegisterCommercialWizard({ onSwitchToLogin }) {
     }
     setLoading(true);
     try {
-      const module_access = {
-        ...MODULE_PRESETS[service],
-        ...(service === 'd28d' && programId ? { d28d_program: programId } : {}),
+      const module_access = inviteContext?.module_access || {
+        ...MODULE_PRESETS[effectiveService],
+        ...(effectiveService === 'd28d' && effectiveProgramId ? { d28d_program: effectiveProgramId } : {}),
       };
       await register({
         nombre: formData.nombre,
@@ -139,9 +227,12 @@ export default function RegisterCommercialWizard({ onSwitchToLogin }) {
         teléfono: formData.teléfono,
         genero: formData.genero,
         module_access,
+        gym_id: inviteContext?.gym_id ?? null,
+        trainer_id: inviteContext?.trainer_id ?? null,
+        invite_code: inviteContext ? inviteCode.trim() : undefined,
       });
       await login(formData.email, formData.password);
-      const moduleCode = service === 'food' ? 'food' : service === 'training' ? 'training' : 'd28d';
+      const moduleCode = effectiveService === 'food' ? 'food' : effectiveService === 'training' ? 'training' : 'd28d';
       const planRes = await api.post('/accounts', {
         plan: selectedPlan.nombre,
         cycle_id: Array.isArray(selectedPlan.cycle_ids) && selectedPlan.cycle_ids.length
@@ -173,7 +264,32 @@ export default function RegisterCommercialWizard({ onSwitchToLogin }) {
     >
       {error && <div className="error-message">{error}</div>}
 
-      {step === 1 && (
+      {step === 1 && entryMode === 'invite' && (
+        <form onSubmit={validateInviteCode} className="space-y-3">
+          <p className="text-sm text-stone-400">
+            Código de programa D28D, entrenador, gimnasio o pareja.
+          </p>
+          <input
+            className="input font-mono uppercase"
+            placeholder="Ej. GYM-PRO-001"
+            value={inviteCode}
+            onChange={(e) => setInviteCode(e.target.value.toUpperCase())}
+            required
+          />
+          <button type="submit" className="btn-primary w-full" disabled={validatingCode}>
+            {validatingCode ? 'Validando…' : 'Validar código'}
+          </button>
+          <button
+            type="button"
+            className="btn-secondary w-full"
+            onClick={() => { setEntryMode('direct'); setInviteCode(''); setInviteContext(null); setError(''); }}
+          >
+            Volver a registro directo
+          </button>
+        </form>
+      )}
+
+      {step === 1 && entryMode === 'direct' && (
         <div className="space-y-3">
           {SERVICES.map((s) => (
             <button
@@ -224,60 +340,96 @@ export default function RegisterCommercialWizard({ onSwitchToLogin }) {
         </div>
       )}
 
+      {inviteContext && step >= 3 && (
+        <p className="text-sm text-lime-400 mb-2">Código: {inviteContext.label || inviteCode}</p>
+      )}
+
       {step === 3 && (
-        <div className="space-y-3">
+        <div className="space-y-4 notranslate" translate="no">
           {filteredPlans.length ? filteredPlans.map((plan) => (
             <button
               key={plan.nombre}
               type="button"
-              className={`w-full text-left p-4 rounded-xl border ${
-                selectedPlan?.nombre === plan.nombre ? 'border-lime-500 bg-lime-50' : 'border-stone-200'
+              className={`register-option w-full text-left p-4 rounded-xl border ${
+                selectedPlan?.nombre === plan.nombre ? 'register-option--active' : ''
               }`}
               onClick={() => setSelectedPlan(plan)}
             >
-              <p className="font-semibold">{plan.nombre}</p>
-              <p className="text-sm text-stone-600">{plan.descripcion}</p>
-              <p className="text-lime-700 font-medium text-sm mt-1">
-                COP ${Number(plan.precio_mensual || 0).toLocaleString()}
-                {plan.precio_mensual_usd > 0 ? ` · USD ${plan.precio_mensual_usd}` : ''}
+              <p className="font-semibold register-option-title">{plan.nombre}</p>
+              <p className="text-sm register-option-muted">{plan.descripcion}</p>
+              <p className="register-option-price text-sm mt-1 notranslate" translate="no">
+                {priceForCurrency(plan, 'COP')}
+                {Number(plan.precio_mensual_usd || 0) > 0 ? ` · ${priceForCurrency(plan, 'USD')}` : ''}
               </p>
-              {plan.is_couple && <p className="text-xs text-amber-700">Plan de pareja (2 usuarios)</p>}
+              {plan.is_couple && <p className="text-xs text-amber-400">Plan de pareja (2 usuarios)</p>}
             </button>
           )) : (
-            <p className="text-stone-500">No hay planes visibles para esta selección.</p>
+            <p className="register-option-muted">
+              No hay planes activos para este programa. En admin → Programas D28D → pestaña Planes, marca los planes como Activos.
+            </p>
           )}
+
+          {selectedPlan && (
+            <div className="space-y-2 border-t border-stone-600 pt-4">
+              <p className="text-sm font-semibold text-stone-200">¿En qué moneda deseas pagar?</p>
+              {[
+                { id: 'COP', title: 'Pesos colombianos (COP)' },
+                { id: 'USD', title: 'Dólares estadounidenses (USD)' },
+              ].map((opt) => (
+                <button
+                  key={opt.id}
+                  type="button"
+                  className={`register-option w-full p-4 rounded-xl border text-left ${
+                    currency === opt.id ? 'register-option--active' : ''
+                  }`}
+                  onClick={() => setCurrency(opt.id)}
+                >
+                  <span className="font-semibold register-option-title block">{opt.title}</span>
+                  <span className="text-sm register-option-muted block mt-1">
+                    {priceForCurrency(selectedPlan, opt.id)}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+
           <div className="flex gap-2">
-            <button type="button" className="btn-secondary flex-1" onClick={() => setStep(service === 'd28d' ? 2 : 1)}>Atrás</button>
-            <button type="button" className="btn-primary flex-1" onClick={goNext}>Continuar</button>
+            <button type="button" className="btn-secondary flex-1" onClick={() => {
+              if (inviteContext) {
+                setStep(1);
+                setEntryMode('invite');
+              } else {
+                setStep(effectiveService === 'd28d' ? 2 : 1);
+              }
+            }}>Atrás</button>
+            <button type="button" className="btn-primary flex-1" onClick={goNext} disabled={!selectedPlan || !currency}>
+              Continuar
+            </button>
           </div>
         </div>
       )}
 
       {step === 4 && (
-        <div className="space-y-3">
-          <p className="text-sm text-stone-600">Plan: <strong>{selectedPlan?.nombre}</strong></p>
-          {['COP', 'USD'].map((c) => (
-            <button
-              key={c}
-              type="button"
-              className={`w-full p-4 rounded-xl border text-left ${
-                currency === c ? 'border-lime-500 bg-lime-50' : 'border-stone-200'
-              }`}
-              onClick={() => setCurrency(c)}
-            >
-              <span className="font-semibold">{c}</span>
-              <span className="block text-sm text-stone-600">{priceLabel(selectedPlan)}</span>
-            </button>
-          ))}
+        <div className="space-y-3 notranslate" translate="no">
+          <p className="text-sm text-stone-300">Confirma moneda y plan</p>
+          <p className="register-option-title font-semibold">{selectedPlan?.nombre}</p>
+          <p className="register-option-price">{priceForCurrency(selectedPlan, currency)}</p>
           <div className="flex gap-2">
             <button type="button" className="btn-secondary flex-1" onClick={() => setStep(3)}>Atrás</button>
-            <button type="button" className="btn-primary flex-1" onClick={goNext}>Continuar</button>
+            <button type="button" className="btn-primary flex-1" onClick={goNext}>Continuar a datos</button>
           </div>
         </div>
       )}
 
       {step === 5 && (
         <form onSubmit={handleSubmit} className="space-y-3">
+          {selectedPlan && (
+            <div className="rounded-lg border border-stone-600 bg-stone-900/40 p-3 text-sm notranslate" translate="no">
+              <p><strong>Plan:</strong> {selectedPlan.nombre}</p>
+              <p><strong>Pago:</strong> {currency === 'USD' ? 'Dólares (USD)' : 'Pesos colombianos (COP)'}</p>
+              <p className="text-lime-400">{priceForCurrency(selectedPlan, currency)}</p>
+            </div>
+          )}
           <input className="input" placeholder="Nombre completo" required value={formData.nombre}
             onChange={(e) => setFormData({ ...formData, nombre: e.target.value })} />
           <input className="input" type="email" placeholder="Email" required value={formData.email}
@@ -315,8 +467,14 @@ export default function RegisterCommercialWizard({ onSwitchToLogin }) {
         <button type="button" className="link-button" onClick={onSwitchToLogin}>Iniciar sesión</button>
       </p>
       <p className="text-center text-xs text-stone-400">
-        ¿Tienes código de gym, coach o pareja?{' '}
-        <button type="button" className="link-button" onClick={onSwitchToLogin}>Usa el registro con código</button>
+        ¿Tienes código de gym, coach o programa?{' '}
+        <button
+          type="button"
+          className="link-button"
+          onClick={() => { setEntryMode('invite'); setStep(1); setError(''); }}
+        >
+          Registrarme con código
+        </button>
       </p>
     </AuthLayout>
   );

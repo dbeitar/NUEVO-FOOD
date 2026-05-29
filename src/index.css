@@ -356,6 +356,30 @@
     border-color: var(--d28d-border);
   }
 
+  /* Formulario de planes (modal programa): inputs legibles en tema oscuro */
+  .admin-plans-form .input,
+  .admin-plans-form select.input,
+  .admin-plans-form textarea.input {
+    background-color: #fff;
+    color: #1c1917;
+    border-color: #d6d3d1;
+  }
+
+  .admin-plans-form .input:focus,
+  .admin-plans-form select.input:focus,
+  .admin-plans-form textarea.input:focus {
+    border-color: var(--d28d-yellow);
+    outline-color: var(--d28d-yellow);
+  }
+
+  .admin-plans-form .label {
+    color: #57534e;
+  }
+
+  .admin-plans-form h4 {
+    color: #1c1917;
+  }
+
   .form-modal .form-close-btn,
   .form-modal .policy-close-btn {
     height: 2rem;
@@ -693,6 +717,37 @@
     border-radius: 0.25rem;
     padding: 0.75rem;
     font-size: 0.875rem;
+  }
+
+  /* Registro comercial: tarjetas legibles en panel oscuro */
+  .register-option {
+    border: 1px solid var(--d28d-border);
+    background: var(--d28d-surface-2);
+    color: var(--d28d-text);
+    transition: border-color 0.15s, background 0.15s;
+  }
+
+  .register-option:hover {
+    border-color: var(--d28d-yellow);
+  }
+
+  .register-option--active {
+    border-color: var(--d28d-yellow);
+    background: rgba(255, 215, 0, 0.12);
+    box-shadow: 0 0 0 1px var(--d28d-yellow);
+  }
+
+  .register-option-title {
+    color: var(--d28d-text);
+  }
+
+  .register-option-muted {
+    color: var(--d28d-muted);
+  }
+
+  .register-option-price {
+    color: var(--d28d-yellow);
+    font-weight: 600;
   }
 
   .success-message {

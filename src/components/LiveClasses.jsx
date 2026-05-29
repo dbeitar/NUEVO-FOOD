@@ -79,7 +79,7 @@ export default function LiveClasses({ programId }) {
   const [loading, setLoading] = useState(false);
   const [joining, setJoining] = useState(null);
   const [error, setError] = useState('');
-  const [view, setView] = useState('graphic');
+  const [view, setView] = useState('week');
   const [anchorDate, setAnchorDate] = useState(new Date());
 
   const fetchClasses = async () => {

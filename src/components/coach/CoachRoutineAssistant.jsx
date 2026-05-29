@@ -136,7 +136,11 @@ export default function CoachRoutineAssistant({ onBack = null }) {
         }
       }
     } catch (err) {
-      setError(err.response?.data?.error || 'No se pudo generar la sugerencia.');
+      setError(
+        err.response?.data?.error
+          || err.response?.data?.message
+          || 'No se pudo generar la sugerencia.',
+      );
     } finally {
       setBusy(false);
     }

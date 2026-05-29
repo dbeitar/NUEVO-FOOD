@@ -81,8 +81,8 @@ async function upsertPlan(plan) {
       moduleAccess: plan.module_access || {},
       isCouple: !!plan.is_couple,
       includedSeats: Number(plan.included_seats) || 1,
-      activo: plan.activo !== false,
-      visible: plan.visible !== false,
+      activo: typeof plan.activo === 'boolean' ? plan.activo : plan.activo !== false,
+      visible: typeof plan.visible === 'boolean' ? plan.visible : plan.visible !== false,
       sortOrder: Number(plan.sort_order) || 0,
       cyclesCount: plan.cycles_count != null ? Number(plan.cycles_count) : null,
       supportWhatsapp: plan.support_whatsapp || null,
@@ -102,8 +102,8 @@ async function upsertPlan(plan) {
       moduleAccess: plan.module_access,
       isCouple: !!plan.is_couple,
       includedSeats: Number(plan.included_seats) || 1,
-      activo: plan.activo !== false,
-      visible: plan.visible !== false,
+      activo: typeof plan.activo === 'boolean' ? plan.activo : plan.activo !== false,
+      visible: typeof plan.visible === 'boolean' ? plan.visible : plan.visible !== false,
       sortOrder: Number(plan.sort_order) ?? undefined,
       cyclesCount: plan.cycles_count != null ? Number(plan.cycles_count) : undefined,
       supportWhatsapp: plan.support_whatsapp ?? undefined,
@@ -189,6 +189,37 @@ async function deletePlan(nombre) {
   return true;
 }
 
+/** Renombra plan (PK) y referencias en cuentas / ciclos / invites. */
+async function renamePlan(oldNombre, newNombre) {
+  const oldKey = String(oldNombre || '').trim();
+  const newKey = String(newNombre || '').trim();
+  if (!oldKey || !newKey || oldKey === newKey) return true;
+  const prisma = getPrisma();
+  const exists = await prisma.subscriptionPlan.findUnique({ where: { nombre: newKey } });
+  if (exists) return false;
+  const current = await prisma.subscriptionPlan.findUnique({ where: { nombre: oldKey } });
+  if (!current) return false;
+  await prisma.$transaction(async (tx) => {
+    await tx.userAccount.updateMany({
+      where: { planNombre: oldKey },
+      data: { planNombre: newKey },
+    });
+    await tx.subscriptionPlanCycle.updateMany({
+      where: { planNombre: oldKey },
+      data: { planNombre: newKey },
+    });
+    await tx.programInviteCode.updateMany({
+      where: { suggestedPlanNombre: oldKey },
+      data: { suggestedPlanNombre: newKey },
+    });
+    await tx.subscriptionPlan.update({
+      where: { nombre: oldKey },
+      data: { nombre: newKey },
+    });
+  });
+  return true;
+}
+
 async function adjustPlanUsers(nombre, delta) {
   const plan = await getPrisma().subscriptionPlan.findUnique({ where: { nombre } });
   if (!plan) return false;
@@ -207,6 +238,7 @@ module.exports = {
   updateAccount,
   softDeleteAccount,
   deletePlan,
+  renamePlan,
   adjustPlanUsers,
   planToLegacy,
   accountToLegacy,

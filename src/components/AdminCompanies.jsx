@@ -5,6 +5,19 @@ import { useAuth } from '../context/useAuth';
 import { useI18n } from '../context/useI18n';
 import InviteCodeCell from './admin/InviteCodeCell';
 
+/** Acepta array directo o respuestas envueltas ({ data }, { gyms }, etc.). */
+function asArray(payload) {
+  if (Array.isArray(payload)) return payload;
+  if (payload && typeof payload === 'object') {
+    if (Array.isArray(payload.data)) return payload.data;
+    if (Array.isArray(payload.gyms)) return payload.gyms;
+    if (Array.isArray(payload.trainers)) return payload.trainers;
+    if (Array.isArray(payload.planes)) return payload.planes;
+    if (Array.isArray(payload.plans)) return payload.plans;
+  }
+  return [];
+}
+
 export default function AdminCompanies() {
   const { user } = useAuth();
   const { t } = useI18n();
@@ -30,10 +43,10 @@ export default function AdminCompanies() {
         api.get('/admin/users'),
         api.get('/accounts/plans'),
       ]);
-      setGyms(Array.isArray(g.data) ? g.data : []);
-      setTrainers(Array.isArray(t.data) ? t.data : []);
+      setGyms(asArray(g.data));
+      setTrainers(asArray(t.data));
       setUsers(u.data?.data || []);
-      setPlans(p.data || []);
+      setPlans(asArray(p.data));
       api.get('/admin/invite-codes')
         .then((meta) => setD28dCodes(meta.data?.d28d_codes || []))
         .catch(() => setD28dCodes([]));
@@ -89,6 +102,11 @@ export default function AdminCompanies() {
 
   const createUser = async (e) => {
     e.preventDefault();
+    if (!form.planId) {
+      setError('Selecciona un plan de suscripción para el usuario final');
+      resetMsg();
+      return;
+    }
     try {
       const payload = {
         nombre: form.nombre,
@@ -164,9 +182,12 @@ export default function AdminCompanies() {
             <Building2 className="text-lime-500" />
             {t('companies.gyms', 'Gimnasios')}
           </h3>
-          <div className="relative w-40">
-            <Search className="w-4 h-4 text-stone-500 absolute left-2 top-2.5" />
-            <input className="input pl-7" placeholder={t('common.search', 'Buscar')} value={searchGym} onChange={e => setSearchGym(e.target.value)} />
+          <div className="flex items-center gap-2">
+            <p className="text-xs text-stone-500 hidden sm:block">Crear/editar en D28D → Gimnasios</p>
+            <div className="relative w-40">
+              <Search className="w-4 h-4 text-stone-500 absolute left-2 top-2.5" />
+              <input className="input pl-7" placeholder={t('common.search', 'Buscar')} value={searchGym} onChange={e => setSearchGym(e.target.value)} />
+            </div>
           </div>
         </div>
         <ul className="divide-y divide-slate-200">
@@ -256,8 +277,8 @@ export default function AdminCompanies() {
             <input className="input" placeholder={t('common.name', 'Nombre')} value={form.nombre} onChange={e => setForm({ ...form, nombre: e.target.value })} required />
             <input className="input" placeholder={t('common.email', 'Email')} value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} required />
             <input className="input" placeholder={t('companies.password_optional', 'Contraseña (opcional)')} type="password" value={form.password} onChange={e => setForm({ ...form, password: e.target.value })} />
-            <select className="input" value={form.planId} onChange={e => setForm({ ...form, planId: e.target.value })}>
-              <option value="">{t('companies.no_plan', 'Sin plan')}</option>
+            <select className="input" value={form.planId} onChange={e => setForm({ ...form, planId: e.target.value })} required>
+              <option value="">{t('companies.select_plan', 'Seleccionar plan…')}</option>
               {plans.map(p => <option key={p.nombre} value={p.nombre}>{p.nombre}</option>)}
             </select>
             <div className="md:col-span-2 flex gap-2">

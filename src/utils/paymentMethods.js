@@ -7,7 +7,9 @@ const FALLBACK = [
 
 export async function fetchPaymentMethods(moduleCode = 'd28d') {
   try {
-    const r = await api.get(`/payment-links/public?module=${encodeURIComponent(moduleCode)}`);
+    const r = await api.get(`/payment-links/public?module=${encodeURIComponent(moduleCode)}`, {
+      skipShellAuth: true,
+    });
     const methods = r.data?.data?.methods;
     if (Array.isArray(methods) && methods.length) return methods;
   } catch { /* fallback */ }

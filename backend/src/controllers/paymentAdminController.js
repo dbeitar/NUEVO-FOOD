@@ -56,11 +56,12 @@ exports.getOverview = async (req, res) => {
     accounts = scopeFilter(req.user, accounts);
 
     const pending = accounts.filter((a) => PENDING_STATES.includes(String(a.estado || '').toLowerCase()));
-    const expiring = AccountsDatabase.getExpiringSoon().filter((a) => scopeFilter(req.user, [a]).length);
+    let expiring = AccountsDatabase.getExpiringSoon().filter((a) => scopeFilter(req.user, [a]).length);
 
     const enrichedAll = await enrichAccounts(accounts);
     const nameByUser = Object.fromEntries(enrichedAll.map((a) => [a.user_id, a.usuario_nombre]));
     const licenseRows = [];
+    const expiringFromLicenses = [];
     const seenUsers = new Set(enrichedAll.map((a) => a.user_id));
     for (const uid of seenUsers) {
       const licenses = await licenseService.listForUser(uid, { includeInactive: true });
@@ -77,7 +78,23 @@ exports.getOverview = async (req, res) => {
           days_left: daysLeft,
           source: lic.source,
         });
+        if (lic.active && until && daysLeft != null && daysLeft >= 0 && daysLeft <= 30) {
+          expiringFromLicenses.push({
+            id: `lic-${uid}-${lic.module_code}`,
+            user_id: uid,
+            usuario_nombre: nameByUser[uid] || `Usuario #${uid}`,
+            plan: lic.module_code,
+            fecha_vencimiento: lic.valid_until,
+            estado: 'activo',
+            source: 'license',
+          });
+        }
       }
+    }
+
+    const expiringIds = new Set(expiring.map((a) => a.id));
+    for (const row of expiringFromLicenses) {
+      if (!expiringIds.has(row.id)) expiring.push(row);
     }
 
     const paymentNotifications = NotificationDatabase.getByUserId(req.user.id)

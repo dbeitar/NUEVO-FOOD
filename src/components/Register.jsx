@@ -62,8 +62,11 @@ export default function Register({ onSwitchToLogin }) {
   const { register, login } = useAuth();
 
   useEffect(() => {
-    api.get('/accounts/plans')
-      .then((res) => setPlans(Array.isArray(res.data) ? res.data : []))
+    api.get('/accounts/plans', { params: { visible: 'true' }, skipShellAuth: true })
+      .then((res) => {
+        const raw = Array.isArray(res.data) ? res.data : (res.data?.data || []);
+        setPlans(raw.filter((p) => p.activo !== false && p.visible !== false));
+      })
       .catch(() => setPlans([]));
   }, []);
 

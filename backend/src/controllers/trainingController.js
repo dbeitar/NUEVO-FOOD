@@ -605,7 +605,13 @@ const substituteExercise = async (req, res) => {
   }
 };
 
-const { isCoachUser, getCoachTrainerId, sanitizeModuleAccessForCoachClient } = require('../utils/coachScope');
+const {
+  isCoachUser,
+  getCoachTrainerId,
+  canUseCoachTrainingAssistant,
+  resolveCoachTrainerId,
+  sanitizeModuleAccessForCoachClient,
+} = require('../utils/coachScope');
 const { buildListFilter } = require('../utils/d28dRoutineAccess');
 const routineService = require('../services/d28dRoutineService');
 
@@ -767,12 +773,14 @@ const createUserLog = (req, res) => {
 
 const coachAiSuggestRoutine = async (req, res) => {
   try {
-    if (!isCoachUser(req.user)) {
-      return res.status(403).json({ error: 'Solo entrenadores pueden usar este asistente' });
+    if (!canUseCoachTrainingAssistant(req.user)) {
+      return res.status(403).json({ error: 'Sin permiso para el asistente IA de entrenamiento' });
     }
-    const tid = getCoachTrainerId(req.user);
+    const tid = resolveCoachTrainerId(req.user);
     if (tid == null) {
-      return res.status(400).json({ error: 'Cuenta sin entrenador vinculado' });
+      return res.status(400).json({
+        error: 'No hay entrenador vinculado. Asigna trainer_id al usuario o crea un entrenador en el catálogo.',
+      });
     }
     const {
       objetivo = 'hipertrofia',

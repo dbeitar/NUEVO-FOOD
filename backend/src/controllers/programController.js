@@ -11,6 +11,24 @@ exports.getAllPrograms = (req, res) => {
   }
 };
 
+/** Registro público: solo programas activos, sin datos Zoom sensibles. */
+exports.getPublicPrograms = (req, res) => {
+  try {
+    const programs = ProgramSettingsDatabase.getAll()
+      .filter((p) => p.active !== false)
+      .map((p) => ({
+        id: p.id,
+        name: p.name,
+        color: p.color,
+        active: p.active !== false,
+        active_cycle_id: p.active_cycle_id ?? null,
+      }));
+    res.json({ success: true, data: programs });
+  } catch (error) {
+    res.status(500).json({ error: 'Error obteniendo programas' });
+  }
+};
+
 exports.getProgramById = (req, res) => {
   try {
     const program = ProgramSettingsDatabase.getById(req.params.id);
