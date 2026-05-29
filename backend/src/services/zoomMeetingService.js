@@ -91,6 +91,24 @@ function getFallbackJoinUrl(programId, zoomAccountId) {
   return '';
 }
 
+/** Enlace demo cuando no hay S2S ni PMI (solo dev o D28D_ZOOM_ALLOW_PLACEHOLDER=1). */
+function getPlaceholderJoinUrl() {
+  if (process.env.D28D_ZOOM_ALLOW_PLACEHOLDER === '0') return '';
+  const explicit = String(process.env.D28D_ZOOM_PLACEHOLDER_URL || '').trim();
+  if (explicit.startsWith('http')) return explicit;
+  if (process.env.D28D_ZOOM_ALLOW_PLACEHOLDER === '1') {
+    return 'https://zoom.us/j/d28d-demo';
+  }
+  if (process.env.NODE_ENV !== 'production') {
+    return 'https://zoom.us/j/d28d-demo';
+  }
+  return '';
+}
+
+function resolveOfflineJoinUrl(programId, zoomAccountId) {
+  return getFallbackJoinUrl(programId, zoomAccountId) || getPlaceholderJoinUrl();
+}
+
 async function createScheduledMeeting({
   programId,
   zoomAccountId = null,
@@ -110,16 +128,19 @@ async function createScheduledMeeting({
 
   const token = await getS2SToken();
   if (!token) {
-    const fallback = getFallbackJoinUrl(programId, zoomAccountId);
+    const fallback = resolveOfflineJoinUrl(programId, zoomAccountId);
     if (fallback) {
+      const isPlaceholder = fallback === getPlaceholderJoinUrl();
       return {
         ok: true,
-        mode: 'pmi_fallback',
+        mode: isPlaceholder ? 'placeholder' : 'pmi_fallback',
         join_url: fallback,
         start_url: fallback,
         host_email: hostEmail,
         alternative_host: alternativeHostEmail || null,
-        message: 'Enlace PMI (configura ZOOM_S2S_* para crear reuniones nuevas por API).',
+        message: isPlaceholder
+          ? 'Enlace demo (configura ZOOM_S2S_* o D28D_ZOOM_PMI_* para reuniones reales).'
+          : 'Enlace PMI (configura ZOOM_S2S_* para crear reuniones nuevas por API).',
       };
     }
     return {
@@ -167,15 +188,17 @@ async function createScheduledMeeting({
   } catch (err) {
     const detail = err.response?.data?.message || err.message;
     console.error('[Zoom] create meeting failed:', detail);
-    const fallback = getFallbackJoinUrl(programId, zoomAccountId);
+    const fallback = resolveOfflineJoinUrl(programId, zoomAccountId);
     if (fallback) {
+      const isPlaceholder = fallback === getPlaceholderJoinUrl();
       return {
         ok: true,
-        mode: 'pmi_fallback',
+        mode: isPlaceholder ? 'placeholder' : 'pmi_fallback',
         join_url: fallback,
         start_url: fallback,
         host_email: hostEmail,
         warning: detail,
+        message: isPlaceholder ? 'Enlace demo (falló API Zoom).' : undefined,
       };
     }
     return { ok: false, error: 'ZOOM_API_ERROR', message: detail, host_email: hostEmail };

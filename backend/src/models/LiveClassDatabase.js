@@ -48,8 +48,8 @@ class LiveClassDatabase {
   _persist() {
     if (useRelationalStorage()) {
       domainRepo.setArray('live_classes', this.rows).catch((e) => console.error('[LiveClass]', e.message));
-    } else {
-      this._persist();
+    } else if (this.store) {
+      this.store.setAll(this.rows);
     }
   }
 

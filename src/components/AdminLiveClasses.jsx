@@ -245,8 +245,9 @@ export default function AdminLiveClasses() {
         setForm(defaultForm);
         await fetchItems();
         await fetchAttendance();
-      } catch {
-        setError('Error guardando la clase.');
+      } catch (e) {
+        const msg = e.response?.data?.error || e.message;
+        setError(msg || 'Error guardando la clase.');
       } finally {
         setSaving(false);
       }
