@@ -59,7 +59,7 @@ async function importBibleFromJson({ filePath, versionCode = 'RVR1960', versionN
             code: bookCode,
             name: row.book_name || bookCode,
             testament: row.testament || 'OT',
-            orden: bookMap.size + 1,
+            orden: Number(row.orden) || bookMap.size + 1,
           },
         });
       }
@@ -81,6 +81,9 @@ async function importBibleFromJson({ filePath, versionCode = 'RVR1960', versionN
       update: { text },
     });
     imported += 1;
+    if (imported % 2000 === 0) {
+      console.log(`[bible.import] ${imported}/${rows.length} versículos…`);
+    }
   }
 
   await prisma.spiritualBibleVersion.update({

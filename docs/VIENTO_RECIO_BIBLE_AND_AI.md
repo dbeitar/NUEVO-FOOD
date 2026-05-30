@@ -23,23 +23,21 @@ Formato requerido por MVPFOOD:
 ]
 ```
 
-### Importar
+### Importar (recomendado — descarga + base de datos)
 
-**Admin UI:** Centro de Formación Espiritual → Biblia → Seleccionar archivo JSON
-
-**CLI:**
+Un solo comando descarga la **Reina-Valera 1960 completa** (~31 000 versículos) e importa a PostgreSQL:
 
 ```bash
-# Descarga tu JSON a una ruta local, por ejemplo:
-# ~/Downloads/rvr1960.json
-
-node scripts/spiritual/import_bible.mjs \
-  --file ~/Downloads/rvr1960.json \
-  --version RVR1960 \
-  --name "Reina-Valera 1960"
+npm run spiritual:import-bible-full
 ```
 
-Tiempo estimado: ~31 000 versículos en 1–3 minutos.
+Queda almacenada en:
+- **PostgreSQL** — tablas `spiritual_bible_*` (lectura en la app)
+- **Caché local** — `backend/data/spiritual/rvr1960.source.json` y `rvr1960.flat.json` (re-importación sin red)
+
+Para forzar nueva descarga: `node scripts/spiritual/download_and_import_rvr1960.cjs --force`
+
+### Importar manual (JSON propio)
 
 ---
 
