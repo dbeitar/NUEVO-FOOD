@@ -13,7 +13,6 @@ import {
   adminSaveStudy,
   adminSaveVerse,
   adminUploadStudy,
-  adminImportBible,
   adminAiStatus,
   adminNicolasTrainer,
   adminAiGenerateVerse,
