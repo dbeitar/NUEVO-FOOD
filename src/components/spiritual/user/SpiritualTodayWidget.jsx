@@ -7,8 +7,8 @@ import {
   registerEvent,
   openStudy,
   spiritualWidgetsEnabled,
-} from '../../utils/spiritualApi';
-import { resolveMediaUrl } from '../../utils/mediaUrl';
+} from '../../../utils/spiritualApi';
+import { resolveMediaUrl } from '../../../utils/mediaUrl';
 
 export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
   const [feed, setFeed] = useState(null);
