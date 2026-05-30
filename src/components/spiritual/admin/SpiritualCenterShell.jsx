@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react';
 import { ArrowLeft } from 'lucide-react';
 import {
   adminImportBible,
+  adminBibleStats,
   adminListDevotionals,
   adminListEvents,
   adminListStudies,
@@ -19,6 +20,7 @@ import {
   adminAiGenerateDevotional,
   adminAiGenerateStudy,
 } from '../../../utils/spiritualApi';
+import './SpiritualCenterShell.css';
 
 const TABS = [
   { id: 'bible', label: 'Biblia' },
@@ -45,6 +47,7 @@ export default function SpiritualCenterShell({ onBack }) {
   const [aiStatus, setAiStatus] = useState(null);
   const [nicolas, setNicolas] = useState(null);
   const [aiBusy, setAiBusy] = useState(false);
+  const [bibleStats, setBibleStats] = useState(null);
 
   const [verseForm, setVerseForm] = useState({
     scheduled_date: new Date().toISOString().slice(0, 10),
@@ -115,6 +118,11 @@ export default function SpiritualCenterShell({ onBack }) {
 
   useEffect(() => { reload(); }, [reload]);
 
+  useEffect(() => {
+    if (tab !== 'bible') return;
+    adminBibleStats().then(setBibleStats).catch(() => setBibleStats(null));
+  }, [tab, msg]);
+
   const flash = (text) => {
     setMsg(text);
     setTimeout(() => setMsg(''), 3000);
@@ -176,6 +184,8 @@ export default function SpiritualCenterShell({ onBack }) {
     if (!file) return;
     const out = await adminImportBible(file);
     flash(`Biblia importada: ${out.imported} versículos.`);
+    const stats = await adminBibleStats();
+    setBibleStats(stats);
   };
 
   const runAi = async (kind) => {
@@ -211,7 +221,7 @@ export default function SpiritualCenterShell({ onBack }) {
   };
 
   return (
-    <div className="dashboard-main-view space-y-6">
+    <div className="dashboard-main-view spiritual-center-shell space-y-6">
       <header className="flex flex-wrap items-center gap-3">
         {onBack ? (
           <button type="button" className="btn-secondary" onClick={onBack}>
@@ -220,19 +230,19 @@ export default function SpiritualCenterShell({ onBack }) {
           </button>
         ) : null}
         <div>
-          <h2 className="text-2xl font-bold text-stone-900">Centro de Formación Espiritual</h2>
-          <p className="text-sm text-stone-600">Administración exclusiva SuperAdmin — VIENTO RECIO V1</p>
+          <h2 className="spiritual-center-shell__title">Centro de Formación Espiritual</h2>
+          <p className="spiritual-center-shell__subtitle">Administración exclusiva SuperAdmin — VIENTO RECIO V1</p>
         </div>
       </header>
 
-      {msg ? <p className="rounded-lg bg-green-50 px-3 py-2 text-sm text-green-800">{msg}</p> : null}
+      {msg ? <p className="spiritual-center-shell__flash">{msg}</p> : null}
 
-      <nav className="flex flex-wrap gap-2 border-b border-stone-200 pb-2">
+      <nav className="spiritual-center-shell__nav flex flex-wrap gap-2">
         {TABS.map((t) => (
           <button
             key={t.id}
             type="button"
-            className={`rounded-lg px-3 py-1.5 text-sm ${tab === t.id ? 'bg-amber-100 font-semibold text-amber-900' : 'text-stone-600 hover:bg-stone-100'}`}
+            className={`spiritual-center-shell__tab ${tab === t.id ? 'spiritual-center-shell__tab--active' : ''}`}
             onClick={() => setTab(t.id)}
           >
             {t.label}
@@ -241,9 +251,32 @@ export default function SpiritualCenterShell({ onBack }) {
       </nav>
 
       {tab === 'bible' ? (
-        <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-6">
-          <h3 className="font-semibold">Importar Biblia (JSON)</h3>
-          <p className="text-sm text-stone-600">
+        <div className="spiritual-center-shell__card space-y-4">
+          {bibleStats?.loaded ? (
+            <div className="spiritual-center-shell__stats-ok">
+              ✓ Biblia RVR1960 cargada — {bibleStats.books} libros · {bibleStats.verses.toLocaleString('es')} versículos
+              {bibleStats.version?.importedAt
+                ? ` · importada ${new Date(bibleStats.version.importedAt).toLocaleDateString('es')}`
+                : ''}
+            </div>
+          ) : (
+            <p className="text-sm" style={{ color: 'rgba(255,255,255,0.65)' }}>
+              Aún no hay Biblia importada. Usa el archivo JSON o ejecuta: <code>npm run spiritual:import-bible-full</code>
+            </p>
+          )}
+          {bibleStats?.sampleBooks?.length ? (
+            <div>
+              <p className="text-sm" style={{ color: 'rgba(255,255,255,0.7)' }}>Libros disponibles (muestra):</p>
+              <div className="spiritual-center-shell__book-grid">
+                {bibleStats.sampleBooks.map((b) => (
+                  <span key={b.id} className="spiritual-center-shell__book-chip">{b.name}</span>
+                ))}
+              </div>
+            </div>
+          ) : null}
+          <hr style={{ borderColor: 'var(--d28d-border, #2a2a2a)' }} />
+          <h3>Importar / actualizar Biblia (JSON)</h3>
+          <p className="text-sm">
             Una versión (RVR1960). Formato: book, chapter, verse, text.
             Guía completa: <code>docs/VIENTO_RECIO_BIBLE_AND_AI.md</code>
           </p>
@@ -252,7 +285,7 @@ export default function SpiritualCenterShell({ onBack }) {
       ) : null}
 
       {tab === 'assistant' ? (
-        <div className="space-y-4 rounded-xl border border-amber-200 bg-amber-50/50 p-6">
+        <div className="spiritual-center-shell__card spiritual-center-shell__card--assistant space-y-4">
           <h3 className="font-semibold">Asistente espiritual gratuito (Ollama)</h3>
           <p className="text-sm text-stone-600">
             Formación centrada en las enseñanzas de Jesús — visión espiritual, no denominacional.
@@ -291,7 +324,7 @@ export default function SpiritualCenterShell({ onBack }) {
       ) : null}
 
       {tab === 'verse' ? (
-        <form onSubmit={saveVerse} className="space-y-4 rounded-xl border border-stone-200 bg-white p-6">
+        <form onSubmit={saveVerse} className="spiritual-center-shell__card space-y-4">
           <h3 className="font-semibold">Versículo del día</h3>
           <label className="block text-sm">
             Fecha
@@ -333,7 +366,7 @@ export default function SpiritualCenterShell({ onBack }) {
       ) : null}
 
       {tab === 'devotional' ? (
-        <form onSubmit={saveDevotional} className="space-y-4 rounded-xl border border-stone-200 bg-white p-6">
+        <form onSubmit={saveDevotional} className="spiritual-center-shell__card space-y-4">
           <h3 className="font-semibold">Devocional</h3>
           <input className="input w-full" placeholder="Título" value={devForm.title} onChange={(ev) => setDevForm({ ...devForm, title: ev.target.value })} required />
           <select className="input w-full" value={devForm.duration_days} onChange={(ev) => setDevForm({ ...devForm, duration_days: Number(ev.target.value) })}>
@@ -358,7 +391,7 @@ export default function SpiritualCenterShell({ onBack }) {
       ) : null}
 
       {tab === 'studies' ? (
-        <form onSubmit={saveStudy} className="space-y-4 rounded-xl border border-stone-200 bg-white p-6">
+        <form onSubmit={saveStudy} className="spiritual-center-shell__card space-y-4">
           <h3 className="font-semibold">Estudio bíblico</h3>
           <input className="input w-full" placeholder="Título" value={studyForm.title} onChange={(ev) => setStudyForm({ ...studyForm, title: ev.target.value })} required />
           <select className="input w-full" value={studyForm.media_type} onChange={(ev) => setStudyForm({ ...studyForm, media_type: ev.target.value })}>
@@ -381,7 +414,7 @@ export default function SpiritualCenterShell({ onBack }) {
       ) : null}
 
       {tab === 'events' ? (
-        <form onSubmit={saveEvent} className="space-y-4 rounded-xl border border-stone-200 bg-white p-6">
+        <form onSubmit={saveEvent} className="spiritual-center-shell__card space-y-4">
           <h3 className="font-semibold">Evento espiritual</h3>
           <input className="input w-full" placeholder="Título" value={eventForm.title} onChange={(ev) => setEventForm({ ...eventForm, title: ev.target.value })} required />
           <select className="input w-full" value={eventForm.mode} onChange={(ev) => setEventForm({ ...eventForm, mode: ev.target.value })}>

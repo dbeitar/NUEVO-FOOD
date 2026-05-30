@@ -133,6 +133,12 @@ const authLimiter = rateLimit({
 app.get('/health', (_req, res) => res.json({ status: 'ok' }));
 app.get('/api/health', (_req, res) => res.json({ status: 'ok' }));
 
+// Raíz del API: redirigir al frontend (evita "Cannot GET /" si abren :3002 en el navegador)
+app.get('/', (_req, res) => {
+  const frontend = String(process.env.FRONTEND_URL || 'http://localhost:5175').replace(/\/+$/, '');
+  res.redirect(302, frontend);
+});
+
 // Endpoints de desarrollo: SOLO si NODE_ENV != production Y ENABLE_DEV_ROUTES=true.
 // Sin password por defecto. Sin echo de body.
 if (ENABLE_DEV_ROUTES) {

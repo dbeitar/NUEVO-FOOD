@@ -25,6 +25,7 @@
     "spiritual:import-bible": "node scripts/spiritual/import_bible.mjs",
     "spiritual:import-bible-full": "node scripts/spiritual/download_and_import_rvr1960.cjs",
     "spiritual:bootstrap-nicolas": "node scripts/spiritual/bootstrap_nicolas_del_rio.cjs",
+    "spiritual:deactivate-test": "node scripts/spiritual/deactivate_test_content.cjs",
     "import:gallery-nico": "node scripts/import_gallery_nico_xlsx.cjs --apply",
     "import:gallery-nico:preview": "node scripts/import_gallery_nico_xlsx.cjs --preview",
     "db:migrate-json": "node scripts/migrate_json_to_postgres.cjs",

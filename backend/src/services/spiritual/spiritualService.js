@@ -12,6 +12,20 @@ function todayDate() {
   return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
 }
 
+function localDateString(d = new Date()) {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function parseScheduleDate(str) {
+  if (!str) return todayDate();
+  const [y, m, d] = String(str).slice(0, 10).split('-').map(Number);
+  if (!y || !m || !d) return todayDate();
+  return new Date(Date.UTC(y, m - 1, d));
+}
+
 function scopeFields(body = {}) {
   const scopeType = String(body.scope_type || body.scopeType || 'global').toLowerCase();
   return {
@@ -176,7 +190,7 @@ async function adminListVersesOfDay() {
 
 async function adminSaveVerseOfDay(userId, body) {
   const prisma = getPrisma();
-  const date = body.scheduled_date ? new Date(body.scheduled_date) : todayDate();
+  const date = parseScheduleDate(body.scheduled_date);
   const scope = scopeFields(body);
   const data = {
     scheduledDate: date,
@@ -253,7 +267,15 @@ async function getTodayVerse(user) {
   const rows = await prisma.spiritualVerseOfDay.findMany({
     where: { scheduledDate: date, published: true },
   });
-  const row = pickBest(rows, user);
+  let row = pickBest(rows, user);
+  if (!row) {
+    const recent = await prisma.spiritualVerseOfDay.findMany({
+      where: { published: true },
+      orderBy: { scheduledDate: 'desc' },
+      take: 30,
+    });
+    row = pickBest(recent, user);
+  }
   if (!row) return null;
   const verse = await verseWithRef(prisma, row.verseId);
   return {
@@ -332,13 +354,44 @@ async function adminSaveDevotional(userId, body) {
   });
 }
 
+async function getBibleStats() {
+  const prisma = getPrisma();
+  const version = await prisma.spiritualBibleVersion.findFirst({
+    where: { code: 'RVR1960', active: true },
+  });
+  if (!version) {
+    return { loaded: false, books: 0, verses: 0, version: null };
+  }
+  const books = await prisma.spiritualBibleBook.count({ where: { versionId: version.id } });
+  const verses = await prisma.spiritualBibleVerse.count({
+    where: { chapter: { book: { versionId: version.id } } },
+  });
+  return {
+    loaded: verses > 100,
+    books,
+    verses,
+    version: {
+      code: version.code,
+      name: version.name,
+      importedAt: version.importedAt,
+    },
+  };
+}
+
 async function listDevotionalsForUser(user) {
   const prisma = getPrisma();
   const plans = await prisma.spiritualDevotionalPlan.findMany({
     where: { active: true },
     include: { days: { orderBy: { dayIndex: 'asc' } } },
+    orderBy: { id: 'desc' },
   });
-  return filterByScope(plans, user);
+  const scoped = filterByScope(plans, user);
+  const priority = { trainer: 3, gym: 2, global: 1 };
+  return scoped.sort((a, b) => {
+    const sa = priority[String(a.scopeType || 'global').toLowerCase()] || 0;
+    const sb = priority[String(b.scopeType || 'global').toLowerCase()] || 0;
+    return sb - sa || b.id - a.id;
+  });
 }
 
 async function startDevotional(userId, planId) {
@@ -450,7 +503,13 @@ async function listStudiesForUser(user) {
     include: { category: true, author: true },
     orderBy: { id: 'desc' },
   });
-  return filterByScope(rows, user);
+  const scoped = filterByScope(rows, user);
+  const priority = { trainer: 3, gym: 2, global: 1 };
+  return scoped.sort((a, b) => {
+    const sa = priority[String(a.scopeType || 'global').toLowerCase()] || 0;
+    const sb = priority[String(b.scopeType || 'global').toLowerCase()] || 0;
+    return sb - sa || b.id - a.id;
+  });
 }
 
 async function openStudy(userId, studyId) {
@@ -516,7 +575,13 @@ async function listEventsForUser(user) {
     orderBy: { startTime: 'asc' },
     take: 20,
   });
-  return filterByScope(rows, user);
+  const scoped = filterByScope(rows, user);
+  const priority = { trainer: 3, gym: 2, global: 1 };
+  return scoped.sort((a, b) => {
+    const sa = priority[String(a.scopeType || 'global').toLowerCase()] || 0;
+    const sb = priority[String(b.scopeType || 'global').toLowerCase()] || 0;
+    return sb - sa;
+  });
 }
 
 async function registerEvent(userId, eventId) {
@@ -655,4 +720,6 @@ module.exports = {
   attendEvent,
   sendEventReminders,
   getTodayFeed,
+  getBibleStats,
+  localDateString,
 };

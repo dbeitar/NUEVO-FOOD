@@ -9,12 +9,24 @@ import {
   spiritualWidgetsEnabled,
 } from '../../../utils/spiritualApi';
 import { resolveMediaUrl } from '../../../utils/mediaUrl';
+import SpiritualStudyReader from './SpiritualStudyReader';
 import './SpiritualTodayWidget.css';
+
+function shouldOpenInline(study) {
+  const url = String(study?.mediaUrl || study?.media_url || '').trim().toLowerCase();
+  const type = String(study?.mediaType || study?.media_type || '').toLowerCase();
+  if (type === 'text') return true;
+  if (!url || url === 'inline') return true;
+  return false;
+}
 
 export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
   const [feed, setFeed] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const [studyPreview, setStudyPreview] = useState(null);
+
+  const closeStudy = useCallback(() => setStudyPreview(null), []);
 
   const load = useCallback(async () => {
     if (!spiritualWidgetsEnabled()) {
@@ -35,6 +47,15 @@ export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (!studyPreview) return undefined;
+    const onKey = (e) => {
+      if (e.key === 'Escape') closeStudy();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [studyPreview, closeStudy]);
+
   if (!spiritualWidgetsEnabled() || loading) return null;
   if (!feed?.enabled) return null;
   const hasContent = feed.verse || feed.devotional || feed.studies?.length || feed.events?.length;
@@ -51,6 +72,31 @@ export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
     if (!d || !feed.devotional?.plan_id) return;
     await completeDevotionalDay(feed.devotional.plan_id, d);
     await load();
+  };
+
+  const handleOpenStudy = async (studyId) => {
+    if (studyPreview?.id === studyId) {
+      closeStudy();
+      return;
+    }
+    const fromFeed = feed.studies?.find((s) => s.id === studyId);
+    try {
+      const full = await openStudy(studyId);
+      const merged = { ...fromFeed, ...full };
+      if (shouldOpenInline(merged) || merged.description) {
+        setStudyPreview(merged);
+        return;
+      }
+      if (merged.mediaUrl?.startsWith('http')) {
+        window.open(merged.mediaUrl, '_blank', 'noopener');
+      } else if (merged.mediaUrl) {
+        window.open(resolveMediaUrl(merged.mediaUrl), '_blank', 'noopener');
+      } else {
+        setStudyPreview(merged);
+      }
+    } catch {
+      if (fromFeed) setStudyPreview(fromFeed);
+    }
   };
 
   return (
@@ -128,15 +174,8 @@ export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
               <li key={st.id}>
                 <button
                   type="button"
-                  className="spiritual-today-widget__study-btn"
-                  onClick={async () => {
-                    const full = await openStudy(st.id);
-                    if (full?.mediaUrl?.startsWith('http')) {
-                      window.open(full.mediaUrl, '_blank', 'noopener');
-                    } else if (full?.mediaUrl) {
-                      window.open(resolveMediaUrl(full.mediaUrl), '_blank', 'noopener');
-                    }
-                  }}
+                  className={`spiritual-today-widget__study-btn${studyPreview?.id === st.id ? ' spiritual-study-reader__study-btn--active' : ''}`}
+                  onClick={() => handleOpenStudy(st.id)}
                 >
                   {st.title}
                   {st.category?.name ? (
@@ -146,6 +185,9 @@ export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
               </li>
             ))}
           </ul>
+          {studyPreview ? (
+            <SpiritualStudyReader study={studyPreview} onClose={closeStudy} />
+          ) : null}
         </div>
       ) : null}
 

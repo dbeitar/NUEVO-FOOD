@@ -184,6 +184,15 @@ exports.adminListVersions = wrap(async (req, res) => {
   res.json(await spiritual.listBibleVersions());
 });
 
+exports.adminBibleStats = wrap(async (req, res) => {
+  if (!requireSuperAdmin(req, res)) return;
+  const stats = await spiritual.getBibleStats();
+  const books = stats.loaded
+    ? await spiritual.listBooks('RVR1960')
+    : [];
+  res.json({ ...stats, sampleBooks: books.slice(0, 12) });
+});
+
 exports.adminAiStatus = wrap(async (req, res) => {
   if (!requireSuperAdmin(req, res)) return;
   const available = await spiritualAi.ollamaAvailable();
@@ -257,7 +266,7 @@ exports.adminAiGenerateStudy = wrap(async (req, res) => {
     title: study.title,
     description: study.content_text || study.description,
     media_type: 'text',
-    media_url: study.media_url || 'inline',
+    media_url: study.media_url || '',
     category_id: cat.id,
     author_id: author.id,
     tags: study.tags,

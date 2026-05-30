@@ -14,6 +14,21 @@ async function main() {
 
   await getPrisma().$connect();
 
+  const prisma = getPrisma();
+  const deactivated = await prisma.spiritualVerseOfDay.updateMany({
+    where: { customText: { contains: 'Prueba V1' }, scopeType: 'global' },
+    data: { published: false },
+  });
+  await prisma.spiritualDevotionalPlan.updateMany({
+    where: { title: { contains: 'V1 Test' }, scopeType: 'global' },
+    data: { active: false },
+  });
+  await prisma.spiritualEvent.updateMany({
+    where: { title: { contains: 'Evento V1' }, scopeType: 'global' },
+    data: { active: false },
+  });
+  if (deactivated.count) console.log('[bootstrap] Contenido piloto global desactivado');
+
   let trainer = await spiritualAi.findNicolasTrainer();
   if (!trainer) {
     console.error('[bootstrap] Nicolas del Rio no encontrado. Ejecuta primero: npm run seed:coach-nicolas');
@@ -36,7 +51,7 @@ async function main() {
 
   const verseGen = await spiritualAi.generateVerseOfDay({ theme: 'enseñanzas de Jesús · comunidad Nicolas del Rio' });
   const verse = await spiritual.adminSaveVerseOfDay(superUserId, {
-    scheduled_date: new Date().toISOString().slice(0, 10),
+    scheduled_date: spiritual.localDateString(),
     verse_id: verseGen.verse_id,
     custom_text: verseGen.custom_text,
     reflection: verseGen.reflection,
@@ -66,7 +81,7 @@ async function main() {
     title: studyGen.title,
     description: studyGen.content_text || studyGen.description,
     media_type: 'text',
-    media_url: 'inline',
+    media_url: '',
     category_id: cat.id,
     author_id: author.id,
     tags: studyGen.tags,
@@ -74,7 +89,23 @@ async function main() {
   });
   console.log('[bootstrap] Estudio id=', study.id, studyGen.ai ? '(IA)' : '(fallback)');
 
-  console.log('\n[bootstrap] Listo. Clientes con trainer_id=', trainer.id, 'verán contenido en «Hoy».');
+  const start = new Date();
+  start.setDate(start.getDate() + 7);
+  start.setHours(19, 0, 0, 0);
+  const end = new Date(start);
+  end.setHours(20, 30, 0, 0);
+  const event = await spiritual.adminSaveEvent(superUserId, {
+    title: 'Encuentro espiritual · Comunidad Nicolas del Rio',
+    description: 'Tiempo de reflexión y oración centrado en las enseñanzas de Jesús.',
+    mode: 'virtual',
+    zoom_link: '',
+    start_time: start.toISOString(),
+    end_time: end.toISOString(),
+    ...scope,
+  });
+  console.log('[bootstrap] Evento id=', event.id);
+
+  console.log('\n[bootstrap] Listo. SuperAdmin y clientes con trainer_id=', trainer.id, 'verán contenido en «Hoy».');
   process.exit(0);
 }
 

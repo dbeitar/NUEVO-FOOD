@@ -42,6 +42,7 @@ router.post('/events/:eventId/attend', ctrl.attendEvent);
 // Admin
 router.use('/admin', requireSuperAdmin);
 router.get('/admin/bible/versions', ctrl.adminListVersions);
+router.get('/admin/bible/stats', ctrl.adminBibleStats);
 router.post('/admin/bible/import', uploadBibleJson, ctrl.adminImportBible);
 router.get('/admin/verse-of-day', ctrl.adminListVerses);
 router.post('/admin/verse-of-day', ctrl.adminSaveVerse);

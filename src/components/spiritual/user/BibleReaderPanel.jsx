@@ -1,9 +1,12 @@
 import { useEffect, useState } from 'react';
 import { ArrowLeft, Search, Star } from 'lucide-react';
 import { getBibleChapter, listBibleBooks, searchBible, toggleFavorite } from '../../../utils/spiritualApi';
+import './BibleReaderPanel.css';
 
 export default function BibleReaderPanel({ onBack }) {
   const [books, setBooks] = useState([]);
+  const [booksLoading, setBooksLoading] = useState(true);
+  const [booksError, setBooksError] = useState(null);
   const [selectedBook, setSelectedBook] = useState(null);
   const [chapter, setChapter] = useState(null);
   const [chapterNum, setChapterNum] = useState(1);
@@ -11,7 +14,15 @@ export default function BibleReaderPanel({ onBack }) {
   const [results, setResults] = useState([]);
 
   useEffect(() => {
-    listBibleBooks().then(setBooks).catch(() => setBooks([]));
+    setBooksLoading(true);
+    setBooksError(null);
+    listBibleBooks()
+      .then((rows) => setBooks(Array.isArray(rows) ? rows : []))
+      .catch(() => {
+        setBooks([]);
+        setBooksError('No se pudo cargar la Biblia. Verifica que el backend esté activo.');
+      })
+      .finally(() => setBooksLoading(false));
   }, []);
 
   const loadChapter = async (bookCode, num) => {
@@ -35,7 +46,7 @@ export default function BibleReaderPanel({ onBack }) {
   };
 
   return (
-    <div className="dashboard-main-view space-y-4">
+    <div className="dashboard-main-view bible-reader-panel space-y-4">
       <header className="flex items-center gap-3">
         {onBack ? (
           <button type="button" className="btn-secondary" onClick={onBack}>
@@ -43,7 +54,7 @@ export default function BibleReaderPanel({ onBack }) {
             Volver
           </button>
         ) : null}
-        <h2 className="text-2xl font-bold text-stone-900">Biblia</h2>
+        <h2 className="bible-reader-panel__title">Biblia</h2>
       </header>
 
       <form onSubmit={onSearch} className="flex gap-2">
@@ -61,12 +72,12 @@ export default function BibleReaderPanel({ onBack }) {
       {results.length > 0 && !chapter ? (
         <ul className="space-y-2">
           {results.map((r) => (
-            <li key={r.id} className="rounded-lg border border-stone-200 bg-white p-3 text-sm">
-              <p className="font-semibold text-stone-800">{r.reference}</p>
-              <p className="text-stone-600">{r.text}</p>
+            <li key={r.id} className="bible-reader-panel__search-result">
+              <p>{r.reference}</p>
+              <p>{r.text}</p>
               <button
                 type="button"
-                className="mt-2 text-amber-700 text-xs"
+                className="bible-reader-panel__fav mt-2"
                 onClick={() => toggleFavorite(r.id)}
               >
                 <Star className="inline h-3 w-3" /> Favorito
@@ -77,18 +88,28 @@ export default function BibleReaderPanel({ onBack }) {
       ) : null}
 
       {!selectedBook && !results.length ? (
+        booksLoading ? (
+          <p className="bible-reader-panel__verse">Cargando libros…</p>
+        ) : booksError ? (
+          <p className="bible-reader-panel__verse">{booksError}</p>
+        ) : books.length ? (
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {books.map((b) => (
             <button
               key={b.id}
               type="button"
-              className="rounded-lg border border-stone-200 bg-white px-3 py-2 text-left text-sm hover:border-amber-300"
+              className="bible-reader-panel__book-btn"
               onClick={() => onSelectBook(b)}
             >
               {b.name}
             </button>
           ))}
         </div>
+        ) : (
+          <p className="bible-reader-panel__verse">
+            No hay libros importados. Ejecuta <code>npm run spiritual:import-bible-full</code> en el servidor.
+          </p>
+        )
       ) : null}
 
       {selectedBook && chapter ? (
@@ -115,14 +136,14 @@ export default function BibleReaderPanel({ onBack }) {
               </button>
             </div>
           </div>
-          <div className="space-y-2 rounded-xl bg-white p-4">
+          <div className="bible-reader-panel__chapter space-y-2">
             {chapter.verses.map((v) => (
-              <p key={v.id} className="text-stone-700">
-                <span className="mr-2 font-semibold text-amber-700">{v.verse_number}</span>
+              <p key={v.id} className="bible-reader-panel__verse">
+                <span className="bible-reader-panel__verse-num">{v.verse_number}</span>
                 {v.text}
                 <button
                   type="button"
-                  className="ml-2 text-xs text-stone-400 hover:text-amber-600"
+                  className="bible-reader-panel__fav"
                   onClick={() => toggleFavorite(v.id)}
                   aria-label="Favorito"
                 >

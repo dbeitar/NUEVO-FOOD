@@ -1,6 +1,7 @@
-const { getUserGymId, getUserTrainerId } = require('../../utils/tenantScope');
+const { getUserGymId, getUserTrainerId, isSuperAdmin } = require('../../utils/tenantScope');
 
 function matchesScope(row, user) {
+  if (isSuperAdmin(user)) return true;
   const scope = String(row.scopeType || row.scope_type || 'global').toLowerCase();
   if (scope === 'global') return true;
   if (scope === 'gym') {

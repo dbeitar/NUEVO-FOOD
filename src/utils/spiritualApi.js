@@ -12,6 +12,11 @@ export async function searchBible(q) {
   return data;
 }
 
+export async function adminBibleStats() {
+  const { data } = await api.get(`${base}/admin/bible/stats`);
+  return data;
+}
+
 export async function listBibleBooks() {
   const { data } = await api.get(`${base}/bible/books`);
   return data;
