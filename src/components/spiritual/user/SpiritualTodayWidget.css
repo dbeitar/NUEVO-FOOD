@@ -1,0 +1,144 @@
+/* Widget «Hoy» — legible en shell oscuro D28D (no pelear con d28d-readability.css) */
+.spiritual-today-widget {
+  background: var(--d28d-surface-2, #141414);
+  border: 1px solid var(--d28d-border, #2a2a2a);
+  border-radius: 1rem;
+  padding: 1.5rem;
+  color: #ffffff;
+}
+
+.spiritual-today-widget__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #ffffff;
+  margin: 0;
+}
+
+.spiritual-today-widget__icon {
+  color: var(--d28d-yellow, #ffd700);
+  flex-shrink: 0;
+}
+
+.spiritual-today-widget__card {
+  background: var(--d28d-surface-3, #1a1a1a);
+  border: 1px solid var(--d28d-border, #2a2a2a);
+  border-radius: 0.75rem;
+  padding: 1rem;
+  margin-bottom: 1rem;
+  color: #ffffff;
+}
+
+.spiritual-today-widget__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--d28d-yellow, #ffd700);
+  margin: 0;
+}
+
+.spiritual-today-widget__heading {
+  margin: 0.35rem 0 0;
+  font-weight: 600;
+  color: #ffffff;
+}
+
+.spiritual-today-widget__body {
+  margin: 0.5rem 0 0;
+  color: rgba(255, 255, 255, 0.88);
+  line-height: 1.55;
+}
+
+.spiritual-today-widget__quote {
+  margin: 0.5rem 0 0;
+  color: rgba(255, 255, 255, 0.92);
+  font-style: italic;
+  line-height: 1.55;
+}
+
+.spiritual-today-widget__meta {
+  margin: 0.25rem 0 0;
+  font-size: 0.875rem;
+  color: rgba(255, 255, 255, 0.72);
+}
+
+.spiritual-today-widget__list-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--d28d-surface-3, #1a1a1a);
+  border: 1px solid var(--d28d-border, #2a2a2a);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #ffffff;
+}
+
+.spiritual-today-widget__study-btn {
+  width: 100%;
+  text-align: left;
+  padding: 0.5rem 0.75rem;
+  background: var(--d28d-surface-3, #1a1a1a);
+  border: 1px solid var(--d28d-border, #2a2a2a);
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  color: #ffffff;
+  cursor: pointer;
+}
+
+.spiritual-today-widget__study-btn:hover {
+  border-color: var(--d28d-yellow, #ffd700);
+}
+
+.spiritual-today-widget__study-meta {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.spiritual-today-widget__link {
+  color: var(--d28d-yellow, #ffd700);
+  text-decoration: underline;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: inherit;
+  flex-shrink: 0;
+}
+
+.spiritual-today-widget__footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 1rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--d28d-yellow, #ffd700);
+  background: none;
+  border: none;
+  cursor: pointer;
+}
+
+.spiritual-today-widget__footer-link:hover {
+  text-decoration: underline;
+}
+
+.spiritual-today-widget__footnote {
+  margin: 1rem 0 0;
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  font-size: 0.75rem;
+  color: rgba(255, 255, 255, 0.45);
+}
+
+.spiritual-today-widget__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.spiritual-today-widget__error {
+  font-size: 0.875rem;
+  color: #fca5a5;
+}

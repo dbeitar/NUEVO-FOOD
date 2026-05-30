@@ -9,6 +9,7 @@ import {
   spiritualWidgetsEnabled,
 } from '../../../utils/spiritualApi';
 import { resolveMediaUrl } from '../../../utils/mediaUrl';
+import './SpiritualTodayWidget.css';
 
 export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
   const [feed, setFeed] = useState(null);
@@ -53,40 +54,40 @@ export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
   };
 
   return (
-    <section className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50/80 to-stone-50 p-6 shadow-sm">
+    <section className="spiritual-today-widget">
       <header className="mb-4 flex items-center gap-2">
-        <Sparkles className="h-5 w-5 text-amber-600" aria-hidden />
-        <h3 className="text-lg font-semibold text-stone-900">Hoy</h3>
+        <Sparkles className="spiritual-today-widget__icon h-5 w-5" aria-hidden />
+        <h3 className="spiritual-today-widget__title">Hoy</h3>
       </header>
 
-      {error ? <p className="text-sm text-stone-500">{error}</p> : null}
+      {error ? <p className="spiritual-today-widget__error">{error}</p> : null}
 
       {feed.verse ? (
-        <div className="mb-4 rounded-xl bg-white/80 p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-amber-700">Versículo del día</p>
+        <div className="spiritual-today-widget__card">
+          <p className="spiritual-today-widget__label">Versículo del día</p>
           {feed.verse.reference ? (
-            <p className="mt-1 text-sm font-semibold text-stone-800">{feed.verse.reference}</p>
+            <p className="spiritual-today-widget__heading">{feed.verse.reference}</p>
           ) : null}
-          <p className="mt-2 text-stone-700 italic">&ldquo;{feed.verse.text}&rdquo;</p>
+          <p className="spiritual-today-widget__quote">&ldquo;{feed.verse.text}&rdquo;</p>
           {feed.verse.reflection ? (
-            <p className="mt-2 text-sm text-stone-600">{feed.verse.reflection}</p>
+            <p className="spiritual-today-widget__body">{feed.verse.reflection}</p>
           ) : null}
         </div>
       ) : null}
 
       {feed.devotional ? (
-        <div className="mb-4 rounded-xl bg-white/80 p-4">
-          <p className="text-xs font-medium uppercase tracking-wide text-amber-700">Devocional</p>
-          <p className="mt-1 font-semibold text-stone-800">{feed.devotional.title}</p>
-          <p className="text-sm text-stone-600">
+        <div className="spiritual-today-widget__card">
+          <p className="spiritual-today-widget__label">Devocional</p>
+          <p className="spiritual-today-widget__heading">{feed.devotional.title}</p>
+          <p className="spiritual-today-widget__meta">
             Día {feed.devotional.next_day?.day_index || 1} de {feed.devotional.duration_days}
             {' · '}
             {feed.devotional.completed_count} completados
           </p>
           {feed.devotional.next_day ? (
-            <p className="mt-2 text-sm text-stone-600 line-clamp-3">{feed.devotional.next_day.reflection}</p>
+            <p className="spiritual-today-widget__body line-clamp-3">{feed.devotional.next_day.reflection}</p>
           ) : null}
-          <div className="mt-3 flex flex-wrap gap-2">
+          <div className="spiritual-today-widget__actions">
             {feed.devotional.completed_count === 0 ? (
               <button type="button" className="btn-primary text-sm" onClick={handleStartDevotional}>
                 Comenzar
@@ -103,14 +104,14 @@ export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
 
       {feed.events?.length ? (
         <div className="mb-4">
-          <p className="mb-2 flex items-center gap-1 text-xs font-medium uppercase tracking-wide text-amber-700">
+          <p className="spiritual-today-widget__label mb-2 flex items-center gap-1">
             <Calendar className="h-3.5 w-3.5" /> Próximos eventos
           </p>
           <ul className="space-y-2">
             {feed.events.map((ev) => (
-              <li key={ev.id} className="flex items-center justify-between rounded-lg bg-white/80 px-3 py-2 text-sm">
+              <li key={ev.id} className="spiritual-today-widget__list-item">
                 <span>{ev.title}</span>
-                <button type="button" className="text-amber-700 underline" onClick={() => registerEvent(ev.id)}>
+                <button type="button" className="spiritual-today-widget__link" onClick={() => registerEvent(ev.id)}>
                   Inscribirme
                 </button>
               </li>
@@ -121,13 +122,13 @@ export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
 
       {feed.studies?.length ? (
         <div>
-          <p className="mb-2 text-xs font-medium uppercase tracking-wide text-amber-700">Estudios recomendados</p>
+          <p className="spiritual-today-widget__label mb-2">Estudios recomendados</p>
           <ul className="space-y-2">
             {feed.studies.map((st) => (
               <li key={st.id}>
                 <button
                   type="button"
-                  className="w-full rounded-lg bg-white/80 px-3 py-2 text-left text-sm hover:bg-white"
+                  className="spiritual-today-widget__study-btn"
                   onClick={async () => {
                     const full = await openStudy(st.id);
                     if (full?.mediaUrl?.startsWith('http')) {
@@ -138,7 +139,9 @@ export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
                   }}
                 >
                   {st.title}
-                  {st.category?.name ? <span className="ml-2 text-stone-500">· {st.category.name}</span> : null}
+                  {st.category?.name ? (
+                    <span className="spiritual-today-widget__study-meta"> · {st.category.name}</span>
+                  ) : null}
                 </button>
               </li>
             ))}
@@ -147,18 +150,14 @@ export default function SpiritualTodayWidget({ compact = false, onOpenBible }) {
       ) : null}
 
       {!compact && onOpenBible ? (
-        <button
-          type="button"
-          className="mt-4 flex items-center gap-2 text-sm font-medium text-amber-800 hover:underline"
-          onClick={onOpenBible}
-        >
+        <button type="button" className="spiritual-today-widget__footer-link" onClick={onOpenBible}>
           <BookOpen className="h-4 w-4" />
           Explorar la Biblia
         </button>
       ) : null}
 
       {!compact ? (
-        <p className="mt-4 flex items-center gap-1 text-xs text-stone-400">
+        <p className="spiritual-today-widget__footnote">
           <Heart className="h-3 w-3" /> Acompañamiento espiritual integrado
         </p>
       ) : null}
