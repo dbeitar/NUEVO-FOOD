@@ -22,6 +22,8 @@
     "seed:pilot": "node scripts/reset_pilot_passwords.cjs",
     "seed:dev": "node scripts/seed_dev_users.cjs",
     "seed:coach-nicolas": "node scripts/seed_coach_nicolas_demo.cjs",
+    "spiritual:import-bible": "node scripts/spiritual/import_bible.mjs",
+    "spiritual:bootstrap-nicolas": "node scripts/spiritual/bootstrap_nicolas_del_rio.cjs",
     "import:gallery-nico": "node scripts/import_gallery_nico_xlsx.cjs --apply",
     "import:gallery-nico:preview": "node scripts/import_gallery_nico_xlsx.cjs --preview",
     "db:migrate-json": "node scripts/migrate_json_to_postgres.cjs",

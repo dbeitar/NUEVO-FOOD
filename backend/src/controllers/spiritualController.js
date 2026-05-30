@@ -1,4 +1,5 @@
 const spiritual = require('../services/spiritual/spiritualService');
+const spiritualAi = require('../services/spiritual/spiritualAiService');
 const { importBibleFromJson } = require('../services/spiritual/bibleImportService');
 const { hasRole } = require('../utils/accessControl');
 const platformAudit = require('../services/platformAuditService');
@@ -181,6 +182,89 @@ exports.adminImportBible = wrap(async (req, res) => {
 exports.adminListVersions = wrap(async (req, res) => {
   if (!requireSuperAdmin(req, res)) return;
   res.json(await spiritual.listBibleVersions());
+});
+
+exports.adminAiStatus = wrap(async (req, res) => {
+  if (!requireSuperAdmin(req, res)) return;
+  const available = await spiritualAi.ollamaAvailable();
+  res.json({
+    ollama_configured: Boolean(process.env.OLLAMA_BASE_URL),
+    ollama_available: available,
+    model: process.env.OLLAMA_MODEL || 'llama3.1:8b',
+    fallback: !available,
+    persona: 'Formación espiritual centrada en enseñanzas de Jesús (no denominacional)',
+  });
+});
+
+exports.adminNicolasTrainer = wrap(async (req, res) => {
+  if (!requireSuperAdmin(req, res)) return;
+  const trainer = await spiritualAi.findNicolasTrainer();
+  if (!trainer) {
+    return res.status(404).json({
+      error: 'Entrenador Nicolas del Rio no encontrado. Ejecuta: npm run seed:coach-nicolas',
+    });
+  }
+  res.json({ id: trainer.id, nombre: trainer.nombre, email: trainer.email });
+});
+
+exports.adminAiGenerateVerse = wrap(async (req, res) => {
+  if (!requireSuperAdmin(req, res)) return;
+  const trainer = await spiritualAi.findNicolasTrainer();
+  const generated = await spiritualAi.generateVerseOfDay(req.body || {});
+  const scope = trainer && req.body?.assign_nicolas !== false
+    ? { scope_type: 'trainer', scope_trainer_id: trainer.id }
+    : { scope_type: req.body?.scope_type || 'global', scope_gym_id: req.body?.scope_gym_id, scope_trainer_id: req.body?.scope_trainer_id };
+  const row = await spiritual.adminSaveVerseOfDay(req.user.id, {
+    scheduled_date: req.body?.scheduled_date || new Date().toISOString().slice(0, 10),
+    verse_id: generated.verse_id,
+    custom_text: generated.custom_text,
+    reflection: generated.reflection,
+    published: req.body?.published !== false,
+    ...scope,
+  });
+  await platformAudit.log(req.user.id, 'spiritual', 'ai.verse.generated', 'verse_of_day', row.id, { trainer_id: trainer?.id, ai: generated.ai });
+  res.json({ generated, saved: row, trainer: trainer ? { id: trainer.id, nombre: trainer.nombre } : null });
+});
+
+exports.adminAiGenerateDevotional = wrap(async (req, res) => {
+  if (!requireSuperAdmin(req, res)) return;
+  const trainer = await spiritualAi.findNicolasTrainer();
+  const plan = await spiritualAi.generateDevotionalPlan(req.body || {});
+  const scope = trainer && req.body?.assign_nicolas !== false
+    ? { scope_type: 'trainer', scope_trainer_id: trainer.id }
+    : { scope_type: req.body?.scope_type || 'global' };
+  const saved = await spiritual.adminSaveDevotional(req.user.id, {
+    title: plan.title,
+    duration_days: plan.duration_days,
+    description: plan.description,
+    days: plan.days,
+    ...scope,
+  });
+  await platformAudit.log(req.user.id, 'spiritual', 'ai.devotional.generated', 'devotional_plan', saved.id, { trainer_id: trainer?.id, ai: plan.ai });
+  res.json({ generated: plan, saved, trainer: trainer ? { id: trainer.id, nombre: trainer.nombre } : null });
+});
+
+exports.adminAiGenerateStudy = wrap(async (req, res) => {
+  if (!requireSuperAdmin(req, res)) return;
+  const trainer = await spiritualAi.findNicolasTrainer();
+  const study = await spiritualAi.generateStudy(req.body || {});
+  const cat = await spiritual.adminSaveCategory('Formación espiritual');
+  const author = await spiritual.adminSaveAuthor('Nicolas del Rio · Comunidad');
+  const scope = trainer && req.body?.assign_nicolas !== false
+    ? { scope_type: 'trainer', scope_trainer_id: trainer.id }
+    : { scope_type: req.body?.scope_type || 'global' };
+  const saved = await spiritual.adminSaveStudy(req.user.id, {
+    title: study.title,
+    description: study.content_text || study.description,
+    media_type: 'text',
+    media_url: study.media_url || 'inline',
+    category_id: cat.id,
+    author_id: author.id,
+    tags: study.tags,
+    ...scope,
+  });
+  await platformAudit.log(req.user.id, 'spiritual', 'ai.study.generated', 'study', saved.id, { trainer_id: trainer?.id, ai: study.ai });
+  res.json({ generated: study, saved, trainer: trainer ? { id: trainer.id, nombre: trainer.nombre } : null });
 });
 
 exports.spiritualEnabled = spiritualEnabled;

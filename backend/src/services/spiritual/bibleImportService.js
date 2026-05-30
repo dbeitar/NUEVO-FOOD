@@ -49,15 +49,20 @@ async function importBibleFromJson({ filePath, versionCode = 'RVR1960', versionN
 
     let book = bookMap.get(bookCode);
     if (!book) {
-      book = await prisma.spiritualBibleBook.create({
-        data: {
-          versionId: version.id,
-          code: bookCode,
-          name: row.book_name || bookCode,
-          testament: row.testament || 'OT',
-          orden: bookMap.size + 1,
-        },
+      book = await prisma.spiritualBibleBook.findFirst({
+        where: { versionId: version.id, code: bookCode },
       });
+      if (!book) {
+        book = await prisma.spiritualBibleBook.create({
+          data: {
+            versionId: version.id,
+            code: bookCode,
+            name: row.book_name || bookCode,
+            testament: row.testament || 'OT',
+            orden: bookMap.size + 1,
+          },
+        });
+      }
       bookMap.set(bookCode, book);
     }
 

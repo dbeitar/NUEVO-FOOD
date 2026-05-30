@@ -58,4 +58,10 @@ router.post('/admin/authors', ctrl.adminSaveAuthor);
 router.get('/admin/events', ctrl.adminListEvents);
 router.post('/admin/events', ctrl.adminSaveEvent);
 
+router.get('/admin/ai/status', ctrl.adminAiStatus);
+router.get('/admin/trainers/nicolas-del-rio', ctrl.adminNicolasTrainer);
+router.post('/admin/ai/verse-of-day', ctrl.adminAiGenerateVerse);
+router.post('/admin/ai/devotional', ctrl.adminAiGenerateDevotional);
+router.post('/admin/ai/study', ctrl.adminAiGenerateStudy);
+
 module.exports = router;

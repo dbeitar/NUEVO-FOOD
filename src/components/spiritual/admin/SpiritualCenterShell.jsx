@@ -13,10 +13,17 @@ import {
   adminSaveStudy,
   adminSaveVerse,
   adminUploadStudy,
+  adminImportBible,
+  adminAiStatus,
+  adminNicolasTrainer,
+  adminAiGenerateVerse,
+  adminAiGenerateDevotional,
+  adminAiGenerateStudy,
 } from '../../../utils/spiritualApi';
 
 const TABS = [
   { id: 'bible', label: 'Biblia' },
+  { id: 'assistant', label: 'Asistente IA' },
   { id: 'verse', label: 'Versículo del día' },
   { id: 'devotional', label: 'Devocionales' },
   { id: 'studies', label: 'Estudios' },
@@ -36,6 +43,9 @@ export default function SpiritualCenterShell({ onBack }) {
   const [devotionals, setDevotionals] = useState([]);
   const [studies, setStudies] = useState([]);
   const [events, setEvents] = useState([]);
+  const [aiStatus, setAiStatus] = useState(null);
+  const [nicolas, setNicolas] = useState(null);
+  const [aiBusy, setAiBusy] = useState(false);
 
   const [verseForm, setVerseForm] = useState({
     scheduled_date: new Date().toISOString().slice(0, 10),
@@ -79,16 +89,26 @@ export default function SpiritualCenterShell({ onBack }) {
 
   const reload = useCallback(async () => {
     try {
-      const [v, d, s, e] = await Promise.all([
+      const [v, d, s, e, ai, tr] = await Promise.all([
         adminListVerses(),
         adminListDevotionals(),
         adminListStudies(),
         adminListEvents(),
+        adminAiStatus().catch(() => null),
+        adminNicolasTrainer().catch(() => null),
       ]);
       setVerses(v);
       setDevotionals(d);
       setStudies(s);
       setEvents(e);
+      setAiStatus(ai);
+      setNicolas(tr);
+      if (tr?.id) {
+        setVerseForm((f) => ({ ...f, scope_type: 'trainer', scope_trainer_id: String(tr.id) }));
+        setDevForm((f) => ({ ...f, scope_type: 'trainer', scope_trainer_id: tr.id }));
+        setStudyForm((f) => ({ ...f, scope_type: 'trainer' }));
+        setEventForm((f) => ({ ...f, scope_type: 'trainer', scope_trainer_id: tr.id }));
+      }
     } catch {
       /* admin only */
     }
@@ -159,6 +179,30 @@ export default function SpiritualCenterShell({ onBack }) {
     flash(`Biblia importada: ${out.imported} versículos.`);
   };
 
+  const runAi = async (kind) => {
+    setAiBusy(true);
+    try {
+      if (kind === 'verse') {
+        const out = await adminAiGenerateVerse({ assign_nicolas: true, published: true });
+        flash(`Versículo generado para ${out.trainer?.nombre || 'Nicolas'}.`);
+      } else if (kind === 'devotional') {
+        await adminAiGenerateDevotional({ duration_days: 7, assign_nicolas: true });
+        flash('Devocional 7 días generado para comunidad Nicolas del Rio.');
+      } else if (kind === 'study') {
+        await adminAiGenerateStudy({
+          topic: 'Enseñanzas de Jesús aplicadas al bienestar integral',
+          assign_nicolas: true,
+        });
+        flash('Estudio generado para comunidad Nicolas del Rio.');
+      }
+      reload();
+    } catch (err) {
+      flash(err?.response?.data?.error || 'Error del asistente. Verifica Ollama o usa npm run spiritual:bootstrap-nicolas');
+    } finally {
+      setAiBusy(false);
+    }
+  };
+
   const onStudyUpload = async (e) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -200,8 +244,50 @@ export default function SpiritualCenterShell({ onBack }) {
       {tab === 'bible' ? (
         <div className="space-y-4 rounded-xl border border-stone-200 bg-white p-6">
           <h3 className="font-semibold">Importar Biblia (JSON)</h3>
-          <p className="text-sm text-stone-600">Una versión (RVR1960). Formato: book, chapter, verse, text.</p>
+          <p className="text-sm text-stone-600">
+            Una versión (RVR1960). Formato: book, chapter, verse, text.
+            Guía completa: <code>docs/VIENTO_RECIO_BIBLE_AND_AI.md</code>
+          </p>
           <input type="file" accept=".json,application/json" onChange={onBibleImport} />
+        </div>
+      ) : null}
+
+      {tab === 'assistant' ? (
+        <div className="space-y-4 rounded-xl border border-amber-200 bg-amber-50/50 p-6">
+          <h3 className="font-semibold">Asistente espiritual gratuito (Ollama)</h3>
+          <p className="text-sm text-stone-600">
+            Formación centrada en las enseñanzas de Jesús — visión espiritual, no denominacional.
+            Contenido asignado a la comunidad de <strong>Nicolas del Rio</strong>.
+          </p>
+          {nicolas ? (
+            <p className="text-sm text-green-800">
+              Entrenador vinculado: {nicolas.nombre} (ID {nicolas.id}) · {nicolas.email}
+            </p>
+          ) : (
+            <p className="text-sm text-red-700">
+              Nicolas del Rio no encontrado. Ejecuta: <code>npm run seed:coach-nicolas</code>
+            </p>
+          )}
+          {aiStatus ? (
+            <p className="text-xs text-stone-500">
+              Ollama: {aiStatus.ollama_available ? 'activo' : 'no disponible — se usa contenido fallback'}
+              {aiStatus.model ? ` · modelo ${aiStatus.model}` : ''}
+            </p>
+          ) : null}
+          <div className="flex flex-wrap gap-2">
+            <button type="button" className="btn-primary" disabled={aiBusy || !nicolas} onClick={() => runAi('verse')}>
+              Generar versículo del día (Nicolas)
+            </button>
+            <button type="button" className="btn-secondary" disabled={aiBusy || !nicolas} onClick={() => runAi('devotional')}>
+              Generar devocional 7 días
+            </button>
+            <button type="button" className="btn-secondary" disabled={aiBusy || !nicolas} onClick={() => runAi('study')}>
+              Generar estudio bíblico
+            </button>
+          </div>
+          <p className="text-xs text-stone-500">
+            CLI completo: <code>npm run spiritual:bootstrap-nicolas</code> · Instalar IA: <code>ollama pull llama3.1:8b</code>
+          </p>
         </div>
       ) : null}
 

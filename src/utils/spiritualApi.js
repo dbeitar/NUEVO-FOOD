@@ -122,6 +122,31 @@ export async function adminImportBible(file, versionCode = 'RVR1960') {
   return data;
 }
 
+export async function adminAiStatus() {
+  const { data } = await api.get(`${base}/admin/ai/status`);
+  return data;
+}
+
+export async function adminNicolasTrainer() {
+  const { data } = await api.get(`${base}/admin/trainers/nicolas-del-rio`);
+  return data;
+}
+
+export async function adminAiGenerateVerse(body = {}) {
+  const { data } = await api.post(`${base}/admin/ai/verse-of-day`, body);
+  return data;
+}
+
+export async function adminAiGenerateDevotional(body = {}) {
+  const { data } = await api.post(`${base}/admin/ai/devotional`, body);
+  return data;
+}
+
+export async function adminAiGenerateStudy(body = {}) {
+  const { data } = await api.post(`${base}/admin/ai/study`, body);
+  return data;
+}
+
 export function spiritualWidgetsEnabled() {
   return String(import.meta.env.VITE_SPIRITUAL_WIDGETS ?? 'true').toLowerCase() !== 'false';
 }
