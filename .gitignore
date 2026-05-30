@@ -62,6 +62,8 @@ backend/data/localStorage_backup.json
 !backend/data/*.example.json
 !backend/data/d28d_routines_import.json
 !backend/data/spiritual/*.example.json
+# Generados por npm run spiritual:import-bible-full (no versionar)
+backend/data/spiritual/rvr1960*.json
 
 # Uploads espirituales (runtime)
 backend/uploads/spiritual/
