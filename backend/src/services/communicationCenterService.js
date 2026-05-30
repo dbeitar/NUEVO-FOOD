@@ -13,7 +13,7 @@ function normalizeChannel(value) {
 
 function normalizeModule(value) {
   const m = String(value || '').toLowerCase();
-  if (['d28d', 'food', 'training', 'platform'].includes(m)) return m;
+  if (['d28d', 'food', 'training', 'platform', 'spiritual'].includes(m)) return m;
   return 'd28d';
 }
 

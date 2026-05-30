@@ -1,0 +1,8 @@
+[
+  { "book": "GEN", "chapter": 1, "verse": 1, "text": "En el principio creó Dios los cielos y la tierra." },
+  { "book": "GEN", "chapter": 1, "verse": 2, "text": "Y la tierra estaba desordenada y vacía, y las tinieblas estaban sobre la faz del abismo, y el Espíritu de Dios se movía sobre la faz de las aguas." },
+  { "book": "GEN", "chapter": 1, "verse": 3, "text": "Y dijo Dios: Sea la luz; y fue la luz." },
+  { "book": "JHN", "chapter": 3, "verse": 16, "text": "Porque de tal manera amó Dios al mundo, que ha dado a su Hijo unigénito, para que todo aquel que en él cree, no se pierda, mas tenga vida eterna." },
+  { "book": "PSA", "book_name": "Salmos", "testament": "OT", "chapter": 23, "verse": 1, "text": "Jehová es mi pastor; nada me faltará." },
+  { "book": "PHP", "book_name": "Filipenses", "testament": "NT", "chapter": 4, "verse": 13, "text": "Todo lo puedo en Cristo que me fortalece." }
+]

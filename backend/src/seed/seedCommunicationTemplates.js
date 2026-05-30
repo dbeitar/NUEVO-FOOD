@@ -54,6 +54,16 @@ async function ensureRequiredCommunicationTemplates() {
     // usuario inactivo / destacado
     { ...base, nombre: 'Usuario inactivo (in_app)', evento: 'd28d.user.inactive', modulo: 'd28d', canal: 'in_app', asunto: 'Te extrañamos', contenido: 'Hace días que no participas. ¡Vuelve a tus clases!' },
     { ...base, nombre: 'Cumplimiento destacado (in_app)', evento: 'd28d.adherence.highlighted', modulo: 'd28d', canal: 'in_app', asunto: '¡Buen trabajo!', contenido: 'Tu adherencia está en verde. ¡Sigue así!' },
+
+    // spiritual / VIENTO RECIO V1 (plantillas nuevas — no modificar existentes)
+    { ...base, nombre: 'Versículo del día (in_app)', evento: 'verse.published', modulo: 'spiritual', canal: 'in_app', asunto: 'Versículo del día', contenido: '{{verse.reference}} — {{verse.text}}' },
+    { ...base, nombre: 'Versículo del día (email)', evento: 'verse.published', modulo: 'spiritual', canal: 'email', asunto: 'Versículo del día', contenido: '<p><strong>{{verse.reference}}</strong></p><p>{{verse.text}}</p><p>{{verse.reflection}}</p>' },
+    { ...base, nombre: 'Versículo del día (WhatsApp)', evento: 'verse.published', modulo: 'spiritual', canal: 'whatsapp_link', asunto: 'Versículo del día', contenido: '{{verse.reference}}: {{verse.text}}' },
+    { ...base, nombre: 'Devocional iniciado (in_app)', evento: 'devotional.started', modulo: 'spiritual', canal: 'in_app', asunto: 'Devocional iniciado', contenido: 'Comenzaste: {{devotional.title}}' },
+    { ...base, nombre: 'Devocional completado (in_app)', evento: 'devotional.completed', modulo: 'spiritual', canal: 'in_app', asunto: '¡Devocional completado!', contenido: 'Terminaste: {{devotional.title}}' },
+    { ...base, nombre: 'Evento espiritual (in_app)', evento: 'event.created', modulo: 'spiritual', canal: 'in_app', asunto: 'Nuevo evento', contenido: '{{event.title}} — {{event.start_time}}' },
+    { ...base, nombre: 'Recordatorio evento (in_app)', evento: 'event.reminder', modulo: 'spiritual', canal: 'in_app', asunto: 'Recordatorio de evento', contenido: 'Mañana: {{event.title}} a las {{event.start_time}}' },
+    { ...base, nombre: 'Recordatorio evento (email)', evento: 'event.reminder', modulo: 'spiritual', canal: 'email', asunto: 'Recordatorio: {{event.title}}', contenido: '<p>Te recordamos el evento <strong>{{event.title}}</strong>.</p><p>Inicio: {{event.start_time}}</p>' },
   ];
 
   let created = 0;

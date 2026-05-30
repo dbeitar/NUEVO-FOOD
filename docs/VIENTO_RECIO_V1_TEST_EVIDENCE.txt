@@ -1,0 +1,8 @@
+=== VIENTO RECIO V1 TEST 2026-05-30T02:07:33Z ===
+BASE_URL=http://localhost:3003/api
+=== VIENTO RECIO V1 — http://localhost:3003/api ===
+ [0;32mOK[0m   login super admin
+ [0;32mOK[0m   feed incluye versículo del día
+ [0;32mOK[0m   plantillas spiritual (2)
+
+RESULTADO: 18 OK, 0 FAIL

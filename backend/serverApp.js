@@ -886,6 +886,9 @@ app.use('/api/d28d/progress', d28dProgressRoutes);
 app.use('/api/training/progress', trainingProgressRoutes);
 app.use('/api/faq', faqRoutes);
 app.use('/api/help', helpRoutes);
+const spiritualRoutes = require('./src/routes/spiritualRoutes');
+app.use('/api/spiritual', spiritualRoutes);
+app.use('/uploads/spiritual', express.static(require('path').join(__dirname, 'uploads/spiritual')));
 const platformAuditController = require('./src/controllers/platformAuditController');
 app.get('/api/platform/audit', require('./src/middleware/auth'), platformAuditController.list);
 app.use('/uploads/challenges', express.static(require('path').join(__dirname, 'uploads/challenges')));
@@ -950,6 +953,14 @@ try {
   else console.log(`[comm.scheduler] desactivado (${out?.reason || 'n/a'})`);
 } catch (e) {
   console.warn('[comm.scheduler] no inició:', e.message);
+}
+
+try {
+  const { startSpiritualScheduler } = require('./src/jobs/spiritualScheduler');
+  const sp = startSpiritualScheduler();
+  if (sp?.started) console.log(`[spiritual.scheduler] activo (interval=${sp.intervalMs}ms)`);
+} catch (e) {
+  console.warn('[spiritual.scheduler] no inició:', e.message);
 }
 
 if (USE_RELATIONAL) {

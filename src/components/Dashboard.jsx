@@ -65,6 +65,11 @@ import TrainingExpertProgress from '../training-module/TrainingExpertProgress';
 import CoachTrainersAdmin from './dashboard/CoachTrainersAdmin';
 import CoachRoutineAssistant from './coach/CoachRoutineAssistant';
 import CoachEcosystemTracking from './coach/CoachEcosystemTracking';
+import SpiritualCenterShell from './spiritual/admin/SpiritualCenterShell';
+import SpiritualTodayWidget from './spiritual/user/SpiritualTodayWidget';
+import BibleReaderPanel from './spiritual/user/BibleReaderPanel';
+import { spiritualWidgetsEnabled } from '../utils/spiritualApi';
+
 export default function Dashboard() {
   const { user, logout } = useAuth();
   const { t, lang, setLang } = useI18n();
@@ -439,12 +444,17 @@ export default function Dashboard() {
 
   // === Vistas =============================================================
   const renderHome = () => (
-    <ServicesHero
-      user={user}
-      services={services}
-      brandName={brandName}
-      onPickService={onPickService}
-    />
+    <div className="space-y-6">
+      {spiritualWidgetsEnabled() ? (
+        <SpiritualTodayWidget compact onOpenBible={() => navigate('spiritual-bible')} />
+      ) : null}
+      <ServicesHero
+        user={user}
+        services={services}
+        brandName={brandName}
+        onPickService={onPickService}
+      />
+    </div>
   );
 
   const renderServicePanel = () => {
@@ -622,6 +632,19 @@ export default function Dashboard() {
           'admin_gimnasio', 'admin_marca', 'entrenador', 'nutricionista',
         ]) ? <AdminModuleVigencias /> : null;
       case 'appearance': return hasAnyRole(['super_admin']) ? <AdminFrontendAppearance /> : null;
+      case 'spiritual-center':
+        return hasAnyRole(['super_admin']) ? (
+          <SpiritualCenterShell
+            onBack={() => {
+              setOpenServicePanel('configurations');
+              setCurrentView('servicePanel');
+            }}
+          />
+        ) : null;
+      case 'spiritual-bible':
+        return (
+          <BibleReaderPanel onBack={() => navigate(isFinal ? 'progress' : 'home')} />
+        );
       case 'progress':
         if (hasAnyRole(['entrenador', 'nutricionista', 'admin_training', 'admin_entrenador'])) {
           return (
@@ -633,6 +656,9 @@ export default function Dashboard() {
           const { hasD28d, hasTraining, showShellHelpAssistant } = serviceShellUx;
           return (
             <div className="space-y-8">
+              {spiritualWidgetsEnabled() ? (
+                <SpiritualTodayWidget onOpenBible={() => navigate('spiritual-bible')} />
+              ) : null}
               {hasFood ? <Progress /> : null}
               {hasD28d ? (
                 <>

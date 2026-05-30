@@ -3,6 +3,7 @@ import { useI18n } from '../../context/useI18n';
 
 const CARDS = [
   { id: 'communication', title: 'Comunicación', desc: 'Plantillas, eventos, WhatsApp y auditoría del centro de comunicaciones.' },
+  { id: 'spiritual-center', title: 'Centro de Formación Espiritual', desc: 'Biblia, versículo del día, devocionales, estudios y eventos.' },
   { id: 'faq-center', title: 'FAQ Center', desc: 'Preguntas frecuentes por módulo (D28D, Training, Platform).' },
   { id: 'paymentlinks', title: 'Enlaces y métodos de pago', desc: 'Wompi, pago en sede por módulo.' },
   { id: 'appearance', title: 'Apariencia', desc: 'Marca, textos e imágenes del frontend.' },
@@ -34,6 +35,7 @@ export default function ConfigurationsHub({ onBack, onNavigate, hasAnyRole }) {
           if (c.id === 'appearance' && hasAnyRole && !hasAnyRole(['super_admin'])) return null;
           if (c.id === 'paymentlinks' && hasAnyRole && !hasAnyRole(['super_admin'])) return null;
           if (c.id === 'communication' && hasAnyRole && !hasAnyRole(['super_admin'])) return null;
+          if (c.id === 'spiritual-center' && hasAnyRole && !hasAnyRole(['super_admin'])) return null;
           if (c.id === 'faq-center' && hasAnyRole && !hasAnyRole(['super_admin', 'admin_d28d', 'admin_training', 'admin_entrenador'])) return null;
           return (
             <button

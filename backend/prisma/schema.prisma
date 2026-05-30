@@ -716,3 +716,228 @@ model PlatformAuditEvent {
   @@index([userId, createdAt])
   @@map("platform_audit_events")
 }
+
+// --- VIENTO RECIO V1 (Centro de Formación Espiritual) ---
+
+model SpiritualBibleVersion {
+  id         Int       @id @default(autoincrement())
+  code       String    @unique @db.VarChar(32)
+  name       String    @db.VarChar(120)
+  language   String    @default("es") @db.VarChar(8)
+  active     Boolean   @default(true)
+  importedAt DateTime? @map("imported_at")
+  sourceMeta Json?     @map("source_meta")
+  books      SpiritualBibleBook[]
+
+  @@map("spiritual_bible_versions")
+}
+
+model SpiritualBibleBook {
+  id        Int      @id @default(autoincrement())
+  versionId Int      @map("version_id")
+  orden     Int
+  code      String   @db.VarChar(8)
+  name      String   @db.VarChar(64)
+  testament String   @db.VarChar(4)
+  version   SpiritualBibleVersion @relation(fields: [versionId], references: [id], onDelete: Cascade)
+  chapters  SpiritualBibleChapter[]
+
+  @@unique([versionId, code])
+  @@map("spiritual_bible_books")
+}
+
+model SpiritualBibleChapter {
+  id            Int      @id @default(autoincrement())
+  bookId        Int      @map("book_id")
+  chapterNumber Int      @map("chapter_number")
+  book          SpiritualBibleBook @relation(fields: [bookId], references: [id], onDelete: Cascade)
+  verses        SpiritualBibleVerse[]
+  bookmarks     SpiritualUserBookmark[]
+
+  @@unique([bookId, chapterNumber])
+  @@map("spiritual_bible_chapters")
+}
+
+model SpiritualBibleVerse {
+  id           Int      @id @default(autoincrement())
+  chapterId    Int      @map("chapter_id")
+  verseNumber  Int      @map("verse_number")
+  text         String   @db.Text
+  chapter      SpiritualBibleChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+  favorites    SpiritualUserFavorite[]
+
+  @@unique([chapterId, verseNumber])
+  @@index([text])
+  @@map("spiritual_bible_verses")
+}
+
+model SpiritualUserFavorite {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  verseId    Int      @map("verse_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  verse      SpiritualBibleVerse @relation(fields: [verseId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, verseId])
+  @@map("spiritual_user_favorites")
+}
+
+model SpiritualUserBookmark {
+  id         Int      @id @default(autoincrement())
+  userId     Int      @map("user_id")
+  chapterId  Int      @map("chapter_id")
+  label      String?  @db.VarChar(120)
+  createdAt  DateTime @default(now()) @map("created_at")
+  chapter    SpiritualBibleChapter @relation(fields: [chapterId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, chapterId])
+  @@map("spiritual_user_bookmarks")
+}
+
+model SpiritualVerseOfDay {
+  id            Int       @id @default(autoincrement())
+  scheduledDate DateTime  @map("scheduled_date") @db.Date
+  verseId       Int?      @map("verse_id")
+  customText    String?   @map("custom_text") @db.Text
+  reflection    String?   @db.Text
+  published     Boolean   @default(false)
+  publishedAt   DateTime? @map("published_at")
+  createdById   Int       @map("created_by_id")
+  scopeType     String    @default("global") @map("scope_type") @db.VarChar(16)
+  scopeGymId    Int?      @map("scope_gym_id")
+  scopeTrainerId Int?     @map("scope_trainer_id")
+  createdAt     DateTime  @default(now()) @map("created_at")
+  updatedAt     DateTime  @updatedAt @map("updated_at")
+
+  @@unique([scheduledDate, scopeType, scopeGymId, scopeTrainerId])
+  @@map("spiritual_verse_of_day")
+}
+
+model SpiritualDevotionalPlan {
+  id           Int      @id @default(autoincrement())
+  title        String   @db.VarChar(200)
+  durationDays Int      @map("duration_days")
+  description  String?  @db.Text
+  active       Boolean  @default(true)
+  scopeType    String   @default("global") @map("scope_type") @db.VarChar(16)
+  scopeGymId   Int?     @map("scope_gym_id")
+  scopeTrainerId Int?   @map("scope_trainer_id")
+  createdAt    DateTime @default(now()) @map("created_at")
+  updatedAt    DateTime @updatedAt @map("updated_at")
+  days         SpiritualDevotionalDay[]
+  progress     SpiritualDevotionalProgress[]
+
+  @@map("spiritual_devotional_plans")
+}
+
+model SpiritualDevotionalDay {
+  id         Int      @id @default(autoincrement())
+  planId     Int      @map("plan_id")
+  dayIndex   Int      @map("day_index")
+  verseId    Int?     @map("verse_id")
+  reflection String   @db.Text
+  prayer     String   @db.Text
+  challenge  String   @db.Text
+  plan       SpiritualDevotionalPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([planId, dayIndex])
+  @@map("spiritual_devotional_days")
+}
+
+model SpiritualDevotionalProgress {
+  id          Int      @id @default(autoincrement())
+  userId      Int      @map("user_id")
+  planId      Int      @map("plan_id")
+  dayIndex    Int      @map("day_index")
+  completedAt DateTime @default(now()) @map("completed_at")
+  plan        SpiritualDevotionalPlan @relation(fields: [planId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, planId, dayIndex])
+  @@map("spiritual_devotional_progress")
+}
+
+model SpiritualStudyCategory {
+  id     Int      @id @default(autoincrement())
+  name   String   @unique @db.VarChar(120)
+  active Boolean  @default(true)
+  studies SpiritualStudy[]
+
+  @@map("spiritual_study_categories")
+}
+
+model SpiritualStudyAuthor {
+  id     Int      @id @default(autoincrement())
+  name   String   @unique @db.VarChar(120)
+  active Boolean  @default(true)
+  studies SpiritualStudy[]
+
+  @@map("spiritual_study_authors")
+}
+
+model SpiritualStudy {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  mediaType   String   @map("media_type") @db.VarChar(24)
+  mediaUrl    String   @map("media_url") @db.VarChar(500)
+  categoryId  Int?     @map("category_id")
+  authorId    Int?     @map("author_id")
+  tags        Json     @default("[]")
+  active      Boolean  @default(true)
+  scopeType   String   @default("global") @map("scope_type") @db.VarChar(16)
+  scopeGymId  Int?     @map("scope_gym_id")
+  scopeTrainerId Int?  @map("scope_trainer_id")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  category    SpiritualStudyCategory? @relation(fields: [categoryId], references: [id])
+  author      SpiritualStudyAuthor? @relation(fields: [authorId], references: [id])
+
+  @@map("spiritual_studies")
+}
+
+model SpiritualEvent {
+  id          Int      @id @default(autoincrement())
+  title       String   @db.VarChar(200)
+  description String?  @db.Text
+  mode        String   @db.VarChar(16)
+  location    String?  @db.VarChar(200)
+  zoomLink    String?  @map("zoom_link") @db.VarChar(500)
+  meetLink    String?  @map("meet_link") @db.VarChar(500)
+  startTime   DateTime @map("start_time")
+  endTime     DateTime @map("end_time")
+  capacity    Int?
+  active      Boolean  @default(true)
+  scopeType   String   @default("global") @map("scope_type") @db.VarChar(16)
+  scopeGymId  Int?     @map("scope_gym_id")
+  scopeTrainerId Int?  @map("scope_trainer_id")
+  reminderSent Boolean @default(false) @map("reminder_sent")
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  registrations SpiritualEventRegistration[]
+  attendance  SpiritualEventAttendance[]
+
+  @@map("spiritual_events")
+}
+
+model SpiritualEventRegistration {
+  id           Int      @id @default(autoincrement())
+  eventId      Int      @map("event_id")
+  userId       Int      @map("user_id")
+  registeredAt DateTime @default(now()) @map("registered_at")
+  status       String   @default("registered") @db.VarChar(16)
+  event        SpiritualEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("spiritual_event_registrations")
+}
+
+model SpiritualEventAttendance {
+  id       Int      @id @default(autoincrement())
+  eventId  Int      @map("event_id")
+  userId   Int      @map("user_id")
+  joinedAt DateTime @default(now()) @map("joined_at")
+  event    SpiritualEvent @relation(fields: [eventId], references: [id], onDelete: Cascade)
+
+  @@unique([eventId, userId])
+  @@map("spiritual_event_attendance")
+}
