@@ -76,6 +76,37 @@ Resumen:
 5. Seeds piloto si entorno nuevo.
 6. Ejecutar suite E2E contra URL staging.
 
+### Centro espiritual (Biblia + contenido «Hoy»)
+
+Git trae **código y migraciones**, no los ~31.000 versículos ni el contenido editorial (van en **PostgreSQL**).
+
+**Variables (obligatorias en prod):**
+
+| Dónde | Variable | Valor |
+|-------|----------|-------|
+| Frontend build | `VITE_SPIRITUAL_WIDGETS` | `true` |
+| Backend runtime | `SPIRITUAL_CENTER_ENABLED` | `true` |
+| Backend runtime | `FRONTEND_URL` | URL del frontend (ej. Vercel) |
+
+**Una vez desplegado el backend con `DATABASE_URL`:**
+
+```bash
+npm run db:prisma-deploy          # tablas spiritual_*
+npm run seed:coach-nicolas        # entrenador Nicolas (si entorno nuevo)
+npm run spiritual:deploy-prod     # Biblia RVR1960 + contenido + limpia tests
+```
+
+El script es **idempotente**: no re-importa la Biblia si ya hay versículos; no duplica bootstrap si ya hay devocionales del trainer.
+
+Verificación:
+
+```bash
+curl -H "Authorization: Bearer TOKEN" https://TU-API/api/spiritual/admin/bible/stats
+# → books: 66, verses: 31104, loaded: true
+```
+
+Guía completa: [VIENTO_RECIO_BIBLE_AND_AI.md](../VIENTO_RECIO_BIBLE_AND_AI.md)
+
 ---
 
 ## 6. Pruebas automatizadas
