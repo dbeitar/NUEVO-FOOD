@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import api from '../services/api';
 import LiveClassSchedule from './LiveClassSchedule';
+import './LiveClasses.css';
 
 const viewOptions = [
   { id: 'month', label: 'Mensual' },
@@ -79,7 +80,7 @@ export default function LiveClasses({ programId }) {
   const [loading, setLoading] = useState(false);
   const [joining, setJoining] = useState(null);
   const [error, setError] = useState('');
-  const [view, setView] = useState('week');
+  const [view, setView] = useState('graphic');
   const [anchorDate, setAnchorDate] = useState(new Date());
 
   const fetchClasses = async () => {
@@ -136,18 +137,18 @@ export default function LiveClasses({ programId }) {
     const attendance = Array.isArray(item.attendance_user_ids) ? item.attendance_user_ids.length : 0;
 
     return (
-      <div key={item.id} className={`border border-slate-200 rounded-lg p-4 shadow-sm bg-white ${compact ? 'text-xs' : ''}`}>
+      <div key={item.id} className={`d28d-live-classes__class-card ${compact ? 'text-xs' : ''}`}>
         <div className="flex items-start justify-between gap-3">
           <div>
-            <div className="text-[11px] uppercase tracking-[0.16em] text-slate-500 font-semibold">
+            <div className="d28d-live-classes__kicker text-[11px] uppercase tracking-[0.16em] font-semibold">
               {item.source_module === 'd28d' || item.is_global ? 'Programa D28D' : item.gym_id ? 'Tu gimnasio' : 'Clase'}
             </div>
-            <h3 className={`${compact ? 'text-sm' : 'text-xl'} font-semibold text-stone-900 mt-1`}>{item.title}</h3>
-            {!compact && <p className="text-sm text-stone-600 mt-2">{item.description || 'Clase en vivo de entrenamiento guiado.'}</p>}
+            <h3 className={`d28d-live-classes__title ${compact ? 'text-sm' : 'text-xl'} font-semibold mt-1`}>{item.title}</h3>
+            {!compact && <p className="d28d-live-classes__desc text-sm mt-2">{item.description || 'Clase en vivo de entrenamiento guiado.'}</p>}
           </div>
-          <span className="rounded-full px-3 py-1 text-xs font-semibold bg-slate-100 text-slate-700">{status}</span>
+          <span className="d28d-live-classes__status rounded-full px-3 py-1 text-xs font-semibold">{status}</span>
         </div>
-        <div className="mt-3 grid sm:grid-cols-2 gap-2 text-sm text-stone-600">
+        <div className="mt-3 grid sm:grid-cols-2 gap-2 text-sm d28d-live-classes__meta">
           <span>{compact ? `${formatTime(item.start_time)} - ${formatTime(item.end_time)}` : `${formatDateTime(item.start_time)} -> ${formatDateTime(item.end_time)}`}</span>
           <span>Coach: {item.coach || 'D28D'}</span>
           <span>Cupos: {enrolled}/{item.capacity || 40}</span>
@@ -155,7 +156,7 @@ export default function LiveClasses({ programId }) {
         </div>
         {!compact && (
           <div className="mt-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div className="text-sm text-stone-600 break-all">Zoom: <span className="font-medium text-stone-900">{item.zoom_link}</span></div>
+            <div className="text-sm d28d-live-classes__meta break-all">Zoom: <span className="font-medium d28d-live-classes__title">{item.zoom_link}</span></div>
             <button
               type="button"
               onClick={() => handleJoin(item)}
@@ -207,10 +208,10 @@ export default function LiveClasses({ programId }) {
   };
 
   return (
-    <div className="max-w-7xl mx-auto space-y-6">
-      <div className="bg-white border border-slate-200 rounded-lg p-5">
-        <h2 className="text-3xl font-bold text-stone-900">Clases en vivo</h2>
-        <p className="text-stone-600 mt-2">Agenda y reserva tus clases. La asistencia se confirma al entrar al Zoom.</p>
+    <div className="d28d-live-classes max-w-7xl mx-auto space-y-6">
+      <div className="d28d-live-classes__panel rounded-lg p-5">
+        <h2 className="d28d-live-classes__title text-3xl font-bold">Clases en vivo</h2>
+        <p className="d28d-live-classes__desc mt-2">Agenda y reserva tus clases. La asistencia se confirma al entrar al Zoom.</p>
         <div className="mt-5 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-3">
           <div className="flex flex-wrap gap-2">
             {viewOptions.map((option) => (
@@ -218,7 +219,7 @@ export default function LiveClasses({ programId }) {
                 key={option.id}
                 type="button"
                 onClick={() => setView(option.id)}
-                className={`px-4 py-2 rounded-lg text-sm font-semibold border ${view === option.id ? 'bg-stone-900 text-white border-stone-900' : 'bg-white text-stone-700 border-slate-200'}`}
+                className={`d28d-live-classes__tab px-4 py-2 rounded-lg text-sm font-semibold border ${view === option.id ? 'd28d-live-classes__tab--active' : ''}`}
               >
                 {option.label}
               </button>
@@ -232,14 +233,14 @@ export default function LiveClasses({ programId }) {
         </div>
       </div>
 
-      {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg">{error}</div>}
+      {error && <div className="d28d-live-classes__error p-4 rounded-lg">{error}</div>}
       {loading ? (
-        <div className="text-center py-12 text-stone-500 bg-white border border-slate-200 rounded-lg">Cargando clases...</div>
+        <div className="d28d-live-classes__panel text-center py-12 rounded-lg">Cargando clases...</div>
       ) : renderCalendar()}
     </div>
   );
 }
 
 function EmptyState() {
-  return <div className="p-8 bg-stone-50 rounded-lg text-center text-stone-600">No hay clases programadas para esta vista.</div>;
+  return <div className="d28d-live-classes__empty p-8 rounded-lg text-center">No hay clases programadas para esta vista.</div>;
 }
