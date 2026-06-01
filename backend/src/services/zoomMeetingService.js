@@ -96,12 +96,8 @@ function getPlaceholderJoinUrl() {
   if (process.env.D28D_ZOOM_ALLOW_PLACEHOLDER === '0') return '';
   const explicit = String(process.env.D28D_ZOOM_PLACEHOLDER_URL || '').trim();
   if (explicit.startsWith('http')) return explicit;
-  if (process.env.D28D_ZOOM_ALLOW_PLACEHOLDER === '1') {
-    return 'https://zoom.us/j/d28d-demo';
-  }
-  if (process.env.NODE_ENV !== 'production') {
-    return 'https://zoom.us/j/d28d-demo';
-  }
+  // Evitar enlaces demo inválidos (ej. /j/d28d-demo) que confunden en pruebas.
+  // Si no hay S2S ni PMI, exige un placeholder real explícito.
   return '';
 }
 

@@ -3,11 +3,8 @@ import api from '../services/api';
 import LiveClassSchedule from './LiveClassSchedule';
 import './LiveClasses.css';
 
+// Vista única: Horario Gráfico (referencia visual operativa D28D).
 const viewOptions = [
-  { id: 'month', label: 'Mensual' },
-  { id: 'week', label: 'Semanal' },
-  { id: 'day', label: 'Diaria' },
-  { id: 'upcoming', label: 'Próximas' },
   { id: 'graphic', label: 'Horario Gráfico' },
 ];
 
