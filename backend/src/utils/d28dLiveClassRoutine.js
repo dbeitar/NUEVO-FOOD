@@ -22,7 +22,12 @@ async function buildRoutineLinkFields(body = {}, existing = null) {
   if (body.d28d_session_adjustments !== undefined) {
     patch.d28d_session_adjustments = String(body.d28d_session_adjustments || '').trim();
   }
-  if (!body.title && !existing?.title) patch.title = routine.nombre;
+  const customTitle = String(body.title || '').trim();
+  if (customTitle) {
+    patch.title = customTitle;
+  } else if (!existing?.title) {
+    patch.title = routine.nombre;
+  }
   if (body.description === undefined && !existing?.description && routine.descripcion) {
     patch.description = routine.descripcion;
   }

@@ -31,8 +31,13 @@ function routineOptionLabel(r) {
 
 function formatDateTimeLocal(value) {
   if (!value) return '';
-  const sanitized = value.replace('Z', '');
-  return sanitized;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) {
+    const sanitized = String(value).replace('Z', '').slice(0, 16);
+    return sanitized.length >= 16 ? sanitized : '';
+  }
+  const pad = (n) => String(n).padStart(2, '0');
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
 export default function AdminLiveClasses() {
@@ -42,6 +47,9 @@ export default function AdminLiveClasses() {
   const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [success, setSuccess] = useState('');
+  const [classSearch, setClassSearch] = useState('');
+  const [lastCreatedId, setLastCreatedId] = useState(null);
   const [attendance, setAttendance] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [routines, setRoutines] = useState([]);
@@ -64,7 +72,13 @@ export default function AdminLiveClasses() {
     try {
       setLoading(true);
       const resp = await api.get('/live-classes/admin');
-      setItems(resp.data?.data || []);
+      const rows = resp.data?.data || [];
+      rows.sort((a, b) => {
+        const ta = new Date(a.created_at || a.start_time).getTime();
+        const tb = new Date(b.created_at || b.start_time).getTime();
+        return tb - ta;
+      });
+      setItems(rows);
     } catch {
       setError('No se pudo cargar la lista de clases.');
     } finally {
@@ -176,6 +190,19 @@ export default function AdminLiveClasses() {
     return names;
   }, [routineCategories, routineEditForm.categoria]);
 
+  const filteredItems = useMemo(() => {
+    const q = classSearch.trim().toLowerCase();
+    if (!q) return items;
+    return items.filter((item) => {
+      const prog = programs.find((p) => p.id === item.program_id)?.name || '';
+      const haystack = [item.title, item.coach, prog, item.zoom_link, item.description]
+        .filter(Boolean)
+        .join(' ')
+        .toLowerCase();
+      return haystack.includes(q);
+    });
+  }, [items, classSearch, programs]);
+
   const hostLabel = (hostId) => {
     const h = d28dHosts.find((x) => String(x.id) === String(hostId));
     return h ? `${h.nombre} (${h.email})` : '—';
@@ -194,7 +221,7 @@ export default function AdminLiveClasses() {
       setSaving(true);
       setError('');
       const resp = await api.post('/live-classes/admin/zoom-meeting', {
-        title: form.use_routine && form.d28d_routine_id ? '' : form.title,
+        title: form.title?.trim() || '',
         program_id: form.program_id,
         zoom_account_id: form.program_id === 'virtual_d28d' ? form.zoom_account_id : null,
         start_time: form.start_time,
@@ -206,8 +233,9 @@ export default function AdminLiveClasses() {
       const link = resp.data?.data?.zoom_link;
       if (link) {
         handleChange('zoom_link', link);
-        const msg = resp.data?.data?.zoom?.message;
-        if (msg) setError(msg);
+        const mode = resp.data?.data?.zoom?.mode;
+        setSuccess(`Enlace Zoom generado: ${link}${mode === 'placeholder' ? ' (demo — configura ZOOM_S2S en servidor)' : ''}`);
+        setError('');
       }
     } catch (e) {
       setError(e.response?.data?.error || 'No se pudo generar el enlace Zoom.');
@@ -218,11 +246,21 @@ export default function AdminLiveClasses() {
 
   const handleSubmit = async (event) => {
       event.preventDefault();
+      const sessionTitle = form.title?.trim();
+      if (!sessionTitle && !(form.use_routine && form.d28d_routine_id)) {
+        setError('Indica el nombre de sesión o selecciona una rutina D28D.');
+        return;
+      }
+      if (!form.program_id) {
+        setError('Selecciona el programa D28D (necesario para Zoom automático).');
+        return;
+      }
       try {
         setSaving(true);
         setError('');
+        setSuccess('');
         const payload = {
-          title: form.use_routine && form.d28d_routine_id ? '' : form.title,
+          title: sessionTitle || undefined,
           description: form.description,
           zoom_link: form.auto_zoom && !form.zoom_link ? '' : form.zoom_link,
           start_time: form.start_time,
@@ -238,9 +276,19 @@ export default function AdminLiveClasses() {
           d28d_host_user_id: form.d28d_host_user_id ? Number(form.d28d_host_user_id) : null,
         };
         if (form.id) {
-          await api.put(`/live-classes/admin/${form.id}`, payload);
+          const resp = await api.put(`/live-classes/admin/${form.id}`, payload);
+          setSuccess(resp.data?.message || 'Clase actualizada correctamente.');
+          setLastCreatedId(form.id);
         } else {
-          await api.post('/live-classes/admin', payload);
+          const resp = await api.post('/live-classes/admin', payload);
+          const created = resp.data?.data;
+          const zoomNote = resp.data?.zoom?.mode === 'placeholder'
+            ? ' · Enlace demo (configura ZOOM_S2S_* en backend/.env para Zoom real)'
+            : '';
+          setSuccess(
+            `${resp.data?.message || 'Clase creada correctamente'}. Zoom: ${created?.zoom_link || '—'}${zoomNote}`,
+          );
+          setLastCreatedId(created?.id ?? null);
         }
         setForm(defaultForm);
         await fetchItems();
@@ -248,6 +296,7 @@ export default function AdminLiveClasses() {
       } catch (e) {
         const msg = e.response?.data?.error || e.message;
         setError(msg || 'Error guardando la clase.');
+        setSuccess('');
       } finally {
         setSaving(false);
       }
@@ -306,6 +355,7 @@ export default function AdminLiveClasses() {
       </div>
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-4">{error}</div>}
+      {success && <div className="bg-green-50 text-green-800 p-4 rounded-lg mb-4 break-all">{success}</div>}
 
       {showRoutineEditor && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
@@ -409,16 +459,24 @@ export default function AdminLiveClasses() {
         </div>
 
         <div className="grid sm:grid-cols-2 gap-4">
-          <label className="block">
-            <span className="text-sm font-semibold text-slate-700">Título</span>
+          <label className="block sm:col-span-2">
+            <span className="text-sm font-semibold text-slate-700">Nombre de sesión</span>
             <input
-              className="input w-full"
+              className="input w-full mt-1"
               value={form.title}
               onChange={(e) => handleChange('title', e.target.value)}
-              required={!form.use_routine}
-              disabled={form.use_routine}
-              placeholder={form.use_routine ? 'Se completa desde la rutina' : ''}
+              required={!form.use_routine || !form.d28d_routine_id}
+              placeholder={
+                form.use_routine
+                  ? 'Ej: FUERZA D28D - Lunes 08:00 (si lo dejas vacío, usa el nombre de la rutina)'
+                  : 'Ej: FUERZA D28D - Lunes 08:00'
+              }
             />
+            {form.use_routine ? (
+              <p className="text-xs text-slate-500 mt-1">
+                Puedes escribir el nombre de la sesión aunque uses rutina D28D.
+              </p>
+            ) : null}
           </label>
           <label className="block sm:col-span-2">
             <span className="text-sm font-semibold text-slate-700">Programa D28D</span>
@@ -555,11 +613,28 @@ export default function AdminLiveClasses() {
         <LiveClassRoutineHost classItem={previewClass} user={null} />
       )}
 
+      <div className="mb-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <label className="block flex-1 max-w-md">
+          <span className="text-sm font-semibold text-slate-700">Buscar clases</span>
+          <input
+            type="search"
+            className="input w-full mt-1"
+            placeholder="Título, coach, programa, Zoom…"
+            value={classSearch}
+            onChange={(e) => setClassSearch(e.target.value)}
+          />
+        </label>
+        <p className="text-xs text-slate-500">
+          {filteredItems.length} de {items.length} · más recientes arriba
+        </p>
+      </div>
+
       <div className="overflow-x-auto rounded-3xl border border-slate-200 bg-white">
         <table className="min-w-full text-sm">
           <thead className="bg-slate-50 text-left text-slate-500 text-xs uppercase tracking-[0.2em]">
             <tr>
-              <th className="px-4 py-3">Título</th>
+              <th className="px-4 py-3">Nombre sesión</th>
+              <th className="px-4 py-3">Zoom</th>
               <th className="px-4 py-3">Rutina D28D</th>
               <th className="px-4 py-3">Host D28D</th>
               <th className="px-4 py-3">Inicio</th>
@@ -572,20 +647,32 @@ export default function AdminLiveClasses() {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="8" className="px-4 py-5 text-center text-slate-500">
+                <td colSpan="9" className="px-4 py-5 text-center text-slate-500">
                   Cargando clases...
                 </td>
               </tr>
-            ) : items.length === 0 ? (
+            ) : filteredItems.length === 0 ? (
               <tr>
-                <td colSpan="8" className="px-4 py-5 text-center text-slate-500">
-                  Ninguna clase disponible.
+                <td colSpan="9" className="px-4 py-5 text-center text-slate-500">
+                  Ninguna clase coincide con la búsqueda.
                 </td>
               </tr>
             ) : (
-              items.map((item) => (
-                <tr key={item.id} className="border-t border-slate-200">
+              filteredItems.map((item) => (
+                <tr
+                  key={item.id}
+                  className={`border-t border-slate-200 ${lastCreatedId === item.id ? 'bg-lime-50/80' : ''}`}
+                >
                   <td className="px-4 py-4 font-medium text-slate-900">{item.title}</td>
+                  <td className="px-4 py-4 text-slate-600 text-xs max-w-[140px] truncate" title={item.zoom_link}>
+                    {item.zoom_link ? (
+                      <a href={item.zoom_link} target="_blank" rel="noopener noreferrer" className="text-blue-600 underline">
+                        Ver enlace
+                      </a>
+                    ) : (
+                      '—'
+                    )}
+                  </td>
                   <td className="px-4 py-4 text-slate-600 text-xs">
                     {item.d28d_routine?.nombre || item.d28d_routine_snapshot?.nombre || '—'}
                   </td>

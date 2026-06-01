@@ -186,13 +186,14 @@ async function resolveZoomLinkForClass(body, hostFields, resolvedTitle) {
   let zoomLink = String(body.zoom_link || '').trim();
   let zoomMeta = null;
   const wantsAuto = body.auto_zoom === true || body.auto_zoom === 'true';
-  if (wantsAuto && body.program_id) {
+  const programId = body.program_id || body.programId || null;
+  if (wantsAuto && programId) {
     const hostUser = hostFields.d28d_host_user_id
       ? userDB.getById(Number(hostFields.d28d_host_user_id))
       : null;
     const legacyManualZoom = String(process.env.ZOOM_LEGACY_MANUAL_ACCOUNT || '').toLowerCase() === 'true';
     const zoomResult = await zoomMeetingService.createScheduledMeeting({
-      programId: body.program_id,
+      programId,
       zoomAccountId: legacyManualZoom ? (body.zoom_account_id || null) : null,
       topic: resolvedTitle,
       startTime: body.start_time,
@@ -203,8 +204,14 @@ async function resolveZoomLinkForClass(body, hostFields, resolvedTitle) {
       zoomLink = zoomResult.join_url;
       zoomMeta = zoomResult;
     } else if (!zoomLink) {
-      return { error: zoomResult.message || 'No se pudo generar el enlace Zoom', status: 400, zoomMeta };
+      return {
+        error: zoomResult.message || 'No se pudo generar el enlace Zoom',
+        status: 400,
+        zoomMeta,
+      };
     }
+  } else if (wantsAuto && !programId && !zoomLink) {
+    return { error: 'program_id es requerido para generar Zoom automático', status: 400 };
   }
   if (!zoomLink) {
     return { error: 'zoom_link es requerido (o activa generar enlace Zoom)', status: 400 };
@@ -248,7 +255,7 @@ const createClass = async (req, res) => {
     const { title, description = '', start_time, end_time, gym_id: bodyGymId = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40, source_module = 'd28d' } = req.body || {};
     const routineLink = await buildRoutineLinkFields(req.body || {});
     const hostFields = resolveD28dHostFields(req.body || {});
-    const resolvedTitle = title || routineLink.title;
+    const resolvedTitle = (title && String(title).trim()) || routineLink.title || '';
     if (!resolvedTitle || !start_time || !end_time) {
       return res.status(400).json({ error: 'title (o rutina D28D), start_time y end_time son requeridos' });
     }
@@ -320,7 +327,13 @@ const createClass = async (req, res) => {
     } catch (e) {
       console.warn('comm.class.scheduled:', e.message);
     }
-    return res.status(201).json({ success: true, data: enriched, zoom: zoomResolved.zoomMeta || null });
+    return res.status(201).json({
+      success: true,
+      message: 'Clase creada correctamente',
+      data: enriched,
+      zoom_link: zoom_link,
+      zoom: zoomResolved.zoomMeta || null,
+    });
   } catch (error) {
     console.error('Error creando clase en vivo:', error);
     return res.status(500).json({ error: 'Error creando clase en vivo' });
@@ -452,7 +465,12 @@ const updateClass = async (req, res) => {
     } catch (e) {
       console.warn('comm.class.updated:', e.message);
     }
-    return res.json({ success: true, data: enriched, zoom: zoomMeta });
+    return res.json({
+      success: true,
+      message: 'Clase actualizada correctamente',
+      data: enriched,
+      zoom: zoomMeta || null,
+    });
   } catch (error) {
     console.error('Error actualizando clase en vivo:', error);
     return res.status(500).json({ error: 'Error actualizando clase en vivo' });

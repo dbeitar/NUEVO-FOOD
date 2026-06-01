@@ -1,7 +1,8 @@
 import { useState, useEffect, useMemo } from 'react';
 import api from '../services/api';
-import { Calendar, User, ExternalLink, CheckCircle, Users, Info } from 'lucide-react';
+import { Calendar, User, ExternalLink, Users, Info } from 'lucide-react';
 import { useAuth } from '../context/useAuth';
+import './LiveClassSchedule.css';
 
 const WEEKDAYS = ['Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'];
 const TZ = 'America/Mexico_City';
@@ -38,36 +39,43 @@ function weekdayFromClass(classItem) {
 }
 
 const DEFAULT_SLOTS = [
-  { label: '6:20-7:00 am', start: '06:20', end: '07:00', color: 'bg-purple-100 text-purple-900 border-purple-200' },
-  { label: '8:20-9:00 am', start: '08:20', end: '09:00', color: 'bg-lime-100 text-lime-900 border-lime-200' },
-  { label: '9:00-9:40 am', start: '09:00', end: '09:40', color: 'bg-cyan-100 text-cyan-900 border-cyan-200' },
-  { label: '6:20-7:00 pm', start: '18:20', end: '19:00', color: 'bg-indigo-100 text-indigo-900 border-indigo-200' },
-  { label: '7:00-7:40 pm', start: '19:00', end: '19:40', color: 'bg-emerald-100 text-emerald-900 border-emerald-200' },
+  { label: '6:20-7:00 A.M.', start: '06:20', end: '07:00', period: 'evening' },
+  { label: '8:20-9:00 A.M.', start: '08:20', end: '09:00', period: 'morning' },
+  { label: '9:00-9:40 A.M.', start: '09:00', end: '09:40', period: 'morning' },
+  { label: '6:20-7:00 P.M.', start: '18:20', end: '19:00', period: 'evening' },
+  { label: '7:00-7:40 P.M.', start: '19:00', end: '19:40', period: 'evening' },
 ];
 
-const SLOT_COLORS = [
-  'bg-purple-100 text-purple-900 border-purple-200',
-  'bg-lime-100 text-lime-900 border-lime-200',
-  'bg-cyan-100 text-cyan-900 border-cyan-200',
-  'bg-indigo-100 text-indigo-900 border-indigo-200',
-  'bg-emerald-100 text-emerald-900 border-emerald-200',
-];
+function slotPeriod(start) {
+  const h = parseInt(String(start).slice(0, 2), 10);
+  if (Number.isNaN(h)) return 'morning';
+  return h >= 12 ? 'evening' : 'morning';
+}
+
+function matchesSlot(classItem, slot) {
+  const dayKey = weekdayFromClass(classItem);
+  const start = timeFromIso(classItem.start_time);
+  const end = timeFromIso(classItem.end_time);
+  if (!start) return false;
+  return start === slot.start && (end === slot.end || !slot.end);
+}
 
 export default function LiveClassSchedule({ programId }) {
   const { user } = useAuth();
   const [classes, setClasses] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [, setError] = useState('');
+  const [notice, setNotice] = useState('');
   const [enrolling, setEnrolling] = useState(null);
 
   const fetchClasses = async () => {
     try {
       setLoading(true);
+      setNotice('');
       const params = programId ? { program_id: programId } : {};
       const res = await api.get('/live-classes', { params });
       setClasses((res.data.data || []).filter((c) => c.active !== false));
     } catch {
-      setError('Error al cargar el horario');
+      setNotice('Error al cargar el horario. Verifica que el backend esté activo.');
     } finally {
       setLoading(false);
     }
@@ -86,26 +94,23 @@ export default function LiveClassSchedule({ programId }) {
       if (!start) return;
       const key = `${start}-${end}`;
       if (!seen.has(key)) {
-        seen.set(key, { start, end, label: `${start}${end ? `-${end}` : ''}` });
+        const period = slotPeriod(start);
+        const suffix = period === 'evening' ? ' P.M.' : ' A.M.';
+        seen.set(key, {
+          start,
+          end,
+          period,
+          label: `${start}${end ? `-${end}` : ''}${suffix}`,
+        });
       }
     });
     const dynamic = [...seen.values()].sort((a, b) => a.start.localeCompare(b.start));
-    if (dynamic.length === 0) return DEFAULT_SLOTS;
-    return dynamic.map((slot, i) => ({
-      ...slot,
-      label: slot.label.replace(/^(\d{2}:\d{2})/, (_, t) => t),
-      color: SLOT_COLORS[i % SLOT_COLORS.length],
-    }));
+    return dynamic.length ? dynamic : DEFAULT_SLOTS;
   }, [classes]);
 
   const getClassForSlot = (dayName, slot) => {
     const dayKey = normalizeDay(dayName);
-    return classes.find((c) => {
-      if (weekdayFromClass(c) !== dayKey) return false;
-      const start = timeFromIso(c.start_time);
-      if (!start) return false;
-      return start === slot.start || start.slice(0, 2) === slot.start.slice(0, 2);
-    });
+    return classes.find((c) => weekdayFromClass(c) === dayKey && matchesSlot(c, slot));
   };
 
   const handleEnroll = async (classId) => {
@@ -121,87 +126,112 @@ export default function LiveClassSchedule({ programId }) {
   };
 
   const handleJoin = async (classId, zoomLink) => {
+    if (!zoomLink) {
+      alert('Esta sesión aún no tiene enlace Zoom. Contacta al administrador D28D.');
+      return;
+    }
     try {
       await api.post(`/live-classes/${classId}/join`);
-      window.open(zoomLink, '_blank');
-    } catch (err) {
-      console.error('Error al registrar asistencia', err);
-      window.open(zoomLink, '_blank');
+      window.open(zoomLink, '_blank', 'noopener,noreferrer');
+    } catch {
+      window.open(zoomLink, '_blank', 'noopener,noreferrer');
     }
   };
 
-  const getMaskedAvailable = (enrolledCount = 0) => {
-    const total = 20;
-    const available = total - enrolledCount;
-    return `${available}/${total}`;
+  const spotsLabel = (classItem) => {
+    const total = Number(classItem.capacity) || 40;
+    const enrolled = classItem.enrolled_user_ids?.length || 0;
+    const available = Math.max(0, total - enrolled);
+    return `${available} DISPONIBLES`;
   };
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center p-12">
+      <div className="d28d-graphic-schedule flex items-center justify-center p-12">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-lime-500" />
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-2 text-sm text-slate-600 bg-blue-50 p-3 rounded-lg border border-blue-100">
-        <Info className="w-4 h-4 text-blue-500 shrink-0" />
-        <p>Horario semanal de clases en vivo. Los horarios se alinean con las sesiones programadas en el calendario.</p>
+    <div className="d28d-graphic-schedule space-y-4">
+      <div className="d28d-graphic-schedule__banner">
+        <div className="d28d-graphic-schedule__banner-main">
+          <div className="d28d-graphic-schedule__banner-icon" aria-hidden>
+            <Calendar className="h-5 w-5" />
+          </div>
+          <div>
+            <h2>Horario de clases</h2>
+            <p>Semana I — Programación modular</p>
+          </div>
+        </div>
+        <div className="d28d-graphic-schedule__brand">
+          <div>D28D GLOBAL</div>
+          <div>MÉTODO D28D</div>
+        </div>
       </div>
 
-      <div className="overflow-x-auto rounded-xl border border-slate-200 shadow-sm bg-white">
-        <table className="min-w-full divide-y divide-slate-200">
+      <div className="d28d-graphic-schedule__notice">
+        <Info className="w-4 h-4 shrink-0 mt-0.5" />
+        <p>
+          Calendario D28D para consumo de marcas blancas. La asistencia se marca al entrar al Zoom.
+          {classes.length === 0 ? ' Aún no hay sesiones activas — el admin las programa en «Programar».' : ''}
+        </p>
+      </div>
+
+      {notice ? <p className="text-sm text-red-600">{notice}</p> : null}
+
+      <div className="d28d-graphic-schedule__table-wrap">
+        <table className="d28d-graphic-schedule__table">
           <thead>
-            <tr className="bg-slate-50">
-              <th className="px-4 py-3 text-left text-xs font-bold text-slate-500 uppercase tracking-wider w-32">Horario</th>
+            <tr>
+              <th>Hora / Día</th>
               {WEEKDAYS.map((day) => (
-                <th key={day} className="px-4 py-3 text-center text-xs font-bold text-slate-500 uppercase tracking-wider min-w-[140px]">
-                  {day}
-                </th>
+                <th key={day}>{day}</th>
               ))}
             </tr>
           </thead>
-          <tbody className="divide-y divide-slate-100">
+          <tbody>
             {timeSlots.map((slot) => (
-              <tr key={slot.label} className="hover:bg-slate-50/50 transition-colors">
-                <td className="px-4 py-4 text-xs font-semibold text-slate-600 whitespace-nowrap bg-slate-50/30">
-                  {slot.label}
-                </td>
+              <tr key={slot.label}>
+                <td className="d28d-graphic-schedule__time-cell">{slot.label}</td>
                 {WEEKDAYS.map((day) => {
                   const classItem = getClassForSlot(day, slot);
                   if (!classItem) {
-                    return <td key={day} className="px-2 py-2 text-center text-slate-300 text-xs">—</td>;
+                    return <td key={day} className="d28d-graphic-schedule__empty-cell" />;
                   }
-                  const enrolled = classItem.enrolled_user_ids?.length || 0;
                   const isEnrolled = user && classItem.enrolled_user_ids?.includes(user.id);
+                  const cardClass = slot.period === 'evening'
+                    ? 'd28d-graphic-schedule__card d28d-graphic-schedule__card--evening'
+                    : 'd28d-graphic-schedule__card d28d-graphic-schedule__card--morning';
                   return (
-                    <td key={day} className="px-2 py-2">
-                      <div className={`p-2 rounded-lg border text-xs ${slot.color}`}>
-                        <div className="font-bold truncate" title={classItem.title}>{classItem.title}</div>
-                        <div className="flex items-center gap-1 mt-1 opacity-80">
-                          <User className="w-3 h-3" />
-                          <span className="truncate">{classItem.coach || 'Coach'}</span>
+                    <td key={day} style={{ padding: '0.35rem', verticalAlign: 'top' }}>
+                      <div className={cardClass}>
+                        <div className="d28d-graphic-schedule__card-title" title={classItem.title}>
+                          {classItem.title}
                         </div>
-                        <div className="flex items-center gap-1 mt-0.5 opacity-70">
-                          <Users className="w-3 h-3" />
-                          <span>{getMaskedAvailable(enrolled)}</span>
+                        <div className="d28d-graphic-schedule__card-meta">
+                          <User className="w-3 h-3 shrink-0" />
+                          <span className="truncate">{classItem.coach || 'ENTRENADOR D28D'}</span>
                         </div>
-                        <div className="mt-2 flex flex-col gap-1">
+                        <div className="d28d-graphic-schedule__card-meta">
+                          <Users className="w-3 h-3 shrink-0" />
+                          <span>{spotsLabel(classItem)}</span>
+                        </div>
+                        <div className="d28d-graphic-schedule__card-actions">
                           {!isEnrolled ? (
                             <button
                               type="button"
-                              className="text-[10px] font-bold uppercase bg-white/50 hover:bg-white px-2 py-1 rounded border border-current/20"
+                              className="d28d-graphic-schedule__btn-enroll"
                               disabled={enrolling === classItem.id}
                               onClick={() => handleEnroll(classItem.id)}
                             >
-                              {enrolling === classItem.id ? '…' : 'Reservar'}
+                              {enrolling === classItem.id ? '…' : 'Inscribirme'}
                             </button>
                           ) : (
                             <button
                               type="button"
-                              className="text-[10px] font-bold uppercase bg-white hover:bg-white px-2 py-1 rounded border border-current/30 flex items-center justify-center gap-1"
+                              className="d28d-graphic-schedule__btn-zoom"
                               onClick={() => handleJoin(classItem.id, classItem.zoom_link)}
                             >
                               <ExternalLink className="w-3 h-3" />
@@ -218,12 +248,6 @@ export default function LiveClassSchedule({ programId }) {
           </tbody>
         </table>
       </div>
-
-      {classes.length === 0 && (
-        <p className="text-center text-sm text-slate-500 py-4">
-          No hay clases activas para este programa. El administrador puede programarlas en «Administrar clases».
-        </p>
-      )}
     </div>
   );
 }
