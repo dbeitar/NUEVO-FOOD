@@ -92,14 +92,27 @@ Mínimo a completar en `backend/.env`:
 
 ### 2.4. Levantar todo en local
 
+**Primera vez (clon nuevo):**
+
 ```bash
+npm run setup:local   # Docker Postgres + migraciones + seeds + Biblia espiritual
 npm run dev:all
 ```
 
-Por defecto:
-- Frontend: <http://localhost:5174>
-- Backend:  <http://localhost:3001>
-- Healthcheck: <http://localhost:3001/api/health>
+**Día a día:**
+
+```bash
+docker compose up -d postgres   # si Docker no está arriba
+npm run dev:all
+```
+
+Por defecto (`dev:all`):
+
+- Frontend: <http://localhost:5175>
+- Backend:  <http://localhost:3002/api>
+- Healthcheck: <http://localhost:3002/api/health>
+
+Guía equipo (qué va en git vs DB): [`docs/SETUP_REPOSITORIO.md`](docs/SETUP_REPOSITORIO.md)
 
 También se puede levantar cada lado por separado:
 
