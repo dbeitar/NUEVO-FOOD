@@ -40,6 +40,53 @@ function formatDateTimeLocal(value) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
 }
 
+const TZ_CO = 'America/Bogota';
+
+function toApiDateTime(localValue) {
+  if (!localValue) return '';
+  const d = new Date(localValue);
+  if (Number.isNaN(d.getTime())) return String(localValue);
+  return d.toISOString();
+}
+
+function formatClassDateTime(value) {
+  if (!value) return '—';
+  try {
+    const d = new Date(value);
+    if (Number.isNaN(d.getTime())) return String(value);
+    return new Intl.DateTimeFormat('es-CO', {
+      weekday: 'short',
+      day: '2-digit',
+      month: 'short',
+      year: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit',
+      hour12: true,
+      timeZone: TZ_CO,
+    }).format(d);
+  } catch {
+    return String(value);
+  }
+}
+
+function resolveFormTitle(form, routines) {
+  const custom = form.title?.trim();
+  if (custom) return custom;
+  if (form.use_routine && form.d28d_routine_id) {
+    const r = routines.find((x) => String(x.id) === String(form.d28d_routine_id));
+    if (r?.nombre) return r.nombre;
+  }
+  return 'Sesión D28D';
+}
+
+function zoomModeLabel(zoom) {
+  if (!zoom) return '';
+  if (zoom.mode === 'api') return 'Zoom API (reunión nueva)';
+  if (zoom.mode === 'placeholder') return 'Enlace demo (configura ZOOM_S2S en servidor)';
+  if (zoom.mode === 'pmi_fallback') return 'Enlace PMI fijo';
+  return zoom.message || '';
+}
+
 export default function AdminLiveClasses() {
   const { user: currentUser } = useAuth();
   const [items, setItems] = useState([]);
@@ -217,26 +264,30 @@ export default function AdminLiveClasses() {
       setError('Selecciona programa, inicio y fin antes de generar Zoom.');
       return;
     }
+    const sessionTitle = resolveFormTitle(form, routines);
     try {
       setSaving(true);
       setError('');
+      setSuccess('');
       const resp = await api.post('/live-classes/admin/zoom-meeting', {
-        title: form.title?.trim() || '',
+        title: sessionTitle,
         program_id: form.program_id,
         zoom_account_id: form.program_id === 'virtual_d28d' ? form.zoom_account_id : null,
-        start_time: form.start_time,
-        end_time: form.end_time,
+        start_time: toApiDateTime(form.start_time),
+        end_time: toApiDateTime(form.end_time),
         d28d_host_user_id: form.d28d_host_user_id ? Number(form.d28d_host_user_id) : null,
         d28d_routine_id: form.use_routine && form.d28d_routine_id ? Number(form.d28d_routine_id) : null,
         auto_zoom: true,
       });
       const link = resp.data?.data?.zoom_link;
-      if (link) {
-        handleChange('zoom_link', link);
-        const mode = resp.data?.data?.zoom?.mode;
-        setSuccess(`Enlace Zoom generado: ${link}${mode === 'placeholder' ? ' (demo — configura ZOOM_S2S en servidor)' : ''}`);
-        setError('');
+      const zoomInfo = resp.data?.data?.zoom;
+      if (!link) {
+        setError(resp.data?.error || 'No se recibió enlace Zoom. Verifica programa y fechas.');
+        return;
       }
+      setForm((prev) => ({ ...prev, zoom_link: link, auto_zoom: true }));
+      const mode = zoomModeLabel(zoomInfo);
+      setSuccess(`✓ Zoom generado${mode ? ` (${mode})` : ''}: ${link}`);
     } catch (e) {
       setError(e.response?.data?.error || 'No se pudo generar el enlace Zoom.');
     } finally {
@@ -246,7 +297,7 @@ export default function AdminLiveClasses() {
 
   const handleSubmit = async (event) => {
       event.preventDefault();
-      const sessionTitle = form.title?.trim();
+      const sessionTitle = resolveFormTitle(form, routines);
       if (!sessionTitle && !(form.use_routine && form.d28d_routine_id)) {
         setError('Indica el nombre de sesión o selecciona una rutina D28D.');
         return;
@@ -263,8 +314,8 @@ export default function AdminLiveClasses() {
           title: sessionTitle || undefined,
           description: form.description,
           zoom_link: form.auto_zoom && !form.zoom_link ? '' : form.zoom_link,
-          start_time: form.start_time,
-          end_time: form.end_time,
+          start_time: toApiDateTime(form.start_time),
+          end_time: toApiDateTime(form.end_time),
           gym_id: form.gym_id || null,
           is_global: form.is_global,
           active: form.active,
@@ -284,7 +335,9 @@ export default function AdminLiveClasses() {
           const created = resp.data?.data;
           const zoomNote = resp.data?.zoom?.mode === 'placeholder'
             ? ' · Enlace demo (configura ZOOM_S2S_* en backend/.env para Zoom real)'
-            : '';
+            : resp.data?.zoom?.mode === 'api'
+              ? ' · Reunión Zoom creada por API'
+              : '';
           setSuccess(
             `${resp.data?.message || 'Clase creada correctamente'}. Zoom: ${created?.zoom_link || '—'}${zoomNote}`,
           );
@@ -521,23 +574,28 @@ export default function AdminLiveClasses() {
             </label>
             <div className="flex flex-wrap gap-2">
               <input
-                className="input flex-1 min-w-[200px]"
+                className="input flex-1 min-w-[200px] !text-slate-900 !bg-white"
                 value={form.zoom_link}
                 onChange={(e) => handleChange('zoom_link', e.target.value)}
-                required={!form.auto_zoom}
-                placeholder={form.auto_zoom ? 'Se genera al guardar o con el botón' : 'https://zoom.us/j/…'}
+                readOnly={form.auto_zoom && !form.zoom_link}
+                placeholder={form.auto_zoom ? 'Pulsa «Generar Zoom» o guarda la clase' : 'https://zoom.us/j/…'}
               />
               <button
                 type="button"
                 className="btn-secondary text-sm whitespace-nowrap"
-                disabled={saving || !form.program_id}
+                disabled={saving || !form.program_id || !form.start_time || !form.end_time}
                 onClick={generateZoomLink}
               >
-                Generar Zoom
+                {saving ? 'Generando…' : 'Generar Zoom'}
               </button>
             </div>
+            {form.zoom_link ? (
+              <p className="text-xs text-green-700 mt-1 break-all">
+                Enlace activo: {form.zoom_link}
+              </p>
+            ) : null}
             <p className="text-xs text-slate-500 mt-1">
-              P = Pancitas · V = Vital · Virtual = cuentas 1 y 2. El entrenador D28D asignado recibe notificación.
+              Requiere programa + inicio/fin. Sin ZOOM_S2S en servidor se usa enlace demo (válido para pruebas).
             </p>
           </label>
         </div>
@@ -625,7 +683,9 @@ export default function AdminLiveClasses() {
           />
         </label>
         <p className="text-xs text-slate-500">
-          {filteredItems.length} de {items.length} · más recientes arriba
+          {filteredItems.length} de {items.length} · más recientes arriba · guardado en PostgreSQL (
+          <code className="text-[10px]">live_classes</code>
+          ) o <code className="text-[10px]">backend/data/live_classes.json</code>
         </p>
       </div>
 
@@ -637,7 +697,7 @@ export default function AdminLiveClasses() {
               <th className="px-4 py-3">Zoom</th>
               <th className="px-4 py-3">Rutina D28D</th>
               <th className="px-4 py-3">Host D28D</th>
-              <th className="px-4 py-3">Inicio</th>
+              <th className="px-4 py-3">Fecha y hora (CO)</th>
               <th className="px-4 py-3">Programa</th>
               <th className="px-4 py-3">Gym / Global</th>
               <th className="px-4 py-3">Activo</th>
@@ -679,7 +739,10 @@ export default function AdminLiveClasses() {
                   <td className="px-4 py-4 text-slate-600 text-xs">
                     {hostLabel(item.d28d_host_user_id) || item.coach || '—'}
                   </td>
-                  <td className="px-4 py-4 text-slate-600">{item.start_time}</td>
+                  <td className="px-4 py-4 text-slate-600 text-xs whitespace-nowrap">
+                    <div>{formatClassDateTime(item.start_time)}</div>
+                    <div className="text-slate-400">→ {formatClassDateTime(item.end_time)}</div>
+                  </td>
                   <td className="px-4 py-4 text-slate-600 font-bold capitalize">{programs.find(p => p.id === item.program_id)?.name || '---'}</td>
                   <td className="px-4 py-4 text-slate-600">{item.is_global ? 'Global' : item.gym_id || 'Privada'}</td>
                   <td className="px-4 py-4 text-slate-600">{item.active ? 'Sí' : 'No'}</td>
@@ -724,7 +787,7 @@ export default function AdminLiveClasses() {
               ) : attendance.map((row) => (
                 <tr key={row.class_id} className="border-t border-slate-200 align-top">
                   <td className="px-4 py-4 font-semibold text-stone-900">{row.title}</td>
-                  <td className="px-4 py-4 text-stone-600">{row.start_time}</td>
+                  <td className="px-4 py-4 text-stone-600 text-xs">{formatClassDateTime(row.start_time)}</td>
                   <td className="px-4 py-4 text-stone-900 font-semibold">{row.total_attendees}</td>
                   <td className="px-4 py-4">
                     {row.by_gym?.length ? (

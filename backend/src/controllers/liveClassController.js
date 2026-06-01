@@ -18,6 +18,32 @@ const {
 const zoomMeetingService = require('../services/zoomMeetingService');
 const { notifyD28dHostAssigned } = require('../utils/d28dHostNotification');
 
+const TZ_D28D = process.env.D28D_ZOOM_TIMEZONE || 'America/Bogota';
+
+function normalizeApiDateTime(value) {
+  if (!value) return null;
+  const d = new Date(value);
+  if (Number.isNaN(d.getTime())) return null;
+  return d.toISOString();
+}
+
+function deriveDayLabelFromIso(iso) {
+  if (!iso) return '';
+  try {
+    const name = new Intl.DateTimeFormat('es-ES', { weekday: 'long', timeZone: TZ_D28D }).format(new Date(iso));
+    return name.charAt(0).toUpperCase() + name.slice(1);
+  } catch {
+    return '';
+  }
+}
+
+function resolveSessionTitle(body, routineLink = {}) {
+  const custom = String(body.title || '').trim();
+  if (custom) return custom;
+  if (routineLink.title) return routineLink.title;
+  return 'Sesión D28D';
+}
+
 const LIVE_ADMIN_ROLES = ['super_admin', 'admin_marca', 'admin_gimnasio', 'admin_gym', 'admin_d28d'];
 const LIVE_PLATFORM_WRITE_ROLES = ['super_admin', 'admin_d28d'];
 const D28D_HOST_ROLE = 'entrenador_d28d';
@@ -226,19 +252,29 @@ const createZoomMeeting = async (req, res) => {
     }
     const routineLink = await buildRoutineLinkFields(req.body || {});
     const hostFields = resolveD28dHostFields(req.body || {});
-    const title = req.body.title || routineLink.title;
-    if (!title || !req.body.start_time || !req.body.end_time || !req.body.program_id) {
-      return res.status(400).json({ error: 'program_id, start_time, end_time y título (o rutina) son requeridos' });
+    const title = resolveSessionTitle(req.body, routineLink);
+    const startNorm = normalizeApiDateTime(req.body.start_time);
+    const endNorm = normalizeApiDateTime(req.body.end_time);
+    if (!startNorm || !endNorm || !req.body.program_id) {
+      return res.status(400).json({
+        error: 'Selecciona programa, fecha/hora de inicio y fin antes de generar Zoom.',
+      });
     }
-    const resolved = await resolveZoomLinkForClass(req.body, hostFields, title);
+    const resolved = await resolveZoomLinkForClass(
+      { ...req.body, start_time: startNorm, end_time: endNorm },
+      hostFields,
+      title,
+    );
     if (resolved.error) {
       return res.status(resolved.status || 400).json({ error: resolved.error, zoom: resolved.zoomMeta });
     }
     return res.json({
       success: true,
+      message: resolved.zoomMeta?.message || 'Enlace Zoom listo',
       data: {
         zoom_link: resolved.zoomLink,
         zoom: resolved.zoomMeta,
+        title,
       },
     });
   } catch (error) {
@@ -255,11 +291,17 @@ const createClass = async (req, res) => {
     const { title, description = '', start_time, end_time, gym_id: bodyGymId = null, active = true, is_global = true, day_label = '', class_type = 'METODO D28D', coach = '', capacity = 40, source_module = 'd28d' } = req.body || {};
     const routineLink = await buildRoutineLinkFields(req.body || {});
     const hostFields = resolveD28dHostFields(req.body || {});
-    const resolvedTitle = (title && String(title).trim()) || routineLink.title || '';
-    if (!resolvedTitle || !start_time || !end_time) {
-      return res.status(400).json({ error: 'title (o rutina D28D), start_time y end_time son requeridos' });
+    const startNorm = normalizeApiDateTime(start_time);
+    const endNorm = normalizeApiDateTime(end_time);
+    const resolvedTitle = resolveSessionTitle(req.body, routineLink);
+    if (!startNorm || !endNorm) {
+      return res.status(400).json({ error: 'start_time y end_time válidos son requeridos' });
     }
-    const zoomResolved = await resolveZoomLinkForClass(req.body, hostFields, resolvedTitle);
+    const zoomResolved = await resolveZoomLinkForClass(
+      { ...req.body, start_time: startNorm, end_time: endNorm },
+      hostFields,
+      resolvedTitle,
+    );
     if (zoomResolved.error) {
       return res.status(zoomResolved.status || 400).json({ error: zoomResolved.error });
     }
@@ -272,16 +314,18 @@ const createClass = async (req, res) => {
       ? null
       : bodyGymId;
 
+    const dayLabel = String(day_label || '').trim() || deriveDayLabelFromIso(startNorm);
+
     const created = LiveClassDatabase.create({
       title: resolvedTitle,
       description: description || routineLink.description || '',
       zoom_link,
-      start_time,
-      end_time,
+      start_time: startNorm,
+      end_time: endNorm,
       gym_id: finalGymId,
       active,
       is_global,
-      day_label,
+      day_label: dayLabel,
       class_type,
       coach: hostFields.coach || coach,
       capacity,
@@ -394,18 +438,26 @@ const updateClass = async (req, res) => {
     }
     const routineLink = await buildRoutineLinkFields(req.body || {}, current);
     const hostFields = resolveD28dHostFields(req.body || {});
-    const resolvedTitle = req.body.title || routineLink.title || current.title;
+    const resolvedTitle = resolveSessionTitle(req.body, routineLink) || current.title;
     const prevStart = String(current.start_time || '');
     const prevEnd = String(current.end_time || '');
-    const nextStart = req.body.start_time !== undefined ? String(req.body.start_time) : prevStart;
-    const nextEnd = req.body.end_time !== undefined ? String(req.body.end_time) : prevEnd;
+    const nextStartRaw = req.body.start_time !== undefined ? req.body.start_time : prevStart;
+    const nextEndRaw = req.body.end_time !== undefined ? req.body.end_time : prevEnd;
+    const nextStart = normalizeApiDateTime(nextStartRaw) || prevStart;
+    const nextEnd = normalizeApiDateTime(nextEndRaw) || prevEnd;
     const timeChanged = nextStart !== prevStart || nextEnd !== prevEnd;
     let zoom_link = req.body.zoom_link !== undefined ? req.body.zoom_link : current.zoom_link;
     let zoomMeta = null;
     const wantsAuto = req.body.auto_zoom === true || req.body.auto_zoom === 'true';
     if (wantsAuto && (req.body.program_id || current.program_id)) {
       const zoomResolved = await resolveZoomLinkForClass(
-        { ...req.body, program_id: req.body.program_id || current.program_id, start_time: req.body.start_time || current.start_time, end_time: req.body.end_time || current.end_time },
+        {
+          ...req.body,
+          program_id: req.body.program_id || current.program_id,
+          start_time: nextStart,
+          end_time: nextEnd,
+          auto_zoom: true,
+        },
         hostFields,
         resolvedTitle,
       );
@@ -420,6 +472,12 @@ const updateClass = async (req, res) => {
     const updated = LiveClassDatabase.update(id, {
       ...(req.body || {}),
       ...routineLink,
+      title: resolvedTitle,
+      start_time: nextStart,
+      end_time: nextEnd,
+      day_label: req.body.day_label !== undefined
+        ? String(req.body.day_label || '').trim()
+        : (timeChanged ? deriveDayLabelFromIso(nextStart) : current.day_label),
       zoom_link,
       coach: hostFields.coach !== undefined ? hostFields.coach : req.body?.coach,
       d28d_host_user_id: hostFields.d28d_host_user_id,
