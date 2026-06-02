@@ -35,8 +35,6 @@ export default function MiProgreso() {
   const foodExternal = hasFood && isFoodExternal();
   const trainingExternal = hasTraining && isTrainingExternal();
 
-  const showShellAssistant = hasD28d || hasTraining;
-
   return (
     <div className="space-y-6">
       <header>
@@ -135,8 +133,11 @@ export default function MiProgreso() {
         </div>
       ) : null}
 
-      {showShellAssistant ? (
-        <HelpAssistantWidget modulo={hasD28d ? 'd28d' : 'training'} />
+      {(tab === 'resumen' || tab === 'asistencia' || tab === 'eventos' || tab === 'logros') && hasD28d ? (
+        <HelpAssistantWidget modulo="d28d" />
+      ) : null}
+      {tab === 'habitos' && hasTraining && !trainingExternal ? (
+        <HelpAssistantWidget modulo="training" />
       ) : null}
     </div>
   );

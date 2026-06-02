@@ -150,7 +150,8 @@ async function main() {
     token: d28dTok,
     body: {
       title: `E2E Clase ${ts}`,
-      zoom_link: 'https://zoom.us/j/e2etest',
+      program_id: 'virtual_d28d',
+      auto_zoom: true,
       start_time: start,
       end_time: end,
       source_module: 'd28d',

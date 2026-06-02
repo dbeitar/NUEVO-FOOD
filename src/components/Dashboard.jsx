@@ -14,7 +14,6 @@ import FoodLog from './FoodLog';
 import AdminFoodsManager from './AdminFoodsManager';
 import AdminUsers from './AdminUsers';
 import AdminPlans from './AdminPlans';
-import AdminProgramInvites from './AdminProgramInvites';
 import AdminCompanies from './AdminCompanies';
 import AdminGyms from './AdminGyms';
 import MyAccount from './MyAccount';
@@ -40,7 +39,6 @@ import {
   isTrainingLegacyView,
   openTrainingModule,
   openTrainingModuleView,
-  resolveTrainingDest,
   consumeTrainingLaunch,
 } from '../utils/trainingModule';
 import MyPlanView from './dashboard/MyPlanView';
@@ -58,12 +56,8 @@ import D28dRoutinesMaster from './admin/D28dRoutinesMaster';
 import D28dCoachTracking from './d28d/D28dCoachTracking';
 import D28dZoomAccountsMaster from './d28d/D28dZoomAccountsMaster';
 import D28dChallengesAdmin from './d28d/D28dChallengesAdmin';
-import D28dChallengesPanel from './d28d/D28dChallengesPanel';
 import D28dProgressDashboard from './d28d/D28dProgressDashboard';
 import FaqCenterAdmin from './FaqCenterAdmin';
-import HelpAssistantWidget from './HelpAssistantWidget';
-import TrainingProgressPanel from './training/TrainingProgressPanel';
-import TrainingExpertProgress from '../training-module/TrainingExpertProgress';
 import CoachTrainersAdmin from './dashboard/CoachTrainersAdmin';
 import CoachRoutineAssistant from './coach/CoachRoutineAssistant';
 import CoachEcosystemTracking from './coach/CoachEcosystemTracking';

@@ -276,11 +276,11 @@ async function main() {
     token: d28Tok,
     body: {
       title: `E2E Class ${uniq}`,
-      zoom_link: 'https://zoom.us/j/e2e',
+      program_id: 'virtual_d28d',
+      auto_zoom: true,
       start_time: start,
       end_time: end,
       source_module: 'd28d',
-      program_id: 'virtual_d28d',
       coach: 'Coach',
       capacity: 40,
     },
