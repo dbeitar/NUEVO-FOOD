@@ -5,6 +5,7 @@ import LiveClassRoutineHost from './live/LiveClassRoutineHost';
 import RoutineTemplateViewer from './routines/RoutineTemplateViewer';
 import RoutineTemplateEditor from './routines/RoutineTemplateEditor';
 import { emptyRoutine, routineFromApi } from '../shared/routineTemplateConstants';
+import D28dSchedulingCalendar from './d28d/D28dSchedulingCalendar';
 
 const defaultForm = {
   title: '',
@@ -107,6 +108,7 @@ export default function AdminLiveClasses() {
   const [success, setSuccess] = useState('');
   const [classSearch, setClassSearch] = useState('');
   const [lastCreatedId, setLastCreatedId] = useState(null);
+  const [adminMode, setAdminMode] = useState('list');
   const [attendance, setAttendance] = useState([]);
   const [programs, setPrograms] = useState([]);
   const [routines, setRoutines] = useState([]);
@@ -428,7 +430,35 @@ export default function AdminLiveClasses() {
           <h2 className="text-3xl font-bold text-stone-900">Administrar Clases en Vivo</h2>
           <p className="text-sm text-stone-600 mt-2">Crea, edita y publica sesiones de Zoom para tus entrenamientos en vivo.</p>
         </div>
+        <div className="flex gap-2">
+          <button
+            type="button"
+            className={`px-4 py-2 rounded-xl text-sm font-semibold ${adminMode === 'list' ? 'bg-indigo-600 text-white' : 'bg-stone-100'}`}
+            onClick={() => setAdminMode('list')}
+          >
+            Lista
+          </button>
+          <button
+            type="button"
+            className={`px-4 py-2 rounded-xl text-sm font-semibold ${adminMode === 'calendar' ? 'bg-indigo-600 text-white' : 'bg-stone-100'}`}
+            onClick={() => setAdminMode('calendar')}
+          >
+            Calendario
+          </button>
+        </div>
       </div>
+
+      {adminMode === 'calendar' && (
+        <div className="mb-8">
+          <D28dSchedulingCalendar
+            programs={programs}
+            onSaved={() => {
+              fetchItems();
+              fetchAttendance();
+            }}
+          />
+        </div>
+      )}
 
       {error && <div className="bg-red-50 text-red-700 p-4 rounded-lg mb-4">{error}</div>}
       {success && <div className="bg-green-50 text-green-800 p-4 rounded-lg mb-4 break-all">{success}</div>}
@@ -456,6 +486,7 @@ export default function AdminLiveClasses() {
         </div>
       )}
 
+      {adminMode === 'list' ? (
       <form className="grid gap-4 mb-8" onSubmit={handleSubmit}>
         <div className="rounded-2xl border border-lime-200 bg-lime-50/40 p-4 mb-2">
           <label className="flex items-center gap-2 text-sm font-semibold text-slate-800">
@@ -699,8 +730,9 @@ export default function AdminLiveClasses() {
           {form.id ? 'Actualizar clase' : 'Crear clase'}
         </button>
       </form>
+      ) : null}
 
-      {previewClass?.d28d_routine && (
+      {previewClass?.d28d_routine && adminMode === 'list' && (
         <LiveClassRoutineHost classItem={previewClass} user={null} />
       )}
 

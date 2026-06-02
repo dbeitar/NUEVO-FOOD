@@ -25,8 +25,8 @@ import { isTrainingExternal, getTrainingModulePublicUrl } from '../../utils/trai
 const SERVICE_DEFS = [
   {
     id: 'd28d',
-    title: 'D28D',
-    desc: 'Programas Vital, Pancitas y Virtual D28D. Si perteneces a un gimnasio, agenda clases en vivo aquí.',
+    title: 'Programa en vivo',
+    desc: 'Comunidad, ciclos y clases en vivo. Si perteneces a un gimnasio virtual, entra desde tu marca.',
     descAdmin: 'Programas D28D, gimnasios marca blanca (solo plataforma crea sedes), clases en vivo y asistencia.',
     img: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=800&q=80',
     alt: 'Sesión de entrenamiento grupal',

@@ -38,7 +38,7 @@ export default function D28dChallengesPanel() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-bold flex items-center gap-2"><Trophy className="w-5 h-5" /> Mis Retos</h3>
+      <h3 className="text-xl font-bold flex items-center gap-2"><Trophy className="w-5 h-5" /> Eventos</h3>
       {msg && <p className="text-sm text-emerald-700">{msg}</p>}
       {challenges.map((c) => (
         <div key={c.id} className="card">

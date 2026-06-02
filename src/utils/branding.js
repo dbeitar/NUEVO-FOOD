@@ -10,5 +10,5 @@ const fromEnv = (key, fallback) => {
 // Nombre por defecto del producto. Una vez autenticado, el Dashboard pinta el
 // brand del gym del usuario (white-label) y este valor solo se usa antes de
 // auth o cuando el usuario no pertenece a ningún gym.
-export const PUBLIC_BRAND_NAME = fromEnv('VITE_BRAND_NAME', 'D28D GYM VIRTUAL');
-export const PUBLIC_BRAND_TAGLINE = fromEnv('VITE_BRAND_TAGLINE', 'Entrena en vivo con los mejores profesionales.');
+export const PUBLIC_BRAND_NAME = fromEnv('VITE_BRAND_NAME', 'FOODPLAN Platform');
+export const PUBLIC_BRAND_TAGLINE = fromEnv('VITE_BRAND_TAGLINE', 'Nutrición, entrenamiento y comunidad en una sola cuenta.');

@@ -14,7 +14,7 @@ export default function D28dProgressDashboard() {
 
   return (
     <div className="space-y-4">
-      <h3 className="text-xl font-bold">Mi Progreso D28D</h3>
+      <h3 className="text-xl font-bold">Resumen D28D</h3>
       <div className="grid md:grid-cols-3 gap-4">
         <div className="card text-center">
           <p className="text-xs uppercase text-stone-500">Semáforo</p>
@@ -27,7 +27,7 @@ export default function D28dProgressDashboard() {
           <p className="text-sm text-stone-600">{data.attendance_pct}%</p>
         </div>
         <div className="card">
-          <p className="text-xs uppercase text-stone-500">Retos</p>
+          <p className="text-xs uppercase text-stone-500">Eventos</p>
           <p className="text-sm">Inscritos: {data.challenges_joined}</p>
           <p className="text-sm">Completados: {data.challenges_completed}</p>
           <p className="text-sm">Ganados: {data.challenges_won}</p>

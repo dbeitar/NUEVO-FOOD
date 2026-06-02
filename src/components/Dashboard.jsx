@@ -19,6 +19,8 @@ import AdminCompanies from './AdminCompanies';
 import AdminGyms from './AdminGyms';
 import MyAccount from './MyAccount';
 import Progress from './Progress';
+import MiProgreso from './MiProgreso';
+import SupportCenter from './SupportCenter';
 import Equivalentes from './Equivalentes';
 import Recipes from './Recipes';
 import TrainingModule from './TrainingModule';
@@ -160,7 +162,7 @@ export default function Dashboard() {
     if (!user?.id || bootRouted) return;
     if (isPureCoach || isTrainingOps) {
       setOpenServicePanel('training');
-      setCurrentView(isPureCoach ? 'progress' : 'admintrainers');
+      setCurrentView(isPureCoach ? 'mi-progreso' : 'admintrainers');
       setBootRouted(true);
       return;
     }
@@ -233,6 +235,20 @@ export default function Dashboard() {
     return () => { active = false; };
   }, [user?.trainer_id]);
 
+  useEffect(() => {
+    const root = document.documentElement;
+    if (gymBrand?.primary_color) {
+      root.style.setProperty('--shell-primary', gymBrand.primary_color);
+    }
+    if (gymBrand?.secondary_color) {
+      root.style.setProperty('--shell-secondary', gymBrand.secondary_color);
+    }
+    return () => {
+      root.style.removeProperty('--shell-primary');
+      root.style.removeProperty('--shell-secondary');
+    };
+  }, [gymBrand?.primary_color, gymBrand?.secondary_color]);
+
   // === Branding (white-label) =============================================
   const brandName = (gymBrand?.brand_name && gymBrand.brand_name.trim())
     || (coachBrand?.white_label_enabled && coachBrand?.brand_name?.trim())
@@ -246,29 +262,39 @@ export default function Dashboard() {
 
   // === Handlers ============================================================
   const navigate = (view) => {
-    if (view === 'home') {
+    const VIEW_ALIASES = {
+      progress: 'mi-progreso',
+      'd28d-progress': 'mi-progreso',
+      'd28d-challenges': 'mi-progreso',
+    };
+    const resolvedView = VIEW_ALIASES[view] || view;
+    if (resolvedView === 'home') {
       setOpenServicePanel(null);
       setSelectedProgram(null);
       setCurrentView('home');
       return;
     }
-    if (isFoodExternal() && isFoodLegacyView(view)) {
+    if (isFoodExternal() && isFoodLegacyView(resolvedView)) {
+      openFoodModule('/dashboard');
+      return;
+    }
+    if (resolvedView === 'food-plan-launch') {
       openFoodModule('/dashboard');
       return;
     }
     // Coaches: galería, IA, seguimiento, etc. dentro del shell (dashboard unificado).
-    if (isTrainingExternal() && isTrainingLegacyView(view) && !coachUsesShellTraining) {
-      openTrainingModuleView(view, user);
+    if (isTrainingExternal() && isTrainingLegacyView(resolvedView) && !coachUsesShellTraining) {
+      openTrainingModuleView(resolvedView, user);
       return;
     }
-    setCurrentView(view);
+    setCurrentView(resolvedView);
     const trainingPanelViews = new Set([
       'admingallery', 'coachai', 'admintraining', 'adminusers',
       'progress', 'admintrainers', 'training',
     ]);
-    if (isTrainingLegacyView(view) || trainingPanelViews.has(view)) {
+    if (isTrainingLegacyView(resolvedView) || trainingPanelViews.has(resolvedView)) {
       setOpenServicePanel('training');
-    } else if (view === 'servicePanel') {
+    } else if (resolvedView === 'servicePanel') {
       /* mantiene openServicePanel actual */
     } else {
       setOpenServicePanel(null);
@@ -331,16 +357,18 @@ export default function Dashboard() {
     const account = t('nav.myaccount', 'Mi Cuenta');
     if (isFinal) {
       const items = [{ id: 'home', label: home }];
-      if (services.find((s) => s.id === 'food-plan') && !isFoodExternal()) {
-        items.push({ id: 'myplan', label: t('nav.myplan', 'Mi Plan') });
+      const hasLive = services.some((s) => s.id === 'd28d' || s.id === 'live-classes');
+      const hasProgressModule = services.some((s) =>
+        ['food-plan', 'd28d', 'live-classes', 'training'].includes(s.id));
+      if (hasProgressModule) {
+        items.push({ id: 'mi-progreso', label: t('nav.mi_progreso', 'Mi Progreso') });
       }
-      if (services.find((s) => s.id === 'training')) items.push({ id: 'training', label: t('nav.training', 'Entrenamiento') });
-      items.push({ id: 'progress', label: t('nav.progress', 'Progreso') });
-      if (services.find((s) => s.id === 'd28d') || services.find((s) => s.id === 'live-classes')) {
+      if (hasLive) {
         items.push({ id: 'liveclasses', label: t('nav.liveclasses_short', 'Clases') });
       }
+      items.push({ id: 'support', label: t('nav.support', 'Soporte') });
       items.push({ id: 'myaccount', label: account });
-      return items.slice(0, 6);
+      return items;
     }
 
     if (!hasAnyRole(['super_admin'])) {
@@ -643,8 +671,9 @@ export default function Dashboard() {
         ) : null;
       case 'spiritual-bible':
         return (
-          <BibleReaderPanel onBack={() => navigate(isFinal ? 'progress' : 'home')} />
+          <BibleReaderPanel onBack={() => navigate(isFinal ? 'mi-progreso' : 'home')} />
         );
+      case 'mi-progreso':
       case 'progress':
         if (hasAnyRole(['entrenador', 'nutricionista', 'admin_training', 'admin_entrenador'])) {
           return (
@@ -652,31 +681,11 @@ export default function Dashboard() {
           );
         }
         if (isFinal) {
-          const hasFood = services.some((s) => s.id === 'food-plan') && !isFoodExternal();
-          const { hasD28d, hasTraining, showShellHelpAssistant } = serviceShellUx;
-          return (
-            <div className="space-y-8">
-              {spiritualWidgetsEnabled() ? (
-                <SpiritualTodayWidget onOpenBible={() => navigate('spiritual-bible')} />
-              ) : null}
-              {hasFood ? <Progress /> : null}
-              {hasD28d ? (
-                <>
-                  <D28dProgressDashboard />
-                  <D28dChallengesPanel />
-                </>
-              ) : null}
-              {hasTraining ? <TrainingProgressPanel /> : null}
-              {!hasFood && !hasD28d && !hasTraining ? (
-                <p className="text-stone-500">{t('services.no_services', 'Aún no tienes servicios activos.')}</p>
-              ) : null}
-              {showShellHelpAssistant ? (
-                <HelpAssistantWidget modulo={hasD28d ? 'd28d' : hasTraining ? 'training' : 'platform'} />
-              ) : null}
-            </div>
-          );
+          return <MiProgreso />;
         }
         return <Progress />;
+      case 'support':
+        return <SupportCenter />;
       case 'coachai':
         if (!isPureCoach && !hasAnyRole(['admin_training', 'admin_entrenador', 'nutricionista'])) return renderHome();
         return <CoachRoutineAssistant onBack={backToTrainingPanel} />;
@@ -690,15 +699,8 @@ export default function Dashboard() {
         if (!hasAnyRole(['super_admin', 'admin_d28d'])) return renderHome();
         return <D28dChallengesAdmin onBack={() => { setOpenServicePanel('d28d'); setCurrentView('servicePanel'); }} />;
       case 'd28d-challenges':
-        return (
-          <div className="space-y-6">
-            <D28dChallengesPanel />
-            <D28dProgressDashboard />
-            {serviceShellUx.showShellHelpAssistant ? <HelpAssistantWidget modulo="d28d" /> : null}
-          </div>
-        );
       case 'd28d-progress':
-        return <D28dProgressDashboard />;
+        return isFinal ? <MiProgreso /> : <D28dProgressDashboard />;
       case 'equivalentes': return <Equivalentes />;
       case 'training': return <TrainingModule />;
       case 'admintraining':
@@ -758,9 +760,9 @@ export default function Dashboard() {
             ? <img src={brandLogoSrc} alt={brandName} style={{ height: 28, width: 'auto', borderRadius: 4 }} />
             : null}
           <h1 style={{ fontSize: '1.05rem', margin: 0 }}>
-            {(() => {
-              const parts = String(brandName || 'D28D GYM VIRTUAL').split(' ');
-              const head = parts[0] || 'D28D';
+              {(() => {
+              const parts = String(brandName || PUBLIC_BRAND_NAME).split(' ');
+              const head = parts[0] || 'FOODPLAN';
               const tail = parts.slice(1).join(' ');
               return (
                 <>
@@ -776,7 +778,12 @@ export default function Dashboard() {
             <button
               key={item.id}
               onClick={() => navigate(item.id)}
-              className={currentView === item.id ? 'nav-link active' : 'nav-link'}
+              className={
+                currentView === item.id
+                || (item.id === 'mi-progreso' && ['progress', 'd28d-challenges', 'd28d-progress'].includes(currentView))
+                  ? 'nav-link active'
+                  : 'nav-link'
+              }
             >
               {item.label}
             </button>

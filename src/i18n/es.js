@@ -2,6 +2,8 @@ import { DASHBOARD_I18N_ES } from './dashboardKeys';
 
 export default {
   'nav.progress': 'Progreso',
+  'nav.mi_progreso': 'Mi Progreso',
+  'nav.support': 'Soporte',
   'nav.home': 'Inicio',
   'nav.calculator': 'Calculadora',
   'nav.foods': 'Alimentos',

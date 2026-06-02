@@ -51,10 +51,13 @@ export async function openFoodModule(returnPath) {
     const { data } = await api.get('/food-module/launch', {
       params: { return_url: returnUrl },
     });
-    const url = data?.data?.url;
+    let url = data?.data?.url;
+    if (url && !/^https?:\/\//i.test(url)) {
+      url = `${getFoodModulePublicUrl()}${url.startsWith('/') ? url : `/${url}`}`;
+    }
     if (url) {
       try {
-        const handoff = new URL(url, window.location.origin).searchParams.get('token');
+        const handoff = new URL(url, getFoodModulePublicUrl()).searchParams.get('token');
         if (handoff) sessionStorage.setItem('d28d_food_handoff', handoff);
       } catch { /* noop */ }
       window.location.href = url;
@@ -66,5 +69,16 @@ export async function openFoodModule(returnPath) {
     window.alert(msg);
     return;
   }
-  window.alert('No se recibió URL de FOOD_PLAN. Comprueba que tienes licencia food activa.');
+  window.alert('No se recibió URL de FOOD_PLAN. Comprueba licencia food activa y FOOD_MODULE_URL en el servidor.');
+}
+
+/** Abre foodplan.tech con el mismo token shell (respaldo si falla /launch). */
+export function openFoodModulePublicFallback() {
+  const base = getFoodModulePublicUrl();
+  const token = localStorage.getItem('token');
+  if (token) {
+    window.location.href = `${base}/shell-sso?token=${encodeURIComponent(token)}`;
+    return;
+  }
+  window.location.href = base;
 }
