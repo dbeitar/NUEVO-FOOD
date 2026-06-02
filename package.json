@@ -28,6 +28,7 @@
     "spiritual:bootstrap-nicolas": "node scripts/spiritual/bootstrap_nicolas_del_rio.cjs",
     "spiritual:deactivate-test": "node scripts/spiritual/deactivate_test_content.cjs",
     "spiritual:deploy-prod": "node scripts/spiritual/deploy_spiritual_production.cjs",
+    "d28d:fix-zoom-links": "node scripts/d28d/fix_invalid_zoom_links.cjs",
     "import:gallery-nico": "node scripts/import_gallery_nico_xlsx.cjs --apply",
     "import:gallery-nico:preview": "node scripts/import_gallery_nico_xlsx.cjs --preview",
     "db:migrate-json": "node scripts/migrate_json_to_postgres.cjs",

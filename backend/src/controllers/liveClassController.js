@@ -208,19 +208,41 @@ const getAttendanceReport = (req, res) => {
   }
 };
 
-async function resolveZoomLinkForClass(body, hostFields, resolvedTitle) {
+function pickZoomAccountId(body) {
+  const programId = body.program_id || body.programId || null;
+  const raw = body.zoom_account_id || body.zoomAccountId || null;
+  if (programId === 'virtual_d28d') return raw || 'virtual_d28d_1';
+  if (programId === 'vital' || programId === 'pancitas') return programId;
+  return raw;
+}
+
+async function resolveZoomLinkForClass(body, hostFields, resolvedTitle, options = {}) {
+  const { allowEmptyOnAutoFail = false } = options;
   let zoomLink = String(body.zoom_link || '').trim();
   let zoomMeta = null;
+  let warning = null;
   const wantsAuto = body.auto_zoom === true || body.auto_zoom === 'true';
   const programId = body.program_id || body.programId || null;
+  const zoomAccountId = pickZoomAccountId(body);
+
+  if (zoomLink && !zoomMeetingService.isValidZoomJoinUrl(zoomLink)) {
+    if (!wantsAuto) {
+      return {
+        error: 'El enlace Zoom no es válido (debe ser https://zoom.us/j/ seguido del ID numérico de la reunión). Genera uno nuevo con «Generar Zoom».',
+        status: 400,
+      };
+    }
+    zoomLink = '';
+  }
+
   if (wantsAuto && programId) {
     const hostUser = hostFields.d28d_host_user_id
       ? userDB.getById(Number(hostFields.d28d_host_user_id))
       : null;
-    const legacyManualZoom = String(process.env.ZOOM_LEGACY_MANUAL_ACCOUNT || '').toLowerCase() === 'true';
+    const hostZoomEmail = zoomMeetingService.getZoomHostEmail(programId, zoomAccountId);
     const zoomResult = await zoomMeetingService.createScheduledMeeting({
       programId,
-      zoomAccountId: legacyManualZoom ? (body.zoom_account_id || null) : null,
+      zoomAccountId,
       topic: resolvedTitle,
       startTime: body.start_time,
       endTime: body.end_time,
@@ -229,20 +251,44 @@ async function resolveZoomLinkForClass(body, hostFields, resolvedTitle) {
     if (zoomResult.ok) {
       zoomLink = zoomResult.join_url;
       zoomMeta = zoomResult;
-    } else if (!zoomLink) {
+    } else if (allowEmptyOnAutoFail) {
+      warning = zoomResult.message || 'No se pudo generar Zoom automático; la clase se guardó sin enlace.';
+      zoomMeta = { ...zoomResult, pending: true, host_email: zoomResult.host_email || hostZoomEmail };
+    } else {
       return {
         error: zoomResult.message || 'No se pudo generar el enlace Zoom',
         status: 400,
-        zoomMeta,
+        zoomMeta: { ...zoomResult, host_email: zoomResult.host_email || hostZoomEmail },
       };
     }
   } else if (wantsAuto && !programId && !zoomLink) {
-    return { error: 'program_id es requerido para generar Zoom automático', status: 400 };
+    if (allowEmptyOnAutoFail) {
+      warning = 'program_id es requerido para generar Zoom automático; la clase se guardó sin enlace.';
+    } else {
+      return { error: 'program_id es requerido para generar Zoom automático', status: 400 };
+    }
   }
+
   if (!zoomLink) {
+    if (allowEmptyOnAutoFail) {
+      return { zoomLink: '', zoomMeta, warning };
+    }
     return { error: 'zoom_link es requerido (o activa generar enlace Zoom)', status: 400 };
   }
-  return { zoomLink, zoomMeta };
+  if (!zoomMeetingService.isValidZoomJoinUrl(zoomLink)) {
+    if (allowEmptyOnAutoFail) {
+      return {
+        zoomLink: '',
+        zoomMeta,
+        warning: warning || 'Enlace Zoom inválido; la clase se guardó sin enlace. Usa «Generar Zoom» después.',
+      };
+    }
+    return {
+      error: 'Enlace Zoom inválido. Usa «Generar Zoom» con programa y cuenta del maestro configurados.',
+      status: 400,
+    };
+  }
+  return { zoomLink, zoomMeta, warning };
 }
 
 const createZoomMeeting = async (req, res) => {
@@ -266,7 +312,12 @@ const createZoomMeeting = async (req, res) => {
       title,
     );
     if (resolved.error) {
-      return res.status(resolved.status || 400).json({ error: resolved.error, zoom: resolved.zoomMeta });
+      return res.status(resolved.status || 400).json({
+        error: resolved.error,
+        zoom: resolved.zoomMeta,
+        host_email: resolved.zoomMeta?.host_email,
+        alternative_host: resolved.zoomMeta?.alternative_host,
+      });
     }
     return res.json({
       success: true,
@@ -301,11 +352,16 @@ const createClass = async (req, res) => {
       { ...req.body, start_time: startNorm, end_time: endNorm },
       hostFields,
       resolvedTitle,
+      { allowEmptyOnAutoFail: true },
     );
     if (zoomResolved.error) {
-      return res.status(zoomResolved.status || 400).json({ error: zoomResolved.error });
+      return res.status(zoomResolved.status || 400).json({
+        error: zoomResolved.error,
+        zoom: zoomResolved.zoomMeta || null,
+      });
     }
-    const zoom_link = zoomResolved.zoomLink;
+    const zoom_link = zoomResolved.zoomLink || '';
+    const zoomWarning = zoomResolved.warning || null;
     if (source_module === 'd28d' && !hasRole(req.user, ['super_admin', 'admin_d28d'])) {
       return res.status(403).json({ error: 'Solo D28D puede crear clases globales' });
     }
@@ -373,10 +429,13 @@ const createClass = async (req, res) => {
     }
     return res.status(201).json({
       success: true,
-      message: 'Clase creada correctamente',
+      message: zoomWarning
+        ? `Clase creada correctamente. ${zoomWarning}`
+        : 'Clase creada correctamente',
       data: enriched,
-      zoom_link: zoom_link,
+      zoom_link: zoom_link || null,
       zoom: zoomResolved.zoomMeta || null,
+      zoom_warning: zoomWarning,
     });
   } catch (error) {
     console.error('Error creando clase en vivo:', error);
@@ -460,6 +519,7 @@ const updateClass = async (req, res) => {
         },
         hostFields,
         resolvedTitle,
+        { allowEmptyOnAutoFail: true },
       );
       if (zoomResolved.error && !zoom_link) {
         return res.status(zoomResolved.status || 400).json({ error: zoomResolved.error });

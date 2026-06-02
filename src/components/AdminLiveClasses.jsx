@@ -87,6 +87,16 @@ function zoomModeLabel(zoom) {
   return zoom.message || '';
 }
 
+function selectedProgramZoomEmail(form, programs) {
+  const prog = programs.find((p) => p.id === form.program_id);
+  if (!prog) return '';
+  if (form.program_id === 'virtual_d28d' && Array.isArray(prog.zoom_accounts)) {
+    const acc = prog.zoom_accounts.find((a) => a.id === form.zoom_account_id);
+    return acc?.email || '';
+  }
+  return prog.zoom_email || '';
+}
+
 export default function AdminLiveClasses() {
   const { user: currentUser } = useAuth();
   const [items, setItems] = useState([]);
@@ -287,9 +297,19 @@ export default function AdminLiveClasses() {
       }
       setForm((prev) => ({ ...prev, zoom_link: link, auto_zoom: true }));
       const mode = zoomModeLabel(zoomInfo);
-      setSuccess(`✓ Zoom generado${mode ? ` (${mode})` : ''}: ${link}`);
+      const sala = zoomInfo?.host_email ? ` · Sala Zoom: ${zoomInfo.host_email}` : '';
+      const anfitrion = zoomInfo?.alternative_host
+        ? ` · Anfitrión D28D (alterno): ${zoomInfo.alternative_host}`
+        : form.d28d_host_user_id
+          ? ' · Asigna entrenador D28D para anfitrión alterno en Zoom'
+          : '';
+      setSuccess(`✓ Zoom generado${mode ? ` (${mode})` : ''}${sala}${anfitrion}: ${link}`);
     } catch (e) {
-      setError(e.response?.data?.error || 'No se pudo generar el enlace Zoom.');
+      const z = e.response?.data?.zoom;
+      const extra = z?.host_email
+        ? ` Cuenta del programa: ${z.host_email}${z.alternative_host ? `; anfitrión alterno: ${z.alternative_host}` : ''}.`
+        : '';
+      setError((e.response?.data?.error || 'No se pudo generar el enlace Zoom.') + extra);
     } finally {
       setSaving(false);
     }
@@ -338,8 +358,11 @@ export default function AdminLiveClasses() {
             : resp.data?.zoom?.mode === 'api'
               ? ' · Reunión Zoom creada por API'
               : '';
+          const zoomWarning = resp.data?.zoom_warning;
           setSuccess(
-            `${resp.data?.message || 'Clase creada correctamente'}. Zoom: ${created?.zoom_link || '—'}${zoomNote}`,
+            zoomWarning
+              ? `✓ ${resp.data?.message || 'Clase creada'}. ${zoomWarning}`
+              : `${resp.data?.message || 'Clase creada correctamente'}. Zoom: ${created?.zoom_link || '—'}${zoomNote}`,
           );
           setLastCreatedId(created?.id ?? null);
         }
@@ -548,6 +571,14 @@ export default function AdminLiveClasses() {
                 <option key={p.id} value={p.id}>{p.name}</option>
               ))}
             </select>
+            {form.program_id && selectedProgramZoomEmail(form, programs) ? (
+              <p className="text-xs text-slate-600 mt-1">
+                Cuenta Zoom del maestro: <strong>{selectedProgramZoomEmail(form, programs)}</strong>
+                {form.d28d_host_user_id
+                  ? ` · Entrenador como anfitrión alterno: ${hostLabel(form.d28d_host_user_id)}`
+                  : ' · Elige entrenador D28D para que Zoom lo registre como anfitrión alterno'}
+              </p>
+            ) : null}
           </label>
           {form.program_id === 'virtual_d28d' && (
             <label className="block">
@@ -595,7 +626,9 @@ export default function AdminLiveClasses() {
               </p>
             ) : null}
             <p className="text-xs text-slate-500 mt-1">
-              Requiere programa + inicio/fin. Sin ZOOM_S2S en servidor se usa enlace demo (válido para pruebas).
+              Usa el email del maestro de programas como sala Zoom y al entrenador D28D como anfitrión alterno.
+              En <code>backend/.env</code> configura <code>ZOOM_S2S_*</code> (misma cuenta Zoom empresarial) o un PMI válido
+              (<code>D28D_ZOOM_PMI_*</code> con enlace numérico).
             </p>
           </label>
         </div>

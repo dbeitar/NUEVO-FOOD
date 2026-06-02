@@ -221,7 +221,7 @@ class LiveClassDatabase {
           created.push(this.create({
             title: `${type} D28D - ${dayLabel} ${from}`,
             description: type === 'FUERZA' ? 'Bloque de fuerza guiado para el ciclo D28D.' : 'Clase principal del Metodo D28D.',
-            zoom_link: 'https://zoom.us/j/d28d-demo',
+            zoom_link: '',
             gym_id: null,
             is_global: true,
             source_module: 'd28d',

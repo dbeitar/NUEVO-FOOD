@@ -77,11 +77,8 @@ const SLOTS = [
 ];
 const COACHES = ['Alejo', 'Tatiana', 'Carlos', 'Diana', 'Pipe'];
 const PROGRAMS = ['vital', 'pancitas', 'virtual_d28d'];
-const ZOOM_LINKS = {
-  vital: 'https://zoom.us/j/vital-d28d',
-  pancitas: 'https://zoom.us/j/pancitas-fit',
-  virtual_d28d: 'https://zoom.us/j/virtual-d28d-1',
-};
+// Sin enlaces Zoom ficticios: al crear clases reales usar API S2S + maestro de programas.
+const ZOOM_LINKS = { vital: '', pancitas: '', virtual_d28d: '' };
 const allUserIds = Array.from({ length: 21 }, (_, i) => 100 + i);
 let classId = 1000;
 const liveClasses = [];
